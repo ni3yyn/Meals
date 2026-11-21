@@ -21,7 +21,7 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
 - Plan-run metadata saved per week: generator version, generation timestamp, price snapshot timestamp, budget, wilaya and selected meal slots.
-- The price observations used by each generated week are copied into a week-specific snapshot; new reports affect future generations and do not silently rewrite previous estimates.
+- The price observations used by each generated week are copied into a week-specific snapshot; new reports affect future generations and do not silently rewrite previous estimates. Old plans from before snapshot support fall back to current observations until a snapshot exists. Once a real snapshot ages beyond the freshness window, the saved amount remains visible with an explicit historical-price label.
 - Week-scoped shopping lists; generated and manually entered items remain associated with the plan week.
 - Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone.
 - Manual plan edits are persisted separately from generated suggestions so regeneration cannot silently replace user decisions. Approximate stock is never deducted.

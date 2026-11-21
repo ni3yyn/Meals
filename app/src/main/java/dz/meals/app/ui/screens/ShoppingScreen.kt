@@ -539,6 +539,7 @@ private fun ShoppingItemCard(
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodySmall
                 )
+                item.priceLabel?.let { Text(it, color = MutedInk, style = MaterialTheme.typography.labelSmall) }
                 item.sourceLabel?.let { Text(it, color = MutedInk, style = MaterialTheme.typography.labelSmall) }
                 if (item.isUnavailable) {
                     Text("غير متوفر حالياً في المحل", color = MutedInk, style = MaterialTheme.typography.bodySmall)

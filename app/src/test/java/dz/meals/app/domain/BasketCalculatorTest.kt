@@ -211,6 +211,25 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun historicalSnapshotPriceRemainsAvailableWithHistoricalLabel() {
+        val oldPrice = PriceObservationEntity(
+            "old-potato", "potato", 500.0, "g", 100.0, "سوق سابق", "الجلفة",
+            1_700_000_000_000L, "user_reported", "غير موثق"
+        )
+        val history = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = listOf(oldPrice),
+            selectedWilaya = "الجلفة",
+            nowEpochMillis = 1_800_000_000_000L,
+            allowStaleSnapshotPrices = true
+        )
+        assertEquals(100.0, history.items.single().cashOutlayDzd!!, 0.0001)
+        assertEquals("سعر تاريخي من لقطة الخطة", history.items.single().priceLabel)
+    }
+
+    @Test
     fun savedPlanKeepsItsPriceSnapshotWhenNewReportsArrive() {
         val oldPrice = PriceObservationEntity("old", "potato", 500.0, "g", 100.0, "old source", "الجلفة", 1_700_000_000_000L, "user_reported", "غير موثق")
         val newPrice = PriceObservationEntity("new", "potato", 500.0, "g", 160.0, "new source", "الجلفة", 1_800_000_000_000L, "user_reported", "غير موثق")
@@ -220,9 +239,12 @@ class BasketCalculatorTest {
         )
         assertEquals(
             listOf("old", "new"),
-            pricesForSavedPlan(emptyList(), listOf(oldPrice, newPrice), 0L).map { it.id }
+            pricesForSavedPlan(emptyList(), listOf(oldPrice, newPrice), 1_700_000_000_000L).map { it.id }
         )
-        assertTrue(pricesForSavedPlan(emptyList(), listOf(oldPrice), 1_700_000_000_000L).isEmpty())
+        assertEquals(
+            listOf("old"),
+            pricesForSavedPlan(emptyList(), listOf(oldPrice), 1_700_000_000_000L).map { it.id }
+        )
     }
 
     @Test

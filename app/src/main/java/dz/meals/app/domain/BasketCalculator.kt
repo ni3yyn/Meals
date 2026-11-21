@@ -23,7 +23,8 @@ fun pricesForSavedPlan(
     latestObservations: List<PriceObservationEntity>,
     snapshotAtEpochMillis: Long
 ): List<PriceObservationEntity> =
-    if (snapshotAtEpochMillis > 0L) savedPriceSnapshot else latestObservations
+    if (snapshotAtEpochMillis > 0L && savedPriceSnapshot.isNotEmpty()) savedPriceSnapshot
+    else latestObservations
 
 fun exactPantryDeduction(requiredQuantity: Double, availableQuantity: Double?, approximate: Boolean): Double {
     if (approximate || availableQuantity == null || requiredQuantity <= 0.0 || availableQuantity <= 0.0) return 0.0
@@ -94,7 +95,8 @@ fun calculateBasket(
     prices: List<PriceObservationEntity>,
     checkedItemIds: Set<String> = emptySet(),
     selectedWilaya: String? = null,
-    nowEpochMillis: Long = System.currentTimeMillis()
+    nowEpochMillis: Long = System.currentTimeMillis(),
+    allowStaleSnapshotPrices: Boolean = false
 ): BasketSummary {
     val recipesById = recipes.associateBy { it.id }
     val required = linkedMapOf<RequirementKey, Double>()
@@ -121,7 +123,7 @@ fun calculateBasket(
             .orEmpty()
             .filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd > 0.0 }
         val freshPrices = compatiblePrices.filter { observation ->
-            if (observation.priceKind == "demo") {
+            if (allowStaleSnapshotPrices || observation.priceKind == "demo") {
                 true
             } else {
                 val observedAt = observation.observedAtEpochMillis
@@ -155,6 +157,16 @@ fun calculateBasket(
         val purchaseQuantity = if (price != null && packs != null) packs * price.packQuantityBase else netRequired
         val cashOutlay = if (price != null && packs != null) packs * price.packPriceDzd else null
         val id = key.ingredientId + "::" + key.unit
+        val isHistoricalPrice = allowStaleSnapshotPrices && price != null &&
+            price.priceKind != "demo" && price.observedAtEpochMillis?.let { observedAt ->
+                nowEpochMillis < observedAt || nowEpochMillis - observedAt > MAX_PRICE_AGE_MILLIS
+            } == true
+        val observationDate = price?.observedAtEpochMillis?.let { observedAt ->
+            java.time.Instant.ofEpochMilli(observedAt)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDate()
+                .toString()
+        }
 
         ShoppingListItem(
             id = id,
@@ -166,8 +178,15 @@ fun calculateBasket(
             unit = key.unit,
             consumedValueDzd = consumedValue,
             cashOutlayDzd = cashOutlay,
-            priceLabel = price?.priceKind?.let { if (it == "demo") "قيمة توضيحية" else "ملاحظة سعر" },
-            sourceLabel = price?.sourceLabel,
+            priceLabel = when {
+                price == null -> null
+                price.priceKind == "demo" -> "قيمة توضيحية"
+                isHistoricalPrice -> "سعر تاريخي من لقطة الخطة"
+                else -> "ملاحظة سعر"
+            },
+            sourceLabel = price?.let {
+                listOfNotNull(it.sourceLabel, it.locationLabel, observationDate).joinToString(" · ")
+            },
             isApproximatePantry = approximateStock,
             checked = id in checkedItemIds,
             userAdded = false

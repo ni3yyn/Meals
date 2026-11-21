@@ -136,7 +136,8 @@ class MealsRepository(context: Context) {
             pantryEntities,
             prices,
             existingShopping.filter { it.checked }.map { it.id.substringAfter("::") }.toSet(),
-            planWilaya
+            planWilaya,
+            allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty()
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
@@ -298,7 +299,7 @@ class MealsRepository(context: Context) {
         }
 
         val generatedAt = System.currentTimeMillis()
-        val priceSnapshotAt = prices.mapNotNull { it.observedAtEpochMillis }.maxOrNull() ?: generatedAt
+        val priceSnapshotAt = generatedAt
         database.withTransaction {
             dao.deletePlanPriceSnapshots(weekStartIso)
             if (prices.isNotEmpty()) {
