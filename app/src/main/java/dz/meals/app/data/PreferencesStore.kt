@@ -21,8 +21,8 @@ class PreferencesStore(context: Context) {
     private object Keys {
         val weeklyBudget = intPreferencesKey("weekly_budget_dzd")
         val wilaya = stringPreferencesKey("wilaya")
-        val plannedRecipeIds = stringSetPreferencesKey("planned_recipe_ids")
-        val checkedIngredientIds = stringSetPreferencesKey("checked_ingredient_ids")
+        val householdServings = intPreferencesKey("household_servings")
+        val allergyIds = stringSetPreferencesKey("allergy_ids")
     }
 
     val preferences: Flow<AppPreferences> = dataStore.data
@@ -34,48 +34,22 @@ class PreferencesStore(context: Context) {
             AppPreferences(
                 weeklyBudgetDzd = values[Keys.weeklyBudget] ?: 15_000,
                 wilaya = values[Keys.wilaya] ?: "الجزائر",
-                plannedRecipeIds = values[Keys.plannedRecipeIds] ?: emptySet(),
-                checkedIngredientIds = values[Keys.checkedIngredientIds] ?: emptySet()
+                householdServings = values[Keys.householdServings] ?: 3,
+                allergyIds = values[Keys.allergyIds] ?: emptySet()
             )
         }
 
-    suspend fun saveSettings(weeklyBudgetDzd: Int, wilaya: String) {
+    suspend fun saveSettings(
+        weeklyBudgetDzd: Int,
+        wilaya: String,
+        householdServings: Int,
+        allergyIds: Set<String>
+    ) {
         dataStore.edit { values ->
             values[Keys.weeklyBudget] = weeklyBudgetDzd.coerceAtLeast(0)
             values[Keys.wilaya] = wilaya.trim().ifBlank { "الجزائر" }
-        }
-    }
-
-    suspend fun toggleRecipe(recipeId: String) {
-        dataStore.edit { values ->
-            val selected = values[Keys.plannedRecipeIds]?.toMutableSet() ?: mutableSetOf()
-            if (!selected.add(recipeId)) selected.remove(recipeId)
-            values[Keys.plannedRecipeIds] = selected
-
-            // Remove checked states for ingredients no longer present in the active plan.
-            val activeIngredientKeys = SeedRecipes.all
-                .filter { it.id in selected }
-                .flatMap { recipe -> recipe.ingredients.map { it.id + "::" + it.unit } }
-                .toSet()
-            val checked = values[Keys.checkedIngredientIds]?.filterTo(mutableSetOf()) {
-                it in activeIngredientKeys
-            } ?: mutableSetOf()
-            values[Keys.checkedIngredientIds] = checked
-        }
-    }
-
-    suspend fun toggleIngredient(ingredientId: String) {
-        dataStore.edit { values ->
-            val checked = values[Keys.checkedIngredientIds]?.toMutableSet() ?: mutableSetOf()
-            if (!checked.add(ingredientId)) checked.remove(ingredientId)
-            values[Keys.checkedIngredientIds] = checked
-        }
-    }
-
-    suspend fun clearPlan() {
-        dataStore.edit { values ->
-            values[Keys.plannedRecipeIds] = emptySet()
-            values[Keys.checkedIngredientIds] = emptySet()
+            values[Keys.householdServings] = householdServings.coerceIn(1, 12)
+            values[Keys.allergyIds] = allergyIds
         }
     }
 }

@@ -1,0 +1,83 @@
+package dz.meals.app.domain
+
+import dz.meals.app.data.BasketSummary
+import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.PlannedMeal
+import dz.meals.app.data.ShoppingListItem
+import dz.meals.app.data.local.PantryItemEntity
+import dz.meals.app.data.local.PriceObservationEntity
+import kotlin.math.ceil
+
+private data class RequirementKey(val ingredientId: String, val unit: String)
+
+fun calculateBasket(
+    plannedMeals: List<PlannedMeal>,
+    recipes: List<MealRecipe>,
+    pantry: List<PantryItemEntity>,
+    prices: List<PriceObservationEntity>,
+    checkedItemIds: Set<String> = emptySet()
+): BasketSummary {
+    val recipesById = recipes.associateBy { it.id }
+    val required = linkedMapOf<RequirementKey, Double>()
+
+    plannedMeals.forEach { meal ->
+        val recipe = meal.recipeId?.let(recipesById::get) ?: return@forEach
+        val factor = meal.servings.toDouble() / recipe.baseServings.coerceAtLeast(1)
+        recipe.ingredients.filterNot { it.optional }.forEach { ingredient ->
+            val key = RequirementKey(ingredient.ingredientId, ingredient.unit)
+            required[key] = (required[key] ?: 0.0) + ingredient.quantityBase * factor
+        }
+    }
+
+    val pantryByKey = pantry.groupBy { RequirementKey(it.ingredientId, it.unit) }
+    val priceByIngredient = prices.groupBy { it.ingredientId }
+    val items = required.map { (key, amount) ->
+        val pantryRows = pantryByKey[key].orEmpty()
+        val exactStock = pantryRows.filter { !it.isApproximate && it.quantityBase != null }
+            .sumOf { it.quantityBase ?: 0.0 }
+        val approximateStock = pantryRows.any { it.isApproximate || it.quantityBase == null }
+        val pantryUsed = minOf(amount, exactStock)
+        val netRequired = (amount - pantryUsed).coerceAtLeast(0.0)
+        val price = priceByIngredient[key.ingredientId]
+            ?.filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd >= 0.0 }
+            ?.maxByOrNull { it.observedAtEpochMillis ?: 0L }
+
+        val consumedValue = price?.let { amount / it.packQuantityBase * it.packPriceDzd }
+        val packs = price?.let { if (netRequired <= 0.0) 0.0 else ceil(netRequired / it.packQuantityBase) }
+        val purchaseQuantity = if (price != null && packs != null) packs * price.packQuantityBase else netRequired
+        val cashOutlay = if (price != null && packs != null) packs * price.packPriceDzd else null
+        val id = key.ingredientId + "::" + key.unit
+
+        ShoppingListItem(
+            id = id,
+            ingredientId = key.ingredientId,
+            name = key.ingredientId,
+            requiredQuantity = amount,
+            pantryQuantity = pantryUsed,
+            purchaseQuantity = purchaseQuantity,
+            unit = key.unit,
+            consumedValueDzd = consumedValue,
+            cashOutlayDzd = cashOutlay,
+            priceLabel = price?.priceKind?.let { if (it == "demo") "قيمة توضيحية" else "ملاحظة سعر" },
+            sourceLabel = price?.sourceLabel,
+            isApproximatePantry = approximateStock,
+            checked = id in checkedItemIds,
+            userAdded = false
+        )
+    }
+
+    val priced = items.filter { it.cashOutlayDzd != null }
+    return BasketSummary(
+        items = items,
+        consumedValueDzd = items.sumOf { it.consumedValueDzd ?: 0.0 },
+        purchaseOutlayDzd = priced.sumOf { it.cashOutlayDzd ?: 0.0 },
+        unknownPriceCount = items.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
+        hasDemoPrices = prices.any { it.priceKind == "demo" }
+    )
+}
+
+fun scaleIngredientQuantity(quantity: Double, baseServings: Int, targetServings: Int): Double {
+    require(baseServings > 0) { "baseServings must be positive" }
+    require(targetServings > 0) { "targetServings must be positive" }
+    return quantity * targetServings.toDouble() / baseServings.toDouble()
+}
