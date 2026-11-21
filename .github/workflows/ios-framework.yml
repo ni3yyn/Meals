@@ -1,0 +1,60 @@
+name: iOS shared framework
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "shared/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/ios-framework.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meals-ios-framework
+  cancel-in-progress: true
+
+jobs:
+  build-ios-frameworks:
+    name: Link iOS device and simulator frameworks
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Verify Apple build environment
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          xcrun --sdk iphonesimulator --show-sdk-version
+          test -d "$ANDROID_HOME/platforms/android-37.1"
+
+      - name: Link iOS frameworks
+        run: |
+          gradle :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon --stacktrace
+
+      - name: Upload iOS frameworks
+        uses: actions/upload-artifact@v7
+        with:
+          name: meals-shared-ios-frameworks
+          path: |
+            shared/build/bin/iosArm64/debugFramework/MealsShared.framework
+            shared/build/bin/iosSimulatorArm64/debugFramework/MealsShared.framework
+          if-no-files-found: error
+          retention-days: 30
