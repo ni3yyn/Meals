@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.Copy
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -18,6 +20,19 @@ val hasReleaseSigning = listOf(
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
+
+val generatedTajawalRes = layout.buildDirectory.dir("generated/tajawal-res")
+val copyTajawalFonts by tasks.registering(Copy::class) {
+    from(rootProject.file("shared/src/commonMain/composeResources/font")) {
+        include(
+            "tajawal_regular.ttf",
+            "tajawal_medium.ttf",
+            "tajawal_bold.ttf",
+            "tajawal_extra_bold.ttf"
+        )
+    }
+    into(generatedTajawalRes.map { it.dir("font") })
+}
 
 android {
     namespace = "dz.meals.app"
@@ -80,6 +95,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // The same shared Tajawal assets are exposed as Android font resources
+    // for a deterministic native Typeface fallback in MainActivity.
+    sourceSets.getByName("main").res.srcDir(generatedTajawalRes)
+
     room {
         schemaDirectory("$projectDir/schemas")
     }
@@ -91,6 +110,11 @@ android {
     }
 }
 
+
+// Resource merging must wait for the generated Android font files.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Resources") }.configureEach {
+    dependsOn(copyTajawalFonts)
+}
 
 dependencies {
     implementation(project(":shared"))

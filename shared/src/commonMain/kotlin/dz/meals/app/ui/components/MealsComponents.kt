@@ -84,10 +84,6 @@ import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import dev.chrisbanes.haze.glass.GlassOptics
-import dev.chrisbanes.haze.glass.GlassStyle
-import dev.chrisbanes.haze.glass.SurfaceProfile
-import dev.chrisbanes.haze.glass.hazeGlass
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
 import dz.meals.app.ui.theme.Forest
@@ -219,73 +215,86 @@ fun MealsCard(
 }
 
 /**
- * Shared refraction-based glass surface for high-emphasis content.
- *
- * Haze supplies actual backdrop sampling, depth blur, optical refraction,
- * ambient edge lift and specular rim lighting. The Compose overlays only tune
- * the warm porcelain tint and fine double edge; they are not a fake blur.
- *
- * Use for hero summaries and prominent grouped surfaces. Repeating content
- * uses the lighter shared MealsCard blur treatment instead of optical refraction.
- */
-val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
-val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
-
-/**
- * A single, shape-consistent glass material. Haze owns the material fill,
- * refraction, rim and edge; the child content is not covered by a second
- * background rectangle. Keep this for hero surfaces, not every LazyColumn row.
+ * High-emphasis hero surface using the exact same backdrop blur material as
+ * every MealsCard. The hero differs only in scale and content spacing; it does
+ * not use the separate refraction/elevation path that can read as a dark shadow.
  */
 @Composable
 fun MealsGlassSurface(
     modifier: Modifier = Modifier,
-    tintColor: Color = Color(0xFFFFFCF7),
-    tintAlpha: Float = 0.28f,
+    tintColor: Color = Color(0xFFFFF6EC),
+    tintAlpha: Float = 0.34f,
     contentPadding: Dp = 18.dp,
     shape: RoundedCornerShape = RoundedCornerShape(29.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current
-    val glassStyle = remember(shape, tintColor, tintAlpha) {
-        GlassStyle.regular.then {
-            tint(tintColor.copy(alpha = tintAlpha.coerceIn(0.12f, 0.42f)))
-            optics(
-                GlassOptics.regular.copy(
-                    refractionStrength = 0.46f,
-                    refractionHeightFraction = 0.30f,
-                    refractionFoldStrength = 0.08f
-                )
+    val surfaceAlpha = (0.68f + tintAlpha.coerceIn(0f, 0.5f) * 0.24f)
+        .coerceIn(0.70f, 0.82f)
+    val face = remember(tintColor, surfaceAlpha) {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.52f),
+                tintColor.copy(alpha = surfaceAlpha),
+                tintColor.copy(alpha = (surfaceAlpha + 0.10f).coerceAtMost(0.92f))
             )
-            specularIntensity(0.72f)
-            ambientResponse(0.66f)
-            edgeSoftness(5.dp)
-            // Haze 2.1.0 exposes edgeShadow but not the newer edge-outline
-            // or rim-highlight controls. Keep the edge response subtle here;
-            // do not depend on APIs introduced after the pinned stable version.
-            edgeShadow(Color(0x14745D4B))
-            shape(shape)
-            surfaceProfile(SurfaceProfile.Squircle)
-            lightPosition(Alignment.TopStart)
-            chromaticAberrationStrength(0.025f)
-        }
+        )
+    }
+    val rim = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.98f),
+                Color.White.copy(alpha = 0.72f),
+                Color(0xFFEADFD7).copy(alpha = 0.64f)
+            )
+        )
     }
 
     Box(
         modifier = modifier
-            // Do not put a RenderNode elevation shadow on a translucent glass
-            // layer. Haze draws the optical edge and rim as part of the same
-            // material, avoiding a platform shadow bleeding through the tint.
-            .hazeGlass(
-                input = HazeInput.Sources(requireNotNull(hazeState) { "MealsGlassSurface requires MealsBackdrop." }),
-                style = glassStyle
+            .clip(shape)
+            .then(
+                if (hazeState != null) {
+                    Modifier.hazeBlur(
+                        input = HazeInput.Sources(hazeState),
+                        style = MealsCardBlurStyle,
+                        performanceMode = HazePerformanceMode.Default
+                    )
+                } else {
+                    Modifier
+                }
             )
+            .background(face, shape)
+            .border(BorderStroke(1.dp, rim), shape)
     ) {
-        Column(
+        CompositionLocalProvider(
+            LocalContentColor provides MaterialTheme.colorScheme.onSurface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = content
+            )
+        }
+
+        Box(
             modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 38.dp)
                 .fillMaxWidth()
-                .padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            content = content
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.96f),
+                            Color.White.copy(alpha = 0.78f),
+                            Color.Transparent
+                        )
+                    )
+                )
         )
     }
 }

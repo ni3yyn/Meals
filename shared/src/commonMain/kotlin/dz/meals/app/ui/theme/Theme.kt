@@ -53,8 +53,8 @@ private val MidaShapes = Shapes(
  * on Android and iOS rather than depending on the host device's font fallback.
  */
 @Composable
-private fun MidaTypography(): Typography {
-    val tajawal = FontFamily(
+private fun MidaTypography(hostFontFamily: FontFamily? = null): Typography {
+    val tajawal = hostFontFamily ?: FontFamily(
         Font(Res.font.tajawal_regular, weight = FontWeight.Normal),
         Font(Res.font.tajawal_medium, weight = FontWeight.Medium),
         Font(Res.font.tajawal_bold, weight = FontWeight.Bold),
@@ -81,11 +81,14 @@ private fun MidaTypography(): Typography {
 }
 
 @Composable
-fun MidaTheme(content: @Composable () -> Unit) {
+fun MidaTheme(
+    fontFamily: FontFamily? = null,
+    content: @Composable () -> Unit
+) {
     MaterialTheme(
         colorScheme = MidaColors,
         shapes = MidaShapes,
-        typography = MidaTypography(),
+        typography = MidaTypography(fontFamily),
         content = content
     )
 }
