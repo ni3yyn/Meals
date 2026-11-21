@@ -59,7 +59,8 @@ fun PlanScreen(
     onToggleCooked: (String) -> Unit,
     onAdjustServings: (String, Int) -> Unit,
     onPreviousWeek: () -> Unit,
-    onNextWeek: () -> Unit
+    onNextWeek: () -> Unit,
+    onOpenShoppingList: () -> Unit
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
@@ -90,6 +91,13 @@ fun PlanScreen(
                         formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
                         color = MutedInk
                     )
+                }
+                TextButton(
+                    onClick = onOpenShoppingList,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                ) {
+                    MealsIcon(MealsIconName.Basket, contentDescription = null, modifier = Modifier.size(19.dp))
+                    Text("المشتريات")
                 }
                 IconButton(onClick = onPreviousWeek) {
                     MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(26.dp))

@@ -1,11 +1,8 @@
 package dz.meals.app.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -74,6 +71,7 @@ fun ShoppingScreen(
 ) {
     var addDialog by rememberSaveable { mutableStateOf(false) }
     var showPurchased by rememberSaveable { mutableStateOf(false) }
+    var showPriceHistory by rememberSaveable { mutableStateOf(false) }
     var editItemId by rememberSaveable { mutableStateOf<String?>(null) }
     var priceDialog by rememberSaveable { mutableStateOf(false) }
     var itemName by rememberSaveable { mutableStateOf("") }
@@ -94,150 +92,212 @@ fun ShoppingScreen(
     val remainingCount = rows.size - checkedCount
     val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("قائمة المشتريات", style = MaterialTheme.typography.headlineMedium)
-            Text("المطلوب بعد خصم المخزون الدقيق، مع تقريب العبوات الكاملة عند توفر حجمها.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-            MealsCard(containerColor = SoftGreen, borderColor = null, contentPadding = 14.dp) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = 18.dp,
+            end = 18.dp,
+            top = 10.dp,
+            bottom = 122.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item(key = "shopping-overview") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(checkedCount.toString() + " من " + rows.size + " عناصر", fontWeight = FontWeight.Bold, color = Forest)
-                        Text("العناصر التي وضعتها في السلة", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                        MealsProgressBar(progress = if (rows.isEmpty()) 0f else checkedCount.toFloat() / rows.size.toFloat())
+                    Text("قائمة المشتريات", style = MaterialTheme.typography.headlineMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(
+                            onClick = { onShareList(buildShoppingShareText(rows, snapshot)) },
+                            enabled = rows.isNotEmpty()
+                        ) {
+                            Text("مشاركة")
+                        }
+                        TextButton(onClick = { addDialog = true }) {
+                            MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(19.dp))
+                            Text("إضافة")
+                        }
                     }
-                    Text(
-                        (if (rows.isEmpty()) 0 else checkedCount * 100 / rows.size).toString() + "%",
-                        color = Forest,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "مبلغ شراء تقديري: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
-                    fontWeight = FontWeight.Bold,
-                    color = Forest
-                )
-                TextButton(onClick = { addDialog = true }) {
-                    MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Text("عنصر يدوي")
+
+                MealsCard(
+                    containerColor = SoftGreen,
+                    borderColor = null,
+                    contentPadding = 12.dp
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                if (rows.isEmpty()) "لا توجد عناصر بعد"
+                                else "$remainingCount متبقٍ من ${rows.size}",
+                                fontWeight = FontWeight.Bold,
+                                color = Forest
+                            )
+                            if (rows.isNotEmpty()) {
+                                Text(
+                                    "$checkedCount تم جمعها",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                MealsProgressBar(
+                                    progress = checkedCount.toFloat() / rows.size.toFloat()
+                                )
+                            }
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "الشراء المتوقع",
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
+                                fontWeight = FontWeight.Bold,
+                                color = Forest,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            if (snapshot.basket.actualSpendDzd > 0.0) {
+                                Text(
+                                    "المدفوع ${snapshot.basket.actualSpendDzd.toInt().formatDzd()}",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                    if (snapshot.basket.hasDemoPrices || snapshot.basket.unknownPriceCount > 0) {
+                        Text(
+                            text = when {
+                                snapshot.basket.hasDemoPrices && snapshot.basket.unknownPriceCount > 0 ->
+                                    "الأسعار تقديرية · ${snapshot.basket.unknownPriceCount} عناصر دون سعر"
+                                snapshot.basket.hasDemoPrices ->
+                                    "الأسعار تقديرية وليست أسعار سوق مباشرة"
+                                else ->
+                                    "${snapshot.basket.unknownPriceCount} عناصر دون سعر"
+                            },
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
-            }
-            if (snapshot.basket.actualSpendDzd > 0.0) {
-                Text(
-                    "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(),
-                    color = Forest,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    "هذا المجموع يشمل المبالغ التي أدخلتها فقط، وليس قيمة العناصر المحددة تلقائياً.",
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(
-                    onClick = {
-                        onShareList(buildShoppingShareText(rows, snapshot))
-                    },
-                    enabled = rows.isNotEmpty()
-                ) { Text("مشاركة القائمة") }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("حسّن تقديرات منطقتك", fontWeight = FontWeight.SemiBold)
-                    Text(
-                        "أضف سعراً شاهدته في $wilaya" + if (commune.isNotBlank()) " · $commune" else "",
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = { priceDialog = true }) {
+                        Text("تسجيل سعر")
+                    }
+                    if (snapshot.priceObservations.isNotEmpty()) {
+                        TextButton(onClick = { showPriceHistory = !showPriceHistory }) {
+                            Text(if (showPriceHistory) "إخفاء آخر الأسعار" else "آخر الأسعار")
+                        }
+                    }
                 }
-                OutlinedButton(onClick = { priceDialog = true }) { Text("إبلاغ عن سعر") }
-            }
-            if (snapshot.basket.hasDemoPrices) {
-                Text("بعض القيم تجريبية وغير موثّقة. لا تمثل سعراً مباشراً في ولايتك.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-            }
-            if (snapshot.priceObservations.isNotEmpty()) {
-                Text("آخر الأسعار المسجلة على جهازك", fontWeight = FontWeight.SemiBold)
-                snapshot.priceObservations.take(3).forEach { PriceObservationRow(it) }
-                Text(
-                    "البلاغات تحفظ محلياً في هذا الإصدار ولا تُرسل إلى مستخدمين آخرين أو تُعرض كسعر رسمي.",
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall
-                )
+
+                if (showPriceHistory && snapshot.priceObservations.isNotEmpty()) {
+                    MealsCard(
+                        containerColor = Paper,
+                        borderColor = Border,
+                        contentPadding = 12.dp
+                    ) {
+                        snapshot.priceObservations.take(3).forEach { PriceObservationRow(it) }
+                        Text(
+                            "تُحفظ ملاحظات الأسعار على هذا الجهاز فقط، ولا تمثل أسعاراً رسمية.",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
             }
         }
 
         if (rows.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = { showPurchased = false }) {
-                    Text(
-                        "المتبقي (" + remainingCount + ")",
-                        color = if (!showPurchased) Forest else MutedInk,
-                        fontWeight = if (!showPurchased) FontWeight.Bold else FontWeight.Medium
-                    )
-                }
-                TextButton(onClick = { showPurchased = true }) {
-                    Text(
-                        "كل العناصر (" + rows.size + ")",
-                        color = if (showPurchased) Forest else MutedInk,
-                        fontWeight = if (showPurchased) FontWeight.Bold else FontWeight.Medium
-                    )
+            item(key = "shopping-filter") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { showPurchased = false }) {
+                        Text(
+                            "المتبقي ($remainingCount)",
+                            color = if (!showPurchased) Forest else MutedInk,
+                            fontWeight = if (!showPurchased) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
+                    TextButton(onClick = { showPurchased = true }) {
+                        Text(
+                            "كل العناصر (${rows.size})",
+                            color = if (showPurchased) Forest else MutedInk,
+                            fontWeight = if (showPurchased) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
 
-        if (rows.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                MealsIcon(MealsIconName.Basket, contentDescription = null, modifier = Modifier.size(60.dp))
-                Text("قائمتك فارغة", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
-                Text("أضف وصفات إلى خطة الأسبوع أو أضف عنصراً يدوياً.", color = MutedInk, modifier = Modifier.padding(top = 6.dp))
+        when {
+            rows.isEmpty() -> {
+                item(key = "shopping-empty") {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 34.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MealsIllustrationBadge(icon = MealsIconName.Basket, size = 60.dp)
+                        Text("قائمتك فارغة", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            "أضيفي وصفات إلى خطة الأسبوع أو أضيفي عنصراً يدوياً.",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
-        } else {
-            val grouped: Map<String, List<ShoppingListItem>> =
-                visibleRows.groupBy { row: ShoppingListItem -> row.category }
-            val categoryNames: List<String> = grouped.keys.sorted()
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 122.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (visibleRows.isEmpty()) {
-                    item(key = "all-purchased") {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 30.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            MealsIllustrationBadge(icon = MealsIconName.Basket, size = 64.dp)
-                            Text("أحسنتِ، كل العناصر في السلة", style = MaterialTheme.typography.titleLarge)
-                            Text("يمكنك عرض القائمة كاملة لمراجعة ما وضعتِه في السلة.", color = MutedInk)
+            visibleRows.isEmpty() -> {
+                item(key = "shopping-all-collected") {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MealsIllustrationBadge(icon = MealsIconName.Basket, size = 60.dp)
+                        Text("اكتملت القائمة", style = MaterialTheme.typography.titleLarge)
+                        Text("جمعتِ كل العناصر المطلوبة.", color = MutedInk)
+                        TextButton(onClick = { showPurchased = true }) {
+                            Text("عرض العناصر التي جمعتها")
                         }
                     }
                 }
-                categoryNames.forEach { category: String ->
-                    val categoryItems: List<ShoppingListItem> = grouped.getValue(category)
+            }
+            else -> {
+                val grouped: Map<String, List<ShoppingListItem>> =
+                    visibleRows.groupBy { row: ShoppingListItem -> row.category }
+                val categoryNames: List<String> = grouped.keys.sorted()
+                categoryNames.forEach { category ->
+                    val categoryItems = grouped.getValue(category)
                     item(key = "category-$category") {
                         Text(
                             category,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             color = Forest,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                            modifier = Modifier.padding(top = 6.dp, bottom = 1.dp)
                         )
                     }
                     items(categoryItems, key = { it.id }) { item ->
@@ -262,7 +322,6 @@ fun ShoppingScreen(
             }
         }
     }
-
     if (addDialog) {
         MealsAlertDialog(
             onDismissRequest = { addDialog = false },
@@ -550,55 +609,90 @@ private fun ShoppingItemCard(
         contentPadding = 0.dp
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 9.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(checked = item.checked, onCheckedChange = { onToggle() })
-            Column(modifier = Modifier.weight(1f).padding(start = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Checkbox(
+                checked = item.checked,
+                onCheckedChange = { onToggle() }
+            )
+            Column(
+                modifier = Modifier.weight(1f).padding(start = 5.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     item.name,
                     color = if (item.checked) MutedInk else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-                Text(
-                    "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
-                        " · الصافي " + (item.requiredQuantity - item.pantryQuantity).coerceAtLeast(0.0).formatHouseholdQuantity(item.unit) +
-                        (if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit) else ""),
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        "شراء " + item.purchaseQuantity.formatHouseholdQuantity(item.unit),
+                        color = if (item.checked) MutedInk else Forest,
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1
+                    )
+                }
+                if (item.pantryQuantity > 0.0) {
+                    Text(
+                        "المطلوب ${item.requiredQuantity.formatHouseholdQuantity(item.unit)} · في المخزون ${item.pantryQuantity.formatHouseholdQuantity(item.unit)}",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
+                }
                 if (item.isApproximatePantry) {
-                    Text("يوجد مخزون تقريبي؛ لم يُخصم من الكمية المطلوبة.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "مخزون تقريبي لم يُخصم من الكمية",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
-                Text(
-                    "شراء " + item.purchaseQuantity.formatHouseholdQuantity(item.unit) +
-                        " · " + (item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر"),
-                    color = Forest,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                item.priceLabel?.let { Text(it, color = MutedInk, style = MaterialTheme.typography.labelSmall) }
-                item.sourceLabel?.let { Text(it, color = MutedInk, style = MaterialTheme.typography.labelSmall) }
-                if (item.isUnavailable) {
-                    Text("غير متوفر حالياً في المحل", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                }
-                if (item.storeNote.isNotBlank()) {
-                    Text("ملاحظة: " + item.storeNote, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                if (item.isUnavailable || item.storeNote.isNotBlank()) {
+                    Text(
+                        listOfNotNull(
+                            if (item.isUnavailable) "غير متوفر" else null,
+                            item.storeNote.takeIf { it.isNotBlank() }
+                        ).joinToString(" · "),
+                        color = MutedInk,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
                 item.actualSpentDzd?.let {
-                    Text("المبلغ الفعلي: " + it.toInt().formatDzd(), color = Forest, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "المدفوع ${it.toInt().formatDzd()}",
+                        color = Forest,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
-            Column {
-                TextButton(onClick = onEdit) { MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(21.dp)) }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TextButton(onClick = onEdit) {
+                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(20.dp))
+                }
                 if (item.userAdded) {
-                    TextButton(onClick = onDelete) { MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(21.dp)) }
+                    TextButton(onClick = onDelete) {
+                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }
     }
 }
-
 
 
 private fun buildShoppingShareText(
