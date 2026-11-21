@@ -51,14 +51,17 @@ import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
-import java.text.NumberFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import dz.meals.app.shared.format.epochMillisToLocalDate
+import dz.meals.app.shared.format.formatArabicDate
+import dz.meals.app.shared.format.formatArabicWeekRange
+import dz.meals.app.shared.format.formatDzd
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 @Composable
 fun PlanScreen(
-    weekStart: LocalDate,
+    weekStartIso: String,
     preferences: AppPreferences,
     snapshot: MealsSnapshot,
     isGenerating: Boolean,
@@ -70,6 +73,7 @@ fun PlanScreen(
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit
 ) {
+    val weekStart = LocalDate.parse(weekStartIso)
     var showBudgetInfo by rememberSaveable { mutableStateOf(false) }
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
@@ -96,8 +100,7 @@ fun PlanScreen(
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
                     Text(
-                        weekStart.format(DateTimeFormatter.ofPattern("d MMM", Locale("ar", "DZ"))) +
-                            " - " + weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("ar", "DZ"))),
+                        formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
                         color = MutedInk
                     )
                 }
@@ -114,18 +117,18 @@ fun PlanScreen(
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("ميزانية الأسبوع", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f))
                     Text(
-                        preferences.weeklyBudgetDzd.asDzd(),
+                        preferences.weeklyBudgetDzd.formatDzd(),
                         color = androidx.compose.ui.graphics.Color.White,
                         style = MaterialTheme.typography.headlineLarge
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
                             Text("قيمة المكونات المستهلكة", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.bodySmall)
-                            Text(snapshot.basket.consumedValueDzd.toInt().asDzd(), color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
+                            Text(snapshot.basket.consumedValueDzd.toInt().formatDzd(), color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("مبلغ الشراء التقديري", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.bodySmall)
-                            Text(snapshot.basket.purchaseOutlayDzd.toInt().asDzd(), color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
+                            Text(snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(), color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     if (snapshot.basket.unknownPriceCount > 0) {
@@ -136,14 +139,13 @@ fun PlanScreen(
                         )
                     }
                     Text(
-                        "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().asDzd(),
+                        "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(),
                         color = androidx.compose.ui.graphics.Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
                     snapshot.planRun?.let { run ->
                         Text(
-                            "آخر إنشاء: " + java.time.Instant.ofEpochMilli(run.generatedAtEpochMillis)
-                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString() +
+                            "آخر إنشاء: " + epochMillisToLocalDate(run.generatedAtEpochMillis).toString() +
                                 " · نسخة المحرك " + run.engineVersion,
                             color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodySmall
@@ -201,8 +203,8 @@ fun PlanScreen(
         }
 
         items((0 until 7).toList(), key = { it }) { day ->
-            val date = weekStart.plusDays(day.toLong())
-            val dateLabel = date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale("ar", "DZ")))
+            val date = weekStart.plus(DatePeriod(days = day))
+            val dateLabel = formatArabicDate(date)
             val breakfast = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "breakfast" }
             val lunch = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "lunch" }
             val dinner = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "dinner" }
@@ -374,5 +376,3 @@ private fun SlotRow(
     }
 }
 
-private fun Int.asDzd(): String =
-    NumberFormat.getIntegerInstance(Locale("fr", "DZ")).format(this) + " دج"

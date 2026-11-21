@@ -46,10 +46,11 @@ import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import dz.meals.app.shared.format.epochMillisToLocalDate
+import dz.meals.app.shared.format.formatDateDmy
+import dz.meals.app.shared.format.localDateToEpochMillis
+import dz.meals.app.shared.format.prettyQuantity
+import kotlinx.datetime.LocalDate
 
 @Composable
 fun PantryScreen(
@@ -147,8 +148,7 @@ fun PantryScreen(
             } else {
                 items(pantry, key = { it.id }) { item ->
                     val expiry = item.expiryAtEpochMillis?.let {
-                        Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
-                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        formatDateDmy(epochMillisToLocalDate(it))
                     }
                     MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 13.dp) {
                         Row(
@@ -159,7 +159,7 @@ fun PantryScreen(
                                 Text(item.nameAr, style = MaterialTheme.typography.titleLarge)
                                 Text(
                                     if (item.isApproximate) "كمية تقريبية — لم تُخصم من حساب المشتريات"
-                                    else (item.quantityBase ?: 0.0).pretty() + " " + item.unit,
+                                    else (item.quantityBase ?: 0.0).prettyQuantity() + " " + item.unit,
                                     color = MutedInk,
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -226,7 +226,7 @@ private fun PantryAddDialog(
     var expiryText by rememberSaveable(ingredient.id, existing?.id) {
         mutableStateOf(
             existing?.expiryAtEpochMillis?.let {
-                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+                epochMillisToLocalDate(it).toString()
             }.orEmpty()
         )
     }
@@ -235,10 +235,7 @@ private fun PantryAddDialog(
         null
     } else {
         runCatching {
-            LocalDate.parse(expiryText.trim())
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli()
+            localDateToEpochMillis(LocalDate.parse(expiryText.trim()))
         }.getOrNull()
     }
     val expiryIsValid = expiryText.isBlank() || parsedExpiry != null
@@ -294,5 +291,3 @@ private fun PantryAddDialog(
     )
 }
 
-private fun Double.pretty(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else String.format(java.util.Locale.ROOT, "%.1f", this)

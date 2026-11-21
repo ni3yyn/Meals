@@ -232,7 +232,7 @@ fun MealsApp() {
             ) {
                 when (selectedTab) {
                     AppTab.Plan -> PlanScreen(
-                        weekStart = weekStart,
+                        weekStartIso = weekStartIso,
                         preferences = preferences,
                         snapshot = snapshot,
                         isGenerating = isGenerating,
@@ -289,6 +289,16 @@ fun MealsApp() {
                         commune = preferences.commune,
                         shoppingChannel = preferences.shoppingChannel,
                         preferredShop = preferences.preferredShop,
+                        onShareList = { body ->
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات مائدتي")
+                                putExtra(Intent.EXTRA_TEXT, body)
+                            }
+                            runCatching {
+                                context.startActivity(Intent.createChooser(send, "مشاركة قائمة المشتريات"))
+                            }
+                        },
                         onToggleItem = { id, checked -> perform { repository.toggleShoppingItem(id, checked) } },
                         onAddCustomItem = { name, quantity, unit, estimatedPrice ->
                             perform { repository.addCustomShoppingItem(weekStartIso, name, quantity, unit, estimatedPrice) }

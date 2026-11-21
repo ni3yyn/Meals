@@ -19,6 +19,10 @@ The following production sources are now compiled as common Kotlin:
 - The bundled ingredient and recipe catalogue
 - The shared Compose component system
 - Mida color tokens and Compose theme
+- Recipe discovery UI, pantry UI, weekly planner UI and shopping-list UI
+- Common date/time and DZD formatting helpers using kotlinx-datetime and Kotlin common APIs
+
+Shopping-list sharing is exposed as a callback from the shared screen; Android supplies its native share chooser while iOS can supply its native share sheet.
 
 The Android app consumes these sources from `:shared`, so Android and future iOS screens use the same component implementations and tokens.
 
@@ -32,7 +36,7 @@ The existing `:app` module remains the Android application and owns platform ser
 - GitHub APK update checking and Android download intents
 - Android application composition root
 
-The repository and settings adapters currently depend on Android `Context`. They remain in `:app` until the persistence boundary is migrated deliberately.
+The repository and settings adapters currently depend on Android `Context`. They remain in `:app` until the persistence boundary is migrated deliberately. The shared screens are platform-neutral, but the current `MealsApp` composition root and repository wiring are still Android-hosted; iOS needs a platform composition root until those services are abstracted.
 
 ## Remaining migration steps
 

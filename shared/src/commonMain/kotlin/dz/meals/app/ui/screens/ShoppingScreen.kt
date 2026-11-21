@@ -1,6 +1,5 @@
 package dz.meals.app.ui.screens
 
-import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +39,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -55,10 +53,10 @@ import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
-import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import dz.meals.app.shared.format.epochMillisToLocalDate
+import dz.meals.app.shared.format.formatDateDmy
+import dz.meals.app.shared.format.formatDzd
+import dz.meals.app.shared.format.prettyQuantity
 
 @Composable
 fun ShoppingScreen(
@@ -73,7 +71,8 @@ fun ShoppingScreen(
     onEditCustomItem: (String, String, Double, String) -> Unit,
     onUpdateItemDetails: (String, Double?, String, Boolean, Double?) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
-    onRecordPrice: (String, Double, Double, String) -> Unit
+    onRecordPrice: (String, Double, Double, String) -> Unit,
+    onShareList: (String) -> Unit
 ) {
     var addDialog by rememberSaveable { mutableStateOf(false) }
     var editItemId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -93,7 +92,6 @@ fun ShoppingScreen(
 
     val checkedCount = snapshot.shoppingItems.count { it.checked }
     val rows = snapshot.shoppingItems
-    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -122,7 +120,7 @@ fun ShoppingScreen(
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "مبلغ شراء تقديري: " + snapshot.basket.purchaseOutlayDzd.toInt().asDzd(),
+                    "مبلغ شراء تقديري: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
                     fontWeight = FontWeight.Bold,
                     color = Forest
                 )
@@ -133,7 +131,7 @@ fun ShoppingScreen(
             }
             if (snapshot.basket.actualSpendDzd > 0.0) {
                 Text(
-                    "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().asDzd(),
+                    "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(),
                     color = Forest,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -146,15 +144,7 @@ fun ShoppingScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(
                     onClick = {
-                        val body = buildShoppingShareText(rows, snapshot)
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات مائدتي")
-                            putExtra(Intent.EXTRA_TEXT, body)
-                        }
-                        runCatching {
-                            context.startActivity(Intent.createChooser(send, "مشاركة قائمة المشتريات"))
-                        }
+                        onShareList(buildShoppingShareText(rows, snapshot))
                     },
                     enabled = rows.isNotEmpty()
                 ) { Text("مشاركة القائمة") }
@@ -217,9 +207,9 @@ fun ShoppingScreen(
                             onEdit = {
                                 editItemId = item.id
                                 editName = item.name
-                                editQuantity = item.purchaseQuantity.pretty()
+                                editQuantity = item.purchaseQuantity.prettyQuantity()
                                 editUnit = item.unit
-                                editPurchaseQuantity = item.purchaseQuantity.pretty()
+                                editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
                                 editStoreNote = item.storeNote
                                 editActualSpent = item.actualSpentDzd?.toString().orEmpty()
                                 editUnavailable = item.isUnavailable
@@ -470,7 +460,7 @@ private fun PriceReportDialog(
 @Composable
 private fun PriceObservationRow(price: PriceObservationSummary) {
     val date = price.observedAtEpochMillis?.let {
-        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it))
+        formatDateDmy(epochMillisToLocalDate(it))
     } ?: "بدون تاريخ"
     Column(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
@@ -478,10 +468,10 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(price.ingredientNameAr, fontWeight = FontWeight.Medium)
-            Text(price.packPriceDzd.toInt().asDzd(), fontWeight = FontWeight.Bold, color = Forest)
+            Text(price.packPriceDzd.toInt().formatDzd(), fontWeight = FontWeight.Bold, color = Forest)
         }
         Text(
-            price.packQuantityBase.pretty() + " " + price.unit + " · " +
+            price.packQuantityBase.prettyQuantity() + " " + price.unit + " · " +
                 price.locationLabel + " · " + date,
             color = MutedInk,
             style = MaterialTheme.typography.bodySmall
@@ -526,9 +516,9 @@ private fun ShoppingItemCard(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    "المطلوب " + item.requiredQuantity.pretty() + " " + item.unit +
-                        " · الصافي " + (item.requiredQuantity - item.pantryQuantity).coerceAtLeast(0.0).pretty() +
-                        (if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.pretty() else ""),
+                    "المطلوب " + item.requiredQuantity.prettyQuantity() + " " + item.unit +
+                        " · الصافي " + (item.requiredQuantity - item.pantryQuantity).coerceAtLeast(0.0).prettyQuantity() +
+                        (if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.prettyQuantity() else ""),
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -536,8 +526,8 @@ private fun ShoppingItemCard(
                     Text("يوجد مخزون تقريبي؛ لم يُخصم من الكمية المطلوبة.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
-                    "شراء " + item.purchaseQuantity.pretty() + " " + item.unit +
-                        " · " + (item.cashOutlayDzd?.toInt()?.asDzd() ?: "السعر غير متوفر"),
+                    "شراء " + item.purchaseQuantity.prettyQuantity() + " " + item.unit +
+                        " · " + (item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر"),
                     color = Forest,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodySmall
@@ -551,7 +541,7 @@ private fun ShoppingItemCard(
                     Text("ملاحظة: " + item.storeNote, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                 }
                 item.actualSpentDzd?.let {
-                    Text("المبلغ الفعلي: " + it.toInt().asDzd(), color = Forest, style = MaterialTheme.typography.bodySmall)
+                    Text("المبلغ الفعلي: " + it.toInt().formatDzd(), color = Forest, style = MaterialTheme.typography.bodySmall)
                 }
             }
             Column {
@@ -562,42 +552,6 @@ private fun ShoppingItemCard(
             }
         }
     }
-}
-
-private fun Double.pretty(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else String.format(Locale.ROOT, "%.1f", this)
-
-private fun Int.asDzd(): String =
-    NumberFormat.getIntegerInstance(Locale("fr", "DZ")).format(this) + " دج"
-
-
-private fun buildShoppingShareText(rows: List<ShoppingListItem>, snapshot: MealsSnapshot): String = buildString {
-    appendLine("قائمة مشتريات مائدتي")
-    appendLine("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().asDzd())
-    if (snapshot.basket.actualSpendDzd > 0.0) {
-        appendLine("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().asDzd())
-    }
-    appendLine()
-    rows.groupBy { it.category }.toSortedMap().forEach { (category, items) ->
-        appendLine(category)
-        items.forEach { item ->
-            append(if (item.checked) "[x] " else "[ ] ")
-            append(item.name)
-            append(" — ")
-            append(item.purchaseQuantity.pretty())
-            append(" ")
-            append(item.unit)
-            item.cashOutlayDzd?.let { append(" · " + it.toInt().asDzd()) }
-            if (item.isUnavailable) append(" · غير متوفر")
-            if (item.storeNote.isNotBlank()) append(" · " + item.storeNote)
-            appendLine()
-        }
-        appendLine()
-    }
-    if (snapshot.basket.unknownPriceCount > 0) {
-        appendLine("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.")
-    }
-    append("الأسعار تقديرية وليست ضماناً لسعر المحل أو التوفر.")
 }
 
 
