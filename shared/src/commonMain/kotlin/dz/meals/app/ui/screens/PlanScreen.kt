@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Lock
@@ -41,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsGlassSurface
+import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.data.AppPreferences
@@ -113,54 +116,81 @@ fun PlanScreen(
             }
         }
         item {
-            MealsCard(containerColor = Forest, contentColor = androidx.compose.ui.graphics.Color.White, borderColor = null, contentPadding = 17.dp) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("ميزانية الأسبوع", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f))
-                    Text(
-                        preferences.weeklyBudgetDzd.formatDzd(),
-                        color = androidx.compose.ui.graphics.Color.White,
-                        style = MaterialTheme.typography.headlineLarge
+            MealsGlassSurface(
+                modifier = Modifier.fillMaxWidth(),
+                tintColor = androidx.compose.ui.graphics.Color(0xFFFFFCF7),
+                contentPadding = 18.dp,
+                shape = RoundedCornerShape(29.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            "ميزانية الأسبوع",
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            preferences.weeklyBudgetDzd.formatDzd(),
+                            color = dz.meals.app.ui.theme.Ink,
+                            style = MaterialTheme.typography.displaySmall
+                        )
+                    }
+                    MealsIllustrationBadge(
+                        icon = Icons.Outlined.AccountBalanceWallet,
+                        background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
+                        iconTint = Forest,
+                        size = 62.dp
                     )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
-                            Text("قيمة المكونات المستهلكة", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.bodySmall)
-                            Text(snapshot.basket.consumedValueDzd.toInt().formatDzd(), color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("مبلغ الشراء التقديري", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.bodySmall)
-                            Text(snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(), color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.SemiBold)
-                        }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("قيمة المكونات المستهلكة", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                        Text(snapshot.basket.consumedValueDzd.toInt().formatDzd(), color = dz.meals.app.ui.theme.Ink, fontWeight = FontWeight.SemiBold)
                     }
-                    if (snapshot.basket.unknownPriceCount > 0) {
-                        Text(
-                            snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر؛ المجموع غير مكتمل.",
-                            color = androidx.compose.ui.graphics.Color.White,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("مبلغ الشراء التقديري", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                        Text(snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(), color = dz.meals.app.ui.theme.Ink, fontWeight = FontWeight.SemiBold)
                     }
+                }
+                if (snapshot.basket.unknownPriceCount > 0) {
                     Text(
-                        "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(),
-                        color = androidx.compose.ui.graphics.Color.White,
-                        fontWeight = FontWeight.SemiBold
+                        snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر؛ المجموع غير مكتمل.",
+                        color = dz.meals.app.ui.theme.ForestDark,
+                        style = MaterialTheme.typography.bodySmall
                     )
-                    snapshot.planRun?.let { run ->
-                        Text(
-                            "آخر إنشاء: " + epochMillisToLocalDate(run.generatedAtEpochMillis).toString() +
-                                " · نسخة المحرك " + run.engineVersion,
-                            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    if (snapshot.basket.hasDemoPrices) {
-                        Text(
-                            "الأسعار الحالية تجريبية فقط وليست أسعار سوق محلية أو مباشرة.",
-                            color = androidx.compose.ui.graphics.Color.White,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    TextButton(onClick = { showBudgetInfo = true }) {
-                        Text("ما الفرق بين القيمتين؟", color = androidx.compose.ui.graphics.Color.White)
-                    }
+                }
+                Text(
+                    "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(),
+                    color = dz.meals.app.ui.theme.Ink,
+                    fontWeight = FontWeight.SemiBold
+                )
+                snapshot.planRun?.let { run ->
+                    Text(
+                        "آخر إنشاء: " + epochMillisToLocalDate(run.generatedAtEpochMillis).toString() +
+                            " · نسخة المحرك " + run.engineVersion,
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                if (snapshot.basket.hasDemoPrices) {
+                    Text(
+                        "الأسعار الحالية تجريبية فقط وليست أسعار سوق محلية أو مباشرة.",
+                        color = dz.meals.app.ui.theme.ForestDark,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                TextButton(onClick = { showBudgetInfo = true }) {
+                    Text("ما الفرق بين القيمتين؟", color = Forest)
                 }
             }
         }
