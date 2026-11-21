@@ -43,12 +43,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.offset
@@ -67,6 +70,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import dev.chrisbanes.haze.glass.GlassOptics
+import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.SurfaceProfile
+import dev.chrisbanes.haze.glass.hazeGlass
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
 import dz.meals.app.ui.theme.Forest
@@ -141,6 +152,108 @@ fun MealsCard(
                 content = content
             )
         }
+    }
+}
+
+/**
+ * Shared refraction-based glass surface for high-emphasis content.
+ *
+ * Haze supplies actual backdrop sampling, depth blur, optical refraction,
+ * ambient edge lift and specular rim lighting. The Compose overlays only tune
+ * the warm porcelain tint and fine double edge; they are not a fake blur.
+ *
+ * Use for hero summaries, floating controls and grouped surfaces. Dense,
+ * repeating rows should continue using MealsCard to protect LazyColumn scroll
+ * performance and avoid paying for glass rendering on every item.
+ */
+val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+@Composable
+fun MealsGlassSurface(
+    modifier: Modifier = Modifier,
+    tintColor: Color = Color(0xFFFFFCF7),
+    tintAlpha: Float = 0.22f,
+    contentPadding: Dp = 18.dp,
+    shape: Shape = RoundedCornerShape(28.dp),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val hazeState = LocalMealsHazeState.current
+    val safeTintAlpha = tintAlpha.coerceIn(0.08f, 0.42f)
+    val glassStyle = remember(shape, tintColor, safeTintAlpha) {
+        GlassStyle.regular.then {
+            backgroundColor(Color.White.copy(alpha = 0.12f))
+            tint(tintColor.copy(alpha = safeTintAlpha))
+            optics(
+                GlassOptics.regular.copy(
+                    refractionStrength = 0.62f,
+                    refractionHeightFraction = 0.32f,
+                    refractionFoldStrength = 0.12f
+                )
+            )
+            specularIntensity(0.82f)
+            ambientResponse(0.78f)
+            edgeSoftness(10.dp)
+            edgeShadow(Color(0x24745D4B))
+            shape(shape)
+            surfaceProfile(SurfaceProfile.Squircle)
+            lightPosition(Alignment.TopStart)
+            chromaticAberrationStrength(0.06f)
+        }
+    }
+    val faceBrush = remember(tintColor) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.34f),
+                Color.White.copy(alpha = 0.12f),
+                tintColor.copy(alpha = 0.16f)
+            )
+        )
+    }
+    val rimBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.98f),
+                Color.White.copy(alpha = 0.72f),
+                Color(0xFFE8DCD2).copy(alpha = 0.62f)
+            )
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .shadow(15.dp, shape, clip = false)
+            .hazeGlass(
+                input = HazeInput.Backdrop(hazeState),
+                style = glassStyle
+            )
+            .clip(shape)
+            .background(faceBrush, shape)
+            .border(BorderStroke(1.dp, rimBrush), shape)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            content = content
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 46.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.92f),
+                            Color.White.copy(alpha = 0.72f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
     }
 }
 
@@ -618,15 +731,51 @@ fun MealsBottomSheet(
 
 @Composable
 fun MealsBackdrop(content: @Composable () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize().background(Cream)) {
+    val hazeState = rememberHazeState()
+
+    CompositionLocalProvider(LocalMealsHazeState provides hazeState) {
         Box(
-            modifier = Modifier.align(Alignment.TopEnd).offset(x = 76.dp, y = (-74).dp)
-                .size(250.dp).blur(62.dp).background(SoftPink.copy(alpha = 0.92f), CircleShape)
-        )
-        Box(
-            modifier = Modifier.align(Alignment.BottomStart).offset(x = (-78).dp, y = 95.dp)
-                .size(230.dp).blur(60.dp).background(SoftGreen.copy(alpha = 0.92f), CircleShape)
-        )
-        content()
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFFFFF4ED),
+                            Cream,
+                            Color(0xFFF5F1DE),
+                            Color(0xFFFFF0EA)
+                        )
+                    )
+                )
+                .hazeSource(hazeState)
+        ) {
+            // Draw the ambient palette once behind the screen content. Large,
+            // overlapping clouds avoid the isolated "blur blob" appearance.
+            Box(
+                modifier = Modifier.align(Alignment.TopStart).offset(x = (-126).dp, y = (-92).dp)
+                    .size(310.dp).blur(88.dp).background(Color(0xFFF3D7CF).copy(alpha = 0.82f), CircleShape)
+            )
+            Box(
+                modifier = Modifier.align(Alignment.TopCenter).offset(x = 18.dp, y = (-108).dp)
+                    .size(330.dp).blur(96.dp).background(Color(0xFFDDE8CC).copy(alpha = 0.86f), CircleShape)
+            )
+            Box(
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 118.dp, y = (-22).dp)
+                    .size(280.dp).blur(84.dp).background(Color(0xFFF1E4B9).copy(alpha = 0.76f), CircleShape)
+            )
+            Box(
+                modifier = Modifier.align(Alignment.CenterEnd).offset(x = 154.dp, y = 40.dp)
+                    .size(260.dp).blur(92.dp).background(Color(0xFFF6DCD8).copy(alpha = 0.66f), CircleShape)
+            )
+            Box(
+                modifier = Modifier.align(Alignment.BottomStart).offset(x = (-104).dp, y = 104.dp)
+                    .size(300.dp).blur(92.dp).background(Color(0xFFE3EEDB).copy(alpha = 0.82f), CircleShape)
+            )
+            Box(
+                modifier = Modifier.align(Alignment.BottomEnd).offset(x = 96.dp, y = 120.dp)
+                    .size(290.dp).blur(96.dp).background(Color(0xFFF4DCD3).copy(alpha = 0.82f), CircleShape)
+            )
+            content()
+        }
     }
 }
