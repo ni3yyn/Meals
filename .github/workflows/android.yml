@@ -30,7 +30,12 @@ jobs:
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)"
           test -x "$SDKMANAGER"
+          # sdkmanager closes stdin as soon as all licences are accepted. With
+          # GitHub Actions' pipefail setting, the resulting SIGPIPE from yes
+          # would otherwise fail this step even though sdkmanager succeeded.
+          set +o pipefail
           yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses
+          set -o pipefail
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.1" "build-tools;36.0.0" "platform-tools"
 
       - name: Set up Gradle 9.6.0
