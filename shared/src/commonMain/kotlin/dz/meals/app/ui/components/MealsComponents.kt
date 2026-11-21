@@ -345,7 +345,7 @@ fun MealsPrimaryButton(
         enabled = enabled,
         interactionSource = interactionSource,
         modifier = modifier
-            .defaultMinSize(minHeight = 58.dp)
+            .defaultMinSize(minHeight = 52.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -375,17 +375,17 @@ fun MealsPrimaryButton(
                     ),
                     shape = buttonShape
                 )
-                .padding(horizontal = 22.dp, vertical = 15.dp),
+                .padding(horizontal = 18.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = if (showArrow) 22.dp else 0.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (icon != null) {
-                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(19.dp))
-                    Spacer(Modifier.size(9.dp))
+                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(8.dp))
                 }
                 Text(
                     text = label,
@@ -395,7 +395,7 @@ fun MealsPrimaryButton(
             }
 
             if (showArrow) {
-                MealsIcon(name = MealsIconName.ChevronRight, contentDescription = null, modifier = Modifier.align(Alignment.CenterStart).size(23.dp).graphicsLayer { alpha = if (enabled) 0.96f else 0.55f })
+                MealsIcon(name = MealsIconName.ChevronRight, contentDescription = null, modifier = Modifier.align(Alignment.CenterStart).size(20.dp).graphicsLayer { alpha = if (enabled) 0.96f else 0.55f })
             }
         }
     }
@@ -441,7 +441,7 @@ fun MealsSecondaryButton(
         enabled = enabled,
         interactionSource = interactionSource,
         modifier = modifier
-            .defaultMinSize(minHeight = 54.dp)
+            .defaultMinSize(minHeight = 48.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -471,7 +471,7 @@ fun MealsSecondaryButton(
                     ),
                     shape = buttonShape
                 )
-                .padding(horizontal = 20.dp, vertical = 13.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
