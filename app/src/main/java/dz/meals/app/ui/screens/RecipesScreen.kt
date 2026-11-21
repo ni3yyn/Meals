@@ -70,6 +70,9 @@ fun RecipesScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
     var selectedRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
+    var cookingRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
+    var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
+    var cookingServings by rememberSaveable { mutableStateOf(2) }
     val ingredientNames = ingredients.associateBy { it.id }
 
     val filtered = recipes.filter { recipe ->
@@ -224,11 +227,125 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { onAddRecipe(detail.id); selectedRecipeId = null }) { Text("أضف إلى الأسبوع") }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { onAddRecipe(detail.id); selectedRecipeId = null }) {
+                        Text("أضف إلى الأسبوع")
+                    }
+                    TextButton(
+                        onClick = {
+                            cookingRecipeId = detail.id
+                            cookingStepIndex = 0
+                            cookingServings = detail.baseServings
+                            selectedRecipeId = null
+                        }
+                    ) {
+                        Text("ابدأ الطبخ")
+                    }
+                }
             },
             dismissButton = {
                 TextButton(onClick = { selectedRecipeId = null }) { Text("إغلاق") }
             }
         )
     }
+
+    val cookingRecipe = cookingRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
+    if (cookingRecipe != null) {
+        val stepCount = cookingRecipe.stepsAr.size
+        val safeStepIndex = cookingStepIndex.coerceIn(0, (stepCount - 1).coerceAtLeast(0))
+        AlertDialog(
+            onDismissRequest = { cookingRecipeId = null },
+            title = { Text(cookingRecipe.nameAr) },
+            text = {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    item {
+                        Text(
+                            if (stepCount == 0) "لا توجد خطوات مسجلة بعد"
+                            else "الخطوة " + (safeStepIndex + 1) + " من " + stepCount,
+                            color = Forest,
+                            fontWeight = FontWeight.Bold
+                        )
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = {
+                                if (stepCount == 0) 0f else (safeStepIndex + 1).toFloat() / stepCount.toFloat()
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        )
+                    }
+                    item {
+                        Text(
+                            cookingRecipe.stepsAr.getOrNull(safeStepIndex) ?: "يمكنك مراجعة المكونات أو إنهاء وضع الطبخ.",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                    item {
+                        Text("عدد الحصص", fontWeight = FontWeight.SemiBold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(
+                                onClick = { cookingServings = (cookingServings - 1).coerceAtLeast(1) },
+                                enabled = cookingServings > 1
+                            ) { Text("−") }
+                            Text(cookingServings.toString(), fontWeight = FontWeight.Bold)
+                            TextButton(
+                                onClick = { cookingServings = (cookingServings + 1).coerceAtMost(12) },
+                                enabled = cookingServings < 12
+                            ) { Text("+") }
+                        }
+                    }
+                    item { Text("الكميات لهذه الحصص", fontWeight = FontWeight.SemiBold) }
+                    items(cookingRecipe.ingredients) { ingredient ->
+                        val master = ingredientNames[ingredient.ingredientId]
+                        val amount = ingredient.quantityBase * cookingServings.toDouble() /
+                            cookingRecipe.baseServings.coerceAtLeast(1).toDouble()
+                        val unitLabel = when (ingredient.unit) {
+                            "g" -> "غ"
+                            "ml" -> "مل"
+                            "piece" -> "حبة"
+                            else -> ingredient.unit
+                        }
+                        Text(
+                            "• " + (master?.nameAr ?: ingredient.ingredientId) +
+                                " — " + amount.prettyQuantity() + " " + unitLabel
+                        )
+                    }
+                    if (cookingRecipe.stepsFr.getOrNull(safeStepIndex).orEmpty().isNotBlank()) {
+                        item {
+                            Text(
+                                cookingRecipe.stepsFr[safeStepIndex],
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (safeStepIndex < stepCount - 1) {
+                            cookingStepIndex = safeStepIndex + 1
+                        } else {
+                            cookingRecipeId = null
+                        }
+                    }
+                ) {
+                    Text(if (safeStepIndex < stepCount - 1) "الخطوة التالية" else "إنهاء الطبخ")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = { cookingStepIndex = (safeStepIndex - 1).coerceAtLeast(0) },
+                        enabled = safeStepIndex > 0
+                    ) { Text("السابق") }
+                    TextButton(onClick = { cookingRecipeId = null }) { Text("إغلاق") }
+                }
+            }
+        )
+    }
+}
+
+private fun Double.prettyQuantity(): String =
+    if (this % 1.0 == 0.0) toLong().toString()
+    else String.format(java.util.Locale.ROOT, "%.1f", this)
 }
