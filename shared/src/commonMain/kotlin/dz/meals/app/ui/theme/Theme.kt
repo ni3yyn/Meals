@@ -50,11 +50,15 @@ private val MidaShapes = Shapes(
  */
 @Composable
 private fun MidaTypography(): Typography {
+    // Compose Multiplatform also generates a filename-keyed map. Using it
+    // avoids generated accessor-name differences while keeping resources
+    // bundled and shared across Android and iOS.
+    val fontResources = Res.allFontResources
     val tajawal = FontFamily(
-        Font(Res.font.tajawal_regular, weight = FontWeight.Normal),
-        Font(Res.font.tajawal_medium, weight = FontWeight.Medium),
-        Font(Res.font.tajawal_bold, weight = FontWeight.Bold),
-        Font(Res.font.tajawal_extra_bold, weight = FontWeight.ExtraBold)
+        Font(fontResources.getValue("tajawal_regular"), weight = FontWeight.Normal),
+        Font(fontResources.getValue("tajawal_medium"), weight = FontWeight.Medium),
+        Font(fontResources.getValue("tajawal_bold"), weight = FontWeight.Bold),
+        Font(fontResources.getValue("tajawal_extra_bold"), weight = FontWeight.ExtraBold)
     )
 
     return Typography(
