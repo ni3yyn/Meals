@@ -457,8 +457,8 @@ class MealsRepository(context: Context) {
         val empty = (0 until 7).asSequence()
             .flatMap { day -> MealSlots.ids.asSequence().map { slot -> day to slot } }
             .firstOrNull { (day, slot) ->
-            current.none { it.dayIndex == day && it.mealSlot == slot && (it.recipeId != null || it.isLeftover) }
-        }
+                current.none { it.dayIndex == day && it.mealSlot == slot && (it.recipeId != null || it.isLeftover) }
+            }
             ?: return
         setMeal(weekStartIso, empty.first, empty.second, recipeId, servings)
     }
