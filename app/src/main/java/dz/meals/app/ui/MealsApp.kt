@@ -220,7 +220,11 @@ private fun MealsAppContent() {
                     .padding(top = innerPadding.calculateTopPadding())
                     .hazeSource(hazeState, zIndex = 1f)
             ) {
-                when (selectedTab) {
+                MealsBubblyTransition(
+                    targetState = selectedTab,
+                    modifier = Modifier.fillMaxSize()
+                ) { targetTab ->
+                    when (targetTab) {
                     AppTab.Plan -> PlanScreen(
                         weekStartIso = weekStartIso,
                         preferences = preferences,
@@ -312,6 +316,7 @@ private fun MealsAppContent() {
                         },
                         onRemove = { id -> perform { repository.updatePantry(id, null, false) } }
                     )
+                    }
                 }
             }
         }
