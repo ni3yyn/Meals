@@ -19,11 +19,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,6 +33,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Forest
@@ -49,24 +52,30 @@ import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
-import dz.meals.app.ui.theme.Tangerine
-import java.text.NumberFormat
-import java.util.Locale
 
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
 @Composable
 fun RecipesScreen(
     recipes: List<MealRecipe>,
-    plannedRecipeIds: Set<String>,
-    onToggleRecipe: (String) -> Unit
+    ingredients: List<IngredientMaster>,
+    allergyIds: Set<String>,
+    onAddRecipe: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
+    var selectedRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
+    val ingredientNames = ingredients.associateBy { it.id }
+
     val filtered = recipes.filter { recipe ->
-        (category == "الكل" || recipe.category == category) &&
-            (query.isBlank() || recipe.name.contains(query.trim(), ignoreCase = true) ||
-                recipe.description.contains(query.trim(), ignoreCase = true))
+        val aliases = recipe.ingredients.flatMap { ingredientNames[it.ingredientId]?.aliases.orEmpty() }
+        recipe.allergens.intersect(allergyIds).isEmpty() &&
+            (category == "الكل" || recipe.category == category) &&
+            (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
+                recipe.nameFr.contains(query.trim(), true) ||
+                recipe.descriptionAr.contains(query.trim(), true) ||
+                recipe.descriptionFr.contains(query.trim(), true) ||
+                aliases.any { it.contains(query.trim(), true) })
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -75,7 +84,7 @@ fun RecipesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("وصفات من مطبخنا", style = MaterialTheme.typography.headlineMedium)
-            Text("أفكار بسيطة بمكوّنات مألوفة في الجزائر.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+            Text("ابحث بالعربية أو الفرنسية أو بأسماء المكونات المحلية.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
             Row(
                 modifier = Modifier.fillMaxWidth().background(Paper, RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp, vertical = 13.dp),
@@ -90,7 +99,7 @@ fun RecipesScreen(
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink),
                     decorationBox = { inner ->
-                        if (query.isEmpty()) Text("ابحث عن وصفة...", color = MutedInk)
+                        if (query.isEmpty()) Text("ابحث عن وصفة أو مكوّن...", color = MutedInk)
                         inner()
                     }
                 )
@@ -100,11 +109,7 @@ fun RecipesScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 recipeCategories.forEach { item ->
-                    FilterChip(
-                        selected = category == item,
-                        onClick = { category = item },
-                        label = { Text(item) }
-                    )
+                    FilterChip(selected = category == item, onClick = { category = item }, label = { Text(item) })
                 }
             }
         }
@@ -115,79 +120,100 @@ fun RecipesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(filtered, key = { it.id }) { recipe ->
-                RecipeCard(
-                    recipe = recipe,
-                    isPlanned = recipe.id in plannedRecipeIds,
-                    onToggle = { onToggleRecipe(recipe.id) }
-                )
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Paper),
+                    border = BorderStroke(1.dp, Border),
+                    shape = RoundedCornerShape(15.dp)
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Box(
+                                modifier = Modifier.size(48.dp).background(SoftGreen, RoundedCornerShape(13.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = Forest, modifier = Modifier.size(24.dp))
+                            }
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(recipe.nameAr, style = MaterialTheme.typography.titleLarge)
+                                Text(recipe.descriptionAr, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                                Text(recipe.nameFr, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = MutedInk, modifier = Modifier.size(16.dp))
+                            Text(recipe.durationMinutes.toString() + " د", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                            Text(recipe.baseServings.toString() + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                            Spacer(Modifier.weight(1f))
+                            Text(recipe.category, color = Forest, fontWeight = FontWeight.SemiBold)
+                        }
+                        Text(
+                            "المكونات: " + recipe.ingredients.take(5).joinToString("، ") {
+                                ingredientNames[it.ingredientId]?.nameAr ?: it.ingredientId
+                            } + if (recipe.ingredients.size > 5) "..." else "",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { onAddRecipe(recipe.id) },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Forest),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Outlined.Add, contentDescription = null)
+                                Text("أضف إلى الأسبوع")
+                            }
+                            TextButton(onClick = { selectedRecipeId = recipe.id }) {
+                                Icon(Icons.Outlined.Info, contentDescription = null)
+                                Text("التفاصيل")
+                            }
+                        }
+                    }
+                }
             }
             if (filtered.isEmpty()) {
-                item { Text("لا توجد وصفات مطابقة لبحثك.", color = MutedInk, modifier = Modifier.padding(16.dp)) }
+                item {
+                    Text(
+                        if (recipes.any { it.allergens.intersect(allergyIds).isNotEmpty() }) "لا توجد وصفات مطابقة. قد تكون قيود الحساسية تستبعد بعض النتائج."
+                        else "لا توجد وصفات مطابقة لبحثك.",
+                        color = MutedInk,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
             item { Spacer(Modifier.height(10.dp)) }
         }
     }
-}
 
-@Composable
-private fun RecipeCard(recipe: MealRecipe, isPlanned: Boolean, onToggle: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Paper),
-        border = BorderStroke(1.dp, Border),
-        shape = RoundedCornerShape(15.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier.size(48.dp).background(SoftGreen, RoundedCornerShape(13.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = Forest, modifier = Modifier.size(24.dp))
+    val detail = selectedRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
+    if (detail != null) {
+        AlertDialog(
+            onDismissRequest = { selectedRecipeId = null },
+            title = { Text(detail.nameAr) },
+            text = {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { Text(detail.descriptionAr, color = MutedInk) }
+                    item { Text("المكونات", fontWeight = FontWeight.Bold) }
+                    items(detail.ingredients) { ingredient ->
+                        val master = ingredientNames[ingredient.ingredientId]
+                        Text(
+                            "• " + (master?.nameAr ?: ingredient.ingredientId) +
+                                " — " + ingredient.quantityBase.toString() + " " + ingredient.unit
+                        )
+                    }
+                    item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
+                    items(detail.stepsAr) { step ->
+                        Text((detail.stepsAr.indexOf(step) + 1).toString() + ". " + step)
+                    }
+                    item { Text("الحساسية: " + if (detail.allergens.isEmpty()) "لا توجد مسببات مسجلة" else detail.allergens.joinToString("، ")) }
                 }
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(recipe.name, style = MaterialTheme.typography.titleLarge)
-                    Text(recipe.description, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onAddRecipe(detail.id); selectedRecipeId = null }) { Text("أضف إلى الأسبوع") }
+            },
+            dismissButton = {
+                TextButton(onClick = { selectedRecipeId = null }) { Text("إغلاق") }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = MutedInk, modifier = Modifier.size(16.dp))
-                    Text(recipe.durationMinutes.toString() + " د", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                }
-                Text(recipe.servings.toString() + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.weight(1f))
-                Text(recipe.estimatedCostDzd.asDzd(), color = Forest, fontWeight = FontWeight.Bold)
-            }
-            Text(
-                "المكوّنات: " + recipe.ingredients.take(4).joinToString("، ") { it.name } +
-                    if (recipe.ingredients.size > 4) "..." else "",
-                color = MutedInk,
-                style = MaterialTheme.typography.bodySmall
-            )
-            Button(
-                onClick = onToggle,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPlanned) SoftGreen else Forest,
-                    contentColor = if (isPlanned) Forest else Color.White
-                ),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                if (isPlanned) {
-                    Icon(Icons.Filled.Check, contentDescription = null)
-                    Text("أُضيفت إلى الخطة — إزالة")
-                } else {
-                    Icon(Icons.Outlined.Add, contentDescription = null)
-                    Text("أضف إلى خطة الأسبوع")
-                }
-            }
-        }
+        )
     }
 }
-
-private fun Int.asDzd(): String =
-    NumberFormat.getIntegerInstance(Locale("fr", "DZ")).format(this) + " دج"
