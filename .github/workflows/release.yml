@@ -2,10 +2,7 @@ name: Signed Android release
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
-    paths-ignore:
-      - ".github/workflows/**"
   workflow_dispatch:
     inputs:
       version:
