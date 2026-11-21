@@ -57,6 +57,7 @@ import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
+import kotlin.math.roundToLong
 
 private val recipeCategories = listOf("الكل", "المفضلة", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
@@ -340,6 +341,10 @@ fun RecipesScreen(
     }
 }
 
-private fun Double.prettyQuantity(): String =
-    if (this % 1.0 == 0.0) toLong().toString()
-    else String.format(java.util.Locale.ROOT, "%.1f", this)
+private fun Double.prettyQuantity(): String {
+    if (this % 1.0 == 0.0) return toLong().toString()
+    val roundedTenths = (this * 10.0).roundToLong()
+    val whole = roundedTenths / 10
+    val fraction = kotlin.math.abs(roundedTenths % 10)
+    return "$whole.$fraction"
+}
