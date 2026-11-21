@@ -326,6 +326,26 @@ private fun MealsAppContent() {
                 ingredients = snapshot.ingredients,
                 isFirstSetup = !preferences.hasCompletedSetup,
                 onDismiss = { showSettings = false },
+                onQuickStart = { budget, servings ->
+                    scope.launch {
+                        preferencesStore.saveSettings(
+                            budget,
+                            preferences.wilaya,
+                            servings,
+                            emptySet(),
+                            preferences.mealSlots,
+                            emptySet(),
+                            "none",
+                            preferences.maxCookingMinutes,
+                            preferences.budgetBufferPercent,
+                            preferences.commune,
+                            preferences.shoppingChannel,
+                            preferences.preferredShop
+                        )
+                        showSettings = false
+                        refresh()
+                    }
+                },
                 onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer, commune, shoppingChannel, preferredShop ->
                     scope.launch {
                         preferencesStore.saveSettings(
@@ -398,9 +418,11 @@ private fun SettingsDialog(
     onDismiss: () -> Unit,
     ingredients: List<dz.meals.app.data.IngredientMaster>,
     isFirstSetup: Boolean,
+    onQuickStart: (Int, Int) -> Unit,
     onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int, String, String, String) -> Unit
 ) {
     var step by rememberSaveable { mutableStateOf(0) }
+    var noKnownAllergies by rememberSaveable { mutableStateOf(false) }
     var budgetText by rememberSaveable(preferences.weeklyBudgetDzd) { mutableStateOf(preferences.weeklyBudgetDzd.toString()) }
     var wilayaText by rememberSaveable(preferences.wilaya) { mutableStateOf(preferences.wilaya) }
     var communeText by rememberSaveable(preferences.commune) { mutableStateOf(preferences.commune) }
@@ -497,6 +519,32 @@ private fun SettingsDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("عدد الحصص") }
                     )
+                    if (isFirstSetup) {
+                        MealsCheckRow(
+                            title = "لا توجد حساسية غذائية معروفة",
+                            supportingText = "إن وُجدت حساسية أو كان هناك شك، أكملي الخطوات التالية أولاً.",
+                            checked = noKnownAllergies,
+                            onCheckedChange = { noKnownAllergies = it }
+                        )
+                        TextButton(
+                            onClick = {
+                                val budget = budgetText.toIntOrNull()
+                                val servings = servingsText.toIntOrNull()
+                                if (noKnownAllergies && budget != null && budget > 0 && servings != null && servings in 1..12) {
+                                    onQuickStart(budget, servings)
+                                }
+                            },
+                            enabled = noKnownAllergies && validStep,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("ابدئي الآن بالإعدادات الأساسية")
+                        }
+                        Text(
+                            "سنستخدم اختيارات افتراضية لبقية التفضيلات. يمكنك تعديلها لاحقاً من الإعدادات.",
+                            color = dz.meals.app.ui.theme.MutedInk,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
                 1 -> {
                     Text("ما الوجبات التي تحبين التخطيط لها؟", style = MaterialTheme.typography.titleMedium)
