@@ -3,6 +3,7 @@ package dz.meals.app.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,9 +54,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -168,91 +170,56 @@ fun MealsCard(
  */
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 
+/**
+ * A single, shape-consistent glass material. Haze owns the material fill,
+ * refraction, rim and edge; the child content is not covered by a second
+ * background rectangle. Keep this for hero surfaces, not every LazyColumn row.
+ */
 @Composable
 fun MealsGlassSurface(
     modifier: Modifier = Modifier,
     tintColor: Color = Color(0xFFFFFCF7),
-    tintAlpha: Float = 0.22f,
+    tintAlpha: Float = 0.28f,
     contentPadding: Dp = 18.dp,
-    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
+    shape: RoundedCornerShape = RoundedCornerShape(29.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsHazeState.current
-    val safeTintAlpha = tintAlpha.coerceIn(0.08f, 0.42f)
-    val glassStyle = remember(shape, tintColor, safeTintAlpha) {
+    val glassStyle = remember(shape, tintColor, tintAlpha) {
         GlassStyle.regular.then {
-            backgroundColor(Color.White.copy(alpha = 0.12f))
-            tint(tintColor.copy(alpha = safeTintAlpha))
+            tint(tintColor.copy(alpha = tintAlpha.coerceIn(0.12f, 0.42f)))
             optics(
                 GlassOptics.regular.copy(
-                    refractionStrength = 0.62f,
-                    refractionHeightFraction = 0.32f,
-                    refractionFoldStrength = 0.12f
+                    refractionStrength = 0.46f,
+                    refractionHeightFraction = 0.30f,
+                    refractionFoldStrength = 0.08f
                 )
             )
-            specularIntensity(0.82f)
-            ambientResponse(0.78f)
-            edgeSoftness(10.dp)
+            specularIntensity(0.72f)
+            ambientResponse(0.66f)
+            edgeSoftness(5.dp)
             edgeShadow(Color(0x24745D4B))
             shape(shape)
             surfaceProfile(SurfaceProfile.Squircle)
             lightPosition(Alignment.TopStart)
-            chromaticAberrationStrength(0.06f)
+            chromaticAberrationStrength(0.025f)
         }
-    }
-    val faceBrush = remember(tintColor) {
-        Brush.linearGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.34f),
-                Color.White.copy(alpha = 0.12f),
-                tintColor.copy(alpha = 0.16f)
-            )
-        )
-    }
-    val rimBrush = remember {
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.98f),
-                Color.White.copy(alpha = 0.72f),
-                Color(0xFFE8DCD2).copy(alpha = 0.62f)
-            )
-        )
     }
 
     Box(
         modifier = modifier
-            .shadow(15.dp, shape, clip = false)
+            .shadow(12.dp, shape, clip = false)
             .hazeGlass(
                 input = HazeInput.Backdrop(hazeState),
                 style = glassStyle
             )
-            .clip(shape)
-            .background(faceBrush, shape)
-            .border(BorderStroke(1.dp, rimBrush), shape)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 46.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.92f),
-                            Color.White.copy(alpha = 0.72f),
-                            Color.Transparent
-                        )
-                    )
-                )
         )
     }
 }
@@ -601,10 +568,15 @@ fun MealsIllustrationBadge(
     size: Dp = 54.dp
 ) {
     Box(
-        modifier = modifier.size(size).clip(RoundedCornerShape(size / 2.8f)).background(background),
+        modifier = modifier
+            .shadow(7.dp, CircleShape, clip = false)
+            .size(size)
+            .clip(CircleShape)
+            .background(background)
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.96f)), CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(size * 0.48f))
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(size * 0.46f))
     }
 }
 
@@ -737,45 +709,75 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
+                .hazeSource(hazeState)
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                drawRect(
                     Brush.linearGradient(
                         colors = listOf(
                             Color(0xFFFFF4ED),
                             Cream,
                             Color(0xFFF5F1DE),
                             Color(0xFFFFF0EA)
-                        )
+                        ),
+                        start = Offset.Zero,
+                        end = Offset(size.width, size.height)
                     )
                 )
-                .hazeSource(hazeState)
-        ) {
-            // Draw the ambient palette once behind the screen content. Large,
-            // overlapping clouds avoid the isolated "blur blob" appearance.
-            Box(
-                modifier = Modifier.align(Alignment.TopStart).offset(x = (-126).dp, y = (-92).dp)
-                    .size(310.dp).blur(88.dp).background(Color(0xFFF3D7CF).copy(alpha = 0.82f), CircleShape)
-            )
-            Box(
-                modifier = Modifier.align(Alignment.TopCenter).offset(x = 18.dp, y = (-108).dp)
-                    .size(330.dp).blur(96.dp).background(Color(0xFFDDE8CC).copy(alpha = 0.86f), CircleShape)
-            )
-            Box(
-                modifier = Modifier.align(Alignment.TopEnd).offset(x = 118.dp, y = (-22).dp)
-                    .size(280.dp).blur(84.dp).background(Color(0xFFF1E4B9).copy(alpha = 0.76f), CircleShape)
-            )
-            Box(
-                modifier = Modifier.align(Alignment.CenterEnd).offset(x = 154.dp, y = 40.dp)
-                    .size(260.dp).blur(92.dp).background(Color(0xFFF6DCD8).copy(alpha = 0.66f), CircleShape)
-            )
-            Box(
-                modifier = Modifier.align(Alignment.BottomStart).offset(x = (-104).dp, y = 104.dp)
-                    .size(300.dp).blur(92.dp).background(Color(0xFFE3EEDB).copy(alpha = 0.82f), CircleShape)
-            )
-            Box(
-                modifier = Modifier.align(Alignment.BottomEnd).offset(x = 96.dp, y = 120.dp)
-                    .size(290.dp).blur(96.dp).background(Color(0xFFF4DCD3).copy(alpha = 0.82f), CircleShape)
-            )
+
+                val radius = maxOf(size.width, size.height) * 0.60f
+                drawCloud(
+                    center = Offset(size.width * 0.04f, size.height * 0.10f),
+                    color = Color(0xFFF0D2C8),
+                    radius = radius
+                )
+                drawCloud(
+                    center = Offset(size.width * 0.50f, -size.height * 0.06f),
+                    color = Color(0xFFDCE8CF),
+                    radius = radius * 1.04f
+                )
+                drawCloud(
+                    center = Offset(size.width * 1.02f, size.height * 0.13f),
+                    color = Color(0xFFF1E4BB),
+                    radius = radius * 0.88f
+                )
+                drawCloud(
+                    center = Offset(size.width * 1.04f, size.height * 0.59f),
+                    color = Color(0xFFF4DAD7),
+                    radius = radius * 0.94f
+                )
+                drawCloud(
+                    center = Offset(size.width * 0.02f, size.height * 1.02f),
+                    color = Color(0xFFE0EBD8),
+                    radius = radius * 0.98f
+                )
+                drawCloud(
+                    center = Offset(size.width * 0.93f, size.height * 0.98f),
+                    color = Color(0xFFF2D9CE),
+                    radius = radius * 0.92f
+                )
+            }
             content()
         }
     }
+}
+
+private fun DrawScope.drawCloud(
+    center: Offset,
+    color: Color,
+    radius: Float
+) {
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                color.copy(alpha = 0.70f),
+                color.copy(alpha = 0.32f),
+                Color.Transparent
+            ),
+            center = center,
+            radius = radius
+        ),
+        radius = radius,
+        center = center
+    )
 }

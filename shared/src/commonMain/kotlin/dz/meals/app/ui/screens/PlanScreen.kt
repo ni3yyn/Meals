@@ -46,6 +46,7 @@ import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsPrimaryButton
+import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.MealsSnapshot
@@ -153,13 +154,40 @@ fun PlanScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("قيمة المكونات المستهلكة", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                        Text(snapshot.basket.consumedValueDzd.toInt().formatDzd(), color = dz.meals.app.ui.theme.Ink, fontWeight = FontWeight.SemiBold)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            "قيمة المكونات المستهلكة",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2
+                        )
+                        Text(
+                            snapshot.basket.consumedValueDzd.toInt().formatDzd(),
+                            color = dz.meals.app.ui.theme.Ink,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("مبلغ الشراء التقديري", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                        Text(snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(), color = dz.meals.app.ui.theme.Ink, fontWeight = FontWeight.SemiBold)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            "مبلغ الشراء التقديري",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2
+                        )
+                        Text(
+                            snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
+                            color = dz.meals.app.ui.theme.Ink,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
                 if (snapshot.basket.unknownPriceCount > 0) {
@@ -239,9 +267,9 @@ fun PlanScreen(
             val lunch = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "lunch" }
             val dinner = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "dinner" }
 
-            MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 13.dp) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(dateLabel, fontWeight = FontWeight.Bold)
+            MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 16.dp) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                    Text(dateLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     if ("breakfast" in visibleMealSlots) SlotRow(
                         title = "الفطور",
                         meal = breakfast,
@@ -338,43 +366,109 @@ private fun SlotRow(
 ) {
     var chooseRecipe by rememberSaveable { mutableStateOf(false) }
 
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, color = MutedInk, style = MaterialTheme.typography.bodySmall)
-            Text(recipe?.nameAr ?: "لم يتم اختيار وجبة", fontWeight = FontWeight.SemiBold)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                title,
+                color = Forest,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = recipe?.nameAr ?: "لم يتم اختيار وجبة بعد",
+                color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
             if (meal != null && recipe != null) {
-                Text(recipe.durationMinutes.toString() + " دقيقة · " + meal.servings + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                if (meal.isCooked) {
-                    Text("تم الطهي — تم تحديث المخزون. ألغِ الطهي أولاً لتعديل الوجبة.", color = Forest, style = MaterialTheme.typography.bodySmall)
-                }
+                Text(
+                    recipe.durationMinutes.toString() + " دقيقة",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            if (meal?.isCooked == true) {
+                Text(
+                    "تم الطهي وتحديث المخزون",
+                    color = Forest,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
+
         if (meal != null && recipe != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { onAdjustServings(-1) }, enabled = meal.servings > 1 && !meal.isCooked) { Text("−") }
-                Text(meal.servings.toString(), fontWeight = FontWeight.Bold)
-                TextButton(onClick = { onAdjustServings(1) }, enabled = meal.servings < 12 && !meal.isCooked) { Text("+") }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { onAdjustServings(-1) },
+                        enabled = meal.servings > 1 && !meal.isCooked,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Text("−", color = Forest, style = MaterialTheme.typography.titleLarge)
+                    }
+                    Text(
+                        meal.servings.toString() + " حصص",
+                        color = dz.meals.app.ui.theme.Ink,
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 2.dp)
+                    )
+                    IconButton(
+                        onClick = { onAdjustServings(1) },
+                        enabled = meal.servings < 12 && !meal.isCooked,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Text("+", color = Forest, style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+                IconButton(
+                    onClick = onToggleLock,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Icon(
+                        if (meal.locked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
+                        contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
+                        tint = if (meal.locked) Forest else MutedInk
+                    )
+                }
             }
-            TextButton(onClick = onToggleCooked) {
-                Text(if (meal.isCooked) "تراجع" else "تم الطهي")
-            }
-            IconButton(onClick = onToggleLock) {
-                Icon(
-                    if (meal.locked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
-                    contentDescription = if (meal.locked) "إلغاء القفل" else "قفل الوجبة",
-                    tint = if (meal.locked) Forest else MutedInk
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MealsPrimaryButton(
+                    label = if (meal.isCooked) "تراجع" else "تم الطهي",
+                    onClick = onToggleCooked,
+                    modifier = Modifier.weight(1f),
+                    showArrow = false
+                )
+                MealsSecondaryButton(
+                    label = "تغيير",
+                    onClick = { chooseRecipe = true },
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Refresh
                 )
             }
         } else {
-            Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = MutedInk)
-        }
-        OutlinedButton(onClick = { chooseRecipe = true }, enabled = meal?.isCooked != true) {
-            Icon(if (recipe == null) Icons.Outlined.Add else Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(if (recipe == null) "إضافة" else "تغيير")
+            MealsSecondaryButton(
+                label = "إضافة وصفة",
+                onClick = { chooseRecipe = true },
+                modifier = Modifier.fillMaxWidth(),
+                icon = Icons.Outlined.Add
+            )
         }
     }
 
@@ -394,15 +488,26 @@ private fun SlotRow(
                         ) {
                             Column(Modifier.fillMaxWidth()) {
                                 Text(item.nameAr, fontWeight = FontWeight.SemiBold)
-                                Text(item.durationMinutes.toString() + " دقيقة · " + item.baseServings + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    item.durationMinutes.toString() + " دقيقة · " + item.baseServings + " حصص",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { onSelect(null); chooseRecipe = false }) { Text("إفراغ الوجبة") } },
-            dismissButton = { TextButton(onClick = { chooseRecipe = false }) { Text("إلغاء") } }
+            confirmButton = {
+                TextButton(onClick = { onSelect(null); chooseRecipe = false }) {
+                    Text("إفراغ الوجبة")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { chooseRecipe = false }) {
+                    Text("إلغاء")
+                }
+            }
         )
     }
 }
-
