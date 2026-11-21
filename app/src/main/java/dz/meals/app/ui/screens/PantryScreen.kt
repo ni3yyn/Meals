@@ -15,7 +15,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,8 +56,18 @@ fun PantryScreen(
     onSave: (String, Double?, Boolean, String, Long?) -> Unit,
     onRemove: (String) -> Unit
 ) {
+    var search by rememberSaveable { mutableStateOf("") }
     var selectedIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingItem by rememberSaveable { mutableStateOf<PantryItem?>(null) }
+
     val selectedIngredient = selectedIngredientId?.let { id -> ingredients.firstOrNull { it.id == id } }
+    val matchingIngredients = ingredients.filter { ingredient ->
+        search.isNotBlank() && (
+            ingredient.nameAr.contains(search.trim(), true) ||
+                ingredient.nameFr.contains(search.trim(), true) ||
+                ingredient.aliases.any { it.contains(search.trim(), true) }
+            )
+    }.take(12)
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -63,34 +75,74 @@ fun PantryScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text("المخزون المنزلي", style = MaterialTheme.typography.headlineMedium)
-            Text("أضف ما لديك في البيت حتى لا نطلب شراءه مرة أخرى.", color = MutedInk)
-            Text("يمكن إضافة تاريخ انتهاء وملاحظة. الكميات التقريبية لا تُخصم من المشتريات.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-            Button(
-                onClick = { selectedIngredientId = ingredients.firstOrNull()?.id },
+            Text("ابحث عن مكوّن لإضافته أو عدّل كمية موجودة في البيت.", color = MutedInk)
+            OutlinedTextField(
+                value = search,
+                onValueChange = { search = it.take(60) },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Forest)
-            ) {
-                Icon(Icons.Outlined.Add, contentDescription = null)
-                Text("إضافة إلى المخزون")
-            }
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                label = { Text("ابحث بالعربية أو الفرنسية أو الدارجة") },
+                singleLine = true
+            )
+            Text(
+                "الكمية التقريبية لا تُخصم من المشتريات. تاريخ الانتهاء تذكير فقط وليس حكماً على سلامة الطعام.",
+                color = MutedInk,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
-        if (pantry.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(30.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(Icons.Outlined.Kitchen, contentDescription = null, tint = Forest, modifier = Modifier.size(48.dp))
-                Text("مخزونك فارغ", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 10.dp))
-                Text("أضف المكونات المتوفرة لديك لتقليل مشتريات الأسبوع.", color = MutedInk)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (search.isNotBlank()) {
+                item {
+                    Text("نتائج البحث", style = MaterialTheme.typography.titleMedium, color = Forest)
+                }
+                items(matchingIngredients, key = { "search-" + it.id }) { ingredient ->
+                    TextButton(
+                        onClick = {
+                            editingItem = pantry.firstOrNull { it.ingredientId == ingredient.id }
+                            selectedIngredientId = ingredient.id
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(ingredient.nameAr, color = MaterialTheme.colorScheme.onSurface)
+                                Text(ingredient.nameFr + " · " + ingredient.baseUnit, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Icon(Icons.Outlined.Add, contentDescription = "إضافة أو تعديل")
+                        }
+                    }
+                }
+                if (matchingIngredients.isEmpty()) {
+                    item { Text("لا توجد مكوّنات مطابقة في القاموس الحالي.", color = MutedInk) }
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+
+            item {
+                Text("المخزون الحالي (" + pantry.size + ")", style = MaterialTheme.typography.titleMedium, color = Forest)
+            }
+
+            if (pantry.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Outlined.Kitchen, contentDescription = null, tint = Forest, modifier = Modifier.size(48.dp))
+                        Text("مخزونك فارغ", style = MaterialTheme.typography.titleLarge)
+                        Text("اكتب اسم مكوّن في البحث ثم اختره لإضافته.", color = MutedInk)
+                    }
+                }
+            } else {
                 items(pantry, key = { it.id }) { item ->
                     val expiry = item.expiryAtEpochMillis?.let {
                         Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -114,14 +166,23 @@ fun PantryScreen(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 item.note.takeIf { it.isNotBlank() }?.let {
-                                    Text(it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                    Text("ملاحظة: " + it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                                 }
                                 expiry?.let {
                                     Text("تاريخ الانتهاء المُدخل: $it", color = MutedInk, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
-                            TextButton(onClick = { onRemove(item.id) }) {
-                                Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف")
+                            Column(horizontalAlignment = Alignment.End) {
+                                TextButton(onClick = {
+                                    editingItem = item
+                                    selectedIngredientId = item.ingredientId
+                                }) {
+                                    Icon(Icons.Outlined.Edit, contentDescription = "تعديل المخزون")
+                                    Text("تعديل")
+                                }
+                                TextButton(onClick = { onRemove(item.id) }) {
+                                    Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف")
+                                }
                             }
                         }
                     }
@@ -133,10 +194,16 @@ fun PantryScreen(
     if (selectedIngredient != null) {
         PantryAddDialog(
             ingredient = selectedIngredient,
-            onDismiss = { selectedIngredientId = null },
+            existing = editingItem,
+            onDismiss = {
+                selectedIngredientId = null
+                editingItem = null
+            },
             onSave = { amount, approximate, note, expiry ->
                 onSave(selectedIngredient.id, amount, approximate, note, expiry)
                 selectedIngredientId = null
+                editingItem = null
+                search = ""
             }
         )
     }
@@ -145,13 +212,26 @@ fun PantryScreen(
 @Composable
 private fun PantryAddDialog(
     ingredient: IngredientMaster,
+    existing: PantryItem?,
     onDismiss: () -> Unit,
     onSave: (Double?, Boolean, String, Long?) -> Unit
 ) {
-    var quantity by rememberSaveable(ingredient.id) { mutableStateOf("") }
-    var approximate by rememberSaveable(ingredient.id) { mutableStateOf(false) }
-    var note by rememberSaveable(ingredient.id) { mutableStateOf("") }
-    var expiryText by rememberSaveable(ingredient.id) { mutableStateOf("") }
+    var quantity by rememberSaveable(ingredient.id, existing?.id) {
+        mutableStateOf(existing?.quantityBase?.toString().orEmpty())
+    }
+    var approximate by rememberSaveable(ingredient.id, existing?.id) {
+        mutableStateOf(existing?.isApproximate ?: false)
+    }
+    var note by rememberSaveable(ingredient.id, existing?.id) {
+        mutableStateOf(existing?.note.orEmpty())
+    }
+    var expiryText by rememberSaveable(ingredient.id, existing?.id) {
+        mutableStateOf(
+            existing?.expiryAtEpochMillis?.let {
+                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+            }.orEmpty()
+        )
+    }
 
     val parsedExpiry = if (expiryText.isBlank()) {
         null
@@ -167,7 +247,7 @@ private fun PantryAddDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("إضافة " + ingredient.nameAr) },
+        title = { Text(if (existing == null) "إضافة " + ingredient.nameAr else "تعديل " + ingredient.nameAr) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("الوحدة الأساسية: " + ingredient.baseUnit, color = MutedInk)
