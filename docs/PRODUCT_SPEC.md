@@ -1,12 +1,15 @@
 # Meals — implementation status against the product specification
 
 ## Product and privacy policy
-This is a native Android app for Algeria. It deliberately starts directly in local guest mode. No authentication, sign-in, phone number, OTP, cloud profile or auth SDK is required for the current feature set. Planning works without a network connection after installation.
+This is a native Android app for Algeria. It runs as a local-only app and starts directly into its first-run setup without authentication. No sign-in, account, phone number, OTP, cloud profile, auth SDK or user-account system is part of this product scope. Planning works without a network connection after installation.
+
+**Explicit exclusions:** kitchen-equipment awareness/filtering is intentionally not part of the app. Account-based sync, shared households, invitations, subscriptions, purchases and an authenticated admin portal are also out of scope unless the product owner explicitly changes these requirements.
 
 ## Implemented milestone
 - Kotlin, Jetpack Compose and Material 3; Arabic RTL interface.
 - Room persistence for canonical ingredients, recipes, recipe ingredients, bilingual preparation steps, week slots, pantry items, price observations and shopping items.
 - DataStore for budget, wilaya, optional commune, shopping channel and preferred shop, household servings, selected meal slots, allergies, vegetarian/vegan pattern, soft disliked-ingredient preferences, preferred maximum cook time, budget buffer and local first-run setup completion.
+- Kitchen-equipment selection and equipment-dependent recipe filtering are deliberately omitted.
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
@@ -22,6 +25,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone.
 - Manual plan edits are persisted separately from generated suggestions so regeneration cannot silently replace user decisions. Approximate stock is never deducted.
 - Shopping item details for manual purchase-quantity override, store notes, availability and user-entered actual spend; custom items can carry an optional total price estimate.
+- Plain-text shopping-list sharing through the Android share chooser, without contacts permission.
 - Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.
 - Unit tests for serving scaling, exact/approximate pantry handling, package rounding and catalogue integrity.
@@ -97,7 +101,7 @@ Price observations store canonical ingredient ID, pack size, normalized unit, DZ
 6. Add optional pantry/fridge scan with user confirmation, expiry reminders and cooked-meal stock deduction with undo.
 7. Add transparent bounded-swap plan optimization, ingredient substitutions and more complete budget feasibility explanations.
 8. Add data export/import, local backup, notifications and accessibility/performance/device tests.
-9. Cloud sync, accounts, household invitations/roles, subscriptions, purchase verification, admin console and server operations are deferred. They must remain optional and must never gate local use.
+9. Account-based cloud sync, household invitations/roles, subscriptions, purchase verification, authenticated admin console and server operations are excluded from the current product scope. Do not add authentication unless the product owner explicitly changes this decision.
 
 ## Architecture
 - Single-activity Compose UI.

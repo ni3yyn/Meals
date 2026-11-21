@@ -2,8 +2,10 @@
 
 Native Kotlin Android meal planner for Algeria.
 
-## No-account policy
-The app opens directly into the planner. No authentication, email, phone number, OTP, cloud account or network connection is required for the implemented features.
+## No-auth policy
+The app opens directly into local first-run setup and then the planner. No authentication, email, phone number, OTP, cloud account or user-account system is included. The core app works offline.
+
+Kitchen-equipment awareness and recipe filtering based on equipment are intentionally excluded.
 
 ## Implemented
 - Arabic-first Jetpack Compose interface with right-to-left layout.
@@ -21,7 +23,8 @@ The app opens directly into the planner. No authentication, email, phone number,
 - Consolidated shopping requirements and whole-pack rounding.
 - Consumed-ingredient value separated from cash needed to buy packages.
 - Week-specific shopping lists with category grouping, persistent checks, editable generated purchase amounts, shop notes, unavailable flags, actual-spend entry and optional prices for custom items.
-- Local price observations with pack size, date, shop context and wilaya; reported values remain unverified and device-local.
+- Local price observations with pack size, date, optional commune, shopping channel, shop context and wilaya; reported values remain unverified and device-local.
+- Share the current shopping list as plain text using Android's native share chooser.
 - Weekly budget, wilaya, optional commune, shopping channel and preferred shop stored locally.
 - R8 minification, obfuscation and resource shrinking in release builds.
 
