@@ -87,6 +87,7 @@ fun MealsApp(localeTag: String = DEFAULT_MEALS_LOCALE_TAG) {
 
 @Composable
 private fun MealsAppContent() {
+    MealsStartupLogger.markOnce("MealsAppContent entered")
     val context = LocalContext.current
     val preferencesStore = remember(context) { PreferencesStore(context) }
     val repository = remember(context) { MealsRepository(context) }
@@ -156,8 +157,11 @@ private fun MealsAppContent() {
     }
 
     LaunchedEffect(repository, weekStartIso, preferences.wilaya, preferences.mealSlots) {
+        MealsStartupLogger.markOnce("Initial repository initialization started")
         repository.ensureInitialized()
+        MealsStartupLogger.markOnce("Initial repository initialization completed")
         refresh()
+        MealsStartupLogger.markOnce("Initial meal snapshot loaded")
     }
 
     LaunchedEffect(preferences.hasCompletedSetup) {
