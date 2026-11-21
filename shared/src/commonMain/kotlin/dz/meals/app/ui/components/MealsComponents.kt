@@ -111,11 +111,11 @@ private val MealsCardBlurStyle = HazeBlurStyle {
     noiseFactor(0.035f)
     colorEffects(
         listOf(
-            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.24f))
+            HazeColorEffect.tint(Color(0xFFFFF6EC).copy(alpha = 0.34f))
         )
     )
     fallbackColorEffect(
-        HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
+        HazeColorEffect.tint(Color(0xFFFFF6EC).copy(alpha = 0.96f))
     )
 }
 
@@ -139,7 +139,7 @@ fun MealsCard(
 ) {
     val cardHazeState = LocalMealsCardHazeState.current
     val usesLightContent = contentColor == Color.White
-    val surfaceAlpha = if (usesLightContent) 0.78f else 0.62f
+    val surfaceAlpha = if (usesLightContent) 0.84f else 0.76f
 
     val face = remember(containerColor, usesLightContent, surfaceAlpha) {
         Brush.verticalGradient(
@@ -147,13 +147,13 @@ fun MealsCard(
                 listOf(
                     Color.White.copy(alpha = 0.20f),
                     containerColor.copy(alpha = surfaceAlpha),
-                    containerColor.copy(alpha = 0.86f)
+                    containerColor.copy(alpha = 0.92f)
                 )
             } else {
                 listOf(
-                    Color.White.copy(alpha = 0.44f),
+                    Color.White.copy(alpha = 0.52f),
                     containerColor.copy(alpha = surfaceAlpha),
-                    containerColor.copy(alpha = 0.68f)
+                    containerColor.copy(alpha = 0.86f)
                 )
             }
         )
