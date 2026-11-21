@@ -185,13 +185,16 @@ fun ShoppingScreen(
                 Text("أضف وصفات إلى خطة الأسبوع أو أضف عنصراً يدوياً.", color = MutedInk, modifier = Modifier.padding(top = 6.dp))
             }
         } else {
-            val grouped = rows.groupBy { it.category }.toSortedMap()
+            val grouped: Map<String, List<ShoppingListItem>> =
+                rows.groupBy { row: ShoppingListItem -> row.category }
+            val categoryNames: List<String> = grouped.keys.sorted()
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                grouped.forEach { (category, categoryItems) ->
+                categoryNames.forEach { category: String ->
+                    val categoryItems: List<ShoppingListItem> = grouped.getValue(category)
                     item(key = "category-$category") {
                         Text(
                             category,
