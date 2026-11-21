@@ -3,6 +3,7 @@ package dz.meals.app.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -28,6 +29,7 @@ class PreferencesStore(context: Context) {
         val dietPattern = stringPreferencesKey("diet_pattern")
         val maxCookingMinutes = intPreferencesKey("max_cooking_minutes")
         val budgetBufferPercent = intPreferencesKey("budget_buffer_percent")
+        val hasCompletedSetup = booleanPreferencesKey("has_completed_setup")
     }
 
     val preferences: Flow<AppPreferences> = dataStore.data
@@ -46,7 +48,8 @@ class PreferencesStore(context: Context) {
                 dislikedIngredientIds = values[Keys.dislikedIngredientIds] ?: emptySet(),
                 dietPattern = values[Keys.dietPattern] ?: "none",
                 maxCookingMinutes = (values[Keys.maxCookingMinutes] ?: 60).coerceIn(10, 240),
-                budgetBufferPercent = (values[Keys.budgetBufferPercent] ?: 5).coerceIn(0, 30)
+                budgetBufferPercent = (values[Keys.budgetBufferPercent] ?: 5).coerceIn(0, 30),
+                hasCompletedSetup = values[Keys.hasCompletedSetup] ?: false
             )
         }
 
@@ -71,6 +74,7 @@ class PreferencesStore(context: Context) {
             values[Keys.dietPattern] = dietPattern.takeIf { it in setOf("none", "vegetarian", "vegan") } ?: "none"
             values[Keys.maxCookingMinutes] = maxCookingMinutes.coerceIn(10, 240)
             values[Keys.budgetBufferPercent] = budgetBufferPercent.coerceIn(0, 30)
+            values[Keys.hasCompletedSetup] = true
         }
     }
 }

@@ -155,6 +155,7 @@ class BasketCalculatorTest {
         assertEquals("none", defaults.dietPattern)
         assertTrue(defaults.budgetBufferPercent in 0..30)
         assertTrue(defaults.maxCookingMinutes in 10..240)
+        assertTrue(!defaults.hasCompletedSetup)
     }
 
     @Test

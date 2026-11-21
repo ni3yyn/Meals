@@ -6,7 +6,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 ## Implemented milestone
 - Kotlin, Jetpack Compose and Material 3; Arabic RTL interface.
 - Room persistence for canonical ingredients, recipes, recipe ingredients, bilingual preparation steps, week slots, pantry items, price observations and shopping items.
-- DataStore for budget, wilaya, household servings, selected meal slots, allergies, vegetarian/vegan pattern, soft disliked-ingredient preferences, preferred maximum cook time and budget buffer.
+- DataStore for budget, wilaya, household servings, selected meal slots, allergies, vegetarian/vegan pattern, soft disliked-ingredient preferences, preferred maximum cook time, budget buffer and local first-run setup completion.
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
@@ -30,10 +30,10 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 ## Current user flows
 
 ### First launch
-1. Launch directly into the weekly plan.
-2. Seed the local recipe and ingredient catalogue into Room on first run.
-3. Set budget, wilaya, household portions and allergy exclusions.
-4. No account, location permission or network access is required.
+1. Seed the local recipe and ingredient catalogue into Room on first run.
+2. Show a first-run setup for budget, wilaya, household portions, meal slots, allergies and dietary preferences.
+3. Save setup completion locally, then open the weekly plan.
+4. The setup can be dismissed and revisited from Settings. No account, phone number, location permission or network access is required.
 
 ### Weekly plan
 1. View seven days with the selected breakfast, lunch and/or dinner slots.

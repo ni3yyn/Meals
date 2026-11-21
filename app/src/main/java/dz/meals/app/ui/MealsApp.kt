@@ -92,6 +92,10 @@ fun MealsApp() {
         refresh()
     }
 
+    LaunchedEffect(preferences.hasCompletedSetup) {
+        if (!preferences.hasCompletedSetup) showSettings = true
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             containerColor = Cream,
@@ -227,6 +231,7 @@ fun MealsApp() {
         SettingsDialog(
             preferences = preferences,
             ingredients = snapshot.ingredients,
+            isFirstSetup = !preferences.hasCompletedSetup,
             onDismiss = { showSettings = false },
             onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer ->
                 scope.launch {
@@ -255,6 +260,7 @@ private fun SettingsDialog(
     preferences: AppPreferences,
     onDismiss: () -> Unit,
     ingredients: List<dz.meals.app.data.IngredientMaster>,
+    isFirstSetup: Boolean,
     onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int) -> Unit
 ) {
     var budgetText by rememberSaveable(preferences.weeklyBudgetDzd) { mutableStateOf(preferences.weeklyBudgetDzd.toString()) }
@@ -270,9 +276,16 @@ private fun SettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("إعدادات الأسرة والميزانية") },
+        title = { Text(if (isFirstSetup) "لنجهّز أول خطة لك" else "إعدادات الأسرة والميزانية") },
         text = {
             Column {
+                if (isFirstSetup) {
+                    Text(
+                        "اختر ميزانيتك وعادات الوجبات. يبدأ التطبيق مباشرة دون حساب أو رقم هاتف، وتُحفظ هذه الإعدادات على جهازك.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
                 Text("الميزانية الأسبوعية بالدينار الجزائري")
                 OutlinedTextField(
                     value = budgetText,

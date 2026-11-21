@@ -44,7 +44,8 @@ data class AppPreferences(
     val dislikedIngredientIds: Set<String> = emptySet(),
     val dietPattern: String = "none",
     val maxCookingMinutes: Int = 60,
-    val budgetBufferPercent: Int = 5
+    val budgetBufferPercent: Int = 5,
+    val hasCompletedSetup: Boolean = false
 )
 
 data class PantryItem(
