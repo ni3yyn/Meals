@@ -166,7 +166,8 @@ class BasketCalculatorTest {
         assertTrue(!isRecipeAllowed(chickenRecipe, categories, emptySet(), "vegetarian"))
         assertTrue(!isRecipeAllowed(chickenRecipe, categories, emptySet(), "vegan"))
         assertTrue(isRecipeAllowed(chickenRecipe, categories, emptySet(), "none"))
-        assertTrue(!isRecipeAllowed(recipe, emptyMap(), setOf("milk"), "none"))
+        val milkRecipe = recipe.copy(allergens = setOf("milk"))
+        assertTrue(!isRecipeAllowed(milkRecipe, emptyMap(), setOf("milk"), "none"))
     }
 
     @Test
