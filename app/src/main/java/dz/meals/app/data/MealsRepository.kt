@@ -400,7 +400,12 @@ class MealsRepository(context: Context) {
     suspend fun adjustMealServings(id: String, weekStartIso: String, delta: Int) {
         val meal = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id } ?: return
         if (meal.isCooked) return
-        dao.upsertPlanMeal(meal.copy(servings = (meal.servings + delta).coerceIn(1, 12)))
+        dao.upsertPlanMeal(
+            meal.copy(
+                servings = (meal.servings + delta).coerceIn(1, 12),
+                isUserEdited = true
+            )
+        )
     }
 
     suspend fun addRecipeToNextSlot(weekStartIso: String, recipeId: String, servings: Int) {
