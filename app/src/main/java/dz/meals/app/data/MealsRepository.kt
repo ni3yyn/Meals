@@ -21,6 +21,7 @@ class MealsRepository(context: Context) {
     private val dao: MealsDao = database.mealsDao()
 
     suspend fun ensureInitialized() {
+        SeedRecipes.validateCatalogue()
         if (dao.recipeCount() > 0) return
         database.withTransaction {
             dao.insertIngredients(SeedRecipes.ingredients.map {
@@ -325,7 +326,7 @@ class MealsRepository(context: Context) {
         val samples = listOf(
             Triple("semolina", 1_000.0, 150.0),
             Triple("chicken", 1_000.0, 650.0),
-            Triple("carrot", 1_000.0, 100.0),
+            Triple("carrot", 1.0, 10.0),
             Triple("zucchini", 1.0, 45.0),
             Triple("chickpeas", 1_000.0, 220.0),
             Triple("tomato", 1_000.0, 140.0),

@@ -4,7 +4,7 @@ object SeedRecipes {
     val ingredients = listOf(
         IngredientMaster("semolina", "سميد متوسط", "Semoule moyenne", "حبوب ومخبوزات", "g", setOf("gluten"), listOf("سميد", "semoule", "smid")),
         IngredientMaster("chicken", "دجاج", "Poulet", "لحوم ودواجن", "g", emptySet(), listOf("دجاجة", "poulet")),
-        IngredientMaster("carrot", "جزر", "Carotte", "خضروات", "g", emptySet(), listOf("زرودية", "carotte", "zrodiya")),
+        IngredientMaster("carrot", "جزر", "Carotte", "خضروات", "piece", emptySet(), listOf("زرودية", "carotte", "zrodiya")),
         IngredientMaster("zucchini", "قرعة خضراء", "Courgette", "خضروات", "piece", emptySet(), listOf("كوسة", "courgette", "qar3a")),
         IngredientMaster("chickpeas", "حمص", "Pois chiches", "بقوليات", "g", emptySet(), listOf("حمص يابس", "pois chiche", "homs")),
         IngredientMaster("tomato", "طماطم", "Tomate", "خضروات", "g", emptySet(), listOf("مطيشة", "tomate", "maticha")),
@@ -19,6 +19,22 @@ object SeedRecipes {
         IngredientMaster("potato", "بطاطا", "Pomme de terre", "خضروات", "g", emptySet(), listOf("اطاطبلا", "pomme de terre", "patate", "batata")),
         IngredientMaster("cheese", "جبن", "Fromage", "ألبان وبيض", "g", setOf("milk"), listOf("فرماج", "fromage", "jben"))
     )
+
+    fun validateCatalogue() {
+        require(ingredients.map { it.id }.distinct().size == ingredients.size) { "Ingredient IDs must be unique" }
+        val ingredientById = ingredients.associateBy { it.id }
+        require(all.isNotEmpty()) { "Recipe catalogue must not be empty" }
+        all.forEach { recipe ->
+            require(recipe.baseServings > 0) { "Recipe ${recipe.id} must have positive base servings" }
+            require(recipe.durationMinutes > 0) { "Recipe ${recipe.id} must have positive preparation time" }
+            recipe.ingredients.forEach { item ->
+                val master = requireNotNull(ingredientById[item.ingredientId]) { "Unknown ingredient ${item.ingredientId} in ${recipe.id}" }
+                require(item.unit == master.baseUnit) { "Unit mismatch for ${item.ingredientId} in ${recipe.id}: expected ${master.baseUnit}, got ${item.unit}" }
+                require(item.quantityBase > 0.0) { "Non-positive quantity for ${item.ingredientId} in ${recipe.id}" }
+                require(recipe.allergens.containsAll(master.allergens)) { "Missing allergen tags for ${item.ingredientId} in ${recipe.id}" }
+            }
+        }
+    }
 
     val all = listOf(
         MealRecipe(

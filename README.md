@@ -1,31 +1,35 @@
 # مائدتي (Meals)
 
-Native Kotlin Android app for planning meals and shopping on a budget in Algeria.
+Native Kotlin Android meal planner for Algeria.
 
-## Product principles
-- **No authentication:** launch directly into the app. No email, phone number, OTP, account, or login gate.
-- **Offline-first:** planning settings and shopping progress are stored on the device.
-- **Algerian-first:** Arabic RTL UI and DZD budgeting.
-- **Honest prices:** starter values are demo estimates, not live market prices.
+## No-account policy
+The app opens directly into the planner. No authentication, email, phone number, OTP, cloud account or network connection is required for the implemented features.
 
-## First implemented slice
-- Weekly budget and wilaya settings
-- Searchable recipe catalogue with categories
-- Weekly meal selection
-- Consolidated shopping list with quantities
-- Persistent check-off state
-- R8 minification and resource shrinking on release
+## Implemented
+- Arabic-first Jetpack Compose interface with right-to-left layout.
+- Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
+- Seven-day planner with deterministic local plan generation.
+- Household serving scaling and lockable meal slots.
+- Configurable allergy exclusions applied as hard recipe filters.
+- Arabic/French recipe and ingredient-alias search.
+- Exact pantry deductions; approximate stock is a reminder and is never deducted.
+- Consolidated shopping requirements and whole-pack rounding.
+- Consumed-ingredient value separated from cash needed to buy packages.
+- Manual shopping items and persistent check-off state.
+- Weekly budget, wilaya and household preferences stored locally.
+- R8 minification, obfuscation and resource shrinking in release builds.
 
-## Build requirements
-JDK 17, Gradle 9.6.0, Android Gradle Plugin 9.5.0, and Android SDK Platform 37.1.
+**Price warning:** bundled observations are explicitly tagged as demo values, not current Algerian market prices. No live retailer or government price feed is connected yet.
 
-The CI workflow generates the Gradle Wrapper on the first push when it is not present. Afterwards, use:
+## Build
+JDK 17, Gradle 9.6.0 and Android SDK Platform 37.1:
 
 ```bash
 ./gradlew testDebugUnitTest assembleDebug
 ./gradlew assembleRelease
 ```
 
-The debug application ID is `dz.meals.app.debug`; the release application ID is `dz.meals.app`.
+Debug ID: `dz.meals.app.debug`  
+Release ID: `dz.meals.app`
 
-See [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) for user flows, local-data rules, price-data requirements, and the roadmap.
+See [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) for status and the remaining roadmap.
