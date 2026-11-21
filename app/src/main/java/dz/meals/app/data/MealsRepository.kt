@@ -96,7 +96,11 @@ class MealsRepository(context: Context) {
         val ingredients = dao.getIngredients().map { it.toModel() }
         val recipes = loadRecipes()
         val savedRun = dao.getPlanRun(weekStartIso)
-        val slotsForThisWeek = savedRun?.mealSlots ?: selectedMealSlots
+        val slotsForThisWeek = savedRun?.mealSlotsCsv
+            ?.split(",")
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: selectedMealSlots
         val planned = dao.getPlanMeals(weekStartIso)
             .filter { it.mealSlot in slotsForThisWeek }
             .map { it.toModel() }
