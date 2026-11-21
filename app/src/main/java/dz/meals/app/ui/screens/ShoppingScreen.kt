@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -62,14 +63,19 @@ fun ShoppingScreen(
     wilaya: String,
     onToggleItem: (String, Boolean) -> Unit,
     onAddCustomItem: (String, Double, String) -> Unit,
+    onEditCustomItem: (String, String, Double, String) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
     onRecordPrice: (String, Double, Double, String) -> Unit
 ) {
     var addDialog by rememberSaveable { mutableStateOf(false) }
+    var editItemId by rememberSaveable { mutableStateOf<String?>(null) }
     var priceDialog by rememberSaveable { mutableStateOf(false) }
     var itemName by rememberSaveable { mutableStateOf("") }
     var itemQuantity by rememberSaveable { mutableStateOf("1") }
     var itemUnit by rememberSaveable { mutableStateOf("حبة") }
+    var editName by rememberSaveable { mutableStateOf("") }
+    var editQuantity by rememberSaveable { mutableStateOf("1") }
+    var editUnit by rememberSaveable { mutableStateOf("حبة") }
 
     val checkedCount = snapshot.shoppingItems.count { it.checked }
     val rows = snapshot.shoppingItems
@@ -121,9 +127,7 @@ fun ShoppingScreen(
             }
             if (snapshot.priceObservations.isNotEmpty()) {
                 Text("آخر الأسعار المسجلة على جهازك", fontWeight = FontWeight.SemiBold)
-                snapshot.priceObservations.take(3).forEach { price ->
-                    PriceObservationRow(price)
-                }
+                snapshot.priceObservations.take(3).forEach { PriceObservationRow(it) }
                 Text(
                     "البلاغات تحفظ محلياً في هذا الإصدار ولا تُرسل إلى مستخدمين آخرين أو تُعرض كسعر رسمي.",
                     color = MutedInk,
@@ -143,17 +147,34 @@ fun ShoppingScreen(
                 Text("أضف وصفات إلى خطة الأسبوع أو أضف عنصراً يدوياً.", color = MutedInk, modifier = Modifier.padding(top = 6.dp))
             }
         } else {
+            val grouped = rows.groupBy { it.category }.toSortedMap()
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(rows, key = { it.id }) { item ->
-                    ShoppingItemCard(
-                        item = item,
-                        onToggle = { onToggleItem(item.id, !item.checked) },
-                        onDelete = { onDeleteCustomItem(item.id) }
-                    )
+                grouped.forEach { (category, categoryItems) ->
+                    item(key = "category-$category") {
+                        Text(
+                            category,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Forest,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                        )
+                    }
+                    items(categoryItems, key = { it.id }) { item ->
+                        ShoppingItemCard(
+                            item = item,
+                            onToggle = { onToggleItem(item.id, !item.checked) },
+                            onEdit = {
+                                editItemId = item.id
+                                editName = item.name
+                                editQuantity = item.purchaseQuantity.pretty()
+                                editUnit = item.unit
+                            },
+                            onDelete = { onDeleteCustomItem(item.id) }
+                        )
+                    }
                 }
             }
         }
@@ -192,6 +213,40 @@ fun ShoppingScreen(
                 ) { Text("إضافة") }
             },
             dismissButton = { TextButton(onClick = { addDialog = false }) { Text("إلغاء") } }
+        )
+    }
+
+    if (editItemId != null) {
+        AlertDialog(
+            onDismissRequest = { editItemId = null },
+            title = { Text("تعديل العنصر") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("اسم العنصر") }, singleLine = true)
+                    OutlinedTextField(
+                        value = editQuantity,
+                        onValueChange = { editQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
+                        label = { Text("الكمية") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                    OutlinedTextField(value = editUnit, onValueChange = { editUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val quantity = editQuantity.replace(',', '.').toDoubleOrNull()
+                        val id = editItemId
+                        if (id != null && quantity != null && quantity > 0.0 && editName.isNotBlank()) {
+                            onEditCustomItem(id, editName, quantity, editUnit)
+                            editItemId = null
+                        }
+                    },
+                    enabled = editName.isNotBlank() && (editQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0
+                ) { Text("حفظ التعديل") }
+            },
+            dismissButton = { TextButton(onClick = { editItemId = null }) { Text("إلغاء") } }
         )
     }
 
@@ -330,6 +385,7 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
 private fun ShoppingItemCard(
     item: ShoppingListItem,
     onToggle: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -367,8 +423,9 @@ private fun ShoppingItemCard(
                 item.sourceLabel?.let { Text(it, color = MutedInk, style = MaterialTheme.typography.labelSmall) }
             }
             if (item.userAdded) {
-                TextButton(onClick = onDelete) {
-                    Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف العنصر")
+                Column {
+                    TextButton(onClick = onEdit) { Icon(Icons.Outlined.Edit, contentDescription = "تعديل") }
+                    TextButton(onClick = onDelete) { Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف") }
                 }
             }
         }

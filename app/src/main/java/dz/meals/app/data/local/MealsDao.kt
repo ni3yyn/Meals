@@ -76,6 +76,9 @@ interface MealsDao {
     @Query("UPDATE shopping_items SET checked = :checked, updatedAtEpochMillis = :updatedAt WHERE id = :id")
     suspend fun setShoppingItemChecked(id: String, checked: Boolean, updatedAt: Long)
 
+    @Query("SELECT * FROM shopping_items WHERE id = :id AND userAdded = 1 LIMIT 1")
+    suspend fun getCustomShoppingItem(id: String): ShoppingItemEntity?
+
     @Query("DELETE FROM shopping_items WHERE id = :id AND userAdded = 1")
     suspend fun deleteCustomShoppingItem(id: String)
 }

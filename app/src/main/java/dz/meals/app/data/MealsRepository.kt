@@ -345,6 +345,23 @@ class MealsRepository(context: Context) {
         )
     }
 
+    suspend fun updateCustomShoppingItem(id: String, name: String, quantity: Double, unit: String) {
+        val cleanName = name.trim()
+        if (cleanName.isEmpty() || quantity <= 0.0) return
+        val current = dao.getCustomShoppingItem(id) ?: return
+        dao.upsertShoppingItems(
+            listOf(
+                current.copy(
+                    customName = cleanName,
+                    requiredQuantity = quantity,
+                    purchaseQuantity = quantity,
+                    unit = unit.trim().ifBlank { "حبة" },
+                    updatedAtEpochMillis = System.currentTimeMillis()
+                )
+            )
+        )
+    }
+
     suspend fun deleteCustomShoppingItem(id: String) {
         dao.deleteCustomShoppingItem(id)
     }
@@ -464,7 +481,8 @@ private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = Shopping
     sourceLabel = sourceLabel,
     isApproximatePantry = isApproximatePantry,
     checked = checked,
-    userAdded = userAdded
+    userAdded = userAdded,
+    category = ingredient?.category ?: "أخرى"
 )
 
 fun currentWeekStartIso(date: LocalDate = LocalDate.now()): String =

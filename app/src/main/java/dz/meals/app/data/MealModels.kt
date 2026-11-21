@@ -67,7 +67,8 @@ data class ShoppingListItem(
     val sourceLabel: String?,
     val isApproximatePantry: Boolean,
     val checked: Boolean,
-    val userAdded: Boolean
+    val userAdded: Boolean,
+    val category: String = "أخرى"
 )
 
 data class BasketSummary(

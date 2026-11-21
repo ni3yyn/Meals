@@ -190,6 +190,9 @@ fun MealsApp() {
                         wilaya = preferences.wilaya,
                         onToggleItem = { id, checked -> perform { repository.toggleShoppingItem(id, checked) } },
                         onAddCustomItem = { name, quantity, unit -> perform { repository.addCustomShoppingItem(name, quantity, unit) } },
+                        onEditCustomItem = { id, name, quantity, unit ->
+                            perform { repository.updateCustomShoppingItem(id, name, quantity, unit) }
+                        },
                         onDeleteCustomItem = { id -> perform { repository.deleteCustomShoppingItem(id) } },
                         onRecordPrice = { id, pack, amount, context ->
                             perform { repository.recordPriceObservation(id, pack, amount, preferences.wilaya, context) }
