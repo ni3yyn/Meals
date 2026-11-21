@@ -11,7 +11,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
@@ -66,7 +65,6 @@ import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
 import dz.meals.app.data.currentWeekStartIso
 import dz.meals.app.ui.components.*
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.hazeSource
 import dz.meals.app.ui.screens.PantryScreen
 import dz.meals.app.ui.screens.PlanScreen
@@ -167,7 +165,9 @@ fun MealsApp() {
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         MealsBackdrop {
-        val hazeState = LocalMealsHazeState.current
+        val hazeState = requireNotNull(LocalMealsHazeState.current) {
+            "MealsApp must be hosted inside MealsBackdrop so the shared Haze source is available."
+        }
         val navigationItems = remember {
             listOf(
                 MealsNavigationItem("الخطة", Icons.Outlined.CalendarMonth),

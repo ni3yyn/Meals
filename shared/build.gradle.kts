@@ -37,7 +37,7 @@ kotlin {
             api(compose.materialIconsExtended)
             api(compose.components.resources)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.haze.core)
+            api(libs.haze.core)
             implementation(libs.haze.glass)
             implementation(libs.haze.blur)
         }
