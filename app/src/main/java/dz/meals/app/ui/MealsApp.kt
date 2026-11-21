@@ -1,5 +1,8 @@
 package dz.meals.app.ui
 
+import android.content.Intent
+import android.net.Uri
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +21,9 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Kitchen
 import androidx.compose.material.icons.outlined.RestaurantMenu
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SystemUpdateAlt
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +57,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import dz.meals.app.BuildConfig
 import dz.meals.app.data.AppPreferences
+import dz.meals.app.data.AppUpdateChecker
+import dz.meals.app.data.AppUpdateCheckResult
+import dz.meals.app.data.AppUpdateInfo
 import dz.meals.app.data.MealsRepository
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
@@ -64,6 +74,8 @@ import dz.meals.app.ui.screens.ShoppingScreen
 import dz.meals.app.ui.theme.Cream
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+
+private const val LATEST_APK_DOWNLOAD_URL = "https://github.com/ni3yyn/Meals/releases/latest/download/meals.apk"
 
 private enum class AppTab(val title: String) {
     Plan("الخطة"),
@@ -78,6 +90,7 @@ fun MealsApp() {
     val context = LocalContext.current
     val preferencesStore = remember(context) { PreferencesStore(context) }
     val repository = remember(context) { MealsRepository(context) }
+    val updateChecker = remember { AppUpdateChecker() }
     val preferences by preferencesStore.preferences.collectAsState(initial = AppPreferences())
     val scope = rememberCoroutineScope()
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
@@ -88,9 +101,51 @@ fun MealsApp() {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var isGenerating by remember { mutableStateOf(false) }
     var generationMessage by remember { mutableStateOf<String?>(null) }
+    var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
+    var isCheckingForUpdates by remember { mutableStateOf(false) }
+    var updateStatus by remember { mutableStateOf("تحققي من توفر إصدار أحدث من التطبيق.") }
+    var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
 
     suspend fun refresh() {
         snapshot = repository.snapshot(weekStartIso, preferences.wilaya, preferences.mealSlots)
+    }
+
+    fun checkForAppUpdates() {
+        if (isCheckingForUpdates) return
+        scope.launch {
+            isCheckingForUpdates = true
+            updateStatus = "جارٍ التحقق من أحدث إصدار..."
+            availableUpdate = null
+            try {
+                when (val result = updateChecker.checkForUpdates(BuildConfig.VERSION_NAME)) {
+                    AppUpdateCheckResult.UpToDate -> {
+                        updateStatus = "تطبيقك محدّث بالفعل، لديك أحدث إصدار مستقر."
+                    }
+                    is AppUpdateCheckResult.Available -> {
+                        availableUpdate = result.update
+                        updateStatus = "يتوفر تحديث جديد للتطبيق."
+                    }
+                }
+            } catch (error: Exception) {
+                updateStatus = error.message ?: "تعذر التحقق من التحديثات. حاولي مجدداً."
+            } finally {
+                isCheckingForUpdates = false
+            }
+        }
+    }
+
+    fun openLatestApk() {
+        val url = availableUpdate?.downloadUrl ?: LATEST_APK_DOWNLOAD_URL
+        try {
+            context.startActivity(
+                Intent.createChooser(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)),
+                    "تنزيل مائدتي"
+                )
+            )
+        } catch (_: Exception) {
+            updateStatus = "تعذر فتح رابط التنزيل. تحققي من وجود متصفح على الجهاز."
+        }
     }
 
     fun perform(action: suspend () -> Unit) {
@@ -122,6 +177,12 @@ fun MealsApp() {
                         }
                     },
                     actions = {
+                        IconButton(
+                            onClick = { showUpdateDialog = true },
+                            modifier = Modifier.padding(end = 6.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftGreen)
+                        ) {
+                            Icon(Icons.Outlined.SystemUpdateAlt, contentDescription = "تحديث التطبيق", tint = dz.meals.app.ui.theme.Forest)
+                        }
                         IconButton(
                             onClick = { showSettings = true },
                             modifier = Modifier.padding(end = 10.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftPink)
@@ -274,6 +335,46 @@ fun MealsApp() {
                 }
             }
         )
+    }
+
+    if (showUpdateDialog) {
+        MealsDialog(
+            title = "تحديث التطبيق",
+            subtitle = "الإصدار الحالي ${BuildConfig.VERSION_NAME}",
+            onDismiss = { showUpdateDialog = false }
+        ) {
+            MealsCard(
+                containerColor = dz.meals.app.ui.theme.SoftGreen,
+                borderColor = null,
+                contentPadding = 16.dp
+            ) {
+                Text(
+                    updateStatus,
+                    color = dz.meals.app.ui.theme.ForestDark,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                availableUpdate?.let { update ->
+                    Text(
+                        "الإصدار الجديد: ${update.version}",
+                        color = dz.meals.app.ui.theme.ForestDark,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+            MealsPrimaryButton(
+                label = if (isCheckingForUpdates) "جارٍ التحقق..." else "التحقق من وجود تحديثات",
+                onClick = { checkForAppUpdates() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isCheckingForUpdates,
+                icon = Icons.Outlined.Refresh
+            )
+            MealsSecondaryButton(
+                label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
+                onClick = { openLatestApk() },
+                modifier = Modifier.fillMaxWidth(),
+                icon = Icons.Outlined.Download
+            )
+        }
     }
 
     generationMessage?.let { message ->

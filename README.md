@@ -42,3 +42,19 @@ Debug ID: `dz.meals.app.debug`
 Release ID: `dz.meals.app`
 
 See [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) for status and the remaining roadmap.
+
+
+## Signed releases and in-app updates
+
+Pushing to `main` runs the signed release workflow. It increments the patch version from the latest stable release, builds the R8-minified release variant, verifies the APK signature and package ID, then publishes `meals.apk` as a GitHub Release asset. The app's update button checks the latest stable release and opens that APK through Android's browser/download flow.
+
+The release workflow requires these repository Actions secrets:
+
+- `ANDROID_KEYSTORE_BASE64`: the Base64-encoded, persistent Meals release keystore.
+- `ANDROID_KEYSTORE_PASSWORD`: that keystore's password.
+- `ANDROID_KEY_ALIAS`: the key alias.
+- `ANDROID_KEY_PASSWORD`: the key password.
+
+Create the keystore once with `keytool -genkeypair -v -keystore meals-release.jks -alias meals -keyalg RSA -keysize 4096 -validity 10000`, encode it with `base64 -w0 meals-release.jks`, and save the result and passwords in **Settings → Secrets and variables → Actions** for this repository. Keep a secure offline backup of the keystore. Never commit it, and do not replace or lose it: every update to an installed release must use the same signing key.
+
+The normal Android CI workflow intentionally uploads only the debug APK. It no longer publishes an unsigned release APK that Android cannot install.

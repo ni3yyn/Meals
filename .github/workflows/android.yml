@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
-    name: Build and test
+    name: Test and build debug APK
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -30,9 +30,6 @@ jobs:
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)"
           test -x "$SDKMANAGER"
-          # sdkmanager closes stdin as soon as all licences are accepted. With
-          # GitHub Actions' pipefail setting, the resulting SIGPIPE from yes
-          # would otherwise fail this step even though sdkmanager succeeded.
           set +o pipefail
           yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses
           set -o pipefail
@@ -43,34 +40,16 @@ jobs:
         with:
           gradle-version: "9.6.0"
 
-      - name: Generate and commit Gradle Wrapper on first main-branch push
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --gradle-version 9.6.0
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar
-            git commit -m "build: add Gradle Wrapper scripts"
-            git push
-          fi
-
       - name: Run unit tests
         run: gradle testDebugUnitTest --no-daemon
 
       - name: Assemble debug APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Assemble minified release APK
-        run: gradle assembleRelease --no-daemon
-
-      - name: Upload APKs
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: meals-apks
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
+          name: meals-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14

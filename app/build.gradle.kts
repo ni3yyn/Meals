@@ -4,6 +4,20 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(3)
+val appVersionName = providers.gradleProperty("appVersionName").orElse("0.2.1")
+
+val releaseKeystorePath = providers.gradleProperty("releaseKeystorePath").orNull
+val releaseStorePassword = providers.gradleProperty("releaseStorePassword").orNull
+val releaseKeyAlias = providers.gradleProperty("releaseKeyAlias").orNull
+val releaseKeyPassword = providers.gradleProperty("releaseKeyPassword").orNull
+val hasReleaseSigning = listOf(
+    releaseKeystorePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "dz.meals.app"
     compileSdk {
@@ -16,9 +30,21 @@ android {
         applicationId = "dz.meals.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = appVersionCode.get()
+        versionName = appVersionName.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(requireNotNull(releaseKeystorePath))
+                storePassword = requireNotNull(releaseStorePassword)
+                keyAlias = requireNotNull(releaseKeyAlias)
+                keyPassword = requireNotNull(releaseKeyPassword)
+            }
+        }
     }
 
     buildTypes {
@@ -27,6 +53,13 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
+            // Public releases use the persistent private key supplied by CI.
+            // Local builds remain installable with the machine's standard debug key.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -59,6 +92,7 @@ ksp {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore.preferences)
 
