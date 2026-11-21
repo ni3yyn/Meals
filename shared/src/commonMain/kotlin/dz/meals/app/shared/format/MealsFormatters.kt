@@ -32,6 +32,42 @@ fun Double.prettyQuantity(): String {
     return "$whole.$fraction"
 }
 
+/**
+ * Converts internal recipe units into familiar household shopping units.
+ * Recipe calculations remain in their exact base units (g/ml/piece).
+ */
+fun Double.formatHouseholdQuantity(unit: String): String {
+    if (!isFinite()) return "—"
+    return when (unit.trim().lowercase()) {
+        "g" -> if (abs(this) >= 1000.0) {
+            "${(this / 1000.0).prettyQuantity()} كغ"
+        } else {
+            "${prettyQuantity()} غ"
+        }
+        "ml" -> if (abs(this) >= 1000.0) {
+            "${(this / 1000.0).prettyQuantity()} لتر"
+        } else {
+            "${prettyQuantity()} مل"
+        }
+        "piece" -> {
+            val pieceLabel = when (this) {
+                1.0 -> "حبة"
+                2.0 -> "حبتان"
+                else -> "حبات"
+            }
+            "${prettyQuantity()} $pieceLabel"
+        }
+        else -> "${prettyQuantity()} $unit"
+    }
+}
+
+fun formatHouseholdUnit(unit: String): String = when (unit.trim().lowercase()) {
+    "g" -> "غ"
+    "ml" -> "مل"
+    "piece" -> "حبة"
+    else -> unit
+}
+
 fun epochMillisToLocalDate(epochMillis: Long): LocalDate =
     Instant.fromEpochMilliseconds(epochMillis)
         .toLocalDateTime(TimeZone.currentSystemDefault())
