@@ -3,6 +3,6 @@
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
-    <path android:fillColor="#F8EBDD" android:pathData="M24,4 L29.7,17.3 L44,18.5 L33.2,27.8 L36.4,42 L24,34.5 L11.6,42 L14.8,27.8 L4,18.5 L18.3,17.3 Z"/>
+    <path android:fillColor="#F8EBDD" android:pathData="M24,4 L29.7,17.3 L44,18.5 L33.2,27.8 L36.4,42 L24,34.5 L11.6,42 L14.8,27.8 L4,18.5 L18.3,17.3 Z" android:strokeColor="#315B43" android:strokeWidth="1.35" android:strokeLineJoin="round" />
     <path android:fillColor="#D6A94F" android:pathData="M24,8 L28.8,18.7 L40.3,19.7 L31.6,27.1 L34.2,38.4 L24,32.2 L13.8,38.4 L16.4,27.1 L7.7,19.7 L19.2,18.7 Z" android:strokeColor="#00000000" android:strokeWidth="1.7" android:strokeLineCap="round" android:strokeLineJoin="round"/>
 </vector>

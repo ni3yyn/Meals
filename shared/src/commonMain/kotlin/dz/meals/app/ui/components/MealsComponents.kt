@@ -646,7 +646,7 @@ fun MealsIllustrationBadge(
             .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.96f)), CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        MealsIcon(icon, contentDescription = null, modifier = Modifier.size(size * 0.68f))
+        MealsIcon(icon, contentDescription = null, modifier = Modifier.size(size * 0.78f))
     }
 }
 

@@ -3,6 +3,7 @@ package dz.meals.app.ui.icons
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_icon_plan
 import dz.meals.app.shared.generated.resources.meals_icon_cookbook
@@ -72,7 +73,10 @@ fun MealsIcon(
     Image(
         painter = painterResource(name.drawable()),
         contentDescription = contentDescription,
-        modifier = modifier
+        modifier = modifier.graphicsLayer {
+            scaleX = 1.18f
+            scaleY = 1.18f
+        }
     )
 }
 
