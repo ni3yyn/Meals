@@ -12,19 +12,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Kitchen
-import androidx.compose.material.icons.outlined.Search
 import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -39,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.PantryItem
@@ -83,7 +78,7 @@ fun PantryScreen(
                 value = search,
                 onValueChange = { search = it.take(60) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                leadingIcon = { MealsIcon(MealsIconName.Search, contentDescription = null, modifier = Modifier.size(22.dp)) },
                 label = { Text("ابحث بالعربية أو الفرنسية أو الدارجة") },
                 singleLine = true
             )
@@ -120,7 +115,7 @@ fun PantryScreen(
                                 Text(ingredient.nameAr, color = MaterialTheme.colorScheme.onSurface)
                                 Text(ingredient.nameFr + " · " + ingredient.baseUnit, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             }
-                            Icon(Icons.Outlined.Add, contentDescription = "إضافة أو تعديل")
+                            MealsIcon(MealsIconName.Add, contentDescription = "إضافة أو تعديل", modifier = Modifier.size(23.dp))
                         }
                     }
                 }
@@ -140,7 +135,7 @@ fun PantryScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        MealsIllustrationBadge(icon = Icons.Outlined.Kitchen, size = 64.dp)
+                        MealsIllustrationBadge(icon = MealsIconName.Pantry, size = 64.dp)
                         Text("مخزونك فارغ", style = MaterialTheme.typography.titleLarge)
                         Text("اكتب اسم مكوّن في البحث ثم اختره لإضافته.", color = MutedInk)
                     }
@@ -175,11 +170,11 @@ fun PantryScreen(
                                     editingItem = item
                                     selectedIngredientId = item.ingredientId
                                 }) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = "تعديل المخزون")
+                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(21.dp))
                                     Text("تعديل")
                                 }
                                 TextButton(onClick = { onRemove(item.id) }) {
-                                    Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف")
+                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(21.dp))
                                 }
                             }
                         }

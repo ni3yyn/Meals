@@ -27,10 +27,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -46,7 +42,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -65,7 +60,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -95,6 +89,8 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.ui.theme.SoftPink
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsIconName
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = RoundedCornerShape(26.dp)
@@ -310,7 +306,7 @@ fun MealsPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: ImageVector? = null,
+    icon: MealsIconName? = null,
     showArrow: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -384,11 +380,7 @@ fun MealsPrimaryButton(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(19.dp)
-                    )
+                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(19.dp))
                     Spacer(Modifier.size(9.dp))
                 }
                 Text(
@@ -399,14 +391,7 @@ fun MealsPrimaryButton(
             }
 
             if (showArrow) {
-                Icon(
-                    imageVector = Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = if (enabled) 0.96f else 0.55f),
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .size(23.dp)
-                )
+                MealsIcon(name = MealsIconName.ChevronRight, contentDescription = null, modifier = Modifier.align(Alignment.CenterStart).size(23.dp).graphicsLayer { alpha = if (enabled) 0.96f else 0.55f })
             }
         }
     }
@@ -418,7 +403,7 @@ fun MealsSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: ImageVector? = null
+    icon: MealsIconName? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
@@ -490,11 +475,7 @@ fun MealsSecondaryButton(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(8.dp))
                 }
                 Text(
@@ -562,7 +543,7 @@ fun MealsChoiceTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     description: String? = null,
-    icon: ImageVector? = null
+    icon: MealsIconName? = null
 ) {
     MealsCard(
         modifier = modifier.fillMaxWidth().clickable(
@@ -586,7 +567,7 @@ fun MealsChoiceTile(
                         .background(if (selected) Color.White.copy(alpha = 0.78f) else SoftPink),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = Forest, modifier = Modifier.size(23.dp))
+                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(28.dp))
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -598,7 +579,7 @@ fun MealsChoiceTile(
                     modifier = Modifier.size(27.dp).clip(CircleShape).background(Forest),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Outlined.Check, contentDescription = "محدد", tint = Color.White, modifier = Modifier.size(17.dp))
+                    MealsIcon(name = MealsIconName.Check, contentDescription = "محدد", modifier = Modifier.size(20.dp))
                 }
             } else {
                 Box(
@@ -647,10 +628,9 @@ fun MealsSectionHeader(
 
 @Composable
 fun MealsIllustrationBadge(
-    icon: ImageVector,
+    icon: MealsIconName,
     modifier: Modifier = Modifier,
     background: Color = SoftGreen,
-    iconTint: Color = Forest,
     size: Dp = 54.dp
 ) {
     Box(
@@ -662,7 +642,7 @@ fun MealsIllustrationBadge(
             .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.96f)), CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(size * 0.46f))
+        MealsIcon(icon, contentDescription = null, modifier = Modifier.size(size * 0.68f))
     }
 }
 
@@ -755,7 +735,7 @@ fun MealsDialog(
                     }
                     if (showCloseButton) {
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Outlined.Close, contentDescription = "إغلاق", tint = MutedInk)
+                            MealsIcon(MealsIconName.Close, contentDescription = "إغلاق", modifier = Modifier.size(25.dp))
                         }
                     }
                 }
@@ -861,7 +841,7 @@ fun MealsBottomSheet(
  */
 data class MealsNavigationItem(
     val label: String,
-    val icon: ImageVector
+    val icon: MealsIconName
 )
 
 /**
@@ -965,12 +945,7 @@ fun MealsFrostedBottomBar(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label,
-                        tint = foreground,
-                        modifier = Modifier.size(23.dp * iconSize)
-                    )
+                    MealsIcon(name = item.icon, contentDescription = item.label, modifier = Modifier.size(25.dp * iconSize))
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = item.label,

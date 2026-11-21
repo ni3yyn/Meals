@@ -18,21 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Restaurant
-import androidx.compose.material.icons.outlined.Search
 import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,6 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
@@ -104,7 +97,7 @@ fun RecipesScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Outlined.Search, contentDescription = null, tint = MutedInk)
+                MealsIcon(MealsIconName.Search, contentDescription = null, modifier = Modifier.size(23.dp))
                 BasicTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -140,7 +133,7 @@ fun RecipesScreen(
                                 modifier = Modifier.size(48.dp).background(SoftGreen, RoundedCornerShape(22.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = Forest, modifier = Modifier.size(24.dp))
+                                MealsIcon(MealsIconName.Meal, contentDescription = null, modifier = Modifier.size(31.dp))
                             }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(recipe.nameAr, style = MaterialTheme.typography.titleLarge)
@@ -148,15 +141,11 @@ fun RecipesScreen(
                                 Text(recipe.nameFr, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             }
                             IconButton(onClick = { onToggleFavorite(recipe.id) }) {
-                                Icon(
-                                    if (recipe.id in favoriteRecipeIds) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                    contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة",
-                                    tint = Forest
-                                )
+                                MealsIcon(name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline, contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة", modifier = Modifier.size(27.dp))
                             }
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = MutedInk, modifier = Modifier.size(16.dp))
+                            MealsIcon(MealsIconName.Clock, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(recipe.durationMinutes.toString() + " د", color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             Text(recipe.baseServings.toString() + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             Spacer(Modifier.weight(1f))
@@ -174,10 +163,10 @@ fun RecipesScreen(
                                 label = "أضف إلى الأسبوع",
                                 onClick = { onAddRecipe(recipe.id) },
                                 modifier = Modifier.weight(1f),
-                                icon = Icons.Outlined.Add
+                                icon = MealsIconName.Add
                             )
                             TextButton(onClick = { selectedRecipeId = recipe.id }) {
-                                Icon(Icons.Outlined.Info, contentDescription = null)
+                                MealsIcon(MealsIconName.Info, contentDescription = null, modifier = Modifier.size(23.dp))
                                 Text("التفاصيل")
                             }
                         }

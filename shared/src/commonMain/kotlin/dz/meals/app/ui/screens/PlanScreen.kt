@@ -12,21 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.outlined.Restaurant
-import androidx.compose.material.icons.outlined.Refresh
 import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsIllustrationBadge
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSecondaryButton
@@ -109,10 +101,10 @@ fun PlanScreen(
                     )
                 }
                 IconButton(onClick = onPreviousWeek) {
-                    Icon(Icons.Outlined.ArrowForward, contentDescription = "الأسبوع السابق", tint = Forest)
+                    MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(26.dp))
                 }
                 IconButton(onClick = onNextWeek) {
-                    Icon(Icons.Outlined.ArrowBack, contentDescription = "الأسبوع التالي", tint = Forest)
+                    MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(26.dp))
                 }
             }
         }
@@ -144,9 +136,8 @@ fun PlanScreen(
                         )
                     }
                     MealsIllustrationBadge(
-                        icon = Icons.Outlined.AccountBalanceWallet,
+                        icon = MealsIconName.Wallet,
                         background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
-                        iconTint = Forest,
                         size = 62.dp
                     )
                 }
@@ -250,7 +241,7 @@ fun PlanScreen(
                 onClick = { onGenerate(fillEmptyOnly) },
                 enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
-                icon = Icons.Outlined.Refresh
+                icon = MealsIconName.Refresh
             )
             Text(
                 "نحافظ على الوجبات المقفلة. الحساسية والنمط الغذائي قيود إلزامية، أما وقت الطبخ وتجنب مكونات معينة فيؤثران في ترتيب الاقتراحات.",
@@ -437,11 +428,7 @@ private fun SlotRow(
                     onClick = onToggleLock,
                     modifier = Modifier.size(38.dp)
                 ) {
-                    Icon(
-                        if (meal.locked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
-                        contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
-                        tint = if (meal.locked) Forest else MutedInk
-                    )
+                    MealsIcon(name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen, contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة", modifier = Modifier.size(25.dp))
                 }
             }
             Row(
@@ -459,7 +446,7 @@ private fun SlotRow(
                     label = "تغيير",
                     onClick = { chooseRecipe = true },
                     modifier = Modifier.weight(1f),
-                    icon = Icons.Outlined.Refresh
+                    icon = MealsIconName.Refresh
                 )
             }
         } else {
@@ -467,7 +454,7 @@ private fun SlotRow(
                 label = "إضافة وصفة",
                 onClick = { chooseRecipe = true },
                 modifier = Modifier.fillMaxWidth(),
-                icon = Icons.Outlined.Add
+                icon = MealsIconName.Add
             )
         }
     }

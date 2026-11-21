@@ -16,17 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Kitchen
-import androidx.compose.material.icons.outlined.RestaurantMenu
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.SystemUpdateAlt
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -63,6 +53,8 @@ import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
 import dz.meals.app.data.currentWeekStartIso
 import dz.meals.app.ui.components.*
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsIconName
 import dev.chrisbanes.haze.hazeSource
 import dz.meals.app.ui.screens.PantryScreen
 import dz.meals.app.ui.screens.PlanScreen
@@ -177,10 +169,10 @@ private fun MealsAppContent() {
         }
         val navigationItems = remember {
             listOf(
-                MealsNavigationItem("الخطة", Icons.Outlined.CalendarMonth),
-                MealsNavigationItem("الوصفات", Icons.Outlined.RestaurantMenu),
-                MealsNavigationItem("المشتريات", Icons.Outlined.ShoppingCart),
-                MealsNavigationItem("المخزون", Icons.Outlined.Kitchen)
+                MealsNavigationItem("الخطة", MealsIconName.Plan),
+                MealsNavigationItem("الوصفات", MealsIconName.Cookbook),
+                MealsNavigationItem("المشتريات", MealsIconName.Basket),
+                MealsNavigationItem("المخزون", MealsIconName.Pantry)
             )
         }
         Scaffold(
@@ -198,13 +190,13 @@ private fun MealsAppContent() {
                             onClick = { showUpdateDialog = true },
                             modifier = Modifier.padding(end = 6.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftGreen)
                         ) {
-                            Icon(Icons.Outlined.SystemUpdateAlt, contentDescription = "تحديث التطبيق", tint = dz.meals.app.ui.theme.Forest)
+                            MealsIcon(MealsIconName.Update, contentDescription = "تحديث التطبيق", modifier = Modifier.size(25.dp))
                         }
                         IconButton(
                             onClick = { showSettings = true },
                             modifier = Modifier.padding(end = 10.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftPink)
                         ) {
-                            Icon(Icons.Outlined.Settings, contentDescription = "الإعدادات", tint = dz.meals.app.ui.theme.Forest)
+                            MealsIcon(MealsIconName.Settings, contentDescription = "الإعدادات", modifier = Modifier.size(25.dp))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -370,13 +362,13 @@ private fun MealsAppContent() {
                     onClick = { checkForAppUpdates() },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isCheckingForUpdates,
-                    icon = Icons.Outlined.Refresh
+                    icon = MealsIconName.Refresh
                 )
                 MealsSecondaryButton(
                     label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
                     onClick = { openLatestApk() },
                     modifier = Modifier.fillMaxWidth(),
-                    icon = Icons.Outlined.Download
+                    icon = MealsIconName.Download
                 )
             }
         }
@@ -542,7 +534,7 @@ private fun SettingsDialog(
                             title = label,
                             selected = diet == id,
                             onClick = { diet = id },
-                            icon = androidx.compose.material.icons.Icons.Outlined.RestaurantMenu
+                            icon = MealsIconName.Cookbook
                         )
                     }
                 }

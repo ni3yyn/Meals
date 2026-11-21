@@ -15,16 +15,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.ShoppingBasket
 import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -41,6 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsProgressBar
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealsSnapshot
@@ -123,7 +119,7 @@ fun ShoppingScreen(
                     color = Forest
                 )
                 TextButton(onClick = { addDialog = true }) {
-                    Icon(Icons.Outlined.Add, contentDescription = null)
+                    MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(20.dp))
                     Text("عنصر يدوي")
                 }
             }
@@ -178,7 +174,7 @@ fun ShoppingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Outlined.ShoppingBasket, contentDescription = null, tint = Forest, modifier = Modifier.size(48.dp))
+                MealsIcon(MealsIconName.Basket, contentDescription = null, modifier = Modifier.size(60.dp))
                 Text("قائمتك فارغة", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
                 Text("أضف وصفات إلى خطة الأسبوع أو أضف عنصراً يدوياً.", color = MutedInk, modifier = Modifier.padding(top = 6.dp))
             }
@@ -547,9 +543,9 @@ private fun ShoppingItemCard(
                 }
             }
             Column {
-                TextButton(onClick = onEdit) { Icon(Icons.Outlined.Edit, contentDescription = "تعديل") }
+                TextButton(onClick = onEdit) { MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(21.dp)) }
                 if (item.userAdded) {
-                    TextButton(onClick = onDelete) { Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف") }
+                    TextButton(onClick = onDelete) { MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(21.dp)) }
                 }
             }
         }

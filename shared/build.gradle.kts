@@ -34,7 +34,6 @@ kotlin {
             api(compose.foundation)
             api(compose.ui)
             api(compose.material3)
-            api(compose.materialIconsExtended)
             api(compose.components.resources)
             implementation(libs.kotlinx.datetime)
             api(libs.haze.core)
