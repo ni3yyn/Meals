@@ -69,7 +69,8 @@ import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.ui.theme.SoftPink
 
-private val LargeTileShape = RoundedCornerShape(26.dp)
+private val LargeTileShape = RoundedCornerShape(24.dp)
+private val MealsCardShape = RoundedCornerShape(26.dp)
 private val ButtonShape = RoundedCornerShape(22.dp)
 
 /**
@@ -86,7 +87,7 @@ fun MealsCard(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     contentPadding: Dp = 18.dp,
     borderColor: Color? = Border.copy(alpha = 0.72f),
-    shape: Shape = LargeTileShape,
+    shape: Shape = MealsCardShape,
     shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
