@@ -6,7 +6,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 ## Implemented milestone
 - Kotlin, Jetpack Compose and Material 3; Arabic RTL interface.
 - Room persistence for canonical ingredients, recipes, recipe ingredients, bilingual preparation steps, week slots, pantry items, price observations and shopping items.
-- DataStore for household budget, wilaya, household servings and allergy exclusions.
+- DataStore for budget, wilaya, household servings, selected meal slots, allergies, vegetarian/vegan pattern, soft disliked-ingredient preferences, preferred maximum cook time and budget buffer.
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
@@ -15,6 +15,9 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Pantry exact-quantity records and approximate reminders, with optional user-entered expiry dates and storage notes. Only numeric exact stock can reduce basket requirements.
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
+- Plan-run metadata saved per week: generator version, generation timestamp, price snapshot timestamp, budget, wilaya and selected meal slots.
+- Week-scoped shopping lists; generated and manually entered items remain associated with the plan week.
+- Shopping item details for manual purchase-quantity override, store notes, availability and user-entered actual spend.
 - Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.
 - Unit tests for serving scaling, exact/approximate pantry handling, package rounding and catalogue integrity.
@@ -33,11 +36,14 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 4. No account, location permission or network access is required.
 
 ### Weekly plan
-1. View seven days with lunch and dinner slots.
+1. View seven days with the selected breakfast, lunch and/or dinner slots.
 2. Generate a week using household servings, budget and strict allergy filtering.
 3. Lock meals that must remain unchanged.
 4. Replace or clear a slot, or change portion counts.
-5. The shopping basket recalculates from the whole plan.
+5. Plan generation treats allergies and vegetarian/vegan patterns as hard constraints. Disliked ingredients and preferred cook time are soft ranking inputs.
+6. A configurable budget buffer is applied to the planner target.
+7. Each generated week records its engine version and price snapshot.
+8. The shopping basket recalculates from the whole plan.
 
 ### Recipe discovery
 1. Search Arabic, French and catalogue aliases.
@@ -46,8 +52,8 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 4. Add a recipe to the next available meal slot.
 
 ### Pantry
-1. Select a canonical ingredient.
-2. Enter an exact quantity in its base unit, or mark the stock as approximate.
+1. Search ingredients by Arabic, French or stored aliases, then select a canonical ingredient.
+2. Enter an exact quantity in its base unit, or mark the stock as approximate. Existing records can be edited.
 3. Exact stock reduces the amount to buy.
 4. Approximate reminders are visible but never treated as exact quantities.
 
@@ -62,7 +68,8 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 1. Aggregate repeated ingredients across planned meals.
 2. Display recipe requirement, pantry deduction and purchase quantity separately.
 3. Round purchase quantity up to complete packages when pack-size data exists.
-4. Preserve checked state, group ingredients by category and allow manual additions or edits.
+4. Preserve checked state within that week, group ingredients by category and allow manual additions or edits.
+5. Edit a generated item's intended purchase amount, add a shop note, mark it unavailable or enter actual spend. Recipe requirements remain unchanged.
 
 ## Cost and price integrity
 The app distinguishes consumed ingredient value from cash required to buy full packages. A recipe requiring 120 g can have a 120 g consumed value while requiring a 500 g package purchase. Remaining package contents can be used later.
@@ -76,14 +83,15 @@ Price observations store canonical ingredient ID, pack size, normalized unit, DZ
 - Data is device-local. Clearing app storage or uninstalling removes the local plan and pantry.
 
 ## Remaining work from the full specification
-1. Expand and editorially review the recipe catalogue, regional coverage and bilingual instructions.
-2. Build real price-provider adapters, source/licence review, wilaya/commune and store observations, freshness handling and user-submitted price moderation.
-3. Add price entry and receipt capture with reviewed suggestions.
-4. Add ingredient substitution and budget optimization with transparent scoring.
-5. Add week history, meal-prep/cook mode, favourites, cookbooks and personal recipe creation/import.
-6. Add dietary profiles, nutrition calculations and more allergen controls after curating the data.
-7. Add data export/import, local backup, reminders and expiry tracking.
-8. Cloud sync, accounts, household invitations and server-side roles are deferred. They must remain optional and must never gate local use.
+1. Complete the first-run welcome/onboarding flow, Arabic/French UI localization, commune and shopping-channel preferences.
+2. Expand and editorially review the recipe catalogue, regional coverage, recipe versioning, attribution/licensing and bilingual instructions.
+3. Build real price-provider adapters, source/licence register, wilaya/commune/store observations, configurable freshness/confidence and moderation.
+4. Add receipt/photo price capture with explicit consent, redaction and user review.
+5. Add recipe import (Share sheet, URL, image and manual entry) with private draft review, plus editable personal recipes and cookbooks.
+6. Add optional pantry/fridge scan with user confirmation, expiry reminders and cooked-meal stock deduction with undo.
+7. Add transparent bounded-swap plan optimization, ingredient substitutions and more complete budget feasibility explanations.
+8. Add data export/import, local backup, notifications and accessibility/performance/device tests.
+9. Cloud sync, accounts, household invitations/roles, subscriptions, purchase verification, admin console and server operations are deferred. They must remain optional and must never gate local use.
 
 ## Architecture
 - Single-activity Compose UI.

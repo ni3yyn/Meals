@@ -85,6 +85,9 @@ interface MealsDao {
     @Query("UPDATE shopping_items SET weekStartIso = :weekStartIso WHERE weekStartIso = ''")
     suspend fun assignUnscopedShoppingItemsToWeek(weekStartIso: String): Int
 
+    @Query("UPDATE shopping_items SET id = weekStartIso || '::' || id WHERE userAdded = 0 AND weekStartIso <> '' AND instr(id, '::') = 0")
+    suspend fun scopeLegacyGeneratedShoppingItemIds(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertShoppingItems(items: List<ShoppingItemEntity>)
 

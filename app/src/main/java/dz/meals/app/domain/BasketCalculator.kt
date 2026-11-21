@@ -12,6 +12,37 @@ private data class RequirementKey(val ingredientId: String, val unit: String)
 
 private const val MAX_PRICE_AGE_MILLIS = 30L * 24L * 60L * 60L * 1000L
 
+fun isRecipeAllowed(
+    recipe: MealRecipe,
+    ingredientCategories: Map<String, String>,
+    allergyIds: Set<String>,
+    dietPattern: String
+): Boolean {
+    if (recipe.allergens.intersect(allergyIds).isNotEmpty()) return false
+    return when (dietPattern) {
+        "vegetarian" -> recipe.ingredients.none {
+            ingredientCategories[it.ingredientId] == "لحوم ودواجن"
+        }
+        "vegan" -> recipe.ingredients.none {
+            ingredientCategories[it.ingredientId] in setOf("لحوم ودواجن", "ألبان وبيض")
+        }
+        else -> true
+    }
+}
+
+fun softPreferencePenalty(
+    recipe: MealRecipe,
+    dislikedIngredientIds: Set<String>,
+    maxCookingMinutes: Int
+): Double {
+    val dislikedPenalty = recipe.ingredients
+        .filter { it.ingredientId in dislikedIngredientIds }
+        .sumOf { it.quantityBase.coerceAtMost(500.0) } * 2.0
+    val timePenalty = (recipe.durationMinutes - maxCookingMinutes.coerceIn(10, 240))
+        .coerceAtLeast(0) * 25.0
+    return dislikedPenalty + timePenalty
+}
+
 fun findLockedAllergyConflict(
     lockedMeals: List<PlannedMeal>,
     recipes: List<MealRecipe>,

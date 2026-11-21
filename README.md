@@ -9,16 +9,18 @@ The app opens directly into the planner. No authentication, email, phone number,
 - Arabic-first Jetpack Compose interface with right-to-left layout.
 - Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
 - Seven-day planner with breakfast, lunch and dinner slots and deterministic local plan generation.
-- Household serving scaling, lockable meal slots and previous/next week navigation.
+- Household serving scaling, configurable breakfast/lunch/dinner slots and previous/next week navigation.
+- Vegetarian/vegan hard filters plus soft preferences for disliked ingredients and preferred cooking time.
+- Configurable budget safety buffer and per-week plan generator/price-snapshot metadata.
 - Locally saved favourite recipes.
 - Configurable allergy exclusions applied as hard recipe filters, including checks against locked meals during plan generation.
 - User price observations expire from basket calculations after 30 days; old reports remain visible as history but are not treated as current prices.
 - Arabic/French recipe and ingredient-alias search.
-- Exact pantry deductions; approximate stock is a reminder and is never deducted.
+- Searchable pantry ingredient picker, editable stock records, exact deductions and approximate-stock reminders.
 - Optional pantry expiry dates and storage notes, stored locally.
 - Consolidated shopping requirements and whole-pack rounding.
 - Consumed-ingredient value separated from cash needed to buy packages.
-- Manual shopping items with in-place editing and persistent check-off state, grouped by ingredient category.
+- Week-specific shopping lists with category grouping, persistent checks, editable generated purchase amounts, shop notes, unavailable flags and actual-spend entry.
 - Local price observations with pack size, date, shop context and wilaya; reported values remain unverified and device-local.
 - Weekly budget, wilaya and household preferences stored locally.
 - R8 minification, obfuscation and resource shrinking in release builds.

@@ -7,6 +7,8 @@ import dz.meals.app.data.SeedRecipes
 import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.domain.findLockedAllergyConflict
+import dz.meals.app.domain.isRecipeAllowed
+import dz.meals.app.domain.softPreferencePenalty
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -153,6 +155,28 @@ class BasketCalculatorTest {
         assertEquals("none", defaults.dietPattern)
         assertTrue(defaults.budgetBufferPercent in 0..30)
         assertTrue(defaults.maxCookingMinutes in 10..240)
+    }
+
+    @Test
+    fun vegetarianAndVeganFiltersUseCanonicalIngredientCategories() {
+        val chickenRecipe = recipe.copy(
+            ingredients = listOf(RecipeIngredient("chicken", 300.0, "g"))
+        )
+        val categories = mapOf("chicken" to "لحوم ودواجن")
+        assertTrue(!isRecipeAllowed(chickenRecipe, categories, emptySet(), "vegetarian"))
+        assertTrue(!isRecipeAllowed(chickenRecipe, categories, emptySet(), "vegan"))
+        assertTrue(isRecipeAllowed(chickenRecipe, categories, emptySet(), "none"))
+        assertTrue(!isRecipeAllowed(recipe, emptyMap(), setOf("milk"), "none"))
+    }
+
+    @Test
+    fun cookingTimeAndDislikedIngredientsAreSoftRankingPenalties() {
+        val baseline = softPreferencePenalty(recipe, emptySet(), 60)
+        val withDisliked = softPreferencePenalty(recipe, setOf("potato"), 60)
+        val withTimeLimit = softPreferencePenalty(recipe, emptySet(), 10)
+        assertEquals(0.0, baseline, 0.0001)
+        assertTrue(withDisliked > baseline)
+        assertTrue(withTimeLimit > baseline)
     }
 
     @Test

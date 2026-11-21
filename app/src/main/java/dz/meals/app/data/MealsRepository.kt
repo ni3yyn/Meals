@@ -16,6 +16,8 @@ import dz.meals.app.data.local.RecipeStepEntity
 import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.calculateBasket
 import dz.meals.app.domain.findLockedAllergyConflict
+import dz.meals.app.domain.isRecipeAllowed
+import dz.meals.app.domain.softPreferencePenalty
 import java.time.LocalDate
 import java.util.UUID
 
@@ -26,6 +28,7 @@ class MealsRepository(context: Context) {
     suspend fun ensureInitialized() {
         SeedRecipes.validateCatalogue()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
+        dao.scopeLegacyGeneratedShoppingItemIds()
         if (dao.recipeCount() > 0) return
         database.withTransaction {
             dao.insertIngredients(SeedRecipes.ingredients.map {
@@ -219,15 +222,9 @@ class MealsRepository(context: Context) {
             )
         }
         val ingredientsById = dao.getIngredients().associateBy { it.id }
+        val ingredientCategories = ingredientsById.mapValues { it.value.category }
         val allowed = recipes.filter { recipe ->
-            recipe.allergens.intersect(allergyIds).isEmpty() &&
-                when (dietPattern) {
-                    "vegetarian" -> recipe.ingredients.none { ingredientsById[it.ingredientId]?.category == "لحوم ودواجن" }
-                    "vegan" -> recipe.ingredients.none {
-                        ingredientsById[it.ingredientId]?.category in setOf("لحوم ودواجن", "ألبان وبيض")
-                    }
-                    else -> true
-                }
+            isRecipeAllowed(recipe, ingredientCategories, allergyIds, dietPattern)
         }
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
@@ -255,12 +252,8 @@ class MealsRepository(context: Context) {
                 val basket = calculateBasket(trial, recipes, pantry, prices, selectedWilaya = selectedWilaya)
                 val repeatPenalty = (repeats[recipe.id] ?: 0) * 420.0
                 val overBudgetPenalty = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0) * 3.0
-                val dislikedPenalty = recipe.ingredients
-                    .filter { it.ingredientId in dislikedIngredientIds }
-                    .sumOf { it.quantityBase.coerceAtMost(500.0) } * 2.0
-                val timePenalty = (recipe.durationMinutes - maxCookingMinutes.coerceIn(10, 240))
-                    .coerceAtLeast(0) * 25.0
-                basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty + dislikedPenalty + timePenalty
+                val preferencePenalty = softPreferencePenalty(recipe, dislikedIngredientIds, maxCookingMinutes)
+                basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty + preferencePenalty
             } ?: allowed.minBy { it.id }
 
             chosen[id] = PlannedMeal(
