@@ -1,6 +1,6 @@
 # مائدتي (Meals)
 
-Native Kotlin Android meal planner for Algeria.
+Kotlin Multiplatform meal planner for Algeria, built with Jetpack Compose and Compose Multiplatform. Android remains the current application host; reusable UI, theme tokens, domain models and the recipe catalogue are being shared through the `:shared` module. Android and iOS targets are configured, while iOS persistence and the complete iOS app host remain in the migration roadmap.
 
 ## No-auth policy
 The app opens directly into local first-run setup and then the planner. No authentication, email, phone number, OTP, cloud account or user-account system is included. The core app works offline.
@@ -8,7 +8,10 @@ The app opens directly into local first-run setup and then the planner. No authe
 Kitchen-equipment awareness and recipe filtering based on equipment are intentionally excluded.
 
 ## Implemented
-- Arabic-first Jetpack Compose interface with right-to-left layout.
+- Arabic-first Compose interface with right-to-left layout.
+- KMP `:shared` module targeting Android, iOS devices and iOS simulators.
+- Shared Compose component library, Mida theme and color tokens in `shared/src/commonMain`.
+- Shared Kotlin data models and bundled Algerian ingredient/recipe catalogue in `commonMain`.
 - Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
 - Seven-day planner with breakfast, lunch and dinner slots and deterministic local plan generation.
 - Household serving scaling, configurable breakfast/lunch/dinner slots and previous/next week navigation.
@@ -46,7 +49,7 @@ See [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) for status and the remaining ro
 
 ## Signed releases and in-app updates
 
-Pushing to `main` runs the signed release workflow. It increments the patch version from the latest stable release, builds the R8-minified release variant, verifies the APK signature and package ID, then publishes `meals.apk` as a GitHub Release asset. The app's update button checks the latest stable release and opens that APK through Android's browser/download flow.
+Pushing a `v*` version tag or manually dispatching the signed release workflow publishes an APK. The workflow builds the R8-minified Android release variant, verifies the APK signature and package ID, uploads a 90-day Actions artifact, then publishes `meals.apk` as a GitHub Release asset. The app's update button checks the latest stable release and opens that APK through Android's browser/download flow.
 
 The release workflow requires these repository Actions secrets:
 
@@ -58,3 +61,8 @@ The release workflow requires these repository Actions secrets:
 Create the keystore once with `keytool -genkeypair -v -keystore meals-release.jks -alias meals -keyalg RSA -keysize 4096 -validity 10000`, encode it with `base64 -w0 meals-release.jks`, and save the result and passwords in **Settings → Secrets and variables → Actions** for this repository. Keep a secure offline backup of the keystore. Never commit it, and do not replace or lose it: every update to an installed release must use the same signing key.
 
 The normal Android CI workflow intentionally uploads only the debug APK. It no longer publishes an unsigned release APK that Android cannot install.
+
+
+## Kotlin Multiplatform migration
+
+See [docs/MULTIPLATFORM_MIGRATION.md](docs/MULTIPLATFORM_MIGRATION.md) for the shared source-set layout, platform boundaries and remaining work before iOS is release-ready.
