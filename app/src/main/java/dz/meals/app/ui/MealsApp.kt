@@ -1,6 +1,8 @@
 package dz.meals.app.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
@@ -243,7 +245,7 @@ fun MealsApp() {
             ingredients = snapshot.ingredients,
             isFirstSetup = !preferences.hasCompletedSetup,
             onDismiss = { showSettings = false },
-            onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer ->
+            onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer, commune, shoppingChannel, preferredShop ->
                 scope.launch {
                     preferencesStore.saveSettings(
                         budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer,
