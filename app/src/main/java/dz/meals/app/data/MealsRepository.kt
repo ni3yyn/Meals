@@ -189,8 +189,8 @@ class MealsRepository(context: Context) {
             planRun = savedRun?.toModel(),
             basket = basket.copy(
                 items = shoppingItems,
-                purchaseOutlayDzd = autoItems.sumOf { it.cashOutlayDzd ?: 0.0 },
-                unknownPriceCount = autoItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
+                purchaseOutlayDzd = shoppingItems.sumOf { it.cashOutlayDzd ?: 0.0 },
+                unknownPriceCount = shoppingItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
                 actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 }
             )
         )
@@ -484,9 +484,15 @@ class MealsRepository(context: Context) {
         dao.setShoppingItemChecked(id, checked, System.currentTimeMillis())
     }
 
-    suspend fun addCustomShoppingItem(weekStartIso: String, name: String, quantity: Double, unit: String) {
+    suspend fun addCustomShoppingItem(
+        weekStartIso: String,
+        name: String,
+        quantity: Double,
+        unit: String,
+        estimatedPriceDzd: Double? = null
+    ) {
         val cleanName = name.trim()
-        if (cleanName.isEmpty() || quantity <= 0.0) return
+        if (cleanName.isEmpty() || quantity <= 0.0 || (estimatedPriceDzd != null && estimatedPriceDzd < 0.0)) return
         val id = "custom-" + UUID.randomUUID().toString()
         dao.upsertShoppingItems(
             listOf(
@@ -499,9 +505,9 @@ class MealsRepository(context: Context) {
                     purchaseQuantity = quantity,
                     unit = unit.trim().ifBlank { "حبة" },
                     consumedValueDzd = null,
-                    cashOutlayDzd = null,
-                    priceLabel = null,
-                    sourceLabel = null,
+                    cashOutlayDzd = estimatedPriceDzd,
+                    priceLabel = if (estimatedPriceDzd != null) "سعر يدوي" else null,
+                    sourceLabel = if (estimatedPriceDzd != null) "سعر أدخله المستخدم · غير موثّق" else null,
                     isApproximatePantry = false,
                     checked = false,
                     userAdded = true,

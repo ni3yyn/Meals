@@ -21,7 +21,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Week-scoped shopping lists; generated and manually entered items remain associated with the plan week.
 - Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone.
 - Manual plan edits are persisted separately from generated suggestions so regeneration cannot silently replace user decisions. Approximate stock is never deducted.
-- Shopping item details for manual purchase-quantity override, store notes, availability and user-entered actual spend.
+- Shopping item details for manual purchase-quantity override, store notes, availability and user-entered actual spend; custom items can carry an optional total price estimate.
 - Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.
 - Unit tests for serving scaling, exact/approximate pantry handling, package rounding and catalogue integrity.
@@ -75,6 +75,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 3. Round purchase quantity up to complete packages when pack-size data exists.
 4. Preserve checked state within that week, group ingredients by category and allow manual additions or edits.
 5. Edit a generated item's intended purchase amount, add a shop note, mark it unavailable or enter actual spend. Recipe requirements remain unchanged.
+6. User-created items can include an optional total estimated price; unpriced custom items remain visibly unknown rather than counted as zero.
 
 ## Cost and price integrity
 The app distinguishes consumed ingredient value from cash required to buy full packages. A recipe requiring 120 g can have a 120 g consumed value while requiring a 500 g package purchase. Remaining package contents can be used later.

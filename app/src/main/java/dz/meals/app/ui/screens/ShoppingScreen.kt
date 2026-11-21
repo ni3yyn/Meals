@@ -62,7 +62,7 @@ fun ShoppingScreen(
     ingredients: List<IngredientMaster>,
     wilaya: String,
     onToggleItem: (String, Boolean) -> Unit,
-    onAddCustomItem: (String, Double, String) -> Unit,
+    onAddCustomItem: (String, Double, String, Double?) -> Unit,
     onEditCustomItem: (String, String, Double, String) -> Unit,
     onUpdateItemDetails: (String, Double?, String, Boolean, Double?) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
@@ -74,6 +74,7 @@ fun ShoppingScreen(
     var itemName by rememberSaveable { mutableStateOf("") }
     var itemQuantity by rememberSaveable { mutableStateOf("1") }
     var itemUnit by rememberSaveable { mutableStateOf("حبة") }
+    var itemEstimatedPrice by rememberSaveable { mutableStateOf("") }
     var editName by rememberSaveable { mutableStateOf("") }
     var editQuantity by rememberSaveable { mutableStateOf("1") }
     var editUnit by rememberSaveable { mutableStateOf("حبة") }
@@ -120,6 +121,18 @@ fun ShoppingScreen(
                     Icon(Icons.Outlined.Add, contentDescription = null)
                     Text("عنصر يدوي")
                 }
+            }
+            if (snapshot.basket.actualSpendDzd > 0.0) {
+                Text(
+                    "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().asDzd(),
+                    color = Forest,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "هذا المجموع يشمل المبالغ التي أدخلتها فقط، وليس قيمة العناصر المحددة تلقائياً.",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -206,21 +219,36 @@ fun ShoppingScreen(
                         singleLine = true
                     )
                     OutlinedTextField(value = itemUnit, onValueChange = { itemUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
+                    OutlinedTextField(
+                        value = itemEstimatedPrice,
+                        onValueChange = { itemEstimatedPrice = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
+                        label = { Text("السعر الإجمالي التقديري (اختياري)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        suffix = { Text("دج") },
+                        singleLine = true
+                    )
                 }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val quantity = itemQuantity.replace(',', '.').toDoubleOrNull()
-                        if (quantity != null && quantity > 0 && itemName.isNotBlank()) {
-                            onAddCustomItem(itemName, quantity, itemUnit)
+                        val estimatedPrice = itemEstimatedPrice.takeIf { it.isNotBlank() }
+                            ?.replace(',', '.')?.toDoubleOrNull()
+                        if (quantity != null && quantity > 0 && itemName.isNotBlank() &&
+                            (itemEstimatedPrice.isBlank() || (estimatedPrice != null && estimatedPrice >= 0.0))
+                        ) {
+                            onAddCustomItem(itemName, quantity, itemUnit, estimatedPrice)
                             itemName = ""
                             itemQuantity = "1"
                             itemUnit = "حبة"
+                            itemEstimatedPrice = ""
                             addDialog = false
                         }
                     },
-                    enabled = itemName.isNotBlank() && (itemQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0
+                    enabled = itemName.isNotBlank() &&
+                        (itemQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0 &&
+                        (itemEstimatedPrice.isBlank() || (itemEstimatedPrice.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 ) { Text("إضافة") }
             },
             dismissButton = { TextButton(onClick = { addDialog = false }) { Text("إلغاء") } }
@@ -463,7 +491,8 @@ private fun ShoppingItemCard(
                 )
                 Text(
                     "المطلوب " + item.requiredQuantity.pretty() + " " + item.unit +
-                        if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.pretty() else "",
+                        " · الصافي " + (item.requiredQuantity - item.pantryQuantity).coerceAtLeast(0.0).pretty() +
+                        (if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.pretty() else ""),
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
                 )
