@@ -1,5 +1,6 @@
 package dz.meals.app.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -86,6 +88,7 @@ fun ShoppingScreen(
 
     val checkedCount = snapshot.shoppingItems.count { it.checked }
     val rows = snapshot.shoppingItems
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -133,6 +136,22 @@ fun ShoppingScreen(
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = {
+                        val body = buildShoppingShareText(rows, snapshot)
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات مائدتي")
+                            putExtra(Intent.EXTRA_TEXT, body)
+                        }
+                        runCatching {
+                            context.startActivity(Intent.createChooser(send, "مشاركة قائمة المشتريات"))
+                        }
+                    },
+                    enabled = rows.isNotEmpty()
+                ) { Text("مشاركة القائمة") }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -532,3 +551,33 @@ private fun Double.pretty(): String =
 
 private fun Int.asDzd(): String =
     NumberFormat.getIntegerInstance(Locale("fr", "DZ")).format(this) + " دج"
+
+
+private fun buildShoppingShareText(rows: List<ShoppingListItem>, snapshot: MealsSnapshot): String = buildString {
+    appendLine("قائمة مشتريات مائدتي")
+    appendLine("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().asDzd())
+    if (snapshot.basket.actualSpendDzd > 0.0) {
+        appendLine("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().asDzd())
+    }
+    appendLine()
+    rows.groupBy { it.category }.toSortedMap().forEach { (category, items) ->
+        appendLine(category)
+        items.forEach { item ->
+            append(if (item.checked) "[x] " else "[ ] ")
+            append(item.name)
+            append(" — ")
+            append(item.purchaseQuantity.pretty())
+            append(" ")
+            append(item.unit)
+            item.cashOutlayDzd?.let { append(" · " + it.toInt().asDzd()) }
+            if (item.isUnavailable) append(" · غير متوفر")
+            if (item.storeNote.isNotBlank()) append(" · " + item.storeNote)
+            appendLine()
+        }
+        appendLine()
+    }
+    if (snapshot.basket.unknownPriceCount > 0) {
+        appendLine("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.")
+    }
+    append("الأسعار تقديرية وليست ضماناً لسعر المحل أو التوفر.")
+}
