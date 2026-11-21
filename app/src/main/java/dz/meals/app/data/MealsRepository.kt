@@ -343,7 +343,33 @@ class MealsRepository(context: Context) {
                 servings = servings.coerceIn(1, 12),
                 locked = old?.locked ?: false,
                 isCooked = old?.isCooked ?: false,
-                isUserEdited = true
+                isUserEdited = true,
+                isLeftover = false
+            )
+        )
+    }
+
+    suspend fun setMealFromLeftovers(
+        weekStartIso: String,
+        dayIndex: Int,
+        mealSlot: String,
+        servings: Int
+    ) {
+        val id = "$weekStartIso-$dayIndex-$mealSlot"
+        val old = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id }
+        if (old?.isCooked == true) return
+        dao.upsertPlanMeal(
+            PlanMealEntity(
+                id = id,
+                weekStartIso = weekStartIso,
+                dayIndex = dayIndex,
+                mealSlot = mealSlot,
+                recipeId = null,
+                servings = (old?.servings ?: servings).coerceIn(1, 12),
+                locked = false,
+                isCooked = false,
+                isUserEdited = true,
+                isLeftover = true
             )
         )
     }
@@ -430,7 +456,9 @@ class MealsRepository(context: Context) {
         val current = dao.getPlanMeals(weekStartIso)
         val empty = (0 until 7).asSequence()
             .flatMap { day -> MealSlots.ids.asSequence().map { slot -> day to slot } }
-            .firstOrNull { (day, slot) -> current.none { it.dayIndex == day && it.mealSlot == slot && it.recipeId != null } }
+            .firstOrNull { (day, slot) ->
+            current.none { it.dayIndex == day && it.mealSlot == slot && (it.recipeId != null || it.isLeftover) }
+        }
             ?: return
         setMeal(weekStartIso, empty.first, empty.second, recipeId, servings)
     }
@@ -680,7 +708,8 @@ private fun PlanMealEntity.toModel() = PlannedMeal(
     servings = servings,
     locked = locked,
     isCooked = isCooked,
-    isUserEdited = isUserEdited
+    isUserEdited = isUserEdited,
+    isLeftover = isLeftover
 )
 
 private fun PlannedMeal.toEntity() = PlanMealEntity(
@@ -692,7 +721,8 @@ private fun PlannedMeal.toEntity() = PlanMealEntity(
     servings = servings,
     locked = locked,
     isCooked = isCooked,
-    isUserEdited = isUserEdited
+    isUserEdited = isUserEdited,
+    isLeftover = isLeftover
 )
 
 private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = ShoppingListItem(

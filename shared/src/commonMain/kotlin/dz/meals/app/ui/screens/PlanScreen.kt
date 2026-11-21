@@ -63,6 +63,7 @@ fun PlanScreen(
     isGenerating: Boolean,
     onGenerate: (Boolean) -> Unit,
     onSetMeal: (Int, String, String?) -> Unit,
+    onSetMealFromLeftovers: (Int, String) -> Unit,
     onToggleLock: (String) -> Unit,
     onToggleCooked: (String) -> Unit,
     onAdjustServings: (String, Int) -> Unit,
@@ -267,6 +268,7 @@ fun PlanScreen(
                         recipe = breakfast?.recipeId?.let(recipesById::get),
                         recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
                         onSelect = { recipeId -> onSetMeal(day, "breakfast", recipeId) },
+                        onSetLeftovers = { onSetMealFromLeftovers(day, "breakfast") },
                         onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
                         onToggleCooked = {
                             breakfast?.let { meal ->
@@ -282,6 +284,7 @@ fun PlanScreen(
                         recipe = lunch?.recipeId?.let(recipesById::get),
                         recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
                         onSelect = { recipeId -> onSetMeal(day, "lunch", recipeId) },
+                        onSetLeftovers = { onSetMealFromLeftovers(day, "lunch") },
                         onToggleLock = { lunch?.let { onToggleLock(it.id) } },
                         onToggleCooked = {
                             lunch?.let { meal ->
@@ -297,6 +300,7 @@ fun PlanScreen(
                         recipe = dinner?.recipeId?.let(recipesById::get),
                         recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
                         onSelect = { recipeId -> onSetMeal(day, "dinner", recipeId) },
+                        onSetLeftovers = { onSetMealFromLeftovers(day, "dinner") },
                         onToggleLock = { dinner?.let { onToggleLock(it.id) } },
                         onToggleCooked = {
                             dinner?.let { meal ->
@@ -351,6 +355,7 @@ private fun SlotRow(
     recipe: MealRecipe?,
     recipes: List<MealRecipe>,
     onSelect: (String?) -> Unit,
+    onSetLeftovers: () -> Unit,
     onToggleLock: () -> Unit,
     onToggleCooked: () -> Unit,
     onAdjustServings: (Int) -> Unit
@@ -372,8 +377,8 @@ private fun SlotRow(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = recipe?.nameAr ?: "لم يتم اختيار وجبة بعد",
-                color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
+                text = if (meal?.isLeftover == true) "وجبة من البقايا" else recipe?.nameAr ?: "لم يتم اختيار وجبة بعد",
+                color = if (meal?.isLeftover == true || recipe != null) dz.meals.app.ui.theme.Ink else MutedInk,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
@@ -383,6 +388,13 @@ private fun SlotRow(
                 Text(
                     recipe.durationMinutes.toString() + " دقيقة",
                     color = MutedInk,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            if (meal?.isLeftover == true) {
+                Text(
+                    "من دون مكوّنات إضافية في قائمة التسوق",
+                    color = Forest,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -451,7 +463,7 @@ private fun SlotRow(
             }
         } else {
             MealsSecondaryButton(
-                label = "إضافة وصفة",
+                label = if (meal?.isLeftover == true) "تغيير الوجبة" else "إضافة وصفة",
                 onClick = { chooseRecipe = true },
                 modifier = Modifier.fillMaxWidth(),
                 icon = MealsIconName.Add
@@ -465,6 +477,24 @@ private fun SlotRow(
             title = { Text("اختر وصفة لـ " + title) },
             text = {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    item {
+                        TextButton(
+                            onClick = {
+                                onSetLeftovers()
+                                chooseRecipe = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.fillMaxWidth()) {
+                                Text("وجبة من البقايا", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "من دون مكوّنات إضافية في قائمة التسوق",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
                     items(recipes, key = { it.id }) { item ->
                         TextButton(
                             onClick = {

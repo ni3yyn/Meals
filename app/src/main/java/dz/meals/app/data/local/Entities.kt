@@ -66,7 +66,8 @@ data class PlanMealEntity(
     val servings: Int,
     val locked: Boolean,
     @ColumnInfo(defaultValue = "0") val isCooked: Boolean = false,
-    @ColumnInfo(defaultValue = "0") val isUserEdited: Boolean = false
+    @ColumnInfo(defaultValue = "0") val isUserEdited: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val isLeftover: Boolean = false
 )
 
 @Entity(
