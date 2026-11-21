@@ -69,6 +69,12 @@ fun PlanScreen(
     var showBudgetInfo by rememberSaveable { mutableStateOf(false) }
     val recipesById = snapshot.recipes.associateBy { it.id }
 
+    val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
+        meal.locked && meal.recipeId?.let { recipeId ->
+            recipesById[recipeId]?.allergens?.intersect(preferences.allergyIds)?.isNotEmpty()
+        } == true
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 14.dp),
@@ -132,6 +138,21 @@ fun PlanScreen(
                     TextButton(onClick = { showBudgetInfo = true }) {
                         Text("ما الفرق بين القيمتين؟", color = androidx.compose.ui.graphics.Color.White)
                     }
+                }
+            }
+        }
+        if (unsafeLockedMeal != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFFFF1DE)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        "تنبيه مهم: توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. لن تُعاد كتابة الخطة حتى تفتح قفل هذه الوجبة أو تستبدلها.",
+                        modifier = Modifier.padding(14.dp),
+                        color = androidx.compose.ui.graphics.Color(0xFF6A3D12),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }

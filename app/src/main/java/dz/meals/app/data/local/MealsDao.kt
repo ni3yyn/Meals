@@ -10,6 +10,15 @@ interface MealsDao {
     @Query("SELECT COUNT(*) FROM recipes")
     suspend fun recipeCount(): Int
 
+    @Query("SELECT recipeId FROM favorite_recipes")
+    suspend fun getFavoriteRecipeIds(): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertFavoriteRecipe(item: FavoriteRecipeEntity)
+
+    @Query("DELETE FROM favorite_recipes WHERE recipeId = :recipeId")
+    suspend fun removeFavoriteRecipe(recipeId: String)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIngredients(items: List<IngredientEntity>)
 

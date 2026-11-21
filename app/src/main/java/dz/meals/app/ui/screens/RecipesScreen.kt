@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
@@ -31,6 +33,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,13 +56,15 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 
-private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
+private val recipeCategories = listOf("الكل", "المفضلة", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
 @Composable
 fun RecipesScreen(
     recipes: List<MealRecipe>,
     ingredients: List<IngredientMaster>,
     allergyIds: Set<String>,
+    favoriteRecipeIds: Set<String>,
+    onToggleFavorite: (String) -> Unit,
     onAddRecipe: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -70,7 +75,9 @@ fun RecipesScreen(
     val filtered = recipes.filter { recipe ->
         val aliases = recipe.ingredients.flatMap { ingredientNames[it.ingredientId]?.aliases.orEmpty() }
         recipe.allergens.intersect(allergyIds).isEmpty() &&
-            (category == "الكل" || recipe.category == category) &&
+            (category == "الكل" ||
+                (category == "المفضلة" && recipe.id in favoriteRecipeIds) ||
+                (category != "المفضلة" && recipe.category == category)) &&
             (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
                 recipe.nameFr.contains(query.trim(), true) ||
                 recipe.descriptionAr.contains(query.trim(), true) ||
@@ -138,6 +145,13 @@ fun RecipesScreen(
                                 Text(recipe.descriptionAr, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
                                 Text(recipe.nameFr, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             }
+                            IconButton(onClick = { onToggleFavorite(recipe.id) }) {
+                                Icon(
+                                    if (recipe.id in favoriteRecipeIds) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                    contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة",
+                                    tint = Forest
+                                )
+                            }
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = MutedInk, modifier = Modifier.size(16.dp))
@@ -174,7 +188,8 @@ fun RecipesScreen(
             if (filtered.isEmpty()) {
                 item {
                     Text(
-                        if (recipes.any { it.allergens.intersect(allergyIds).isNotEmpty() }) "لا توجد وصفات مطابقة. قد تكون قيود الحساسية تستبعد بعض النتائج."
+                        if (category == "المفضلة") "لم تحفظ وصفات في المفضلة بعد."
+                        else if (recipes.any { it.allergens.intersect(allergyIds).isNotEmpty() }) "لا توجد وصفات مطابقة. قد تكون قيود الحساسية تستبعد بعض النتائج."
                         else "لا توجد وصفات مطابقة لبحثك.",
                         color = MutedInk,
                         modifier = Modifier.padding(16.dp)

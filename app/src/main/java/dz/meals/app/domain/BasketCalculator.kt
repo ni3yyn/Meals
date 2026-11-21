@@ -10,13 +10,29 @@ import kotlin.math.ceil
 
 private data class RequirementKey(val ingredientId: String, val unit: String)
 
+private const val MAX_PRICE_AGE_MILLIS = 30L * 24L * 60L * 60L * 1000L
+
+fun findLockedAllergyConflict(
+    lockedMeals: List<PlannedMeal>,
+    recipes: List<MealRecipe>,
+    allergyIds: Set<String>
+): String? {
+    if (allergyIds.isEmpty()) return null
+    val recipesById = recipes.associateBy { it.id }
+    return lockedMeals.firstNotNullOfOrNull { meal ->
+        val recipe = meal.recipeId?.let(recipesById::get) ?: return@firstNotNullOfOrNull null
+        recipe.id.takeIf { recipe.allergens.intersect(allergyIds).isNotEmpty() }
+    }
+}
+
 fun calculateBasket(
     plannedMeals: List<PlannedMeal>,
     recipes: List<MealRecipe>,
     pantry: List<PantryItemEntity>,
     prices: List<PriceObservationEntity>,
     checkedItemIds: Set<String> = emptySet(),
-    selectedWilaya: String? = null
+    selectedWilaya: String? = null,
+    nowEpochMillis: Long = System.currentTimeMillis()
 ): BasketSummary {
     val recipesById = recipes.associateBy { it.id }
     val required = linkedMapOf<RequirementKey, Double>()
@@ -42,10 +58,20 @@ fun calculateBasket(
         val compatiblePrices = priceByIngredient[key.ingredientId]
             .orEmpty()
             .filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd > 0.0 }
+        val freshPrices = compatiblePrices.filter { observation ->
+            if (observation.priceKind == "demo") {
+                true
+            } else {
+                val observedAt = observation.observedAtEpochMillis
+                observedAt != null &&
+                    nowEpochMillis >= observedAt &&
+                    nowEpochMillis - observedAt <= MAX_PRICE_AGE_MILLIS
+            }
+        }
         val relevantPrices = if (selectedWilaya.isNullOrBlank()) {
-            compatiblePrices
+            freshPrices
         } else {
-            compatiblePrices.filter {
+            freshPrices.filter {
                 it.priceKind == "demo" ||
                     it.locationLabel.equals(selectedWilaya, ignoreCase = true) ||
                     it.locationLabel.equals("وطني", ignoreCase = true)

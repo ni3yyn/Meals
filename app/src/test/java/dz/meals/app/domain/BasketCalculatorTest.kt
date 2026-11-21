@@ -6,6 +6,7 @@ import dz.meals.app.data.RecipeIngredient
 import dz.meals.app.data.SeedRecipes
 import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PriceObservationEntity
+import dz.meals.app.domain.findLockedAllergyConflict
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -104,6 +105,38 @@ class BasketCalculatorTest {
     fun weekStartsOnMondayForAlgerianMealPlanning() {
         assertEquals("2026-11-16", dz.meals.app.data.currentWeekStartIso(java.time.LocalDate.parse("2026-11-21")))
         assertEquals("2026-11-23", dz.meals.app.data.currentWeekStartIso(java.time.LocalDate.parse("2026-11-24")))
+    }
+
+    @Test
+    fun staleLocalPriceIsIgnoredAndDemoPriceIsClearlyUsedAsFallback() {
+        val demo = PriceObservationEntity("demo-potato", "potato", 500.0, "g", 100.0, "demo", "غير مرتبطة بولاية", null, "demo", "غير موثق")
+        val staleLocal = PriceObservationEntity("old-local", "potato", 500.0, "g", 40.0, "سوق قديم", "الجلفة", 1_700_000_000_000L, "user_reported", "غير موثق")
+
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = listOf(demo, staleLocal),
+            selectedWilaya = "الجلفة",
+            nowEpochMillis = 1_800_000_000_000L
+        )
+
+        assertEquals(100.0, result.items.single().cashOutlayDzd!!, 0.0001)
+        assertEquals("قيمة توضيحية", result.items.single().priceLabel)
+    }
+
+    @Test
+    fun lockedMealConflictingWithAllergyRuleBlocksWeekGeneration() {
+        val glutenRecipe = SeedRecipes.all.first { it.id == "couscous-vegetables" }
+        val lockedMeal = plan.copy(recipeId = glutenRecipe.id, locked = true)
+        assertEquals(
+            glutenRecipe.id,
+            findLockedAllergyConflict(listOf(lockedMeal), listOf(glutenRecipe), setOf("gluten"))
+        )
+        assertEquals(
+            null,
+            findLockedAllergyConflict(listOf(lockedMeal), listOf(glutenRecipe), emptySet())
+        )
     }
 
     @Test

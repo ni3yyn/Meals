@@ -100,7 +100,8 @@ data class PriceObservationSummary(
     val locationLabel: String,
     val observedAtEpochMillis: Long?,
     val priceKind: String,
-    val confidenceLabel: String
+    val confidenceLabel: String,
+    val isStale: Boolean = false
 )
 
 data class MealsSnapshot(
@@ -110,5 +111,6 @@ data class MealsSnapshot(
     val pantry: List<PantryItem> = emptyList(),
     val shoppingItems: List<ShoppingListItem> = emptyList(),
     val priceObservations: List<PriceObservationSummary> = emptyList(),
+    val favoriteRecipeIds: Set<String> = emptySet(),
     val basket: BasketSummary = BasketSummary()
 )

@@ -115,3 +115,10 @@ data class ShoppingItemEntity(
     val userAdded: Boolean,
     val updatedAtEpochMillis: Long
 )
+
+
+@Entity(tableName = "favorite_recipes")
+data class FavoriteRecipeEntity(
+    @PrimaryKey val recipeId: String,
+    val addedAtEpochMillis: Long
+)

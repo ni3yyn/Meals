@@ -181,6 +181,8 @@ fun MealsApp() {
                         recipes = snapshot.recipes,
                         ingredients = snapshot.ingredients,
                         allergyIds = preferences.allergyIds,
+                        favoriteRecipeIds = snapshot.favoriteRecipeIds,
+                        onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                         onAddRecipe = { id ->
                             perform { repository.addRecipeToNextSlot(weekStartIso, id, preferences.householdServings) }
                             selectedTab = AppTab.Plan

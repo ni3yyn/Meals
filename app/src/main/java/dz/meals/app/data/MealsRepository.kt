@@ -2,6 +2,7 @@ package dz.meals.app.data
 
 import android.content.Context
 import androidx.room.withTransaction
+import dz.meals.app.data.local.FavoriteRecipeEntity
 import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.MealsDao
@@ -97,6 +98,7 @@ class MealsRepository(context: Context) {
         }
         val prices = dao.getPriceObservations()
         val existingShopping = dao.getShoppingItems()
+        val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
         val basket = calculateBasket(
             planned,
             recipes,
@@ -150,9 +152,13 @@ class MealsRepository(context: Context) {
                     locationLabel = observation.locationLabel,
                     observedAtEpochMillis = observation.observedAtEpochMillis,
                     priceKind = observation.priceKind,
-                    confidenceLabel = observation.confidenceLabel
+                    confidenceLabel = observation.confidenceLabel,
+                    isStale = observation.priceKind != "demo" &&
+                        (observation.observedAtEpochMillis == null ||
+                            System.currentTimeMillis() - observation.observedAtEpochMillis > 30L * 24L * 60L * 60L * 1000L)
                 )
             }.sortedByDescending { it.observedAtEpochMillis ?: 0L },
+            favoriteRecipeIds = favoriteRecipeIds,
             basket = basket.copy(
                 items = shoppingItems,
                 purchaseOutlayDzd = autoItems.sumOf { it.cashOutlayDzd ?: 0.0 },
@@ -171,6 +177,15 @@ class MealsRepository(context: Context) {
         ensureInitialized()
         val recipes = loadRecipes()
         val locked = dao.getPlanMeals(weekStartIso).filter { it.locked }.map { it.toModel() }
+        val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
+        if (lockedConflict != null) {
+            return GenerationResult(
+                success = false,
+                message = "توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. افتح قفلها أو استبدلها قبل إنشاء الخطة. لم نغيّر أي وجبة.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = weeklyBudgetDzd
+            )
+        }
         val allowed = recipes.filter { it.allergens.intersect(allergyIds).isEmpty() }
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
@@ -312,6 +327,19 @@ class MealsRepository(context: Context) {
                 confidenceLabel = "غير موثّق"
             )
         )
+    }
+
+    suspend fun toggleFavorite(recipeId: String) {
+        if (dao.getFavoriteRecipeIds().contains(recipeId)) {
+            dao.removeFavoriteRecipe(recipeId)
+        } else if (dao.getRecipes().any { it.id == recipeId }) {
+            dao.upsertFavoriteRecipe(
+                FavoriteRecipeEntity(
+                    recipeId = recipeId,
+                    addedAtEpochMillis = System.currentTimeMillis()
+                )
+            )
+        }
     }
 
     suspend fun toggleShoppingItem(id: String, checked: Boolean) {

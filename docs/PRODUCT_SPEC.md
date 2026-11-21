@@ -11,11 +11,11 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
 - Seven-day planner with lunch and dinner slots, manual recipe assignment, serving adjustments and meal locking.
-- Deterministic local week generator. It preserves locked slots and excludes recipes intersecting configured allergy IDs.
+- Deterministic local week generator. It preserves locked slots and excludes recipes intersecting configured allergy IDs. If a previously locked meal conflicts with a newly selected allergy exclusion, generation is blocked with a prompt to unlock or replace it; the app never silently bypasses the exclusion.
 - Pantry exact-quantity records and approximate reminders, with optional user-entered expiry dates and storage notes. Only numeric exact stock can reduce basket requirements.
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
-- Persistent shopping checkboxes, category-grouped rows and editable user-added shopping items.
+- Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.
 - Unit tests for serving scaling, exact/approximate pantry handling, package rounding and catalogue integrity.
 - Release R8 minification, obfuscation and resource shrinking.
@@ -63,7 +63,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 ## Cost and price integrity
 The app distinguishes consumed ingredient value from cash required to buy full packages. A recipe requiring 120 g can have a 120 g consumed value while requiring a 500 g package purchase. Remaining package contents can be used later.
 
-Price observations store canonical ingredient ID, pack size, normalized unit, DZD price, source, geographic label, observation timestamp, price kind and confidence. Current sample observations are tagged as demo, have no observation timestamp or geographic coverage, and are labelled accordingly. They must not be described as live or verified prices. Missing prices remain unknown rather than being silently treated as zero.
+Price observations store canonical ingredient ID, pack size, normalized unit, DZD price, source, geographic label, observation timestamp, price kind and confidence. Non-demo observations older than 30 days are excluded from current basket estimates; the sample/demo fallback remains explicitly labelled. Current sample observations are tagged as demo, have no observation timestamp or geographic coverage, and are labelled accordingly. They must not be described as live or verified prices. Missing prices remain unknown rather than being silently treated as zero.
 
 ## Safety and limitations
 - Allergen filtering is only as complete as the curated recipe and ingredient metadata. Empty allergen metadata does not prove that a recipe is safe.
