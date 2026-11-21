@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(3)
@@ -79,6 +80,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
+
     packaging {
         resources {
             excludes += setOf("/META-INF/AL2.0", "/META-INF/LGPL2.1")
@@ -86,9 +91,6 @@ android {
     }
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
