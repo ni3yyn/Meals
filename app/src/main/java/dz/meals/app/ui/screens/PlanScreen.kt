@@ -62,11 +62,13 @@ fun PlanScreen(
     onGenerate: () -> Unit,
     onSetMeal: (Int, String, String?) -> Unit,
     onToggleLock: (String) -> Unit,
+    onToggleCooked: (String) -> Unit,
     onAdjustServings: (String, Int) -> Unit,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit
 ) {
     var showBudgetInfo by rememberSaveable { mutableStateOf(false) }
+    var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     val recipesById = snapshot.recipes.associateBy { it.id }
 
     val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
@@ -210,6 +212,12 @@ fun PlanScreen(
                         recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
                         onSelect = { recipeId -> onSetMeal(day, "breakfast", recipeId) },
                         onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
+                        onToggleCooked = {
+                            breakfast?.let { meal ->
+                                if (meal.isCooked) onToggleCooked(meal.id)
+                                else mealAwaitingCookConfirmation = meal.id
+                            }
+                        },
                         onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
                     )
                     if ("lunch" in preferences.mealSlots) SlotRow(
@@ -219,6 +227,12 @@ fun PlanScreen(
                         recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
                         onSelect = { recipeId -> onSetMeal(day, "lunch", recipeId) },
                         onToggleLock = { lunch?.let { onToggleLock(it.id) } },
+                        onToggleCooked = {
+                            lunch?.let { meal ->
+                                if (meal.isCooked) onToggleCooked(meal.id)
+                                else mealAwaitingCookConfirmation = meal.id
+                            }
+                        },
                         onAdjustServings = { delta -> lunch?.let { onAdjustServings(it.id, delta) } }
                     )
                     if ("dinner" in preferences.mealSlots) SlotRow(
@@ -228,11 +242,36 @@ fun PlanScreen(
                         recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
                         onSelect = { recipeId -> onSetMeal(day, "dinner", recipeId) },
                         onToggleLock = { dinner?.let { onToggleLock(it.id) } },
+                        onToggleCooked = {
+                            dinner?.let { meal ->
+                                if (meal.isCooked) onToggleCooked(meal.id)
+                                else mealAwaitingCookConfirmation = meal.id
+                            }
+                        },
                         onAdjustServings = { delta -> dinner?.let { onAdjustServings(it.id, delta) } }
                     )
                 }
             }
         }
+    }
+
+    mealAwaitingCookConfirmation?.let { mealId ->
+        AlertDialog(
+            onDismissRequest = { mealAwaitingCookConfirmation = null },
+            title = { Text("تأكيد تسجيل الطهي") },
+            text = {
+                Text("سيُخصم من المخزون فقط ما تملكه بكمية دقيقة. الكميات التقريبية لن تُخصم. يمكنك التراجع من الوجبة نفسها لاستعادة ما خُصم.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onToggleCooked(mealId)
+                    mealAwaitingCookConfirmation = null
+                }) { Text("تأكيد وخصم المخزون الدقيق") }
+            },
+            dismissButton = {
+                TextButton(onClick = { mealAwaitingCookConfirmation = null }) { Text("إلغاء") }
+            }
+        )
     }
 
     if (showBudgetInfo) {
@@ -257,6 +296,7 @@ private fun SlotRow(
     recipes: List<MealRecipe>,
     onSelect: (String?) -> Unit,
     onToggleLock: () -> Unit,
+    onToggleCooked: () -> Unit,
     onAdjustServings: (Int) -> Unit
 ) {
     var chooseRecipe by rememberSaveable { mutableStateOf(false) }
@@ -271,6 +311,9 @@ private fun SlotRow(
             Text(recipe?.nameAr ?: "لم يتم اختيار وجبة", fontWeight = FontWeight.SemiBold)
             if (meal != null && recipe != null) {
                 Text(recipe.durationMinutes.toString() + " دقيقة · " + meal.servings + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                if (meal.isCooked) {
+                    Text("تم الطهي — تم تحديث المخزون", color = Forest, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
         if (meal != null && recipe != null) {
@@ -278,6 +321,9 @@ private fun SlotRow(
                 TextButton(onClick = { onAdjustServings(-1) }, enabled = meal.servings > 1) { Text("−") }
                 Text(meal.servings.toString(), fontWeight = FontWeight.Bold)
                 TextButton(onClick = { onAdjustServings(1) }, enabled = meal.servings < 12) { Text("+") }
+            }
+            TextButton(onClick = onToggleCooked) {
+                Text(if (meal.isCooked) "تراجع" else "تم الطهي")
             }
             IconButton(onClick = onToggleLock) {
                 Icon(

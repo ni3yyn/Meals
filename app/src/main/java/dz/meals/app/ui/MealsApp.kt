@@ -182,6 +182,7 @@ fun MealsApp() {
                             }
                         },
                         onToggleLock = { id -> perform { repository.toggleMealLock(id, weekStartIso) } },
+                        onToggleCooked = { id -> perform { repository.toggleMealCooked(id, weekStartIso) } },
                         onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
                         onPreviousWeek = { weekStartIso = LocalDate.parse(weekStartIso).minusWeeks(1).toString() },
                         onNextWeek = { weekStartIso = LocalDate.parse(weekStartIso).plusWeeks(1).toString() }
