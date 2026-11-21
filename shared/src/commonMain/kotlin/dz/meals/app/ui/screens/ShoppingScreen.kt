@@ -53,6 +53,7 @@ import dz.meals.app.shared.format.formatDateDmy
 import dz.meals.app.shared.format.formatDzd
 import dz.meals.app.shared.format.formatHouseholdQuantity
 import dz.meals.app.shared.format.formatHouseholdUnit
+import dz.meals.app.shared.format.formatPriceInputUnit
 import dz.meals.app.shared.format.prettyQuantity
 
 @Composable
@@ -455,7 +456,7 @@ private fun PriceReportDialog(
                 OutlinedTextField(
                     value = packQuantityText,
                     onValueChange = { packQuantityText = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                    label = { Text("حجم العبوة أو الكمية المباعة (" + (selectedIngredient?.baseUnit?.let { formatHouseholdUnit(it) } ?: "وحدة") + ")") },
+                    label = { Text("حجم العبوة أو الكمية المباعة (" + (selectedIngredient?.baseUnit?.let { formatPriceInputUnit(it) } ?: "وحدة") + ")") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
@@ -474,7 +475,7 @@ private fun PriceReportDialog(
                     singleLine = true
                 )
                 Text(
-                    "سيُحفظ البلاغ محلياً بتاريخ اليوم، وسيظهر كملاحظة مستخدم غير موثّقة وليس كسعر رسمي أو مباشر.",
+                    "اكتبي الوزن بالكيلوغرام أو الحجم باللتر. سيُحوّل التطبيق الكمية للحساب ويحفظ البلاغ محلياً كملاحظة غير موثّقة.",
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -486,7 +487,11 @@ private fun PriceReportDialog(
             TextButton(
                 onClick = {
                     if (selectedIngredient != null && packQuantity != null && amount != null) {
-                        onSubmit(selectedIngredient.id, packQuantity, amount, shopContext)
+                        val baseUnitMultiplier = when (selectedIngredient.baseUnit) {
+                            "g", "ml" -> 1000.0
+                            else -> 1.0
+                        }
+                        onSubmit(selectedIngredient.id, packQuantity * baseUnitMultiplier, amount, shopContext)
                     }
                 },
                 enabled = selectedIngredient != null && (packQuantity ?: 0.0) > 0.0 && (amount ?: 0.0) > 0.0
