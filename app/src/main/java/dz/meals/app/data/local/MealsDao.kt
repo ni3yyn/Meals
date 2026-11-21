@@ -79,14 +79,17 @@ interface MealsDao {
     @Query("SELECT * FROM price_observations")
     suspend fun getPriceObservations(): List<PriceObservationEntity>
 
-    @Query("SELECT * FROM shopping_items ORDER BY userAdded, customName, ingredientId")
-    suspend fun getShoppingItems(): List<ShoppingItemEntity>
+    @Query("SELECT * FROM shopping_items WHERE weekStartIso = :weekStartIso ORDER BY userAdded, customName, ingredientId")
+    suspend fun getShoppingItems(weekStartIso: String): List<ShoppingItemEntity>
+
+    @Query("UPDATE shopping_items SET weekStartIso = :weekStartIso WHERE weekStartIso = ''")
+    suspend fun assignUnscopedShoppingItemsToWeek(weekStartIso: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertShoppingItems(items: List<ShoppingItemEntity>)
 
-    @Query("DELETE FROM shopping_items WHERE userAdded = 0")
-    suspend fun deleteGeneratedShoppingItems()
+    @Query("DELETE FROM shopping_items WHERE userAdded = 0 AND weekStartIso = :weekStartIso")
+    suspend fun deleteGeneratedShoppingItems(weekStartIso: String)
 
     @Query("UPDATE shopping_items SET checked = :checked, updatedAtEpochMillis = :updatedAt WHERE id = :id")
     suspend fun setShoppingItemChecked(id: String, checked: Boolean, updatedAt: Long)

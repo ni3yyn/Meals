@@ -25,6 +25,7 @@ class MealsRepository(context: Context) {
 
     suspend fun ensureInitialized() {
         SeedRecipes.validateCatalogue()
+        dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         if (dao.recipeCount() > 0) return
         database.withTransaction {
             dao.insertIngredients(SeedRecipes.ingredients.map {
@@ -105,21 +106,22 @@ class MealsRepository(context: Context) {
             )
         }
         val prices = dao.getPriceObservations()
-        val existingShopping = dao.getShoppingItems()
+        val existingShopping = dao.getShoppingItems(weekStartIso)
         val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
         val basket = calculateBasket(
             planned,
             recipes,
             pantryEntities,
             prices,
-            existingShopping.filter { it.checked }.map { it.id }.toSet(),
+            existingShopping.filter { it.checked }.map { it.id.substringAfter("::") }.toSet(),
             selectedWilaya
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
-            val old = existingShopping.firstOrNull { it.id == line.id }
+            val scopedId = "$weekStartIso::${line.id}"
+            val old = existingShopping.firstOrNull { it.id == scopedId }
             ShoppingItemEntity(
-                id = line.id,
+                id = scopedId,
                 ingredientId = line.ingredientId,
                 customName = names[line.ingredientId]?.nameAr ?: line.name,
                 requiredQuantity = line.requiredQuantity,
@@ -127,13 +129,16 @@ class MealsRepository(context: Context) {
                 purchaseQuantity = old?.purchaseQuantityOverride ?: line.purchaseQuantity,
                 unit = line.unit,
                 consumedValueDzd = line.consumedValueDzd,
-                cashOutlayDzd = line.cashOutlayDzd,
-                priceLabel = line.priceLabel,
+                cashOutlayDzd = if (old?.purchaseQuantityOverride != null && line.purchaseQuantity > 0.0) {
+                    line.cashOutlayDzd?.times(old.purchaseQuantityOverride / line.purchaseQuantity)
+                } else line.cashOutlayDzd,
+                priceLabel = if (old?.purchaseQuantityOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
                 sourceLabel = line.sourceLabel,
                 isApproximatePantry = line.isApproximatePantry,
                 checked = old?.checked ?: false,
                 userAdded = false,
                 updatedAtEpochMillis = System.currentTimeMillis(),
+                weekStartIso = weekStartIso,
                 purchaseQuantityOverride = old?.purchaseQuantityOverride,
                 storeNote = old?.storeNote.orEmpty(),
                 isUnavailable = old?.isUnavailable ?: false,
@@ -141,10 +146,10 @@ class MealsRepository(context: Context) {
             )
         }
         database.withTransaction {
-            dao.deleteGeneratedShoppingItems()
+            dao.deleteGeneratedShoppingItems(weekStartIso)
             if (autoItems.isNotEmpty()) dao.upsertShoppingItems(autoItems)
         }
-        val shoppingItems = dao.getShoppingItems().map { it.toModel(names[it.ingredientId]) }
+        val shoppingItems = dao.getShoppingItems(weekStartIso).map { it.toModel(names[it.ingredientId]) }
         val savedRun = dao.getPlanRun(weekStartIso)
         return MealsSnapshot(
             recipes = recipes,
@@ -404,7 +409,7 @@ class MealsRepository(context: Context) {
         dao.setShoppingItemChecked(id, checked, System.currentTimeMillis())
     }
 
-    suspend fun addCustomShoppingItem(name: String, quantity: Double, unit: String) {
+    suspend fun addCustomShoppingItem(weekStartIso: String, name: String, quantity: Double, unit: String) {
         val cleanName = name.trim()
         if (cleanName.isEmpty() || quantity <= 0.0) return
         val id = "custom-" + UUID.randomUUID().toString()
@@ -425,7 +430,8 @@ class MealsRepository(context: Context) {
                     isApproximatePantry = false,
                     checked = false,
                     userAdded = true,
-                    updatedAtEpochMillis = System.currentTimeMillis()
+                    updatedAtEpochMillis = System.currentTimeMillis(),
+                    weekStartIso = weekStartIso
                 )
             )
         )

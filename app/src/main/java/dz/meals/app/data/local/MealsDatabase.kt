@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FavoriteRecipeEntity::class,
         PlanRunEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -56,6 +56,13 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE shopping_items ADD COLUMN weekStartIso TEXT NOT NULL DEFAULT ''")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_items_weekStartIso ON shopping_items(weekStartIso)")
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -64,7 +71,7 @@ abstract class MealsDatabase : RoomDatabase() {
                     context.applicationContext,
                     MealsDatabase::class.java,
                     "meals_local.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { INSTANCE = it }
             }
     }
 }

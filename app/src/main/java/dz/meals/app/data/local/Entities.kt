@@ -98,7 +98,10 @@ data class PriceObservationEntity(
     val confidenceLabel: String
 )
 
-@Entity(tableName = "shopping_items")
+@Entity(
+    tableName = "shopping_items",
+    indices = [Index("weekStartIso")]
+)
 data class ShoppingItemEntity(
     @PrimaryKey val id: String,
     val ingredientId: String?,
@@ -115,6 +118,7 @@ data class ShoppingItemEntity(
     val checked: Boolean,
     val userAdded: Boolean,
     val updatedAtEpochMillis: Long,
+    @ColumnInfo(defaultValue = "''") val weekStartIso: String = "",
     val purchaseQuantityOverride: Double? = null,
     @ColumnInfo(defaultValue = "''") val storeNote: String = "",
     @ColumnInfo(defaultValue = "0") val isUnavailable: Boolean = false,
