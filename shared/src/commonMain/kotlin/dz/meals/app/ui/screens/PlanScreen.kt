@@ -47,7 +47,6 @@ import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
-import dz.meals.app.shared.format.epochMillisToLocalDate
 import dz.meals.app.shared.format.formatArabicDate
 import dz.meals.app.shared.format.formatArabicWeekRange
 import dz.meals.app.shared.format.formatDzd
@@ -71,7 +70,6 @@ fun PlanScreen(
     onNextWeek: () -> Unit
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
-    var showBudgetInfo by rememberSaveable { mutableStateOf(false) }
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
     val recipesById = snapshot.recipes.associateBy { it.id }
@@ -113,12 +111,12 @@ fun PlanScreen(
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
                 tintColor = androidx.compose.ui.graphics.Color(0xFFFFF6EC),
-                contentPadding = 18.dp,
-                shape = RoundedCornerShape(29.dp)
+                contentPadding = 14.dp,
+                shape = RoundedCornerShape(25.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(
@@ -128,89 +126,51 @@ fun PlanScreen(
                         Text(
                             "ميزانية الأسبوع",
                             color = dz.meals.app.ui.theme.ForestDark,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.bodySmall
                         )
                         Text(
                             preferences.weeklyBudgetDzd.formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
-                            style = MaterialTheme.typography.displaySmall
-                        )
-                    }
-                    MealsIllustrationBadge(
-                        icon = MealsIconName.Wallet,
-                        background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
-                        size = 62.dp
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Text(
-                            "قيمة المكونات المستهلكة",
-                            color = MutedInk,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 2
-                        )
-                        Text(
-                            snapshot.basket.consumedValueDzd.toInt().formatDzd(),
-                            color = dz.meals.app.ui.theme.Ink,
-                            fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.titleMedium
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
                         )
                     }
                     Column(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            "مبلغ الشراء التقديري",
-                            color = MutedInk,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 2
+                            "الشراء المتوقع",
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            style = MaterialTheme.typography.bodySmall
                         )
                         Text(
                             snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
-                            fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.titleMedium
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
                         )
                     }
+                    MealsIllustrationBadge(
+                        icon = MealsIconName.Wallet,
+                        background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
+                        size = 44.dp
+                    )
                 }
-                if (snapshot.basket.unknownPriceCount > 0) {
+                if (snapshot.basket.unknownPriceCount > 0 || snapshot.basket.hasDemoPrices) {
                     Text(
-                        snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر؛ المجموع غير مكتمل.",
+                        text = when {
+                            snapshot.basket.hasDemoPrices && snapshot.basket.unknownPriceCount > 0 ->
+                                "الأسعار تقديرية، وهناك " + snapshot.basket.unknownPriceCount + " عناصر دون سعر."
+                            snapshot.basket.hasDemoPrices ->
+                                "الأسعار تقديرية وليست أسعار سوق مباشرة."
+                            else ->
+                                snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر."
+                        },
                         color = dz.meals.app.ui.theme.ForestDark,
                         style = MaterialTheme.typography.bodySmall
                     )
-                }
-                Text(
-                    "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(),
-                    color = dz.meals.app.ui.theme.Ink,
-                    fontWeight = FontWeight.SemiBold
-                )
-                snapshot.planRun?.let { run ->
-                    Text(
-                        "آخر إنشاء: " + epochMillisToLocalDate(run.generatedAtEpochMillis).toString() +
-                            " · نسخة المحرك " + run.engineVersion,
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                if (snapshot.basket.hasDemoPrices) {
-                    Text(
-                        "الأسعار الحالية تجريبية فقط وليست أسعار سوق محلية أو مباشرة.",
-                        color = dz.meals.app.ui.theme.ForestDark,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                TextButton(onClick = { showBudgetInfo = true }) {
-                    Text("ما الفرق بين القيمتين؟", color = Forest)
                 }
             }
         }
@@ -233,7 +193,6 @@ fun PlanScreen(
         item {
             MealsCheckRow(
                 title = "املأ الوجبات الفارغة فقط",
-                supportingText = "اترك الوجبات التي اخترتها كما هي",
                 checked = fillEmptyOnly,
                 onCheckedChange = { fillEmptyOnly = it }
             )
@@ -244,12 +203,6 @@ fun PlanScreen(
                 modifier = Modifier.fillMaxWidth(),
                 icon = MealsIconName.Refresh
             )
-            Text(
-                "نحافظ على الوجبات المقفلة. الحساسية والنمط الغذائي قيود إلزامية، أما وقت الطبخ وتجنب مكونات معينة فيؤثران في ترتيب الاقتراحات.",
-                color = MutedInk,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 6.dp)
-            )
         }
 
         items((0 until 7).toList(), key = { it }) { day ->
@@ -259,8 +212,8 @@ fun PlanScreen(
             val lunch = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "lunch" }
             val dinner = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "dinner" }
 
-            MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 16.dp) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(13.dp)) {
+            MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 14.dp) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(dateLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     if ("breakfast" in visibleMealSlots) SlotRow(
                         title = "الفطور",
@@ -334,18 +287,6 @@ fun PlanScreen(
         )
     }
 
-    if (showBudgetInfo) {
-        MealsAlertDialog(
-            onDismissRequest = { showBudgetInfo = false },
-            title = { Text("قيمة الاستهلاك ومبلغ الشراء") },
-            text = {
-                Text(
-                    "قيمة الاستهلاك تحسب الجزء الذي استعملته الوصفات من كل عبوة. مبلغ الشراء يحسب العبوات الكاملة التي قد تحتاج إلى دفع ثمنها بعد خصم المخزون الدقيق. قد يبقى جزء من العبوة لاستخدامه لاحقاً. الأسعار المعروضة حالياً تجريبية، لذلك لا تعتمد عليها كعرض سعر حقيقي."
-                )
-            },
-            confirmButton = { TextButton(onClick = { showBudgetInfo = false }) { Text("حسناً") } }
-        )
-    }
 }
 
 @Composable
