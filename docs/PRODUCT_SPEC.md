@@ -22,7 +22,7 @@ The first release is local-first. A person opens the app and starts using it imm
 ### First launch
 1. Launch directly into the home screen.
 2. No onboarding wall and no account prompt.
-3. Use the default weekly budget and wilaya, or open settings to change them.
+3. Use the default weekly budget and default wilaya, or open settings to change them.
 4. Start adding meals immediately.
 
 ### Plan meals
@@ -84,6 +84,6 @@ Authentication is not part of the current scope. Do not add Firebase Auth, Supab
 - Kotlin 2.4.21 with AGP built-in Kotlin support.
 - Jetpack Compose BOM 2026.11.01.
 - Java 17 bytecode target.
-- minSdk 26, targetSdk 36, compile SDK 37 with extension 1.
+- minSdk 26, targetSdk 36, compile SDK 37.1.
 - Release builds enable minification and resource shrinking.
 - Keep R8 rules narrow; test minified release builds when adding reflection, serialization, or native SDKs.

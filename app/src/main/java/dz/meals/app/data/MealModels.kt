@@ -25,4 +25,8 @@ data class ShoppingListItem(
     val name: String,
     val quantity: Double,
     val unit: String
-)
+) {
+    // Include unit so e.g. 500 g and 2 pieces of the same item stay distinct.
+    val key: String
+        get() = ingredientId + "::" + unit
+}

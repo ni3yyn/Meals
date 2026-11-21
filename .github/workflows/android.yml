@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -24,13 +24,32 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK platform
+        shell: bash
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.1" "build-tools;36.0.0" "platform-tools"
 
       - name: Set up Gradle 9.6.0
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.6.0"
+
+      - name: Generate and commit Gradle Wrapper on first main-branch push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version 9.6.0
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar
+            git commit -m "build: add Gradle Wrapper scripts"
+            git push
+          fi
 
       - name: Run unit tests
         run: gradle testDebugUnitTest --no-daemon
@@ -40,3 +59,13 @@ jobs:
 
       - name: Assemble minified release APK
         run: gradle assembleRelease --no-daemon
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: meals-apks
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14

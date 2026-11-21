@@ -51,6 +51,16 @@ class PreferencesStore(context: Context) {
             val selected = values[Keys.plannedRecipeIds]?.toMutableSet() ?: mutableSetOf()
             if (!selected.add(recipeId)) selected.remove(recipeId)
             values[Keys.plannedRecipeIds] = selected
+
+            // Remove checked states for ingredients no longer present in the active plan.
+            val activeIngredientKeys = SeedRecipes.all
+                .filter { it.id in selected }
+                .flatMap { recipe -> recipe.ingredients.map { it.id + "::" + it.unit } }
+                .toSet()
+            val checked = values[Keys.checkedIngredientIds]?.filterTo(mutableSetOf()) {
+                it in activeIngredientKeys
+            } ?: mutableSetOf()
+            values[Keys.checkedIngredientIds] = checked
         }
     }
 

@@ -41,7 +41,7 @@ fun ShoppingScreen(
     onToggleItem: (String) -> Unit,
     onClearPlan: () -> Unit
 ) {
-    val checkedCount = items.count { it.ingredientId in checkedIds }
+    val checkedCount = items.count { it.key in checkedIds }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -97,8 +97,8 @@ fun ShoppingScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(items, key = { it.ingredientId }) { item ->
-                    val checked = item.ingredientId in checkedIds
+                items(items, key = { it.key }) { item ->
+                    val checked = item.key in checkedIds
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Paper),
                         border = BorderStroke(1.dp, Border),
@@ -108,7 +108,7 @@ fun ShoppingScreen(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Checkbox(checked = checked, onCheckedChange = { onToggleItem(item.ingredientId) })
+                            Checkbox(checked = checked, onCheckedChange = { onToggleItem(item.key) })
                             Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
                                 Text(
                                     item.name,

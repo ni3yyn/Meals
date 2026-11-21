@@ -16,14 +16,14 @@ Native Kotlin Android app for planning meals and shopping on a budget in Algeria
 - Persistent check-off state
 - R8 minification and resource shrinking on release
 
-## Open the project
-Open this repository in a recent Android Studio version with JDK 17 and Android SDK Platform 37 / extension 1 installed. The build uses Gradle 9.6.0 and Android Gradle Plugin 9.5.0.
+## Build requirements
+JDK 17, Gradle 9.6.0, Android Gradle Plugin 9.5.0, and Android SDK Platform 37.1.
 
-## Build
-With Gradle 9.6.0 installed:
+The CI workflow generates the Gradle Wrapper on the first push when it is not present. Afterwards, use:
+
 ```bash
-gradle testDebugUnitTest assembleDebug
-gradle assembleRelease
+./gradlew testDebugUnitTest assembleDebug
+./gradlew assembleRelease
 ```
 
 The debug application ID is `dz.meals.app.debug`; the release application ID is `dz.meals.app`.
