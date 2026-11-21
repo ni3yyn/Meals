@@ -174,7 +174,7 @@ fun MealsGlassSurface(
     tintColor: Color = Color(0xFFFFFCF7),
     tintAlpha: Float = 0.22f,
     contentPadding: Dp = 18.dp,
-    shape: Shape = RoundedCornerShape(28.dp),
+    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsHazeState.current
