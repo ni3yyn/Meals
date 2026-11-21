@@ -313,13 +313,15 @@ private fun SettingsDialog(
                     }
                 }
                 Text("النمط الغذائي", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                androidx.compose.material3.SingleChoiceSegmentedButtonRow {
-                    listOf("none" to "عادي", "vegetarian" to "نباتي", "vegan" to "نباتي صرف").forEachIndexed { index, item ->
-                        androidx.compose.material3.SegmentedButton(
+                androidx.compose.foundation.layout.Row(
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("none" to "عادي", "vegetarian" to "نباتي", "vegan" to "نباتي صرف").forEach { item ->
+                        androidx.compose.material3.FilterChip(
                             selected = diet == item.first,
                             onClick = { diet = item.first },
-                            shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 3)
-                        ) { Text(item.second) }
+                            label = { Text(item.second) }
+                        )
                     }
                 }
                 Text("مكونات تفضّل تجنبها (تفضيل مرن)", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
