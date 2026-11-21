@@ -198,7 +198,13 @@ fun MealsGlassSurface(
             specularIntensity(0.72f)
             ambientResponse(0.66f)
             edgeSoftness(5.dp)
-            edgeShadow(Color(0x24745D4B))
+            // GlassStyle.regular defaults to a 0.7dp black outer outline at
+            // 40% opacity. That edge is too dark for this pale cloudy material.
+            // Replace it with a fine top/side specular rim and a warm, restrained
+            // internal edge response instead of stacking another shadow layer.
+            edgeOutline(Color.Transparent, 0.dp)
+            edgeShadow(Color(0x14745D4B))
+            rimHighlight(0.74f, 1.dp, 0.35f)
             shape(shape)
             surfaceProfile(SurfaceProfile.Squircle)
             lightPosition(Alignment.TopStart)
@@ -208,7 +214,9 @@ fun MealsGlassSurface(
 
     Box(
         modifier = modifier
-            .shadow(12.dp, shape, clip = false)
+            // Do not put a RenderNode elevation shadow on a translucent glass
+            // layer. Haze draws the optical edge and rim as part of the same
+            // material, avoiding a platform shadow bleeding through the tint.
             .hazeGlass(
                 input = HazeInput.Backdrop(hazeState),
                 style = glassStyle
@@ -706,12 +714,16 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
     val hazeState = rememberHazeState()
 
     CompositionLocalProvider(LocalMealsHazeState provides hazeState) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(hazeState)
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Capture only the atmospheric background. Capturing this parent
+            // would also capture its foreground glass cards, feeding their
+            // translucent output back into later Haze surfaces on fallback
+            // renderers (Android < 17 and non-native paths).
+            Canvas(
+                Modifier
+                    .fillMaxSize()
+                    .hazeSource(hazeState)
+            ) {
                 drawRect(
                     Brush.linearGradient(
                         colors = listOf(
