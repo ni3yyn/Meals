@@ -23,13 +23,31 @@ private val TajawalAndroidFontFamily = FontFamily(
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        MealsStartupLogger.mark("MainActivity.onCreate entered")
         super.onCreate(savedInstanceState)
+        MealsStartupLogger.mark("MainActivity.super.onCreate completed")
+
         configureSystemBars()
+        MealsStartupLogger.mark("System bars configured")
+
         setContent {
+            MealsStartupLogger.markOnce("First Compose content pass entered")
             MidaTheme(fontFamily = TajawalAndroidFontFamily) {
+                MealsStartupLogger.markOnce("MidaTheme composition entered")
                 MealsApp()
             }
         }
+        MealsStartupLogger.mark("MainActivity.setContent returned")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        MealsStartupLogger.mark("MainActivity.onStart")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        MealsStartupLogger.mark("MainActivity.onResume")
     }
 
     private fun configureSystemBars() {
