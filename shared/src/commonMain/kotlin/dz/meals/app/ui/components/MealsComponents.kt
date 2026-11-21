@@ -101,15 +101,16 @@ private val ButtonShape = RoundedCornerShape(22.dp)
  * visible items, so only on-screen cards own active Haze nodes.
  */
 private val MealsCardBlurStyle = HazeBlurStyle {
-    blurRadius(16.dp)
-    noiseFactor(0.035f)
+    // Match the frosted bottom navigation's stronger glass diffusion.
+    blurRadius(25.dp)
+    noiseFactor(0.045f)
     colorEffects(
         listOf(
-            HazeColorEffect.tint(Color(0xFFFFF6EC).copy(alpha = 0.34f))
+            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.46f))
         )
     )
     fallbackColorEffect(
-        HazeColorEffect.tint(Color(0xFFFFF6EC).copy(alpha = 0.96f))
+        HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
     )
 }
 
@@ -133,21 +134,22 @@ fun MealsCard(
 ) {
     val cardHazeState = LocalMealsCardHazeState.current
     val usesLightContent = contentColor == Color.White
-    val surfaceAlpha = if (usesLightContent) 0.84f else 0.76f
+    // Keep the face as a light glaze, not an opaque fill over the live blur.
+    val surfaceAlpha = if (usesLightContent) 0.34f else 0.27f
 
     val face = remember(containerColor, usesLightContent, surfaceAlpha) {
         Brush.verticalGradient(
             colors = if (usesLightContent) {
                 listOf(
-                    Color.White.copy(alpha = 0.20f),
+                    Color.White.copy(alpha = 0.18f),
                     containerColor.copy(alpha = surfaceAlpha),
-                    containerColor.copy(alpha = 0.92f)
+                    containerColor.copy(alpha = 0.40f)
                 )
             } else {
                 listOf(
-                    Color.White.copy(alpha = 0.52f),
+                    Color.White.copy(alpha = 0.24f),
                     containerColor.copy(alpha = surfaceAlpha),
-                    containerColor.copy(alpha = 0.86f)
+                    containerColor.copy(alpha = 0.34f)
                 )
             }
         )
@@ -230,14 +232,16 @@ fun MealsGlassSurface(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current
-    val surfaceAlpha = (0.68f + tintAlpha.coerceIn(0f, 0.5f) * 0.24f)
-        .coerceIn(0.70f, 0.82f)
+    // The hero gets a little more body than a regular card, while staying
+    // in the same see-through range as the bottom navigation capsule.
+    val surfaceAlpha = (0.24f + tintAlpha.coerceIn(0f, 0.5f) * 0.16f)
+        .coerceIn(0.24f, 0.34f)
     val face = remember(tintColor, surfaceAlpha) {
         Brush.verticalGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.52f),
+                Color.White.copy(alpha = 0.24f),
                 tintColor.copy(alpha = surfaceAlpha),
-                tintColor.copy(alpha = (surfaceAlpha + 0.10f).coerceAtMost(0.92f))
+                tintColor.copy(alpha = (surfaceAlpha + 0.07f).coerceAtMost(0.42f))
             )
         )
     }
