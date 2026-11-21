@@ -4,6 +4,7 @@ kotlin = "2.4.21"
 ksp = "2.3.12"
 room = "2.8.5"
 composeBom = "2026.11.01"
+composeMultiplatform = "1.12.2"
 activityCompose = "1.13.0"
 datastore = "1.3.0"
 coreKtx = "1.19.1"
@@ -12,6 +13,9 @@ junit = "4.13.2"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+android-kmp = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
 

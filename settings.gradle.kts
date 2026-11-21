@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Meals"
-include(":app")
+include(":app", ":shared")
