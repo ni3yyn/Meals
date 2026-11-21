@@ -3,8 +3,6 @@ package dz.meals.app.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -103,30 +101,29 @@ fun PlanScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
-                    Text(
-                        formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
-                        color = MutedInk
-                    )
-                }
-                TextButton(
-                    onClick = onOpenShoppingList,
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    MealsIcon(MealsIconName.Basket, contentDescription = null, modifier = Modifier.size(19.dp))
-                    Text("المشتريات")
-                }
-                IconButton(onClick = onPreviousWeek) {
-                    MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(26.dp))
-                }
-                IconButton(onClick = onNextWeek) {
-                    MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(26.dp))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
+                        Text(
+                            formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    IconButton(onClick = onOpenShoppingList) {
+                        MealsIcon(MealsIconName.Basket, contentDescription = "المشتريات", modifier = Modifier.size(22.dp))
+                    }
+                    IconButton(onClick = onPreviousWeek) {
+                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(24.dp))
+                    }
+                    IconButton(onClick = onNextWeek) {
+                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(24.dp))
+                    }
                 }
             }
         }
@@ -134,23 +131,24 @@ fun PlanScreen(
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
                 tintColor = androidx.compose.ui.graphics.Color(0xFFFFF6EC),
-                contentPadding = 14.dp,
-                shape = RoundedCornerShape(25.dp)
+                contentPadding = 15.dp,
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    MealsIllustrationBadge(
+                        icon = MealsIconName.Wallet,
+                        background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
+                        size = 42.dp
+                    )
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text(
-                            "ميزانية الأسبوع",
-                            color = dz.meals.app.ui.theme.ForestDark,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text("ميزانية الأسبوع", color = dz.meals.app.ui.theme.ForestDark, style = MaterialTheme.typography.labelMedium)
                         Text(
                             preferences.weeklyBudgetDzd.formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
@@ -158,16 +156,14 @@ fun PlanScreen(
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
+                    Box(
+                        modifier = Modifier.width(1.dp).height(38.dp).background(Border.copy(alpha = 0.75f))
+                    )
                     Column(
                         modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text(
-                            "الشراء المتوقع",
-                            color = dz.meals.app.ui.theme.ForestDark,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text("الشراء المتوقع", color = dz.meals.app.ui.theme.ForestDark, style = MaterialTheme.typography.labelMedium)
                         Text(
                             snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
@@ -175,11 +171,6 @@ fun PlanScreen(
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
-                    MealsIllustrationBadge(
-                        icon = MealsIconName.Wallet,
-                        background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
-                        size = 44.dp
-                    )
                 }
                 if (snapshot.basket.unknownPriceCount > 0 || snapshot.basket.hasDemoPrices) {
                     Text(
@@ -192,7 +183,8 @@ fun PlanScreen(
                                 snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر."
                         },
                         color = dz.meals.app.ui.theme.ForestDark,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -214,18 +206,48 @@ fun PlanScreen(
             }
         }
         item {
-            MealsCheckRow(
-                title = "املأ الوجبات الفارغة فقط",
-                checked = fillEmptyOnly,
-                onCheckedChange = { fillEmptyOnly = it }
-            )
-            MealsPrimaryButton(
-                label = if (isGenerating) "جارٍ إنشاء الخطة..." else "أنشئ خطة 7 أيام",
-                onClick = { onGenerate(fillEmptyOnly) },
-                enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                icon = MealsIconName.Refresh
-            )
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MealsCheckbox(
+                        checked = fillEmptyOnly,
+                        onCheckedChange = { fillEmptyOnly = it }
+                    )
+                    Text(
+                        "املأ الوجبات الفارغة فقط",
+                        modifier = Modifier.weight(1f).clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) { fillEmptyOnly = !fillEmptyOnly },
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                MealsPrimaryButton(
+                    label = if (isGenerating) "جارٍ إنشاء الخطة..." else "أنشئ خطة 7 أيام",
+                    onClick = { onGenerate(fillEmptyOnly) },
+                    enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = MealsIconName.Refresh,
+                    showArrow = false
+                )
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("الوجبات اليومية", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text("7 أيام", color = MutedInk, style = MaterialTheme.typography.labelMedium)
+            }
         }
 
         items((0 until 7).toList(), key = { it }) { day ->
@@ -243,7 +265,7 @@ fun PlanScreen(
             LaunchedEffect(isExpanded) {
                 if (isExpanded) {
                     // Reveal the expanded card after its height transition has settled.
-                    delay(340)
+                    delay(190)
                     bringIntoViewRequester.bringIntoView()
                 }
             }
@@ -252,7 +274,7 @@ fun PlanScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .bringIntoViewRequester(bringIntoViewRequester)
-                    .animateContentSize(animationSpec = tween(durationMillis = 300)),
+                    .animateContentSize(animationSpec = tween(durationMillis = 180)),
                 containerColor = Paper,
                 borderColor = if (isExpanded) Forest.copy(alpha = 0.28f) else Border,
                 contentPadding = 0.dp
@@ -260,7 +282,10 @@ fun PlanScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expandedDay = if (isExpanded) -1 else day }
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) { expandedDay = if (isExpanded) -1 else day }
                         .padding(horizontal = 15.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -310,8 +335,8 @@ fun PlanScreen(
 
                 AnimatedVisibility(
                     visible = isExpanded,
-                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(180)),
-                    exit = shrinkVertically(animationSpec = tween(240)) + fadeOut(animationSpec = tween(140))
+                    enter = expandVertically(animationSpec = tween(durationMillis = 180)),
+                    exit = shrinkVertically(animationSpec = tween(durationMillis = 180))
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
