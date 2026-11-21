@@ -67,8 +67,8 @@ jobs:
             TAG="$REF_NAME"
             VERSION="${TAG#v}"
           else
-            LATEST_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name' 2>/dev/null || true)"
-            if [[ -z "$LATEST_TAG" ]]; then
+            LATEST_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --jq '[.[] | select(.draft == false and .prerelease == false)][0].tag_name // empty' 2>/dev/null || true)"
+            if [[ -z "$LATEST_TAG" || "$LATEST_TAG" == "null" ]]; then
               LATEST_TAG="v0.2.0"
             fi
 
