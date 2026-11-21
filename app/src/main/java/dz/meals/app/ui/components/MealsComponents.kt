@@ -260,20 +260,91 @@ fun MealsSecondaryButton(
     enabled: Boolean = true,
     icon: ImageVector? = null
 ) {
-    OutlinedButton(
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.988f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "mealsSecondaryButtonScale"
+    )
+    val buttonShape = remember { ButtonShape }
+    val surfaceBrush = remember {
+        Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFFFFEFC),
+                Color(0xFFFFF8F1),
+                Color(0xFFF9EEE7)
+            )
+        )
+    }
+    val edgeBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.98f),
+                Color(0xFFD9E8DA).copy(alpha = 0.92f),
+                Color(0xFFE7D8CD).copy(alpha = 0.88f)
+            )
+        )
+    }
+
+    Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 52.dp),
-        shape = ButtonShape,
-        border = BorderStroke(1.dp, Forest.copy(alpha = 0.22f)),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Forest),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
+        interactionSource = interactionSource,
+        modifier = modifier
+            .defaultMinSize(minHeight = 54.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        shape = buttonShape,
+        color = Color.Transparent,
+        contentColor = if (enabled) ForestDark else MutedInk,
+        border = BorderStroke(1.dp, edgeBrush),
+        shadowElevation = if (enabled) 3.dp else 0.dp
     ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = if (enabled) surfaceBrush else Brush.linearGradient(
+                        listOf(Color(0xFFF3EEE9), Color(0xFFEFE8E2))
+                    ),
+                    shape = buttonShape
+                )
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = if (enabled) 0.52f else 0.18f),
+                            Color.Transparent,
+                            Color(0xFFEAD9CD).copy(alpha = if (pressed) 0.16f else 0.06f)
+                        )
+                    ),
+                    shape = buttonShape
+                )
+                .padding(horizontal = 20.dp, vertical = 13.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.size(8.dp))
+                }
+                Text(
+                    text = label,
+                    color = if (enabled) ForestDark else MutedInk,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
-        Text(label, fontWeight = FontWeight.SemiBold)
     }
 }
 
