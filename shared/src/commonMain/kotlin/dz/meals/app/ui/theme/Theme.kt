@@ -13,6 +13,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dz.meals.app.shared.generated.resources.Res
+import dz.meals.app.shared.generated.resources.tajawal_regular
+import dz.meals.app.shared.generated.resources.tajawal_medium
+import dz.meals.app.shared.generated.resources.tajawal_bold
+import dz.meals.app.shared.generated.resources.tajawal_extra_bold
 import org.jetbrains.compose.resources.Font
 
 private val MidaColors = lightColorScheme(
@@ -50,15 +54,11 @@ private val MidaShapes = Shapes(
  */
 @Composable
 private fun MidaTypography(): Typography {
-    // Compose Multiplatform also generates a filename-keyed map. Using it
-    // avoids generated accessor-name differences while keeping resources
-    // bundled and shared across Android and iOS.
-    val fontResources = Res.allFontResources
     val tajawal = FontFamily(
-        Font(fontResources.getValue("tajawal_regular"), weight = FontWeight.Normal),
-        Font(fontResources.getValue("tajawal_medium"), weight = FontWeight.Medium),
-        Font(fontResources.getValue("tajawal_bold"), weight = FontWeight.Bold),
-        Font(fontResources.getValue("tajawal_extra_bold"), weight = FontWeight.ExtraBold)
+        Font(Res.font.tajawal_regular, weight = FontWeight.Normal),
+        Font(Res.font.tajawal_medium, weight = FontWeight.Medium),
+        Font(Res.font.tajawal_bold, weight = FontWeight.Bold),
+        Font(Res.font.tajawal_extra_bold, weight = FontWeight.ExtraBold)
     )
 
     return Typography(
