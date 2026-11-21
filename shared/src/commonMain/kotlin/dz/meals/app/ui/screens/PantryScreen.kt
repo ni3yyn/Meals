@@ -17,7 +17,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsCheckbox
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsIllustrationBadge
@@ -252,7 +252,7 @@ private fun PantryAddDialog(
                     singleLine = true
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = approximate, onCheckedChange = { approximate = it })
+                    MealsCheckbox(checked = approximate, onCheckedChange = { approximate = it })
                     Text("لدي كمية تقريبية فقط")
                 }
                 OutlinedTextField(

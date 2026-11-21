@@ -29,8 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -494,6 +492,63 @@ fun MealsSecondaryButton(
 }
 
 @Composable
+fun MealsCheckbox(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    val fillColor by animateColorAsState(
+        targetValue = if (checked) ForestDark else Color.White.copy(alpha = 0.82f),
+        animationSpec = tween(durationMillis = 180),
+        label = "mealsCheckboxFill"
+    )
+    val edgeColor by animateColorAsState(
+        targetValue = if (checked) ForestDark else MutedInk.copy(alpha = 0.48f),
+        animationSpec = tween(durationMillis = 180),
+        label = "mealsCheckboxEdge"
+    )
+    val checkScale by animateFloatAsState(
+        targetValue = if (checked) 1f else 0.72f,
+        animationSpec = tween(durationMillis = 180),
+        label = "mealsCheckboxCheck"
+    )
+
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .toggleable(
+                value = checked,
+                enabled = enabled && onCheckedChange != null,
+                role = Role.Checkbox,
+                onValueChange = { onCheckedChange?.invoke(it) }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(fillColor)
+                .border(BorderStroke(1.5.dp, edgeColor), RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (checked) {
+                MealsIcon(
+                    name = MealsIconName.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp).graphicsLayer {
+                        scaleX = checkScale
+                        scaleY = checkScale
+                        alpha = checkScale
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun MealsCheckRow(
     title: String,
     checked: Boolean,
@@ -526,15 +581,10 @@ fun MealsCheckRow(
                     Text(it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Checkbox(
+            MealsCheckbox(
                 checked = checked,
                 onCheckedChange = null,
-                enabled = enabled,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = Forest,
-                    uncheckedColor = MutedInk.copy(alpha = 0.55f),
-                    checkmarkColor = Color.White
-                )
+                enabled = enabled
             )
         }
     }

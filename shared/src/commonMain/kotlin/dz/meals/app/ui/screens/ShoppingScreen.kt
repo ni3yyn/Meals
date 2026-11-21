@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsAlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsCheckbox
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsProgressBar
@@ -406,7 +406,7 @@ fun ShoppingScreen(
                         singleLine = true
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = editUnavailable, onCheckedChange = { editUnavailable = it })
+                        MealsCheckbox(checked = editUnavailable, onCheckedChange = { editUnavailable = it })
                         Text("غير متوفر حالياً")
                     }
                     OutlinedTextField(
@@ -613,7 +613,7 @@ private fun ShoppingItemCard(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 9.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
+            MealsCheckbox(
                 checked = item.checked,
                 onCheckedChange = { onToggle() }
             )

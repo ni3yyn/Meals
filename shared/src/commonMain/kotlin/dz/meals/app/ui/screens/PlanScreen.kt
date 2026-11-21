@@ -1,14 +1,30 @@
 package dz.meals.app.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.IconButton
@@ -16,11 +32,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +66,7 @@ import dz.meals.app.shared.format.formatDzd
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import kotlinx.coroutines.delay
 
 @Composable
 fun PlanScreen(
@@ -65,6 +86,7 @@ fun PlanScreen(
     val weekStart = LocalDate.parse(weekStartIso)
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
+    var expandedDay by rememberSaveable { mutableStateOf(0) }
     val recipesById = snapshot.recipes.associateBy { it.id }
     val visibleMealSlots = snapshot.planRun?.mealSlots ?: preferences.mealSlots
 
@@ -75,6 +97,7 @@ fun PlanScreen(
     }
 
     LazyColumn(
+        state = rememberLazyListState(),
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 122.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -211,55 +234,144 @@ fun PlanScreen(
             val breakfast = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "breakfast" }
             val lunch = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "lunch" }
             val dinner = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "dinner" }
+            val dayMeals = listOf(breakfast, lunch, dinner)
+            val plannedCount = dayMeals.count { it?.recipeId != null }
+            val cookedCount = dayMeals.count { it?.isCooked == true }
+            val isExpanded = expandedDay == day
+            val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
-            MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 14.dp) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(dateLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    if ("breakfast" in visibleMealSlots) SlotRow(
-                        title = "الفطور",
-                        meal = breakfast,
-                        recipe = breakfast?.recipeId?.let(recipesById::get),
-                        recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
-                        onSelect = { recipeId -> onSetMeal(day, "breakfast", recipeId) },
-                        onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
-                        onToggleCooked = {
-                            breakfast?.let { meal ->
-                                if (meal.isCooked) onToggleCooked(meal.id)
-                                else mealAwaitingCookConfirmation = meal.id
-                            }
-                        },
-                        onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
+            LaunchedEffect(isExpanded) {
+                if (isExpanded) {
+                    // Reveal the expanded card after its height transition has settled.
+                    delay(340)
+                    bringIntoViewRequester.bringIntoView()
+                }
+            }
+
+            MealsCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .bringIntoViewRequester(bringIntoViewRequester)
+                    .animateContentSize(animationSpec = tween(durationMillis = 300)),
+                containerColor = Paper,
+                borderColor = if (isExpanded) Forest.copy(alpha = 0.28f) else Border,
+                contentPadding = 0.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expandedDay = if (isExpanded) -1 else day }
+                        .padding(horizontal = 15.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(if (isExpanded) dz.meals.app.ui.theme.Forest.copy(alpha = 0.14f) else dz.meals.app.ui.theme.SoftGreen),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            (day + 1).toString(),
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            dateLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = dz.meals.app.ui.theme.Ink
+                        )
+                        Text(
+                            if (cookedCount > 0) {
+                                "$cookedCount مكتملة · $plannedCount من ${visibleMealSlots.size} وجبات"
+                            } else {
+                                "$plannedCount من ${visibleMealSlots.size} وجبات محددة"
+                            },
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    MealsIcon(
+                        name = MealsIconName.ChevronRight,
+                        contentDescription = if (isExpanded) "طي اليوم" else "عرض وجبات اليوم",
+                        modifier = Modifier.size(22.dp).graphicsLayer {
+                            rotationZ = if (isExpanded) 90f else 0f
+                        }
                     )
-                    if ("lunch" in visibleMealSlots) SlotRow(
-                        title = "الغداء",
-                        meal = lunch,
-                        recipe = lunch?.recipeId?.let(recipesById::get),
-                        recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
-                        onSelect = { recipeId -> onSetMeal(day, "lunch", recipeId) },
-                        onToggleLock = { lunch?.let { onToggleLock(it.id) } },
-                        onToggleCooked = {
-                            lunch?.let { meal ->
-                                if (meal.isCooked) onToggleCooked(meal.id)
-                                else mealAwaitingCookConfirmation = meal.id
-                            }
-                        },
-                        onAdjustServings = { delta -> lunch?.let { onAdjustServings(it.id, delta) } }
-                    )
-                    if ("dinner" in visibleMealSlots) SlotRow(
-                        title = "العشاء",
-                        meal = dinner,
-                        recipe = dinner?.recipeId?.let(recipesById::get),
-                        recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
-                        onSelect = { recipeId -> onSetMeal(day, "dinner", recipeId) },
-                        onToggleLock = { dinner?.let { onToggleLock(it.id) } },
-                        onToggleCooked = {
-                            dinner?.let { meal ->
-                                if (meal.isCooked) onToggleCooked(meal.id)
-                                else mealAwaitingCookConfirmation = meal.id
-                            }
-                        },
-                        onAdjustServings = { delta -> dinner?.let { onAdjustServings(it.id, delta) } }
-                    )
+                }
+
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(180)),
+                    exit = shrinkVertically(animationSpec = tween(240)) + fadeOut(animationSpec = tween(140))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Spacer(
+                            Modifier.fillMaxWidth().height(1.dp)
+                                .background(Border.copy(alpha = 0.72f))
+                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(start = 15.dp, end = 15.dp, bottom = 15.dp),
+                            verticalArrangement = Arrangement.spacedBy(15.dp)
+                        ) {
+                            if ("breakfast" in visibleMealSlots) SlotRow(
+                                title = "الفطور",
+                                meal = breakfast,
+                                recipe = breakfast?.recipeId?.let(recipesById::get),
+                                recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
+                                onSelect = { recipeId -> onSetMeal(day, "breakfast", recipeId) },
+                                onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
+                                onToggleCooked = {
+                                    breakfast?.let { meal ->
+                                        if (meal.isCooked) onToggleCooked(meal.id)
+                                        else mealAwaitingCookConfirmation = meal.id
+                                    }
+                                },
+                                onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
+                            )
+                            if ("lunch" in visibleMealSlots) SlotRow(
+                                title = "الغداء",
+                                meal = lunch,
+                                recipe = lunch?.recipeId?.let(recipesById::get),
+                                recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
+                                onSelect = { recipeId -> onSetMeal(day, "lunch", recipeId) },
+                                onToggleLock = { lunch?.let { onToggleLock(it.id) } },
+                                onToggleCooked = {
+                                    lunch?.let { meal ->
+                                        if (meal.isCooked) onToggleCooked(meal.id)
+                                        else mealAwaitingCookConfirmation = meal.id
+                                    }
+                                },
+                                onAdjustServings = { delta -> lunch?.let { onAdjustServings(it.id, delta) } }
+                            )
+                            if ("dinner" in visibleMealSlots) SlotRow(
+                                title = "العشاء",
+                                meal = dinner,
+                                recipe = dinner?.recipeId?.let(recipesById::get),
+                                recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
+                                onSelect = { recipeId -> onSetMeal(day, "dinner", recipeId) },
+                                onToggleLock = { dinner?.let { onToggleLock(it.id) } },
+                                onToggleCooked = {
+                                    dinner?.let { meal ->
+                                        if (meal.isCooked) onToggleCooked(meal.id)
+                                        else mealAwaitingCookConfirmation = meal.id
+                                    }
+                                },
+                                onAdjustServings = { delta -> dinner?.let { onAdjustServings(it.id, delta) } }
+                            )
+                        }
+                    }
                 }
             }
         }
