@@ -677,27 +677,41 @@ fun MealsAlertDialog(
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
-        properties = properties
+        properties = properties.copy(usePlatformDefaultWidth = false)
     ) {
-        MealsGlassSurface(
-            modifier = modifier
-                .fillMaxWidth()
-                .widthIn(max = 560.dp)
-                .padding(horizontal = 18.dp),
-            contentPadding = 22.dp,
-            shape = RoundedCornerShape(29.dp),
-            tintColor = Color(0xFFFFF6EC),
-            tintAlpha = 0.34f
+        Box(
+            modifier = Modifier.fillMaxSize().padding(18.dp),
+            contentAlignment = Alignment.Center
         ) {
-            title?.invoke()
-            text?.invoke()
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            MealsGlassSurface(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .heightIn(max = 760.dp),
+                contentPadding = 22.dp,
+                shape = RoundedCornerShape(29.dp),
+                tintColor = Color(0xFFFFF6EC),
+                tintAlpha = 0.34f
             ) {
-                dismissButton?.invoke()
-                confirmButton()
+                title?.invoke()
+                if (text != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .heightIn(max = 620.dp)
+                    ) {
+                        text()
+                    }
+                }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    dismissButton?.invoke()
+                    confirmButton()
+                }
             }
         }
     }
