@@ -556,23 +556,32 @@ private fun ShoppingItemCard(
 
 
 
-private fun buildShoppingShareText(rows: List<ShoppingListItem>, snapshot: MealsSnapshot): String = buildString {
+private fun buildShoppingShareText(
+    rows: List<ShoppingListItem>,
+    snapshot: MealsSnapshot
+): String = buildString {
     appendLine("قائمة مشتريات مائدتي")
     appendLine("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd())
     if (snapshot.basket.actualSpendDzd > 0.0) {
         appendLine("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd())
     }
     appendLine()
-    rows.groupBy { it.category }.toSortedMap().forEach { (category, items) ->
+
+    val groupedRows: Map<String, List<ShoppingListItem>> =
+        rows.groupBy { row: ShoppingListItem -> row.category }
+
+    groupedRows.keys.sorted().forEach { category: String ->
         appendLine(category)
-        items.forEach { item ->
+        val categoryRows: List<ShoppingListItem> = groupedRows.getValue(category)
+        categoryRows.forEach { item: ShoppingListItem ->
             append(if (item.checked) "[x] " else "[ ] ")
             append(item.name)
             append(" — ")
             append(item.purchaseQuantity.prettyQuantity())
             append(" ")
             append(item.unit)
-            item.cashOutlayDzd?.let { append(" · " + it.toInt().formatDzd()) }
+            val itemCost: Double? = item.cashOutlayDzd
+            if (itemCost != null) append(" · " + itemCost.toInt().formatDzd())
             if (item.isUnavailable) append(" · غير متوفر")
             if (item.storeNote.isNotBlank()) append(" · " + item.storeNote)
             appendLine()
