@@ -211,23 +211,6 @@ class BasketCalculatorTest {
     }
 
     @Test
-    fun leftoverPlanSlotIsPreservedAndAddsNoShoppingIngredients() {
-        val leftoverMeal = plan.copy(recipeId = null, isUserEdited = true, isLeftover = true)
-
-        assertTrue(shouldPreserveMeal(leftoverMeal, fillEmptyOnly = false))
-
-        val result = calculateBasket(
-            plannedMeals = listOf(leftoverMeal),
-            recipes = listOf(recipe),
-            pantry = emptyList(),
-            prices = emptyList()
-        )
-
-        assertTrue(result.items.isEmpty())
-        assertEquals(0.0, result.purchaseOutlayDzd, 0.0001)
-    }
-
-    @Test
     fun historicalSnapshotPriceRemainsAvailableWithHistoricalLabel() {
         val oldPrice = PriceObservationEntity(
             "old-potato", "potato", 500.0, "g", 100.0, "سوق سابق", "الجلفة",

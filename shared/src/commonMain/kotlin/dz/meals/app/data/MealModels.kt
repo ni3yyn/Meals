@@ -105,8 +105,7 @@ data class PlannedMeal(
     val servings: Int,
     val locked: Boolean,
     val isCooked: Boolean = false,
-    val isUserEdited: Boolean = false,
-    val isLeftover: Boolean = false
+    val isUserEdited: Boolean = false
 )
 
 data class PriceObservationSummary(

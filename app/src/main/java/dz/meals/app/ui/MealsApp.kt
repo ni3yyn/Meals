@@ -259,11 +259,6 @@ private fun MealsAppContent() {
                                 repository.setMeal(weekStartIso, day, slot, recipeId, preferences.householdServings)
                             }
                         },
-                        onSetMealFromLeftovers = { day, slot ->
-                            perform {
-                                repository.setMealFromLeftovers(weekStartIso, day, slot, preferences.householdServings)
-                            }
-                        },
                         onToggleLock = { id -> perform { repository.toggleMealLock(id, weekStartIso) } },
                         onToggleCooked = { id -> perform { repository.toggleMealCooked(id, weekStartIso) } },
                         onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
