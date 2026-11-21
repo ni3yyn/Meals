@@ -111,9 +111,22 @@ android {
 }
 
 
-// Resource merging must wait for the generated Android font files.
-tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Resources") }.configureEach {
+// Every Android resource path that can read the generated res/font folder
+// must wait for the copy task. AGP 9.5 validates these dependencies explicitly.
+tasks.matching { it.name == "preBuild" }.configureEach {
     dependsOn(copyTajawalFonts)
+}
+tasks.configureEach {
+    val isFontResourceConsumer =
+        (name.startsWith("map") && name.endsWith("SourceSetPaths")) ||
+        (name.startsWith("process") && name.endsWith("NavigationResources")) ||
+        (name.startsWith("package") && name.endsWith("Resources")) ||
+        (name.startsWith("generate") && name.endsWith("Resources")) ||
+        (name.startsWith("merge") && name.endsWith("Resources"))
+
+    if (isFontResourceConsumer && name != "copyTajawalFonts") {
+        dependsOn(copyTajawalFonts)
+    }
 }
 
 dependencies {

@@ -214,6 +214,9 @@ fun MealsCard(
     }
 }
 
+val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
+val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
+
 /**
  * High-emphasis hero surface using the exact same backdrop blur material as
  * every MealsCard. The hero differs only in scale and content spacing; it does
