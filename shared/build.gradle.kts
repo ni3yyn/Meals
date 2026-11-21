@@ -30,6 +30,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(compose.animation)
             api(compose.runtime)
             api(compose.foundation)
             api(compose.ui)
