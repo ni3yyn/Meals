@@ -11,6 +11,12 @@ kotlin {
         compileSdk = 37
         minSdk = 26
 
+        // Required with the Android-KMP library plugin so Compose Multiplatform
+        // generated composeResources assets are copied into the Android AAR/APK.
+        androidResources {
+            enable = true
+        }
+
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
