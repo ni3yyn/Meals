@@ -343,9 +343,6 @@ fun MealsPrimaryButton(
     }
 
     Surface(
-        onClick = onClick,
-        enabled = enabled,
-        interactionSource = interactionSource,
         modifier = modifier
             .defaultMinSize(minHeight = 52.dp)
             .graphicsLayer {
@@ -361,6 +358,14 @@ fun MealsPrimaryButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .clip(buttonShape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick
+                )
                 .background(
                     brush = if (enabled) buttonBrush else Brush.linearGradient(
                         listOf(Color(0xFF91B7A0), Color(0xFF769B83))
@@ -439,9 +444,6 @@ fun MealsSecondaryButton(
     }
 
     Surface(
-        onClick = onClick,
-        enabled = enabled,
-        interactionSource = interactionSource,
         modifier = modifier
             .defaultMinSize(minHeight = 48.dp)
             .graphicsLayer {
@@ -457,6 +459,14 @@ fun MealsSecondaryButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .clip(buttonShape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick
+                )
                 .background(
                     brush = if (enabled) surfaceBrush else Brush.linearGradient(
                         listOf(Color(0xFFF3EEE9), Color(0xFFEFE8E2))
@@ -481,15 +491,10 @@ fun MealsSecondaryButton(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (icon != null) {
-                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
+                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(17.dp))
+                    Spacer(Modifier.size(7.dp))
                 }
-                Text(
-                    text = label,
-                    color = if (enabled) ForestDark else MutedInk,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
             }
         }
     }
