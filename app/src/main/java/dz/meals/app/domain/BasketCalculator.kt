@@ -15,7 +15,8 @@ fun calculateBasket(
     recipes: List<MealRecipe>,
     pantry: List<PantryItemEntity>,
     prices: List<PriceObservationEntity>,
-    checkedItemIds: Set<String> = emptySet()
+    checkedItemIds: Set<String> = emptySet(),
+    selectedWilaya: String? = null
 ): BasketSummary {
     val recipesById = recipes.associateBy { it.id }
     val required = linkedMapOf<RequirementKey, Double>()
@@ -38,9 +39,28 @@ fun calculateBasket(
         val approximateStock = pantryRows.any { it.isApproximate || it.quantityBase == null }
         val pantryUsed = minOf(amount, exactStock)
         val netRequired = (amount - pantryUsed).coerceAtLeast(0.0)
-        val price = priceByIngredient[key.ingredientId]
-            ?.filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd >= 0.0 }
-            ?.maxByOrNull { it.observedAtEpochMillis ?: 0L }
+        val compatiblePrices = priceByIngredient[key.ingredientId]
+            .orEmpty()
+            .filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd > 0.0 }
+        val relevantPrices = if (selectedWilaya.isNullOrBlank()) {
+            compatiblePrices
+        } else {
+            compatiblePrices.filter {
+                it.priceKind == "demo" ||
+                    it.locationLabel.equals(selectedWilaya, ignoreCase = true) ||
+                    it.locationLabel.equals("وطني", ignoreCase = true)
+            }
+        }
+        val price = relevantPrices.maxWithOrNull(
+            compareBy<PriceObservationEntity> {
+                when {
+                    it.priceKind == "demo" -> 1
+                    !selectedWilaya.isNullOrBlank() && it.locationLabel.equals(selectedWilaya, ignoreCase = true) -> 3
+                    it.locationLabel.equals("وطني", ignoreCase = true) -> 2
+                    else -> 0
+                }
+            }.thenBy { it.observedAtEpochMillis ?: 0L }
+        )
 
         val consumedValue = price?.let { amount / it.packQuantityBase * it.packPriceDzd }
         val packs = price?.let { if (netRequired <= 0.0) 0.0 else ceil(netRequired / it.packQuantityBase) }

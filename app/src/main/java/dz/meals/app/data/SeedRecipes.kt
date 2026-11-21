@@ -10,7 +10,7 @@ object SeedRecipes {
         IngredientMaster("tomato", "طماطم", "Tomate", "خضروات", "g", emptySet(), listOf("مطيشة", "tomate", "maticha")),
         IngredientMaster("lentils", "عدس", "Lentilles", "بقوليات", "g", emptySet(), listOf("عدس يابس", "lentille", "3dess")),
         IngredientMaster("onion", "بصل", "Oignon", "خضروات", "g", emptySet(), listOf("بصلة", "oignon", "bsal")),
-        IngredientMaster("garlic", "ثوم", "Ail", "خضروات", "clove", emptySet(), listOf("ثومة", "ail", "thoum")),
+        IngredientMaster("garlic", "ثوم", "Ail", "خضروات", "piece", emptySet(), listOf("ثومة", "ail", "thoum")),
         IngredientMaster("oil", "زيت", "Huile", "مواد أساسية", "ml", emptySet(), listOf("زيت المائدة", "huile")),
         IngredientMaster("eggs", "بيض", "Œufs", "ألبان وبيض", "piece", setOf("egg"), listOf("بيضات", "oeuf", "œuf", "bayd")),
         IngredientMaster("pepper", "فلفل حلو", "Poivron", "خضروات", "piece", emptySet(), listOf("فلفلة", "poivron", "felfel")),
@@ -65,7 +65,7 @@ object SeedRecipes {
                 RecipeIngredient("onion", 120.0, "g"),
                 RecipeIngredient("carrot", 1.0, "piece"),
                 RecipeIngredient("tomato", 200.0, "g"),
-                RecipeIngredient("garlic", 2.0, "clove"),
+                RecipeIngredient("garlic", 2.0, "piece"),
                 RecipeIngredient("oil", 20.0, "ml")
             ),
             stepsAr = listOf("اغسل العدس وصفّه.", "شوّح البصل والثوم في قليل من الزيت.", "أضف الجزر والطماطم والعدس والماء والتوابل.", "اتركه على نار هادئة حتى ينضج العدس ويثخن المرق."),
@@ -114,7 +114,7 @@ object SeedRecipes {
                 RecipeIngredient("chicken", 600.0, "g"),
                 RecipeIngredient("potato", 700.0, "g"),
                 RecipeIngredient("onion", 120.0, "g"),
-                RecipeIngredient("garlic", 3.0, "clove"),
+                RecipeIngredient("garlic", 3.0, "piece"),
                 RecipeIngredient("oil", 25.0, "ml")
             ),
             stepsAr = listOf("سخّن الفرن إلى 200 درجة مئوية.", "تبّل الدجاج والبطاطا والبصل والثوم بالزيت والتوابل.", "رتّب المكونات في صينية وأضف ربع كوب ماء.", "اطه حتى ينضج الدجاج وتتحمّر البطاطا مع التقليب عند الحاجة."),

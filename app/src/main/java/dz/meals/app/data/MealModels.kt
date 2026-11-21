@@ -88,11 +88,26 @@ data class PlannedMeal(
     val locked: Boolean
 )
 
+data class PriceObservationSummary(
+    val id: String,
+    val ingredientId: String,
+    val ingredientNameAr: String,
+    val packQuantityBase: Double,
+    val unit: String,
+    val packPriceDzd: Double,
+    val sourceLabel: String,
+    val locationLabel: String,
+    val observedAtEpochMillis: Long?,
+    val priceKind: String,
+    val confidenceLabel: String
+)
+
 data class MealsSnapshot(
     val recipes: List<MealRecipe> = emptyList(),
     val ingredients: List<IngredientMaster> = emptyList(),
     val plannedMeals: List<PlannedMeal> = emptyList(),
     val pantry: List<PantryItem> = emptyList(),
     val shoppingItems: List<ShoppingListItem> = emptyList(),
+    val priceObservations: List<PriceObservationSummary> = emptyList(),
     val basket: BasketSummary = BasketSummary()
 )

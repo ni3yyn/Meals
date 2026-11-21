@@ -84,6 +84,23 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun localWilayaPriceIsPreferredOverDemoEstimate() {
+        val demo = PriceObservationEntity("demo-potato", "potato", 500.0, "g", 100.0, "demo", "غير مرتبطة بولاية", null, "demo", "غير موثق")
+        val local = PriceObservationEntity("local-potato", "potato", 500.0, "g", 150.0, "سوق الحي", "الجلفة", 1_800_000_000_000L, "user_reported", "غير موثق")
+
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = listOf(demo, local),
+            selectedWilaya = "الجلفة"
+        )
+
+        assertEquals(150.0, result.items.single().cashOutlayDzd!!, 0.0001)
+        assertEquals("ملاحظة سعر", result.items.single().priceLabel)
+    }
+
+    @Test
     fun seededCatalogueHasConsistentUnitsAndAllergenMetadata() {
         SeedRecipes.validateCatalogue()
     }

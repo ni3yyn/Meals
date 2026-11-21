@@ -76,7 +76,7 @@ class MealsRepository(context: Context) {
         }
     }
 
-    suspend fun snapshot(weekStartIso: String): MealsSnapshot {
+    suspend fun snapshot(weekStartIso: String, selectedWilaya: String? = null): MealsSnapshot {
         ensureInitialized()
         val ingredients = dao.getIngredients().map { it.toModel() }
         val recipes = loadRecipes()
@@ -102,7 +102,8 @@ class MealsRepository(context: Context) {
             recipes,
             pantryEntities,
             prices,
-            existingShopping.filter { it.checked }.map { it.id }.toSet()
+            existingShopping.filter { it.checked }.map { it.id }.toSet(),
+            selectedWilaya
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
@@ -136,6 +137,22 @@ class MealsRepository(context: Context) {
             plannedMeals = planned,
             pantry = pantry,
             shoppingItems = shoppingItems,
+            priceObservations = prices.mapNotNull { observation ->
+                val master = ingredients.firstOrNull { it.id == observation.ingredientId } ?: return@mapNotNull null
+                PriceObservationSummary(
+                    id = observation.id,
+                    ingredientId = observation.ingredientId,
+                    ingredientNameAr = master.nameAr,
+                    packQuantityBase = observation.packQuantityBase,
+                    unit = observation.unit,
+                    packPriceDzd = observation.packPriceDzd,
+                    sourceLabel = observation.sourceLabel,
+                    locationLabel = observation.locationLabel,
+                    observedAtEpochMillis = observation.observedAtEpochMillis,
+                    priceKind = observation.priceKind,
+                    confidenceLabel = observation.confidenceLabel
+                )
+            }.sortedByDescending { it.observedAtEpochMillis ?: 0L },
             basket = basket.copy(
                 items = shoppingItems,
                 purchaseOutlayDzd = autoItems.sumOf { it.cashOutlayDzd ?: 0.0 },
@@ -148,7 +165,8 @@ class MealsRepository(context: Context) {
         weekStartIso: String,
         weeklyBudgetDzd: Int,
         householdServings: Int,
-        allergyIds: Set<String>
+        allergyIds: Set<String>,
+        selectedWilaya: String? = null
     ): GenerationResult {
         ensureInitialized()
         val recipes = loadRecipes()
@@ -176,7 +194,7 @@ class MealsRepository(context: Context) {
                 val trial = chosen.values.toList() + PlannedMeal(
                     id, weekStartIso, day, slot, recipe.id, householdServings.coerceIn(1, 12), false
                 )
-                val basket = calculateBasket(trial, recipes, pantry, prices)
+                val basket = calculateBasket(trial, recipes, pantry, prices, selectedWilaya = selectedWilaya)
                 val repeatPenalty = (repeats[recipe.id] ?: 0) * 420.0
                 val overBudgetPenalty = (basket.purchaseOutlayDzd - weeklyBudgetDzd).coerceAtLeast(0.0) * 3.0
                 basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty
@@ -196,7 +214,7 @@ class MealsRepository(context: Context) {
 
         dao.deleteWeek(weekStartIso)
         dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
-        val result = calculateBasket(chosen.values.toList(), recipes, pantry, prices)
+        val result = calculateBasket(chosen.values.toList(), recipes, pantry, prices, selectedWilaya = selectedWilaya)
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
         return GenerationResult(
             success = true,
@@ -258,6 +276,36 @@ class MealsRepository(context: Context) {
                 )
             )
         }
+    }
+
+    suspend fun recordPriceObservation(
+        ingredientId: String,
+        packQuantityBase: Double,
+        packPriceDzd: Double,
+        selectedWilaya: String,
+        shopContext: String
+    ) {
+        require(packQuantityBase > 0.0) { "Pack quantity must be positive" }
+        require(packPriceDzd > 0.0) { "Price must be positive" }
+        val ingredient = dao.getIngredients().firstOrNull { it.id == ingredientId }
+            ?: throw IllegalArgumentException("Unknown ingredient")
+        val wilaya = selectedWilaya.trim()
+        require(wilaya.isNotEmpty()) { "Wilaya is required" }
+        val context = shopContext.trim().ifBlank { "نوع المحل غير محدد" }
+        dao.upsertPriceObservation(
+            PriceObservationEntity(
+                id = "user-" + UUID.randomUUID().toString(),
+                ingredientId = ingredientId,
+                packQuantityBase = packQuantityBase,
+                unit = ingredient.baseUnit,
+                packPriceDzd = packPriceDzd,
+                sourceLabel = "بلاغ محلي · " + context,
+                locationLabel = wilaya,
+                observedAtEpochMillis = System.currentTimeMillis(),
+                priceKind = "user_reported",
+                confidenceLabel = "غير موثّق"
+            )
+        )
     }
 
     suspend fun toggleShoppingItem(id: String, checked: Boolean) {

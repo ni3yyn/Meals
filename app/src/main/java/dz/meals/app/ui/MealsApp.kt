@@ -77,7 +77,7 @@ fun MealsApp() {
     var generationMessage by remember { mutableStateOf<String?>(null) }
 
     suspend fun refresh() {
-        snapshot = repository.snapshot(weekStartIso)
+        snapshot = repository.snapshot(weekStartIso, preferences.wilaya)
     }
 
     fun perform(action: suspend () -> Unit) {
@@ -87,7 +87,7 @@ fun MealsApp() {
         }
     }
 
-    LaunchedEffect(repository, weekStartIso) {
+    LaunchedEffect(repository, weekStartIso, preferences.wilaya) {
         repository.ensureInitialized()
         refresh()
     }
@@ -157,7 +157,8 @@ fun MealsApp() {
                                         weekStartIso = weekStartIso,
                                         weeklyBudgetDzd = preferences.weeklyBudgetDzd,
                                         householdServings = preferences.householdServings,
-                                        allergyIds = preferences.allergyIds
+                                        allergyIds = preferences.allergyIds,
+                                        selectedWilaya = preferences.wilaya
                                     )
                                     generationMessage = result.message
                                     refresh()
@@ -185,9 +186,14 @@ fun MealsApp() {
                     )
                     AppTab.Shopping -> ShoppingScreen(
                         snapshot = snapshot,
+                        ingredients = snapshot.ingredients,
+                        wilaya = preferences.wilaya,
                         onToggleItem = { id, checked -> perform { repository.toggleShoppingItem(id, checked) } },
                         onAddCustomItem = { name, quantity, unit -> perform { repository.addCustomShoppingItem(name, quantity, unit) } },
-                        onDeleteCustomItem = { id -> perform { repository.deleteCustomShoppingItem(id) } }
+                        onDeleteCustomItem = { id -> perform { repository.deleteCustomShoppingItem(id) } },
+                        onRecordPrice = { id, pack, amount, context ->
+                            perform { repository.recordPriceObservation(id, pack, amount, preferences.wilaya, context) }
+                        }
                     )
                     AppTab.Pantry -> PantryScreen(
                         ingredients = snapshot.ingredients,

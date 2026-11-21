@@ -25,6 +25,9 @@ interface MealsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPrices(items: List<PriceObservationEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPriceObservation(item: PriceObservationEntity)
+
     @Query("SELECT * FROM ingredients ORDER BY nameAr")
     suspend fun getIngredients(): List<IngredientEntity>
 
