@@ -76,6 +76,9 @@ interface MealsDao {
     @Query("DELETE FROM plan_meals WHERE weekStartIso = :weekStartIso")
     suspend fun deleteWeek(weekStartIso: String)
 
+    @Query("DELETE FROM plan_meals WHERE weekStartIso = :weekStartIso AND mealSlot IN (:mealSlots)")
+    suspend fun deletePlanSlots(weekStartIso: String, mealSlots: List<String>)
+
     @Query("SELECT * FROM pantry_items ORDER BY ingredientId")
     suspend fun getPantryItems(): List<PantryItemEntity>
 

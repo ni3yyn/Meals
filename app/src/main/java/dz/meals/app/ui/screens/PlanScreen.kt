@@ -71,6 +71,7 @@ fun PlanScreen(
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
     val recipesById = snapshot.recipes.associateBy { it.id }
+    val visibleMealSlots = snapshot.planRun?.mealSlots ?: preferences.mealSlots
 
     val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
         meal.locked && meal.recipeId?.let { recipeId ->
@@ -213,7 +214,7 @@ fun PlanScreen(
             ) {
                 Column(Modifier.fillMaxWidth().padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(dateLabel, fontWeight = FontWeight.Bold)
-                    if ("breakfast" in preferences.mealSlots) SlotRow(
+                    if ("breakfast" in visibleMealSlots) SlotRow(
                         title = "الفطور",
                         meal = breakfast,
                         recipe = breakfast?.recipeId?.let(recipesById::get),
@@ -228,7 +229,7 @@ fun PlanScreen(
                         },
                         onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
                     )
-                    if ("lunch" in preferences.mealSlots) SlotRow(
+                    if ("lunch" in visibleMealSlots) SlotRow(
                         title = "الغداء",
                         meal = lunch,
                         recipe = lunch?.recipeId?.let(recipesById::get),
@@ -243,7 +244,7 @@ fun PlanScreen(
                         },
                         onAdjustServings = { delta -> lunch?.let { onAdjustServings(it.id, delta) } }
                     )
-                    if ("dinner" in preferences.mealSlots) SlotRow(
+                    if ("dinner" in visibleMealSlots) SlotRow(
                         title = "العشاء",
                         meal = dinner,
                         recipe = dinner?.recipeId?.let(recipesById::get),

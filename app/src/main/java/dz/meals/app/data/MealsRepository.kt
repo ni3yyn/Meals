@@ -18,6 +18,7 @@ import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.calculateBasket
 import dz.meals.app.domain.exactPantryDeduction
 import dz.meals.app.domain.findLockedAllergyConflict
+import dz.meals.app.domain.findPinnedDietConflict
 import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
@@ -94,8 +95,10 @@ class MealsRepository(context: Context) {
         ensureInitialized()
         val ingredients = dao.getIngredients().map { it.toModel() }
         val recipes = loadRecipes()
+        val savedRun = dao.getPlanRun(weekStartIso)
+        val slotsForThisWeek = savedRun?.mealSlots ?: selectedMealSlots
         val planned = dao.getPlanMeals(weekStartIso)
-            .filter { it.mealSlot in selectedMealSlots }
+            .filter { it.mealSlot in slotsForThisWeek }
             .map { it.toModel() }
         val pantryEntities = dao.getPantryItems()
         val pantry = pantryEntities.map { entity ->
@@ -156,7 +159,6 @@ class MealsRepository(context: Context) {
             if (autoItems.isNotEmpty()) dao.upsertShoppingItems(autoItems)
         }
         val shoppingItems = dao.getShoppingItems(weekStartIso).map { it.toModel(names[it.ingredientId]) }
-        val savedRun = dao.getPlanRun(weekStartIso)
         return MealsSnapshot(
             recipes = recipes,
             ingredients = ingredients,
@@ -221,13 +223,22 @@ class MealsRepository(context: Context) {
         if (lockedConflict != null) {
             return GenerationResult(
                 success = false,
-                message = "توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. افتح قفلها أو استبدلها قبل إنشاء الخطة. لم نغيّر أي وجبة.",
+                message = "توجد وجبة مثبتة لا توافق قيود الحساسية الحالية. استبدلها أو غيّر قيود الطعام قبل إنشاء الخطة. لم نغيّر أي وجبة.",
                 purchaseOutlayDzd = 0,
                 budgetDzd = weeklyBudgetDzd
             )
         }
         val ingredientsById = dao.getIngredients().associateBy { it.id }
         val ingredientCategories = ingredientsById.mapValues { it.value.category }
+        val pinnedDietConflict = findPinnedDietConflict(locked, recipes, ingredientCategories, dietPattern)
+        if (pinnedDietConflict != null) {
+            return GenerationResult(
+                success = false,
+                message = "توجد وجبة مثبتة لا توافق النمط الغذائي الحالي. استبدلها أو غيّر النمط قبل إنشاء الخطة. لم نغيّر أي وجبة.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = weeklyBudgetDzd
+            )
+        }
         val allowed = recipes.filter { recipe ->
             isRecipeAllowed(recipe, ingredientCategories, allergyIds, dietPattern)
         }
@@ -276,7 +287,7 @@ class MealsRepository(context: Context) {
         val priceSnapshotAt = prices.mapNotNull { it.observedAtEpochMillis }.maxOrNull() ?: 0L
         val generatedAt = System.currentTimeMillis()
         database.withTransaction {
-            dao.deleteWeek(weekStartIso)
+            dao.deletePlanSlots(weekStartIso, validSlots.toList())
             dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
             dao.upsertPlanRun(
                 PlanRunEntity(

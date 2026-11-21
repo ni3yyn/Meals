@@ -54,6 +54,19 @@ fun softPreferencePenalty(
     return dislikedPenalty + timePenalty
 }
 
+fun findPinnedDietConflict(
+    pinnedMeals: List<PlannedMeal>,
+    recipes: List<MealRecipe>,
+    ingredientCategories: Map<String, String>,
+    dietPattern: String
+): String? {
+    val recipesById = recipes.associateBy { it.id }
+    return pinnedMeals.firstNotNullOfOrNull { meal ->
+        val recipe = meal.recipeId?.let(recipesById::get) ?: return@firstNotNullOfOrNull null
+        recipe.id.takeIf { !isRecipeAllowed(recipe, ingredientCategories, emptySet(), dietPattern) }
+    }
+}
+
 fun findLockedAllergyConflict(
     lockedMeals: List<PlannedMeal>,
     recipes: List<MealRecipe>,

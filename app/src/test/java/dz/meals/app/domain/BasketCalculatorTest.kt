@@ -7,6 +7,7 @@ import dz.meals.app.data.SeedRecipes
 import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.domain.findLockedAllergyConflict
+import dz.meals.app.domain.findPinnedDietConflict
 import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
@@ -180,6 +181,23 @@ class BasketCalculatorTest {
         assertEquals(0.0, baseline, 0.0001)
         assertTrue(withDisliked > baseline)
         assertTrue(withTimeLimit > baseline)
+    }
+
+    @Test
+    fun pinnedMealsThatConflictWithDietPatternBlockRegeneration() {
+        val chicken = recipe.copy(
+            id = "chicken",
+            ingredients = listOf(RecipeIngredient("chicken", 250.0, "g"))
+        )
+        val pinned = plan.copy(recipeId = chicken.id, isUserEdited = true)
+        assertEquals(
+            chicken.id,
+            findPinnedDietConflict(listOf(pinned), listOf(chicken), mapOf("chicken" to "لحوم ودواجن"), "vegetarian")
+        )
+        assertEquals(
+            null,
+            findPinnedDietConflict(listOf(pinned), listOf(chicken), mapOf("chicken" to "لحوم ودواجن"), "none")
+        )
     }
 
     @Test

@@ -11,8 +11,9 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
 - Seven-day planner with configurable breakfast/lunch/dinner slots, manual recipe assignment, serving adjustments and meal locking.
-- Regeneration preserves locked, cooked and manually selected/cleared slots by default; an explicit “fill empty slots only” option preserves all already-populated slots.
-- Deterministic local week generator. It preserves locked slots and excludes recipes intersecting configured allergy IDs. If a previously locked meal conflicts with a newly selected allergy exclusion, generation is blocked with a prompt to unlock or replace it; the app never silently bypasses the exclusion.
+- Regeneration preserves locked, cooked and manually selected/cleared slots by default; an explicit “fill empty slots only” option preserves all already-populated slots. A new run replaces only the meal slots selected for that run, leaving other slots and weeks intact.
+- Saved weeks display their own meal-slot selection rather than silently adopting the current defaults for future plans.
+- Deterministic local week generator. It preserves locked, cooked and manually edited slots, and excludes recipes intersecting configured allergy IDs. If a pinned meal conflicts with a hard allergy/diet rule, generation is blocked with a prompt to change the meal or rule; it never silently bypasses the exclusion.
 - Pantry exact-quantity records and approximate reminders, with optional user-entered expiry dates and storage notes. Only numeric exact stock can reduce basket requirements.
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
