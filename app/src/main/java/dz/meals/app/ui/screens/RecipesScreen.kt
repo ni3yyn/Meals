@@ -348,4 +348,3 @@ fun RecipesScreen(
 private fun Double.prettyQuantity(): String =
     if (this % 1.0 == 0.0) toLong().toString()
     else String.format(java.util.Locale.ROOT, "%.1f", this)
-}
