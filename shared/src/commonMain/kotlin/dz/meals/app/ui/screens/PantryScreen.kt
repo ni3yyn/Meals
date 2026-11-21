@@ -43,6 +43,8 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.shared.format.epochMillisToLocalDate
 import dz.meals.app.shared.format.formatDateDmy
+import dz.meals.app.shared.format.formatHouseholdQuantity
+import dz.meals.app.shared.format.formatHouseholdUnit
 import dz.meals.app.shared.format.localDateToEpochMillis
 import dz.meals.app.shared.format.prettyQuantity
 import kotlinx.datetime.LocalDate
@@ -154,7 +156,7 @@ fun PantryScreen(
                                 Text(item.nameAr, style = MaterialTheme.typography.titleLarge)
                                 Text(
                                     if (item.isApproximate) "كمية تقريبية — لم تُخصم من حساب المشتريات"
-                                    else (item.quantityBase ?: 0.0).prettyQuantity() + " " + item.unit,
+                                    else (item.quantityBase ?: 0.0).formatHouseholdQuantity(item.unit),
                                     color = MutedInk,
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -240,11 +242,11 @@ private fun PantryAddDialog(
         title = { Text(if (existing == null) "إضافة " + ingredient.nameAr else "تعديل " + ingredient.nameAr) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("الوحدة الأساسية: " + ingredient.baseUnit, color = MutedInk)
+                Text("الوحدة: " + formatHouseholdUnit(ingredient.baseUnit), color = MutedInk)
                 OutlinedTextField(
                     value = quantity,
                     onValueChange = { quantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                    label = { Text("الكمية") },
+                    label = { Text("الكمية (" + formatHouseholdUnit(ingredient.baseUnit) + ")") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     enabled = !approximate,
                     singleLine = true
