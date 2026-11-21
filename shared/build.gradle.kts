@@ -35,7 +35,16 @@ kotlin {
             api(compose.ui)
             api(compose.material3)
             api(compose.materialIconsExtended)
+            api(compose.components.resources)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.haze.core)
+            implementation(libs.haze.glass)
         }
     }
+}
+
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "dz.meals.app.shared.generated.resources"
 }
