@@ -523,6 +523,7 @@ fun MealsCheckbox(
         label = "mealsCheckboxCheck"
     )
 
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .size(48.dp)
@@ -530,6 +531,8 @@ fun MealsCheckbox(
                 value = checked,
                 enabled = enabled && onCheckedChange != null,
                 role = Role.Checkbox,
+                interactionSource = interactionSource,
+                indication = null,
                 onValueChange = { onCheckedChange?.invoke(it) }
             ),
         contentAlignment = Alignment.Center
