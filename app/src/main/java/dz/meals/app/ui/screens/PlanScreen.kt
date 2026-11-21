@@ -178,6 +178,7 @@ fun PlanScreen(
         items((0 until 7).toList(), key = { it }) { day ->
             val date = weekStart.plusDays(day.toLong())
             val dateLabel = date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale("ar", "DZ")))
+            val breakfast = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "breakfast" }
             val lunch = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "lunch" }
             val dinner = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "dinner" }
 
@@ -188,6 +189,15 @@ fun PlanScreen(
             ) {
                 Column(Modifier.fillMaxWidth().padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(dateLabel, fontWeight = FontWeight.Bold)
+                    SlotRow(
+                        title = "الفطور",
+                        meal = breakfast,
+                        recipe = breakfast?.recipeId?.let(recipesById::get),
+                        recipes = snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() },
+                        onSelect = { recipeId -> onSetMeal(day, "breakfast", recipeId) },
+                        onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
+                        onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
+                    )
                     SlotRow(
                         title = "الغداء",
                         meal = lunch,

@@ -8,7 +8,7 @@ The app opens directly into the planner. No authentication, email, phone number,
 ## Implemented
 - Arabic-first Jetpack Compose interface with right-to-left layout.
 - Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
-- Seven-day planner with deterministic local plan generation.
+- Seven-day planner with breakfast, lunch and dinner slots and deterministic local plan generation.
 - Household serving scaling, lockable meal slots and previous/next week navigation.
 - Locally saved favourite recipes.
 - Configurable allergy exclusions applied as hard recipe filters, including checks against locked meals during plan generation.

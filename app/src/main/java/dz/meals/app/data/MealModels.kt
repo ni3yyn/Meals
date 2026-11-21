@@ -79,6 +79,10 @@ data class BasketSummary(
     val hasDemoPrices: Boolean = false
 )
 
+object MealSlots {
+    val ids: List<String> = listOf("breakfast", "lunch", "dinner")
+}
+
 data class PlannedMeal(
     val id: String,
     val weekStartIso: String,

@@ -141,6 +141,12 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun weeklyPlannerIncludesBreakfastLunchAndDinnerForSevenDays() {
+        assertEquals(listOf("breakfast", "lunch", "dinner"), dz.meals.app.data.MealSlots.ids)
+        assertEquals(21, dz.meals.app.data.MealSlots.ids.size * 7)
+    }
+
+    @Test
     fun seededCatalogueHasConsistentUnitsAndAllergenMetadata() {
         SeedRecipes.validateCatalogue()
     }

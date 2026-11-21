@@ -196,7 +196,7 @@ class MealsRepository(context: Context) {
         }
 
         val slots = (0 until 7).flatMap { day ->
-            listOf("lunch", "dinner").map { slot -> "$weekStartIso-$day-$slot" to (day to slot) }
+            MealSlots.ids.map { slot -> "$weekStartIso-$day-$slot" to (day to slot) }
         }
         val chosen = locked.associateBy { it.id }.toMutableMap()
         val repeats = locked.mapNotNull { it.recipeId }.groupingBy { it }.eachCount().toMutableMap()
@@ -270,7 +270,7 @@ class MealsRepository(context: Context) {
     suspend fun addRecipeToNextSlot(weekStartIso: String, recipeId: String, servings: Int) {
         val current = dao.getPlanMeals(weekStartIso)
         val empty = (0 until 7).asSequence()
-            .flatMap { day -> sequenceOf(day to "lunch", day to "dinner") }
+            .flatMap { day -> MealSlots.ids.asSequence().map { slot -> day to slot } }
             .firstOrNull { (day, slot) -> current.none { it.dayIndex == day && it.mealSlot == slot && it.recipeId != null } }
             ?: return
         setMeal(weekStartIso, empty.first, empty.second, recipeId, servings)
