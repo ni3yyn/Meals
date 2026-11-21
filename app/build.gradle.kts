@@ -22,7 +22,7 @@ val hasReleaseSigning = listOf(
 ).all { !it.isNullOrBlank() }
 
 val generatedTajawalRes = layout.buildDirectory.dir("generated/tajawal-res")
-val copyTajawalFonts by tasks.registering(Copy::class) {
+val copyTajawalFonts = tasks.register<Copy>("copyTajawalFonts") {
     from(rootProject.file("shared/src/commonMain/composeResources/font")) {
         include(
             "tajawal_regular.ttf",
@@ -97,7 +97,7 @@ android {
 
     // The same shared Tajawal assets are exposed as Android font resources
     // for a deterministic native Typeface fallback in MainActivity.
-    sourceSets.getByName("main").res.srcDir(generatedTajawalRes)
+    sourceSets.getByName("main").res.srcDir(generatedTajawalRes.get().asFile)
 
     room {
         schemaDirectory("$projectDir/schemas")
