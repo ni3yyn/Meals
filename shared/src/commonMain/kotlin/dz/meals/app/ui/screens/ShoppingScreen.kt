@@ -38,6 +38,7 @@ import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsProgressBar
+import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PriceObservationSummary
@@ -50,6 +51,8 @@ import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.shared.format.epochMillisToLocalDate
 import dz.meals.app.shared.format.formatDateDmy
 import dz.meals.app.shared.format.formatDzd
+import dz.meals.app.shared.format.formatHouseholdQuantity
+import dz.meals.app.shared.format.formatHouseholdUnit
 import dz.meals.app.shared.format.prettyQuantity
 
 @Composable
@@ -69,6 +72,7 @@ fun ShoppingScreen(
     onShareList: (String) -> Unit
 ) {
     var addDialog by rememberSaveable { mutableStateOf(false) }
+    var showPurchased by rememberSaveable { mutableStateOf(false) }
     var editItemId by rememberSaveable { mutableStateOf<String?>(null) }
     var priceDialog by rememberSaveable { mutableStateOf(false) }
     var itemName by rememberSaveable { mutableStateOf("") }
@@ -86,6 +90,8 @@ fun ShoppingScreen(
 
     val checkedCount = snapshot.shoppingItems.count { it.checked }
     val rows = snapshot.shoppingItems
+    val remainingCount = rows.size - checkedCount
+    val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -168,6 +174,29 @@ fun ShoppingScreen(
             }
         }
 
+        if (rows.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = { showPurchased = false }) {
+                    Text(
+                        "المتبقي (" + remainingCount + ")",
+                        color = if (!showPurchased) Forest else MutedInk,
+                        fontWeight = if (!showPurchased) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+                TextButton(onClick = { showPurchased = true }) {
+                    Text(
+                        "كل العناصر (" + rows.size + ")",
+                        color = if (showPurchased) Forest else MutedInk,
+                        fontWeight = if (showPurchased) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+            }
+        }
+
         if (rows.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
@@ -180,13 +209,26 @@ fun ShoppingScreen(
             }
         } else {
             val grouped: Map<String, List<ShoppingListItem>> =
-                rows.groupBy { row: ShoppingListItem -> row.category }
+                visibleRows.groupBy { row: ShoppingListItem -> row.category }
             val categoryNames: List<String> = grouped.keys.sorted()
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 122.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (visibleRows.isEmpty()) {
+                    item(key = "all-purchased") {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 30.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            MealsIllustrationBadge(icon = MealsIconName.Basket, size = 64.dp)
+                            Text("أحسنتِ، كل العناصر في السلة", style = MaterialTheme.typography.titleLarge)
+                            Text("يمكنك عرض القائمة كاملة لمراجعة ما وضعتِه في السلة.", color = MutedInk)
+                        }
+                    }
+                }
                 categoryNames.forEach { category: String ->
                     val categoryItems: List<ShoppingListItem> = grouped.getValue(category)
                     item(key = "category-$category") {
@@ -405,7 +447,7 @@ private fun PriceReportDialog(
                     }
                 }
                 Text(
-                    "الوحدة الأساسية: " + (selectedIngredient?.baseUnit ?: "—") +
+                    "الوحدة الأساسية: " + (selectedIngredient?.baseUnit?.let { formatHouseholdUnit(it) } ?: "—") +
                         " · الولاية: " + wilaya,
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
@@ -413,7 +455,7 @@ private fun PriceReportDialog(
                 OutlinedTextField(
                     value = packQuantityText,
                     onValueChange = { packQuantityText = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                    label = { Text("حجم العبوة أو الكمية المباعة (" + (selectedIngredient?.baseUnit ?: "وحدة") + ")") },
+                    label = { Text("حجم العبوة أو الكمية المباعة (" + (selectedIngredient?.baseUnit?.let { formatHouseholdUnit(it) } ?: "وحدة") + ")") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
@@ -468,7 +510,7 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
             Text(price.packPriceDzd.toInt().formatDzd(), fontWeight = FontWeight.Bold, color = Forest)
         }
         Text(
-            price.packQuantityBase.prettyQuantity() + " " + price.unit + " · " +
+            price.packQuantityBase.formatHouseholdQuantity(price.unit) + " · " +
                 price.locationLabel + " · " + date,
             color = MutedInk,
             style = MaterialTheme.typography.bodySmall
@@ -514,9 +556,9 @@ private fun ShoppingItemCard(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    "المطلوب " + item.requiredQuantity.prettyQuantity() + " " + item.unit +
-                        " · الصافي " + (item.requiredQuantity - item.pantryQuantity).coerceAtLeast(0.0).prettyQuantity() +
-                        (if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.prettyQuantity() else ""),
+                    "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
+                        " · الصافي " + (item.requiredQuantity - item.pantryQuantity).coerceAtLeast(0.0).formatHouseholdQuantity(item.unit) +
+                        (if (item.pantryQuantity > 0) " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit) else ""),
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -524,7 +566,7 @@ private fun ShoppingItemCard(
                     Text("يوجد مخزون تقريبي؛ لم يُخصم من الكمية المطلوبة.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
-                    "شراء " + item.purchaseQuantity.prettyQuantity() + " " + item.unit +
+                    "شراء " + item.purchaseQuantity.formatHouseholdQuantity(item.unit) +
                         " · " + (item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر"),
                     color = Forest,
                     fontWeight = FontWeight.SemiBold,
@@ -575,9 +617,7 @@ private fun buildShoppingShareText(
             append(if (item.checked) "[x] " else "[ ] ")
             append(item.name)
             append(" — ")
-            append(item.purchaseQuantity.prettyQuantity())
-            append(" ")
-            append(item.unit)
+            append(item.purchaseQuantity.formatHouseholdQuantity(item.unit))
             val itemCost: Double? = item.cashOutlayDzd
             if (itemCost != null) append(" · " + itemCost.toInt().formatDzd())
             if (item.isUnavailable) append(" · غير متوفر")
