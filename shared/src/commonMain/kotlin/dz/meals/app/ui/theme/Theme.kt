@@ -74,7 +74,7 @@ private fun MidaTypography(hostFontFamily: FontFamily? = null): Typography {
         bodyLarge = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 25.sp),
         bodyMedium = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 22.sp),
         bodySmall = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 20.sp),
-        labelLarge = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Bold, fontSize = 15.sp, lineHeight = 22.sp),
+        labelLarge = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp),
         labelMedium = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 18.sp),
         labelSmall = TextStyle(fontFamily = tajawal, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp)
     )
