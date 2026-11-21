@@ -45,9 +45,9 @@ import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsIllustrationBadge
+import dz.meals.app.ui.components.MealsCheckbox
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
-import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.data.AppPreferences
@@ -115,14 +115,41 @@ fun PlanScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    IconButton(onClick = onOpenShoppingList) {
-                        MealsIcon(MealsIconName.Basket, contentDescription = "المشتريات", modifier = Modifier.size(22.dp))
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape)
+                            .background(Paper.copy(alpha = 0.68f))
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                onClick = onOpenShoppingList
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MealsIcon(MealsIconName.Basket, contentDescription = "المشتريات", modifier = Modifier.size(21.dp))
                     }
-                    IconButton(onClick = onPreviousWeek) {
-                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(24.dp))
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape)
+                            .background(Paper.copy(alpha = 0.68f))
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                onClick = onPreviousWeek
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(23.dp))
                     }
-                    IconButton(onClick = onNextWeek) {
-                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(24.dp))
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape)
+                            .background(Paper.copy(alpha = 0.68f))
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                onClick = onNextWeek
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(23.dp))
                     }
                 }
             }
@@ -157,7 +184,7 @@ fun PlanScreen(
                         )
                     }
                     Box(
-                        modifier = Modifier.width(1.dp).height(38.dp).background(Border.copy(alpha = 0.75f))
+                        modifier = Modifier.size(width = 1.dp, height = 38.dp).background(Border.copy(alpha = 0.75f))
                     )
                     Column(
                         modifier = Modifier.weight(1f),
