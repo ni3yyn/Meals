@@ -9,8 +9,10 @@ The app opens directly into the planner. No authentication, email, phone number,
 - Arabic-first Jetpack Compose interface with right-to-left layout.
 - Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
 - Seven-day planner with deterministic local plan generation.
-- Household serving scaling and lockable meal slots.
-- Configurable allergy exclusions applied as hard recipe filters.
+- Household serving scaling, lockable meal slots and previous/next week navigation.
+- Locally saved favourite recipes.
+- Configurable allergy exclusions applied as hard recipe filters, including checks against locked meals during plan generation.
+- User price observations expire from basket calculations after 30 days; old reports remain visible as history but are not treated as current prices.
 - Arabic/French recipe and ingredient-alias search.
 - Exact pantry deductions; approximate stock is a reminder and is never deducted.
 - Optional pantry expiry dates and storage notes, stored locally.

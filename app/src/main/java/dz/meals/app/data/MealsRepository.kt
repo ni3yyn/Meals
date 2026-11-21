@@ -155,6 +155,7 @@ class MealsRepository(context: Context) {
                     confidenceLabel = observation.confidenceLabel,
                     isStale = observation.priceKind != "demo" &&
                         (observation.observedAtEpochMillis == null ||
+                            System.currentTimeMillis() < observation.observedAtEpochMillis ||
                             System.currentTimeMillis() - observation.observedAtEpochMillis > 30L * 24L * 60L * 60L * 1000L)
                 )
             }.sortedByDescending { it.observedAtEpochMillis ?: 0L },

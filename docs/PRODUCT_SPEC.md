@@ -18,6 +18,10 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.
 - Unit tests for serving scaling, exact/approximate pantry handling, package rounding and catalogue integrity.
+- Saved favourite recipes stored in Room, with a versioned v1-to-v2 database migration.
+- Previous/next week navigation; the planner anchors weeks to Monday.
+- Locked meals that conflict with a newly selected allergy exclusion block regeneration until the user unlocks or replaces them.
+- Non-demo user price observations older than 30 days (or with future/invalid timestamps) are excluded from live basket estimates.
 - Release R8 minification, obfuscation and resource shrinking.
 
 ## Current user flows

@@ -378,6 +378,13 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
             color = MutedInk,
             style = MaterialTheme.typography.labelSmall
         )
+        if (price.isStale) {
+            Text(
+                "سعر قديم أو بتاريخ غير صالح — لا يدخل في تقدير المشتريات الحالي.",
+                color = MutedInk,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
     }
 }
 

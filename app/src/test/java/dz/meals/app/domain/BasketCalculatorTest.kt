@@ -94,7 +94,8 @@ class BasketCalculatorTest {
             recipes = listOf(recipe),
             pantry = emptyList(),
             prices = listOf(demo, local),
-            selectedWilaya = "الجلفة"
+            selectedWilaya = "الجلفة",
+            nowEpochMillis = 1_800_000_000_000L
         )
 
         assertEquals(150.0, result.items.single().cashOutlayDzd!!, 0.0001)
