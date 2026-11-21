@@ -17,7 +17,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
 - Plan-run metadata saved per week: generator version, generation timestamp, price snapshot timestamp, budget, wilaya and selected meal slots.
 - Week-scoped shopping lists; generated and manually entered items remain associated with the plan week.
-- Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. Approximate stock is never deducted.
+- Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone, preventing recipe/portion edits from making the inventory history inaccurate. Approximate stock is never deducted.
 - Shopping item details for manual purchase-quantity override, store notes, availability and user-entered actual spend.
 - Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.

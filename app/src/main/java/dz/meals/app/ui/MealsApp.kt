@@ -3,6 +3,9 @@ package dz.meals.app.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -279,7 +282,11 @@ private fun SettingsDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (isFirstSetup) "لنجهّز أول خطة لك" else "إعدادات الأسرة والميزانية") },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 560.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 if (isFirstSetup) {
                     Text(
                         "اختر ميزانيتك وعادات الوجبات. يبدأ التطبيق مباشرة دون حساب أو رقم هاتف، وتُحفظ هذه الإعدادات على جهازك.",

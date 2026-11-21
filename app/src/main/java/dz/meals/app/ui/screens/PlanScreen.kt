@@ -312,15 +312,15 @@ private fun SlotRow(
             if (meal != null && recipe != null) {
                 Text(recipe.durationMinutes.toString() + " دقيقة · " + meal.servings + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
                 if (meal.isCooked) {
-                    Text("تم الطهي — تم تحديث المخزون", color = Forest, style = MaterialTheme.typography.bodySmall)
+                    Text("تم الطهي — تم تحديث المخزون. ألغِ الطهي أولاً لتعديل الوجبة.", color = Forest, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
         if (meal != null && recipe != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { onAdjustServings(-1) }, enabled = meal.servings > 1) { Text("−") }
+                TextButton(onClick = { onAdjustServings(-1) }, enabled = meal.servings > 1 && !meal.isCooked) { Text("−") }
                 Text(meal.servings.toString(), fontWeight = FontWeight.Bold)
-                TextButton(onClick = { onAdjustServings(1) }, enabled = meal.servings < 12) { Text("+") }
+                TextButton(onClick = { onAdjustServings(1) }, enabled = meal.servings < 12 && !meal.isCooked) { Text("+") }
             }
             TextButton(onClick = onToggleCooked) {
                 Text(if (meal.isCooked) "تراجع" else "تم الطهي")
@@ -335,7 +335,7 @@ private fun SlotRow(
         } else {
             Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = MutedInk)
         }
-        OutlinedButton(onClick = { chooseRecipe = true }) {
+        OutlinedButton(onClick = { chooseRecipe = true }, enabled = meal?.isCooked != true) {
             Icon(if (recipe == null) Icons.Outlined.Add else Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
             Text(if (recipe == null) "إضافة" else "تغيير")
         }

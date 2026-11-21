@@ -16,6 +16,7 @@ import dz.meals.app.data.local.RecipeIngredientEntity
 import dz.meals.app.data.local.RecipeStepEntity
 import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.calculateBasket
+import dz.meals.app.domain.exactPantryDeduction
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.softPreferencePenalty
@@ -299,6 +300,7 @@ class MealsRepository(context: Context) {
     suspend fun setMeal(weekStartIso: String, dayIndex: Int, mealSlot: String, recipeId: String?, servings: Int) {
         val id = "$weekStartIso-$dayIndex-$mealSlot"
         val old = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id }
+        if (old?.isCooked == true) return
         dao.upsertPlanMeal(
             PlanMealEntity(
                 id = id,
@@ -381,6 +383,7 @@ class MealsRepository(context: Context) {
 
     suspend fun adjustMealServings(id: String, weekStartIso: String, delta: Int) {
         val meal = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id } ?: return
+        if (meal.isCooked) return
         dao.upsertPlanMeal(meal.copy(servings = (meal.servings + delta).coerceIn(1, 12)))
     }
 
