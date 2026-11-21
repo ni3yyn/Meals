@@ -204,13 +204,10 @@ fun MealsGlassSurface(
             specularIntensity(0.72f)
             ambientResponse(0.66f)
             edgeSoftness(5.dp)
-            // GlassStyle.regular defaults to a 0.7dp black outer outline at
-            // 40% opacity. That edge is too dark for this pale cloudy material.
-            // Replace it with a fine top/side specular rim and a warm, restrained
-            // internal edge response instead of stacking another shadow layer.
-            edgeOutline(Color.Transparent, 0.dp)
+            // Haze 2.1.0 exposes edgeShadow but not the newer edge-outline
+            // or rim-highlight controls. Keep the edge response subtle here;
+            // do not depend on APIs introduced after the pinned stable version.
             edgeShadow(Color(0x14745D4B))
-            rimHighlight(0.74f, 1.dp, 0.35f)
             shape(shape)
             surfaceProfile(SurfaceProfile.Squircle)
             lightPosition(Alignment.TopStart)
