@@ -15,6 +15,13 @@ class StartupSmokeTest {
     fun launcherActivityStartsAndStartupDiagnosticsAreWritten() {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         val diagnosticsDirectory = java.io.File(targetContext.filesDir, "diagnostics")
+        val updateIconPath =
+            "composeResources/dz.meals.app.shared.generated.resources/drawable/meals_icon_update.xml"
+
+        // Check the exact asset path reported by the user's production crash.
+        targetContext.assets.open(updateIconPath).use { stream ->
+            assertTrue("Packaged Compose resource is empty: $updateIconPath", stream.read() >= 0)
+        }
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
