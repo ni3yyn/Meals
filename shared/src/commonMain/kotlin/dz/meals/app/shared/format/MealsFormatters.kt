@@ -33,8 +33,9 @@ fun Double.prettyQuantity(): String {
 }
 
 /**
- * Converts internal recipe units into familiar household shopping units.
- * Recipe calculations remain in their exact base units (g/ml/piece).
+ * Formats a base-unit quantity for people reading a pantry or shopping list.
+ * This is a display-only conversion: saved values and recipe calculations
+ * remain in their exact base units (g/ml/piece).
  */
 fun Double.formatHouseholdQuantity(unit: String): String {
     if (!isFinite()) return "—"
