@@ -35,6 +35,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
@@ -102,11 +103,28 @@ private val MealsCardShape = RoundedCornerShape(26.dp)
 private val ButtonShape = RoundedCornerShape(22.dp)
 
 /**
+ * One immutable blur recipe shared by every card. LazyColumn only composes
+ * visible items, so only on-screen cards own active Haze nodes.
+ */
+private val MealsCardBlurStyle = HazeBlurStyle {
+    blurRadius(16.dp)
+    noiseFactor(0.035f)
+    colorEffects(
+        listOf(
+            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.24f))
+        )
+    )
+    fallbackColorEffect(
+        HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
+    )
+}
+
+/**
  * The shared elevated surface used for budgets, summaries and grouped content.
  *
- * It deliberately avoids a flat Material card fill: the warm translucent
- * highlight, fine double-tone edge and soft elevation reproduce the layered
- * porcelain/glass surfaces from the Mida visual system without per-card blur.
+ * Each card uses Haze's source-backed Blur with a shared restrained style,
+ * a translucent porcelain tint, fine white rim and no platform elevation
+ * shadow. The dedicated card source contains only the cloudy backdrop.
  */
 @Composable
 fun MealsCard(
@@ -116,43 +134,59 @@ fun MealsCard(
     contentPadding: Dp = 18.dp,
     borderColor: Color? = Border.copy(alpha = 0.72f),
     shape: Shape = MealsCardShape,
-    shadowElevation: Dp = 5.dp,
+    @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val faceHighlight = remember(containerColor) {
-        Brush.linearGradient(
+    val cardHazeState = LocalMealsCardHazeState.current
+    val usesLightContent = contentColor == Color.White
+    val surfaceAlpha = if (usesLightContent) 0.78f else 0.62f
+
+    val face = remember(containerColor, usesLightContent, surfaceAlpha) {
+        Brush.verticalGradient(
+            colors = if (usesLightContent) {
+                listOf(
+                    Color.White.copy(alpha = 0.20f),
+                    containerColor.copy(alpha = surfaceAlpha),
+                    containerColor.copy(alpha = 0.86f)
+                )
+            } else {
+                listOf(
+                    Color.White.copy(alpha = 0.44f),
+                    containerColor.copy(alpha = surfaceAlpha),
+                    containerColor.copy(alpha = 0.68f)
+                )
+            }
+        )
+    }
+    val rim = remember(borderColor) {
+        val lowerEdge = borderColor ?: Color(0xFFEADFD7)
+        Brush.verticalGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.34f),
-                Color.White.copy(alpha = 0.08f),
-                Color(0xFFE8C9BA).copy(alpha = 0.08f)
+                Color.White.copy(alpha = 0.98f),
+                Color.White.copy(alpha = 0.72f),
+                lowerEdge.copy(alpha = 0.64f)
             )
         )
     }
-    val edgeHighlight = remember(borderColor) {
-        borderColor?.let { edge ->
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.98f),
-                    edge.copy(alpha = 0.72f),
-                    edge.copy(alpha = 0.48f)
-                )
-            )
-        }
-    }
 
-    Surface(
-        modifier = modifier,
-        shape = shape,
-        color = containerColor,
-        contentColor = contentColor,
-        border = edgeHighlight?.let { BorderStroke(1.dp, it) },
-        shadowElevation = shadowElevation
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .then(
+                if (cardHazeState != null) {
+                    Modifier.hazeBlur(
+                        input = HazeInput.Sources(cardHazeState),
+                        style = MealsCardBlurStyle,
+                        performanceMode = HazePerformanceMode.Default
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .background(face, shape)
+            .border(BorderStroke(1.dp, rim), shape)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(faceHighlight, shape)
-        ) {
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -161,6 +195,26 @@ fun MealsCard(
                 content = content
             )
         }
+
+        // A restrained specular hairline gives the card a raised glass lip
+        // without placing a RenderNode elevation shadow under a translucent fill.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 34.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.94f),
+                            Color.White.copy(alpha = 0.76f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
     }
 }
 
@@ -171,11 +225,11 @@ fun MealsCard(
  * ambient edge lift and specular rim lighting. The Compose overlays only tune
  * the warm porcelain tint and fine double edge; they are not a fake blur.
  *
- * Use for hero summaries, floating controls and grouped surfaces. Dense,
- * repeating rows should continue using MealsCard to protect LazyColumn scroll
- * performance and avoid paying for glass rendering on every item.
+ * Use for hero summaries and prominent grouped surfaces. Repeating content
+ * uses the lighter shared MealsCard blur treatment instead of optical refraction.
  */
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
+val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
 
 /**
  * A single, shape-consistent glass material. Haze owns the material fill,
@@ -191,7 +245,7 @@ fun MealsGlassSurface(
     shape: RoundedCornerShape = RoundedCornerShape(29.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val hazeState = LocalMealsHazeState.current
+    val hazeState = LocalMealsCardHazeState.current
     val glassStyle = remember(shape, tintColor, tintAlpha) {
         GlassStyle.regular.then {
             tint(tintColor.copy(alpha = tintAlpha.coerceIn(0.12f, 0.42f)))
@@ -222,7 +276,7 @@ fun MealsGlassSurface(
             // layer. Haze draws the optical edge and rim as part of the same
             // material, avoiding a platform shadow bleeding through the tint.
             .hazeGlass(
-                input = HazeInput.Backdrop(hazeState),
+                input = HazeInput.Sources(requireNotNull(hazeState) { "MealsGlassSurface requires MealsBackdrop." }),
                 style = glassStyle
             )
     ) {
@@ -866,14 +920,22 @@ fun MealsFrostedBottomBar(
 
 @Composable
 fun MealsBackdrop(content: @Composable () -> Unit) {
+    // The full-screen state is used by the floating navigation so it can blur
+    // moving content. The card state is isolated to the atmospheric canvas,
+    // preventing a card from sampling itself or neighbouring card outputs.
     val hazeState = rememberHazeState()
+    val cardHazeState = rememberHazeState()
 
-    CompositionLocalProvider(LocalMealsHazeState provides hazeState) {
+    CompositionLocalProvider(
+        LocalMealsHazeState provides hazeState,
+        LocalMealsCardHazeState provides cardHazeState
+    ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Capture only the atmospheric background. Capturing this parent
-            // would also capture its foreground glass cards, feeding their
-            // translucent output back into later Haze surfaces on fallback
-            // renderers (Android < 17 and non-native paths).
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .hazeSource(cardHazeState)
+            ) {
             Canvas(
                 Modifier
                     .fillMaxSize()
@@ -923,6 +985,7 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
                     color = Color(0xFFF2D9CE),
                     radius = radius * 0.92f
                 )
+            }
             }
             content()
         }
