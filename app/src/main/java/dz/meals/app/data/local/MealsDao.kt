@@ -46,6 +46,15 @@ interface MealsDao {
     @Query("SELECT * FROM plan_runs WHERE weekStartIso = :weekStartIso LIMIT 1")
     suspend fun getPlanRun(weekStartIso: String): PlanRunEntity?
 
+    @Query("SELECT * FROM plan_price_snapshots WHERE weekStartIso = :weekStartIso")
+    suspend fun getPlanPriceSnapshots(weekStartIso: String): List<PlanPriceSnapshotEntity>
+
+    @Query("DELETE FROM plan_price_snapshots WHERE weekStartIso = :weekStartIso")
+    suspend fun deletePlanPriceSnapshots(weekStartIso: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlanPriceSnapshots(items: List<PlanPriceSnapshotEntity>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPlanRun(item: PlanRunEntity)
 

@@ -9,6 +9,7 @@ import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.MealsDao
 import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PlanMealEntity
+import dz.meals.app.data.local.PlanPriceSnapshotEntity
 import dz.meals.app.data.local.PlanRunEntity
 import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.data.local.RecipeEntity
@@ -20,6 +21,7 @@ import dz.meals.app.domain.exactPantryDeduction
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.findPinnedDietConflict
 import dz.meals.app.domain.isRecipeAllowed
+import dz.meals.app.domain.pricesForSavedPlan
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
 import java.time.LocalDate
@@ -118,7 +120,14 @@ class MealsRepository(context: Context) {
                 expiryAtEpochMillis = entity.expiryAtEpochMillis
             )
         }
-        val prices = dao.getPriceObservations()
+        val currentPrices = dao.getPriceObservations()
+        val savedPriceSnapshot = if (savedRun != null) {
+            dao.getPlanPriceSnapshots(weekStartIso).map { it.toPriceObservation() }
+        } else emptyList()
+        val prices = if (savedRun != null) {
+            pricesForSavedPlan(savedPriceSnapshot, currentPrices, savedRun.priceSnapshotAtEpochMillis)
+        } else currentPrices
+        val planWilaya = savedRun?.wilaya?.takeIf { it.isNotBlank() } ?: selectedWilaya
         val existingShopping = dao.getShoppingItems(weekStartIso)
         val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
         val basket = calculateBasket(
@@ -127,7 +136,7 @@ class MealsRepository(context: Context) {
             pantryEntities,
             prices,
             existingShopping.filter { it.checked }.map { it.id.substringAfter("::") }.toSet(),
-            selectedWilaya
+            planWilaya
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
@@ -169,7 +178,7 @@ class MealsRepository(context: Context) {
             plannedMeals = planned,
             pantry = pantry,
             shoppingItems = shoppingItems,
-            priceObservations = prices.mapNotNull { observation ->
+            priceObservations = currentPrices.mapNotNull { observation ->
                 val master = ingredients.firstOrNull { it.id == observation.ingredientId } ?: return@mapNotNull null
                 PriceObservationSummary(
                     id = observation.id,
@@ -288,9 +297,13 @@ class MealsRepository(context: Context) {
             repeats[candidate.id] = (repeats[candidate.id] ?: 0) + 1
         }
 
-        val priceSnapshotAt = prices.mapNotNull { it.observedAtEpochMillis }.maxOrNull() ?: 0L
         val generatedAt = System.currentTimeMillis()
+        val priceSnapshotAt = prices.mapNotNull { it.observedAtEpochMillis }.maxOrNull() ?: generatedAt
         database.withTransaction {
+            dao.deletePlanPriceSnapshots(weekStartIso)
+            if (prices.isNotEmpty()) {
+                dao.insertPlanPriceSnapshots(prices.map { it.toPlanSnapshot(weekStartIso) })
+            }
             dao.deletePlanSlots(weekStartIso, validSlots.toList())
             dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
             dao.upsertPlanRun(
@@ -700,6 +713,33 @@ private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = Shopping
     storeNote = storeNote,
     isUnavailable = isUnavailable,
     actualSpentDzd = actualSpentDzd
+)
+
+private fun PriceObservationEntity.toPlanSnapshot(weekStartIso: String) = PlanPriceSnapshotEntity(
+    weekStartIso = weekStartIso,
+    observationId = id,
+    ingredientId = ingredientId,
+    packQuantityBase = packQuantityBase,
+    unit = unit,
+    packPriceDzd = packPriceDzd,
+    sourceLabel = sourceLabel,
+    locationLabel = locationLabel,
+    observedAtEpochMillis = observedAtEpochMillis,
+    priceKind = priceKind,
+    confidenceLabel = confidenceLabel
+)
+
+private fun PlanPriceSnapshotEntity.toPriceObservation() = PriceObservationEntity(
+    id = observationId,
+    ingredientId = ingredientId,
+    packQuantityBase = packQuantityBase,
+    unit = unit,
+    packPriceDzd = packPriceDzd,
+    sourceLabel = sourceLabel,
+    locationLabel = locationLabel,
+    observedAtEpochMillis = observedAtEpochMillis,
+    priceKind = priceKind,
+    confidenceLabel = confidenceLabel
 )
 
 private fun PlanRunEntity.toModel() = PlanRunSummary(

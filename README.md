@@ -13,7 +13,7 @@ Kitchen-equipment awareness and recipe filtering based on equipment are intentio
 - Seven-day planner with breakfast, lunch and dinner slots and deterministic local plan generation.
 - Household serving scaling, configurable breakfast/lunch/dinner slots and previous/next week navigation.
 - Vegetarian/vegan hard filters plus soft preferences for disliked ingredients and preferred cooking time.
-- Configurable budget safety buffer and per-week plan generator/price-snapshot metadata.
+- Configurable budget safety buffer and per-week plan generator/price-snapshot metadata; each generated week keeps its own copy of the prices it used.
 - Locally saved favourite recipes.
 - Configurable allergy exclusions applied as hard recipe filters, including checks against locked meals during plan generation.
 - User price observations expire from basket calculations after 30 days; old reports remain visible as history but are not treated as current prices.

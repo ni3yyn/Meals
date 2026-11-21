@@ -19,9 +19,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ShoppingItemEntity::class,
         FavoriteRecipeEntity::class,
         PlanRunEntity::class,
-        CookedMealDeductionEntity::class
+        CookedMealDeductionEntity::class,
+        PlanPriceSnapshotEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -84,6 +85,27 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS plan_price_snapshots (" +
+                        "weekStartIso TEXT NOT NULL, " +
+                        "observationId TEXT NOT NULL, " +
+                        "ingredientId TEXT NOT NULL, " +
+                        "packQuantityBase REAL NOT NULL, " +
+                        "unit TEXT NOT NULL, " +
+                        "packPriceDzd REAL NOT NULL, " +
+                        "sourceLabel TEXT NOT NULL, " +
+                        "locationLabel TEXT NOT NULL, " +
+                        "observedAtEpochMillis INTEGER, " +
+                        "priceKind TEXT NOT NULL, " +
+                        "confidenceLabel TEXT NOT NULL, " +
+                        "PRIMARY KEY(weekStartIso, observationId))"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_price_snapshots_ingredientId ON plan_price_snapshots(ingredientId)")
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -92,7 +114,7 @@ abstract class MealsDatabase : RoomDatabase() {
                     context.applicationContext,
                     MealsDatabase::class.java,
                     "meals_local.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build().also { INSTANCE = it }
             }
     }
 }

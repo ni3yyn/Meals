@@ -211,6 +211,21 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun savedPlanKeepsItsPriceSnapshotWhenNewReportsArrive() {
+        val oldPrice = PriceObservationEntity("old", "potato", 500.0, "g", 100.0, "old source", "الجلفة", 1_700_000_000_000L, "user_reported", "غير موثق")
+        val newPrice = PriceObservationEntity("new", "potato", 500.0, "g", 160.0, "new source", "الجلفة", 1_800_000_000_000L, "user_reported", "غير موثق")
+        assertEquals(
+            listOf("old"),
+            pricesForSavedPlan(listOf(oldPrice), listOf(oldPrice, newPrice), 1_700_000_000_000L).map { it.id }
+        )
+        assertEquals(
+            listOf("old", "new"),
+            pricesForSavedPlan(emptyList(), listOf(oldPrice, newPrice), 0L).map { it.id }
+        )
+        assertTrue(pricesForSavedPlan(emptyList(), listOf(oldPrice), 1_700_000_000_000L).isEmpty())
+    }
+
+    @Test
     fun cookedMealOnlyDeductsExactAvailablePantryQuantity() {
         assertEquals(150.0, exactPantryDeduction(200.0, 150.0, false), 0.0001)
         assertEquals(0.0, exactPantryDeduction(200.0, null, true), 0.0001)

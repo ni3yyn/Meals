@@ -157,3 +157,23 @@ data class CookedMealDeductionEntity(
     val unit: String,
     val quantityBase: Double
 )
+
+
+@Entity(
+    tableName = "plan_price_snapshots",
+    primaryKeys = ["weekStartIso", "observationId"],
+    indices = [Index("ingredientId")]
+)
+data class PlanPriceSnapshotEntity(
+    val weekStartIso: String,
+    val observationId: String,
+    val ingredientId: String,
+    val packQuantityBase: Double,
+    val unit: String,
+    val packPriceDzd: Double,
+    val sourceLabel: String,
+    val locationLabel: String,
+    val observedAtEpochMillis: Long?,
+    val priceKind: String,
+    val confidenceLabel: String
+)

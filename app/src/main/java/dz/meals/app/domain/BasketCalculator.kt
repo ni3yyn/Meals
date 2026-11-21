@@ -18,6 +18,13 @@ fun shouldPreserveMeal(
 ): Boolean =
     meal.locked || meal.isCooked || meal.isUserEdited || (fillEmptyOnly && meal.recipeId != null)
 
+fun pricesForSavedPlan(
+    savedPriceSnapshot: List<PriceObservationEntity>,
+    latestObservations: List<PriceObservationEntity>,
+    snapshotAtEpochMillis: Long
+): List<PriceObservationEntity> =
+    if (snapshotAtEpochMillis > 0L) savedPriceSnapshot else latestObservations
+
 fun exactPantryDeduction(requiredQuantity: Double, availableQuantity: Double?, approximate: Boolean): Double {
     if (approximate || availableQuantity == null || requiredQuantity <= 0.0 || availableQuantity <= 0.0) return 0.0
     return minOf(requiredQuantity, availableQuantity)

@@ -21,6 +21,7 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
 - Plan-run metadata saved per week: generator version, generation timestamp, price snapshot timestamp, budget, wilaya and selected meal slots.
+- The price observations used by each generated week are copied into a week-specific snapshot; new reports affect future generations and do not silently rewrite previous estimates.
 - Week-scoped shopping lists; generated and manually entered items remain associated with the plan week.
 - Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone.
 - Manual plan edits are persisted separately from generated suggestions so regeneration cannot silently replace user decisions. Approximate stock is never deducted.
@@ -84,7 +85,7 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 ## Cost and price integrity
 The app distinguishes consumed ingredient value from cash required to buy full packages. A recipe requiring 120 g can have a 120 g consumed value while requiring a 500 g package purchase. Remaining package contents can be used later.
 
-Price observations store canonical ingredient ID, pack size, normalized unit, DZD price, source, geographic label, observation timestamp, price kind and confidence. Non-demo observations older than 30 days are excluded from current basket estimates; the sample/demo fallback remains explicitly labelled. Current sample observations are tagged as demo, have no observation timestamp or geographic coverage, and are labelled accordingly. They must not be described as live or verified prices. Missing prices remain unknown rather than being silently treated as zero.
+Price observations store canonical ingredient ID, pack size, normalized unit, DZD price, source, geographic label, observation timestamp, price kind and confidence. Each generated week keeps its own copy of the observations used for its estimate. Non-demo observations older than 30 days are excluded from current basket estimates; the sample/demo fallback remains explicitly labelled. Current sample observations are tagged as demo, have no observation timestamp or geographic coverage, and are labelled accordingly. They must not be described as live or verified prices. Missing prices remain unknown rather than being silently treated as zero.
 
 ## Safety and limitations
 - Allergen filtering is only as complete as the curated recipe and ingredient metadata. Empty allergen metadata does not prove that a recipe is safe.
