@@ -1,6 +1,7 @@
 package dz.meals.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,10 +43,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.graphics.Brush
@@ -55,6 +60,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -142,27 +150,105 @@ fun MealsPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    showArrow: Boolean = true
 ) {
-    Button(
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.985f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "mealsPrimaryButtonScale"
+    )
+    val buttonShape = remember { RoundedCornerShape(26.dp) }
+    val buttonBrush = remember {
+        Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF55A978),
+                Forest,
+                ForestDark
+            )
+        )
+    }
+    val buttonEdge = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.42f),
+                Color.White.copy(alpha = 0.10f),
+                ForestDark.copy(alpha = 0.16f)
+            )
+        )
+    }
+
+    Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 56.dp),
-        shape = ButtonShape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Forest,
-            contentColor = Color.White,
-            disabledContainerColor = Forest.copy(alpha = 0.35f),
-            disabledContentColor = Color.White.copy(alpha = 0.85f)
-        ),
-        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 14.dp),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 0.dp)
+        interactionSource = interactionSource,
+        modifier = modifier
+            .defaultMinSize(minHeight = 58.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        shape = buttonShape,
+        color = Color.Transparent,
+        contentColor = Color.White,
+        border = BorderStroke(1.dp, buttonEdge),
+        shadowElevation = if (enabled) 7.dp else 0.dp
     ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
-            Spacer(Modifier.size(9.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = if (enabled) buttonBrush else Brush.linearGradient(
+                        listOf(Color(0xFF91B7A0), Color(0xFF769B83))
+                    ),
+                    shape = buttonShape
+                )
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = if (enabled) 0.12f else 0.05f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = if (pressed) 0.035f else 0f)
+                        )
+                    ),
+                    shape = buttonShape
+                )
+                .padding(horizontal = 22.dp, vertical = 15.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(19.dp)
+                    )
+                    Spacer(Modifier.size(9.dp))
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (showArrow) {
+                Icon(
+                    imageVector = Icons.Outlined.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = if (enabled) 0.96f else 0.55f),
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(23.dp)
+                )
+            }
         }
-        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
     }
 }
 
