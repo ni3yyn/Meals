@@ -47,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.ui.theme.Border
@@ -96,7 +98,7 @@ fun RecipesScreen(
             Text("وصفات من مطبخنا", style = MaterialTheme.typography.headlineMedium)
             Text("ابحث بالعربية أو الفرنسية أو بأسماء المكونات المحلية.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
             Row(
-                modifier = Modifier.fillMaxWidth().background(Paper, RoundedCornerShape(12.dp))
+                modifier = Modifier.fillMaxWidth().background(Paper, RoundedCornerShape(22.dp))
                     .padding(horizontal = 14.dp, vertical = 13.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -130,15 +132,11 @@ fun RecipesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(filtered, key = { it.id }) { recipe ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Paper),
-                    border = BorderStroke(1.dp, Border),
-                    shape = RoundedCornerShape(15.dp)
-                ) {
-                    Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 15.dp) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Box(
-                                modifier = Modifier.size(48.dp).background(SoftGreen, RoundedCornerShape(13.dp)),
+                                modifier = Modifier.size(48.dp).background(SoftGreen, RoundedCornerShape(22.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = Forest, modifier = Modifier.size(24.dp))
@@ -171,15 +169,12 @@ fun RecipesScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
+                            MealsPrimaryButton(
+                                label = "أضف إلى الأسبوع",
                                 onClick = { onAddRecipe(recipe.id) },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Forest),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Icon(Icons.Outlined.Add, contentDescription = null)
-                                Text("أضف إلى الأسبوع")
-                            }
+                                icon = Icons.Outlined.Add
+                            )
                             TextButton(onClick = { selectedRecipeId = recipe.id }) {
                                 Icon(Icons.Outlined.Info, contentDescription = null)
                                 Text("التفاصيل")

@@ -38,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.PantryItem
 import dz.meals.app.ui.theme.Border
@@ -137,7 +139,7 @@ fun PantryScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Outlined.Kitchen, contentDescription = null, tint = Forest, modifier = Modifier.size(48.dp))
+                        MealsIllustrationBadge(icon = Icons.Outlined.Kitchen, size = 64.dp)
                         Text("مخزونك فارغ", style = MaterialTheme.typography.titleLarge)
                         Text("اكتب اسم مكوّن في البحث ثم اختره لإضافته.", color = MutedInk)
                     }
@@ -148,13 +150,9 @@ fun PantryScreen(
                         Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
                             .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                     }
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = Paper),
-                        border = BorderStroke(1.dp, Border),
-                        shape = RoundedCornerShape(11.dp)
-                    ) {
+                    MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 13.dp) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(13.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {

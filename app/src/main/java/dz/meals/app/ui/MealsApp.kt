@@ -1,6 +1,9 @@
 package dz.meals.app.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +43,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,6 +56,7 @@ import dz.meals.app.data.MealsRepository
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
 import dz.meals.app.data.currentWeekStartIso
+import dz.meals.app.ui.components.*
 import dz.meals.app.ui.screens.PantryScreen
 import dz.meals.app.ui.screens.PlanScreen
 import dz.meals.app.ui.screens.RecipesScreen
@@ -103,26 +110,34 @@ fun MealsApp() {
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        MealsBackdrop {
         Scaffold(
-            containerColor = Cream,
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {
-                        Column {
-                            Text("مائدتي", style = MaterialTheme.typography.titleLarge)
-                            Text(selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)) {
+                            Text("صباح الخير", style = MaterialTheme.typography.titleLarge)
+                            Text("مائدتي · " + selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showSettings = true }) {
-                            Icon(Icons.Outlined.Settings, contentDescription = "الإعدادات")
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.padding(end = 10.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftPink)
+                        ) {
+                            Icon(Icons.Outlined.Settings, contentDescription = "الإعدادات", tint = dz.meals.app.ui.theme.Forest)
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Cream)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             },
             bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                NavigationBar(
+                    modifier = Modifier.clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                    tonalElevation = 0.dp
+                ) {
                     NavigationBarItem(
                         selected = selectedTab == AppTab.Plan,
                         onClick = { selectedTab = AppTab.Plan },
@@ -151,7 +166,8 @@ fun MealsApp() {
             }
         ) { innerPadding ->
             androidx.compose.foundation.layout.Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding)
+                modifier = Modifier.fillMaxSize()
+                    .padding(innerPadding)
             ) {
                 when (selectedTab) {
                     AppTab.Plan -> PlanScreen(
@@ -238,6 +254,7 @@ fun MealsApp() {
                 }
             }
         }
+        }
     }
 
     if (showSettings) {
@@ -277,6 +294,7 @@ private fun SettingsDialog(
     isFirstSetup: Boolean,
     onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int, String, String, String) -> Unit
 ) {
+    var step by rememberSaveable { mutableStateOf(0) }
     var budgetText by rememberSaveable(preferences.weeklyBudgetDzd) { mutableStateOf(preferences.weeklyBudgetDzd.toString()) }
     var wilayaText by rememberSaveable(preferences.wilaya) { mutableStateOf(preferences.wilaya) }
     var communeText by rememberSaveable(preferences.commune) { mutableStateOf(preferences.commune) }
@@ -291,172 +309,236 @@ private fun SettingsDialog(
     var buffer by rememberSaveable(preferences.budgetBufferPercent) { mutableStateOf(preferences.budgetBufferPercent.toString()) }
     var searchIngredient by rememberSaveable { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (isFirstSetup) "لنجهّز أول خطة لك" else "إعدادات الأسرة والميزانية") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 560.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                if (isFirstSetup) {
-                    Text(
-                        "اختر ميزانيتك وعادات الوجبات. يبدأ التطبيق مباشرة دون حساب أو رقم هاتف، وتُحفظ هذه الإعدادات على جهازك.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+    val validStep = when (step) {
+        0 -> (budgetText.toIntOrNull() ?: 0) > 0 && (servingsText.toIntOrNull() ?: 0) in 1..12
+        1 -> slots.isNotEmpty()
+        3 -> (maxMinutes.toIntOrNull() ?: 0) in 10..240 && (buffer.toIntOrNull() ?: -1) in 0..30
+        else -> true
+    }
+
+    MealsDialog(
+        title = if (isFirstSetup) "لنجهّز أسبوعك معاً" else "إعدادات الأسرة",
+        subtitle = listOf("الميزانية والأسرة", "الوجبات", "ما يناسب عائلتك", "تفضيلات الطبخ", "مكان التسوق")[step],
+        onDismiss = { if (!isFirstSetup) onDismiss() },
+        confirmLabel = if (step == 4) "حفظ وابدأ" else "التالي",
+        onConfirm = {
+            if (step < 4) {
+                step += 1
+            } else {
+                val budget = budgetText.toIntOrNull()
+                val servings = servingsText.toIntOrNull()
+                if (budget != null && servings != null && servings in 1..12) {
+                    onSave(
+                        budget, wilayaText, servings, allergies, slots, dislikes, diet,
+                        maxMinutes.toIntOrNull() ?: 60, buffer.toIntOrNull() ?: 5,
+                        communeText, shoppingChannel, preferredShop
                     )
                 }
-                Text("الميزانية الأسبوعية بالدينار الجزائري")
-                OutlinedTextField(
-                    value = budgetText,
-                    onValueChange = { budgetText = it.filter(Char::isDigit).take(9) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    suffix = { Text("دج") }
-                )
-                Text("عدد الحصص المعتاد", modifier = Modifier.padding(top = 12.dp))
-                OutlinedTextField(
-                    value = servingsText,
-                    onValueChange = { servingsText = it.filter(Char::isDigit).take(2) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                Text("الولاية", modifier = Modifier.padding(top = 12.dp))
-                OutlinedTextField(value = wilayaText, onValueChange = { wilayaText = it.take(40) }, singleLine = true)
-                Text("البلدية (اختياري)", modifier = Modifier.padding(top = 8.dp))
-                OutlinedTextField(
-                    value = communeText,
-                    onValueChange = { communeText = it.take(60) },
-                    singleLine = true,
-                    placeholder = { Text("اسم البلدية") }
-                )
-                Text("مكان التسوق المعتاد", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf(
-                        "market" to "سوق",
-                        "grocery" to "بقالة",
-                        "supermarket" to "متجر كبير",
-                        "butcher" to "ملحمة",
-                        "poultry" to "دجاج",
-                        "fishmonger" to "سمك",
-                        "bakery" to "مخبزة",
-                        "other" to "أخرى"
-                    ).forEach { channel ->
-                        androidx.compose.material3.FilterChip(
-                            selected = shoppingChannel == channel.first,
-                            onClick = { shoppingChannel = channel.first },
-                            label = { Text(channel.second) }
-                        )
-                    }
-                }
-                OutlinedTextField(
-                    value = preferredShop,
-                    onValueChange = { preferredShop = it.take(80) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("اسم المحل المفضل (اختياري)") },
-                    singleLine = true
-                )
-                Text("الوجبات التي تريد تخطيطها", modifier = Modifier.padding(top = 12.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                listOf("breakfast" to "الفطور", "lunch" to "الغداء", "dinner" to "العشاء").forEach { (id, label) ->
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        androidx.compose.material3.Checkbox(
-                            checked = id in slots,
-                            onCheckedChange = { checked -> slots = if (checked) slots + id else slots - id }
-                        )
-                        Text(label)
-                    }
-                }
-                Text("استبعاد مسببات الحساسية", modifier = Modifier.padding(top = 12.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                listOf("gluten" to "الغلوتين", "egg" to "البيض", "milk" to "الحليب").forEach { (id, label) ->
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        androidx.compose.material3.Checkbox(
-                            checked = id in allergies,
-                            onCheckedChange = { checked ->
-                                allergies = if (checked) allergies + id else allergies - id
-                            }
-                        )
-                        Text(label)
-                    }
-                }
-                Text("النمط الغذائي", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                androidx.compose.foundation.layout.Row(
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf("none" to "عادي", "vegetarian" to "نباتي", "vegan" to "نباتي صرف").forEach { item ->
-                        androidx.compose.material3.FilterChip(
-                            selected = diet == item.first,
-                            onClick = { diet = item.first },
-                            label = { Text(item.second) }
-                        )
-                    }
-                }
-                Text("مكونات تفضّل تجنبها (تفضيل مرن)", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = searchIngredient,
-                    onValueChange = { searchIngredient = it },
-                    label = { Text("ابحث عن مكوّن") },
-                    singleLine = true
-                )
-                ingredients.filter { ingredient ->
-                    searchIngredient.isBlank() ||
-                        ingredient.nameAr.contains(searchIngredient, true) ||
-                        ingredient.nameFr.contains(searchIngredient, true) ||
-                        ingredient.aliases.any { it.contains(searchIngredient, true) }
-                }.take(12).forEach { ingredient ->
-                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        androidx.compose.material3.Checkbox(
-                            checked = ingredient.id in dislikes,
-                            onCheckedChange = { checked -> dislikes = if (checked) dislikes + ingredient.id else dislikes - ingredient.id }
-                        )
-                        Text(ingredient.nameAr)
-                    }
-                }
-                Text("الوقت الأقصى المفضل للطبخ بالدقائق", modifier = Modifier.padding(top = 10.dp))
-                OutlinedTextField(
-                    value = maxMinutes,
-                    onValueChange = { maxMinutes = it.filter(Char::isDigit).take(3) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                Text("هامش أمان للميزانية (%)", modifier = Modifier.padding(top = 10.dp))
-                OutlinedTextField(
-                    value = buffer,
-                    onValueChange = { buffer = it.filter(Char::isDigit).take(2) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                Text(
-                    "الحساسية والنمط الغذائي شروط تصفية. المكونات التي تفضّل تجنبها ووقت الطبخ تفضيلات مرنة. لا نطلب حساباً أو رقم هاتف؛ بياناتك تبقى على الجهاز.",
-                    modifier = Modifier.padding(top = 8.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
             }
         },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val budget = budgetText.toIntOrNull()
-                    val servings = servingsText.toIntOrNull()
-                    if (budget != null && servings != null && servings in 1..12) {
-                        onSave(
-                            budget, wilayaText, servings, allergies, slots, dislikes, diet,
-                            maxMinutes.toIntOrNull() ?: 60, buffer.toIntOrNull() ?: 5,
-                            communeText, shoppingChannel, preferredShop
+        confirmEnabled = validStep,
+        dismissLabel = when {
+            step > 0 -> "السابق"
+            isFirstSetup -> null
+            else -> "إغلاق"
+        },
+        onDismissAction = { if (step > 0) step -= 1 else onDismiss() },
+        showCloseButton = !isFirstSetup
+    ) {
+        MealsProgressBar(
+            progress = (step + 1) / 5f,
+            label = "الخطوة " + (step + 1) + " من 5"
+        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth().heightIn(max = 500.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(13.dp)
+        ) {
+            when (step) {
+                0 -> {
+                    MealsCard(
+                        containerColor = dz.meals.app.ui.theme.SoftPink,
+                        borderColor = null,
+                        contentPadding = 16.dp
+                    ) {
+                        Text(
+                            "إعداد بسيط لمرة واحدة، وبعدها نرتّب لكِ الوجبات وقائمة التسوق تلقائياً.",
+                            color = dz.meals.app.ui.theme.Ink,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            "لا نحتاج إلى حساب أو رقم هاتف. تبقى تفضيلاتك على هذا الجهاز.",
+                            color = dz.meals.app.ui.theme.MutedInk,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                },
-                enabled = budgetText.toIntOrNull() != null &&
-                    servingsText.toIntOrNull() in 1..12 &&
-                    slots.isNotEmpty() &&
-                    (maxMinutes.toIntOrNull() ?: 0) in 10..240 &&
-                    (buffer.toIntOrNull() ?: -1) in 0..30
-            ) { Text("حفظ") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء") } }
-    )
+                    Text("كم ميزانيتك للأسبوع؟", style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = budgetText,
+                        onValueChange = { budgetText = it.filter(Char::isDigit).take(9) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        label = { Text("الميزانية بالدينار الجزائري") },
+                        suffix = { Text("دج") }
+                    )
+                    Text("كم شخصاً نطبخ له عادة؟", style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = servingsText,
+                        onValueChange = { servingsText = it.filter(Char::isDigit).take(2) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        label = { Text("عدد الحصص") }
+                    )
+                }
+                1 -> {
+                    Text("ما الوجبات التي تحبين التخطيط لها؟", style = MaterialTheme.typography.titleMedium)
+                    Text("اختاري ما تحتاجينه فقط، ويمكنك تغييره لاحقاً.", color = dz.meals.app.ui.theme.MutedInk, style = MaterialTheme.typography.bodySmall)
+                    MealsCheckRow(
+                        title = "الفطور",
+                        supportingText = "وجبة الصباح",
+                        checked = "breakfast" in slots,
+                        onCheckedChange = { slots = if (it) slots + "breakfast" else slots - "breakfast" }
+                    )
+                    MealsCheckRow(
+                        title = "الغداء",
+                        supportingText = "الوجبة الرئيسية",
+                        checked = "lunch" in slots,
+                        onCheckedChange = { slots = if (it) slots + "lunch" else slots - "lunch" }
+                    )
+                    MealsCheckRow(
+                        title = "العشاء",
+                        supportingText = "وجبة المساء",
+                        checked = "dinner" in slots,
+                        onCheckedChange = { slots = if (it) slots + "dinner" else slots - "dinner" }
+                    )
+                }
+                2 -> {
+                    Text("هل هناك أطعمة يجب تجنبها؟", style = MaterialTheme.typography.titleMedium)
+                    Text("نستخدم هذه الاختيارات لاستبعاد الوصفات التي قد لا تناسب عائلتك.", color = dz.meals.app.ui.theme.MutedInk, style = MaterialTheme.typography.bodySmall)
+                    listOf("gluten" to "الغلوتين", "egg" to "البيض", "milk" to "الحليب").forEach { (id, label) ->
+                        MealsCheckRow(
+                            title = label,
+                            checked = id in allergies,
+                            onCheckedChange = { allergies = if (it) allergies + id else allergies - id }
+                        )
+                    }
+                    Text("النمط الغذائي", style = MaterialTheme.typography.titleMedium)
+                    listOf(
+                        "none" to "عادي",
+                        "vegetarian" to "نباتي",
+                        "vegan" to "نباتي صرف"
+                    ).forEach { (id, label) ->
+                        MealsChoiceTile(
+                            title = label,
+                            selected = diet == id,
+                            onClick = { diet = id },
+                            icon = androidx.compose.material.icons.Icons.Outlined.RestaurantMenu
+                        )
+                    }
+                }
+                3 -> {
+                    Text("هل توجد مكونات تفضلين تقليلها؟", style = MaterialTheme.typography.titleMedium)
+                    Text("هذه تفضيلات مرنة، وليست قيود حساسية.", color = dz.meals.app.ui.theme.MutedInk, style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = searchIngredient,
+                        onValueChange = { searchIngredient = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("ابحثي عن مكوّن") },
+                        singleLine = true
+                    )
+                    ingredients.filter { ingredient ->
+                        searchIngredient.isBlank() ||
+                            ingredient.nameAr.contains(searchIngredient, true) ||
+                            ingredient.nameFr.contains(searchIngredient, true) ||
+                            ingredient.aliases.any { it.contains(searchIngredient, true) }
+                    }.take(10).forEach { ingredient ->
+                        MealsCheckRow(
+                            title = ingredient.nameAr,
+                            supportingText = ingredient.nameFr,
+                            checked = ingredient.id in dislikes,
+                            onCheckedChange = { checked ->
+                                dislikes = if (checked) dislikes + ingredient.id else dislikes - ingredient.id
+                            }
+                        )
+                    }
+                    Text("كم دقيقة تفضلين لقضاءها في الطبخ؟", style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = maxMinutes,
+                        onValueChange = { maxMinutes = it.filter(Char::isDigit).take(3) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        label = { Text("الوقت الأقصى بالدقائق") }
+                    )
+                    OutlinedTextField(
+                        value = buffer,
+                        onValueChange = { buffer = it.filter(Char::isDigit).take(2) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        label = { Text("هامش أمان للميزانية (%)") }
+                    )
+                }
+                4 -> {
+                    Text("أين تتسوقين عادة؟", style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = wilayaText,
+                        onValueChange = { wilayaText = it.take(40) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("الولاية") }
+                    )
+                    OutlinedTextField(
+                        value = communeText,
+                        onValueChange = { communeText = it.take(60) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("البلدية (اختياري)") }
+                    )
+                    Text("مكان التسوق المعتاد", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(7.dp)
+                    ) {
+                        listOf(
+                            "market" to "السوق",
+                            "grocery" to "بقالة",
+                            "supermarket" to "متجر كبير",
+                            "butcher" to "ملحمة",
+                            "poultry" to "دجاج",
+                            "fishmonger" to "سمك",
+                            "bakery" to "مخبزة",
+                            "other" to "أخرى"
+                        ).forEach { channel ->
+                            androidx.compose.material3.FilterChip(
+                                selected = shoppingChannel == channel.first,
+                                onClick = { shoppingChannel = channel.first },
+                                label = { Text(channel.second) }
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        value = preferredShop,
+                        onValueChange = { preferredShop = it.take(80) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("اسم المحل المفضل (اختياري)") },
+                        singleLine = true
+                    )
+                    MealsCard(
+                        containerColor = dz.meals.app.ui.theme.SoftGreen,
+                        borderColor = null,
+                        contentPadding = 14.dp
+                    ) {
+                        Text(
+                            "هذه المعلومات تساعدنا على تنظيم قائمة التسوق. لا نستخدم موقعك تلقائياً.",
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

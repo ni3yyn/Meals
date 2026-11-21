@@ -40,6 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsCheckRow
+import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.MealsSnapshot
@@ -107,8 +110,8 @@ fun PlanScreen(
             }
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Forest), shape = RoundedCornerShape(16.dp)) {
-                Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            MealsCard(containerColor = Forest, contentColor = androidx.compose.ui.graphics.Color.White, borderColor = null, contentPadding = 17.dp) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("ميزانية الأسبوع", color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.78f))
                     Text(
                         preferences.weeklyBudgetDzd.asDzd(),
@@ -161,9 +164,10 @@ fun PlanScreen(
         }
         if (unsafeLockedMeal != null) {
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFFFF1DE)),
-                    shape = RoundedCornerShape(12.dp)
+                MealsCard(
+                    containerColor = dz.meals.app.ui.theme.SoftOrange,
+                    borderColor = null,
+                    contentPadding = 14.dp
                 ) {
                     Text(
                         "تنبيه مهم: توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. لن تُعاد كتابة الخطة حتى تفتح قفل هذه الوجبة أو تستبدلها.",
@@ -175,23 +179,19 @@ fun PlanScreen(
             }
         }
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.Checkbox(
-                    checked = fillEmptyOnly,
-                    onCheckedChange = { fillEmptyOnly = it }
-                )
-                Text("املأ الوجبات الفارغة فقط", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-            }
-            Button(
+            MealsCheckRow(
+                title = "املأ الوجبات الفارغة فقط",
+                supportingText = "اترك الوجبات التي اخترتها كما هي",
+                checked = fillEmptyOnly,
+                onCheckedChange = { fillEmptyOnly = it }
+            )
+            MealsPrimaryButton(
+                label = if (isGenerating) "جارٍ إنشاء الخطة..." else "أنشئ خطة 7 أيام",
                 onClick = { onGenerate(fillEmptyOnly) },
                 enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Forest),
-                shape = RoundedCornerShape(11.dp)
-            ) {
-                Icon(Icons.Outlined.Refresh, contentDescription = null)
-                Text(if (isGenerating) "جارٍ إنشاء الخطة..." else "أنشئ خطة 7 أيام")
-            }
+                icon = Icons.Outlined.Refresh
+            )
             Text(
                 "نحافظ على الوجبات المقفلة. الحساسية والنمط الغذائي قيود إلزامية، أما وقت الطبخ وتجنب مكونات معينة فيؤثران في ترتيب الاقتراحات.",
                 color = MutedInk,
@@ -207,12 +207,8 @@ fun PlanScreen(
             val lunch = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "lunch" }
             val dinner = snapshot.plannedMeals.firstOrNull { it.dayIndex == day && it.mealSlot == "dinner" }
 
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Paper),
-                border = BorderStroke(1.dp, Border),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Column(Modifier.fillMaxWidth().padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 13.dp) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(dateLabel, fontWeight = FontWeight.Bold)
                     if ("breakfast" in visibleMealSlots) SlotRow(
                         title = "الفطور",

@@ -44,6 +44,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsProgressBar
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PriceObservationSummary
@@ -100,15 +102,16 @@ fun ShoppingScreen(
         ) {
             Text("قائمة المشتريات", style = MaterialTheme.typography.headlineMedium)
             Text("المطلوب بعد خصم المخزون الدقيق، مع تقريب العبوات الكاملة عند توفر حجمها.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-            Card(colors = CardDefaults.cardColors(containerColor = SoftGreen), shape = RoundedCornerShape(12.dp)) {
+            MealsCard(containerColor = SoftGreen, borderColor = null, contentPadding = 14.dp) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(checkedCount.toString() + " من " + rows.size + " عناصر", fontWeight = FontWeight.Bold, color = Forest)
                         Text("العناصر التي وضعتها في السلة", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                        MealsProgressBar(progress = if (rows.isEmpty()) 0f else checkedCount.toFloat() / rows.size.toFloat())
                     }
                     Text(
                         (if (rows.isEmpty()) 0 else checkedCount * 100 / rows.size).toString() + "%",
@@ -509,7 +512,7 @@ private fun ShoppingItemCard(
     Card(
         colors = CardDefaults.cardColors(containerColor = Paper),
         border = BorderStroke(1.dp, Border),
-        shape = RoundedCornerShape(11.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
