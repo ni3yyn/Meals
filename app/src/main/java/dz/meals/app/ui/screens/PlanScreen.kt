@@ -128,6 +128,20 @@ fun PlanScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
+                    Text(
+                        "الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().asDzd(),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    snapshot.planRun?.let { run ->
+                        Text(
+                            "آخر إنشاء: " + java.time.Instant.ofEpochMilli(run.generatedAtEpochMillis)
+                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString() +
+                                " · نسخة المحرك " + run.engineVersion,
+                            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                     if (snapshot.basket.hasDemoPrices) {
                         Text(
                             "الأسعار الحالية تجريبية فقط وليست أسعار سوق محلية أو مباشرة.",
@@ -168,7 +182,7 @@ fun PlanScreen(
                 Text(if (isGenerating) "جارٍ إنشاء الخطة..." else "أنشئ خطة 7 أيام")
             }
             Text(
-                "نحافظ على الوجبات المقفلة، ولا نقترح وصفات تحتوي على مسببات الحساسية المحددة.",
+                "نحافظ على الوجبات المقفلة. الحساسية والنمط الغذائي قيود إلزامية، أما وقت الطبخ وتجنب مكونات معينة فيؤثران في ترتيب الاقتراحات.",
                 color = MutedInk,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 6.dp)
@@ -189,7 +203,7 @@ fun PlanScreen(
             ) {
                 Column(Modifier.fillMaxWidth().padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(dateLabel, fontWeight = FontWeight.Bold)
-                    SlotRow(
+                    if ("breakfast" in preferences.mealSlots) SlotRow(
                         title = "الفطور",
                         meal = breakfast,
                         recipe = breakfast?.recipeId?.let(recipesById::get),
@@ -198,7 +212,7 @@ fun PlanScreen(
                         onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
                         onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
                     )
-                    SlotRow(
+                    if ("lunch" in preferences.mealSlots) SlotRow(
                         title = "الغداء",
                         meal = lunch,
                         recipe = lunch?.recipeId?.let(recipesById::get),
@@ -207,7 +221,7 @@ fun PlanScreen(
                         onToggleLock = { lunch?.let { onToggleLock(it.id) } },
                         onAdjustServings = { delta -> lunch?.let { onAdjustServings(it.id, delta) } }
                     )
-                    SlotRow(
+                    if ("dinner" in preferences.mealSlots) SlotRow(
                         title = "العشاء",
                         meal = dinner,
                         recipe = dinner?.recipeId?.let(recipesById::get),

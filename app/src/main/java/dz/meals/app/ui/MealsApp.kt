@@ -77,7 +77,7 @@ fun MealsApp() {
     var generationMessage by remember { mutableStateOf<String?>(null) }
 
     suspend fun refresh() {
-        snapshot = repository.snapshot(weekStartIso, preferences.wilaya)
+        snapshot = repository.snapshot(weekStartIso, preferences.wilaya, preferences.mealSlots)
     }
 
     fun perform(action: suspend () -> Unit) {
@@ -87,7 +87,7 @@ fun MealsApp() {
         }
     }
 
-    LaunchedEffect(repository, weekStartIso, preferences.wilaya) {
+    LaunchedEffect(repository, weekStartIso, preferences.wilaya, preferences.mealSlots) {
         repository.ensureInitialized()
         refresh()
     }
@@ -158,7 +158,12 @@ fun MealsApp() {
                                         weeklyBudgetDzd = preferences.weeklyBudgetDzd,
                                         householdServings = preferences.householdServings,
                                         allergyIds = preferences.allergyIds,
-                                        selectedWilaya = preferences.wilaya
+                                        selectedWilaya = preferences.wilaya,
+                                        selectedMealSlots = preferences.mealSlots,
+                                        dislikedIngredientIds = preferences.dislikedIngredientIds,
+                                        dietPattern = preferences.dietPattern,
+                                        maxCookingMinutes = preferences.maxCookingMinutes,
+                                        budgetBufferPercent = preferences.budgetBufferPercent
                                     )
                                     generationMessage = result.message
                                     refresh()
@@ -197,6 +202,9 @@ fun MealsApp() {
                         onEditCustomItem = { id, name, quantity, unit ->
                             perform { repository.updateCustomShoppingItem(id, name, quantity, unit) }
                         },
+                        onUpdateItemDetails = { id, purchaseQty, note, unavailable, actual ->
+                            perform { repository.updateShoppingItemDetails(id, purchaseQty, note, unavailable, actual) }
+                        },
                         onDeleteCustomItem = { id -> perform { repository.deleteCustomShoppingItem(id) } },
                         onRecordPrice = { id, pack, amount, context ->
                             perform { repository.recordPriceObservation(id, pack, amount, preferences.wilaya, context) }
@@ -218,10 +226,13 @@ fun MealsApp() {
     if (showSettings) {
         SettingsDialog(
             preferences = preferences,
+            ingredients = snapshot.ingredients,
             onDismiss = { showSettings = false },
-            onSave = { budget, wilaya, servings, allergies ->
+            onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer ->
                 scope.launch {
-                    preferencesStore.saveSettings(budget, wilaya, servings, allergies)
+                    preferencesStore.saveSettings(
+                        budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer
+                    )
                     showSettings = false
                     refresh()
                 }
@@ -243,12 +254,19 @@ fun MealsApp() {
 private fun SettingsDialog(
     preferences: AppPreferences,
     onDismiss: () -> Unit,
-    onSave: (Int, String, Int, Set<String>) -> Unit
+    ingredients: List<dz.meals.app.data.IngredientMaster>,
+    onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int) -> Unit
 ) {
     var budgetText by rememberSaveable(preferences.weeklyBudgetDzd) { mutableStateOf(preferences.weeklyBudgetDzd.toString()) }
     var wilayaText by rememberSaveable(preferences.wilaya) { mutableStateOf(preferences.wilaya) }
     var servingsText by rememberSaveable(preferences.householdServings) { mutableStateOf(preferences.householdServings.toString()) }
     var allergies by rememberSaveable(preferences.allergyIds) { mutableStateOf(preferences.allergyIds) }
+    var slots by rememberSaveable(preferences.mealSlots) { mutableStateOf(preferences.mealSlots) }
+    var dislikes by rememberSaveable(preferences.dislikedIngredientIds) { mutableStateOf(preferences.dislikedIngredientIds) }
+    var diet by rememberSaveable(preferences.dietPattern) { mutableStateOf(preferences.dietPattern) }
+    var maxMinutes by rememberSaveable(preferences.maxCookingMinutes) { mutableStateOf(preferences.maxCookingMinutes.toString()) }
+    var buffer by rememberSaveable(preferences.budgetBufferPercent) { mutableStateOf(preferences.budgetBufferPercent.toString()) }
+    var searchIngredient by rememberSaveable { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -272,6 +290,16 @@ private fun SettingsDialog(
                 )
                 Text("الولاية", modifier = Modifier.padding(top = 12.dp))
                 OutlinedTextField(value = wilayaText, onValueChange = { wilayaText = it.take(40) }, singleLine = true)
+                Text("الوجبات التي تريد تخطيطها", modifier = Modifier.padding(top = 12.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                listOf("breakfast" to "الفطور", "lunch" to "الغداء", "dinner" to "العشاء").forEach { (id, label) ->
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        androidx.compose.material3.Checkbox(
+                            checked = id in slots,
+                            onCheckedChange = { checked -> slots = if (checked) slots + id else slots - id }
+                        )
+                        Text(label)
+                    }
+                }
                 Text("استبعاد مسببات الحساسية", modifier = Modifier.padding(top = 12.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
                 listOf("gluten" to "الغلوتين", "egg" to "البيض", "milk" to "الحليب").forEach { (id, label) ->
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -284,8 +312,53 @@ private fun SettingsDialog(
                         Text(label)
                     }
                 }
+                Text("النمط الغذائي", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                androidx.compose.material3.SingleChoiceSegmentedButtonRow {
+                    listOf("none" to "عادي", "vegetarian" to "نباتي", "vegan" to "نباتي صرف").forEachIndexed { index, item ->
+                        androidx.compose.material3.SegmentedButton(
+                            selected = diet == item.first,
+                            onClick = { diet = item.first },
+                            shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 3)
+                        ) { Text(item.second) }
+                    }
+                }
+                Text("مكونات تفضّل تجنبها (تفضيل مرن)", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                OutlinedTextField(
+                    value = searchIngredient,
+                    onValueChange = { searchIngredient = it },
+                    label = { Text("ابحث عن مكوّن") },
+                    singleLine = true
+                )
+                ingredients.filter { ingredient ->
+                    searchIngredient.isBlank() ||
+                        ingredient.nameAr.contains(searchIngredient, true) ||
+                        ingredient.nameFr.contains(searchIngredient, true) ||
+                        ingredient.aliases.any { it.contains(searchIngredient, true) }
+                }.take(12).forEach { ingredient ->
+                    androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        androidx.compose.material3.Checkbox(
+                            checked = ingredient.id in dislikes,
+                            onCheckedChange = { checked -> dislikes = if (checked) dislikes + ingredient.id else dislikes - ingredient.id }
+                        )
+                        Text(ingredient.nameAr)
+                    }
+                }
+                Text("الوقت الأقصى المفضل للطبخ بالدقائق", modifier = Modifier.padding(top = 10.dp))
+                OutlinedTextField(
+                    value = maxMinutes,
+                    onValueChange = { maxMinutes = it.filter(Char::isDigit).take(3) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Text("هامش أمان للميزانية (%)", modifier = Modifier.padding(top = 10.dp))
+                OutlinedTextField(
+                    value = buffer,
+                    onValueChange = { buffer = it.filter(Char::isDigit).take(2) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
                 Text(
-                    "قيود الحساسية شروط إلزامية لا يتجاوزها اقتراح الوجبات. لا نطلب حساباً أو رقم هاتف؛ بياناتك تبقى على الجهاز.",
+                    "الحساسية والنمط الغذائي شروط تصفية. المكونات التي تفضّل تجنبها ووقت الطبخ تفضيلات مرنة. لا نطلب حساباً أو رقم هاتف؛ بياناتك تبقى على الجهاز.",
                     modifier = Modifier.padding(top = 8.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
@@ -298,10 +371,17 @@ private fun SettingsDialog(
                     val budget = budgetText.toIntOrNull()
                     val servings = servingsText.toIntOrNull()
                     if (budget != null && servings != null && servings in 1..12) {
-                        onSave(budget, wilayaText, servings, allergies)
+                        onSave(
+                            budget, wilayaText, servings, allergies, slots, dislikes, diet,
+                            maxMinutes.toIntOrNull() ?: 60, buffer.toIntOrNull() ?: 5
+                        )
                     }
                 },
-                enabled = budgetText.toIntOrNull() != null && servingsText.toIntOrNull() in 1..12
+                enabled = budgetText.toIntOrNull() != null &&
+                    servingsText.toIntOrNull() in 1..12 &&
+                    slots.isNotEmpty() &&
+                    (maxMinutes.toIntOrNull() ?: 0) in 10..240 &&
+                    (buffer.toIntOrNull() ?: -1) in 0..30
             ) { Text("حفظ") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء") } }

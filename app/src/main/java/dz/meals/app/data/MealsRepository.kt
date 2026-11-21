@@ -446,6 +446,10 @@ class MealsRepository(context: Context) {
                 current.copy(
                     purchaseQuantityOverride = purchaseQuantity,
                     purchaseQuantity = purchaseQuantity ?: current.purchaseQuantity,
+                    cashOutlayDzd = if (purchaseQuantity != null && current.purchaseQuantity > 0.0) {
+                        current.cashOutlayDzd?.times(purchaseQuantity / current.purchaseQuantity)
+                    } else current.cashOutlayDzd,
+                    priceLabel = if (purchaseQuantity != null) "تقدير معدل يدوياً" else current.priceLabel,
                     storeNote = storeNote.trim().take(100),
                     isUnavailable = unavailable,
                     actualSpentDzd = actualSpentDzd,
