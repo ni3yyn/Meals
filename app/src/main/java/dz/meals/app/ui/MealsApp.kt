@@ -1,5 +1,7 @@
 package dz.meals.app.ui
 
+import dz.meals.app.MealsStartupLogger
+
 import android.content.Intent
 import android.net.Uri
 
