@@ -198,7 +198,9 @@ fun MealsApp() {
                     AppTab.Pantry -> PantryScreen(
                         ingredients = snapshot.ingredients,
                         pantry = snapshot.pantry,
-                        onSave = { id, quantity, approximate -> perform { repository.updatePantry(id, quantity, approximate) } },
+                        onSave = { id, quantity, approximate, note, expiry ->
+                            perform { repository.updatePantry(id, quantity, approximate, note, expiry) }
+                        },
                         onRemove = { id -> perform { repository.updatePantry(id, null, false) } }
                     )
                 }

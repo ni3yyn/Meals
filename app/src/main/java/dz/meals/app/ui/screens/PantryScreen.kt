@@ -42,12 +42,16 @@ import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun PantryScreen(
     ingredients: List<IngredientMaster>,
     pantry: List<PantryItem>,
-    onSave: (String, Double?, Boolean) -> Unit,
+    onSave: (String, Double?, Boolean, String, Long?) -> Unit,
     onRemove: (String) -> Unit
 ) {
     var selectedIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -60,7 +64,7 @@ fun PantryScreen(
         ) {
             Text("المخزون المنزلي", style = MaterialTheme.typography.headlineMedium)
             Text("أضف ما لديك في البيت حتى لا نطلب شراءه مرة أخرى.", color = MutedInk)
-            Text("المخزون التقريبي مثل «بعض الزيت» يظهر كتذكير فقط ولا يُخصم حسابياً.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+            Text("يمكن إضافة تاريخ انتهاء وملاحظة. الكميات التقريبية لا تُخصم من المشتريات.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
             Button(
                 onClick = { selectedIngredientId = ingredients.firstOrNull()?.id },
                 modifier = Modifier.fillMaxWidth(),
@@ -88,6 +92,10 @@ fun PantryScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(pantry, key = { it.id }) { item ->
+                    val expiry = item.expiryAtEpochMillis?.let {
+                        Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    }
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Paper),
                         border = BorderStroke(1.dp, Border),
@@ -97,14 +105,20 @@ fun PantryScreen(
                             modifier = Modifier.fillMaxWidth().padding(13.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(Modifier.weight(1f)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(item.nameAr, style = MaterialTheme.typography.titleLarge)
                                 Text(
-                                    if (item.isApproximate) "كمية تقريبية — لم تخصم من حساب المشتريات"
+                                    if (item.isApproximate) "كمية تقريبية — لم تُخصم من حساب المشتريات"
                                     else (item.quantityBase ?: 0.0).pretty() + " " + item.unit,
                                     color = MutedInk,
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                                item.note.takeIf { it.isNotBlank() }?.let {
+                                    Text(it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                }
+                                expiry?.let {
+                                    Text("تاريخ الانتهاء المُدخل: $it", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                             TextButton(onClick = { onRemove(item.id) }) {
                                 Icon(Icons.Outlined.DeleteOutline, contentDescription = "حذف")
@@ -120,8 +134,8 @@ fun PantryScreen(
         PantryAddDialog(
             ingredient = selectedIngredient,
             onDismiss = { selectedIngredientId = null },
-            onSave = { amount, approximate ->
-                onSave(selectedIngredient.id, amount, approximate)
+            onSave = { amount, approximate, note, expiry ->
+                onSave(selectedIngredient.id, amount, approximate, note, expiry)
                 selectedIngredientId = null
             }
         )
@@ -132,16 +146,30 @@ fun PantryScreen(
 private fun PantryAddDialog(
     ingredient: IngredientMaster,
     onDismiss: () -> Unit,
-    onSave: (Double?, Boolean) -> Unit
+    onSave: (Double?, Boolean, String, Long?) -> Unit
 ) {
     var quantity by rememberSaveable(ingredient.id) { mutableStateOf("") }
     var approximate by rememberSaveable(ingredient.id) { mutableStateOf(false) }
+    var note by rememberSaveable(ingredient.id) { mutableStateOf("") }
+    var expiryText by rememberSaveable(ingredient.id) { mutableStateOf("") }
+
+    val parsedExpiry = if (expiryText.isBlank()) {
+        null
+    } else {
+        runCatching {
+            LocalDate.parse(expiryText.trim())
+                .atStartOfDay(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        }.getOrNull()
+    }
+    val expiryIsValid = expiryText.isBlank() || parsedExpiry != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("إضافة " + ingredient.nameAr) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("الوحدة الأساسية: " + ingredient.baseUnit, color = MutedInk)
                 OutlinedTextField(
                     value = quantity,
@@ -155,12 +183,33 @@ private fun PantryAddDialog(
                     Checkbox(checked = approximate, onCheckedChange = { approximate = it })
                     Text("لدي كمية تقريبية فقط")
                 }
+                OutlinedTextField(
+                    value = expiryText,
+                    onValueChange = { expiryText = it.take(10) },
+                    label = { Text("تاريخ الانتهاء (YYYY-MM-DD، اختياري)") },
+                    singleLine = true,
+                    isError = !expiryIsValid
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it.take(120) },
+                    label = { Text("ملاحظة أو مكان التخزين (اختياري)") },
+                    singleLine = true
+                )
+                Text(
+                    "التاريخ تذكير أدخله المستخدم فقط، وليس حكماً على سلامة الطعام.",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(if (approximate) null else quantity.replace(',', '.').toDoubleOrNull(), approximate) },
-                enabled = approximate || ((quantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0)
+                onClick = {
+                    val exactQuantity = if (approximate) null else quantity.replace(',', '.').toDoubleOrNull()
+                    onSave(exactQuantity, approximate, note.trim(), parsedExpiry)
+                },
+                enabled = expiryIsValid && (approximate || ((quantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0))
             ) { Text("حفظ") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء") } }

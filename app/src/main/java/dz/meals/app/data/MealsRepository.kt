@@ -259,7 +259,13 @@ class MealsRepository(context: Context) {
         setMeal(weekStartIso, empty.first, empty.second, recipeId, servings)
     }
 
-    suspend fun updatePantry(ingredientId: String, quantityBase: Double?, isApproximate: Boolean, note: String = "") {
+    suspend fun updatePantry(
+        ingredientId: String,
+        quantityBase: Double?,
+        isApproximate: Boolean,
+        note: String = "",
+        expiryAtEpochMillis: Long? = null
+    ) {
         val ingredient = dao.getIngredients().firstOrNull { it.id == ingredientId } ?: return
         if (quantityBase == null && !isApproximate) {
             dao.deletePantryItem(ingredientId)
@@ -272,7 +278,7 @@ class MealsRepository(context: Context) {
                     unit = ingredient.baseUnit,
                     isApproximate = isApproximate,
                     note = note,
-                    expiryAtEpochMillis = null
+                    expiryAtEpochMillis = expiryAtEpochMillis
                 )
             )
         }
