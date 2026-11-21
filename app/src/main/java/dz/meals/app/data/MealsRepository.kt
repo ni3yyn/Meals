@@ -20,6 +20,7 @@ import dz.meals.app.domain.exactPantryDeduction
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.softPreferencePenalty
+import dz.meals.app.domain.shouldPreserveMeal
 import java.time.LocalDate
 import java.util.UUID
 
@@ -203,7 +204,8 @@ class MealsRepository(context: Context) {
         dislikedIngredientIds: Set<String> = emptySet(),
         dietPattern: String = "none",
         maxCookingMinutes: Int = 60,
-        budgetBufferPercent: Int = 5
+        budgetBufferPercent: Int = 5,
+        fillEmptyOnly: Boolean = false
     ): GenerationResult {
         ensureInitialized()
         val recipes = loadRecipes()
@@ -211,9 +213,10 @@ class MealsRepository(context: Context) {
         if (validSlots.isEmpty()) {
             return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)
         }
-        val locked = dao.getPlanMeals(weekStartIso)
-            .filter { (it.locked || it.isCooked) && it.mealSlot in validSlots }
+        val existingMeals = dao.getPlanMeals(weekStartIso)
+            .filter { it.mealSlot in validSlots }
             .map { it.toModel() }
+        val locked = existingMeals.filter { shouldPreserveMeal(it, fillEmptyOnly) }
         val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
         if (lockedConflict != null) {
             return GenerationResult(
@@ -309,7 +312,9 @@ class MealsRepository(context: Context) {
                 mealSlot = mealSlot,
                 recipeId = recipeId,
                 servings = servings.coerceIn(1, 12),
-                locked = old?.locked ?: false
+                locked = old?.locked ?: false,
+                isCooked = old?.isCooked ?: false,
+                isUserEdited = true
             )
         )
     }
@@ -634,7 +639,8 @@ private fun PlanMealEntity.toModel() = PlannedMeal(
     recipeId = recipeId,
     servings = servings,
     locked = locked,
-    isCooked = isCooked
+    isCooked = isCooked,
+    isUserEdited = isUserEdited
 )
 
 private fun PlannedMeal.toEntity() = PlanMealEntity(
@@ -645,7 +651,8 @@ private fun PlannedMeal.toEntity() = PlanMealEntity(
     recipeId = recipeId,
     servings = servings,
     locked = locked,
-    isCooked = isCooked
+    isCooked = isCooked,
+    isUserEdited = isUserEdited
 )
 
 private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = ShoppingListItem(

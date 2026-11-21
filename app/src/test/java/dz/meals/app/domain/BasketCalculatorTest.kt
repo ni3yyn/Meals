@@ -9,6 +9,7 @@ import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.softPreferencePenalty
+import dz.meals.app.domain.shouldPreserveMeal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -179,6 +180,16 @@ class BasketCalculatorTest {
         assertEquals(0.0, baseline, 0.0001)
         assertTrue(withDisliked > baseline)
         assertTrue(withTimeLimit > baseline)
+    }
+
+    @Test
+    fun regenerationPreservesLockedCookedAndManuallyEditedMeals() {
+        assertTrue(shouldPreserveMeal(plan.copy(locked = true), false))
+        assertTrue(shouldPreserveMeal(plan.copy(isCooked = true), false))
+        assertTrue(shouldPreserveMeal(plan.copy(isUserEdited = true), false))
+        assertTrue(!shouldPreserveMeal(plan, false))
+        assertTrue(shouldPreserveMeal(plan.copy(recipeId = "existing"), true))
+        assertTrue(!shouldPreserveMeal(plan.copy(recipeId = null), true))
     }
 
     @Test

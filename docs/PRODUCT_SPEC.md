@@ -10,14 +10,16 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
-- Seven-day planner with breakfast, lunch and dinner slots (21 slots per week), manual recipe assignment, serving adjustments and meal locking.
+- Seven-day planner with configurable breakfast/lunch/dinner slots, manual recipe assignment, serving adjustments and meal locking.
+- Regeneration preserves locked, cooked and manually selected/cleared slots by default; an explicit “fill empty slots only” option preserves all already-populated slots.
 - Deterministic local week generator. It preserves locked slots and excludes recipes intersecting configured allergy IDs. If a previously locked meal conflicts with a newly selected allergy exclusion, generation is blocked with a prompt to unlock or replace it; the app never silently bypasses the exclusion.
 - Pantry exact-quantity records and approximate reminders, with optional user-entered expiry dates and storage notes. Only numeric exact stock can reduce basket requirements.
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
 - Plan-run metadata saved per week: generator version, generation timestamp, price snapshot timestamp, budget, wilaya and selected meal slots.
 - Week-scoped shopping lists; generated and manually entered items remain associated with the plan week.
-- Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone, preventing recipe/portion edits from making the inventory history inaccurate. Approximate stock is never deducted.
+- Planned meals can be marked cooked after confirmation; exact pantry deductions are recorded and can be undone. A cooked meal is read-only until its deduction is undone.
+- Manual plan edits are persisted separately from generated suggestions so regeneration cannot silently replace user decisions. Approximate stock is never deducted.
 - Shopping item details for manual purchase-quantity override, store notes, availability and user-entered actual spend.
 - Persistent shopping checkboxes, category-grouped rows, editable user-added shopping items and saved recipe favourites.
 - Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.

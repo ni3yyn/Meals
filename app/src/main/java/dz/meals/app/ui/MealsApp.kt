@@ -156,7 +156,7 @@ fun MealsApp() {
                         preferences = preferences,
                         snapshot = snapshot,
                         isGenerating = isGenerating,
-                        onGenerate = {
+                        onGenerate = { fillEmptyOnly ->
                             scope.launch {
                                 isGenerating = true
                                 try {
@@ -170,7 +170,8 @@ fun MealsApp() {
                                         dislikedIngredientIds = preferences.dislikedIngredientIds,
                                         dietPattern = preferences.dietPattern,
                                         maxCookingMinutes = preferences.maxCookingMinutes,
-                                        budgetBufferPercent = preferences.budgetBufferPercent
+                                        budgetBufferPercent = preferences.budgetBufferPercent,
+                                        fillEmptyOnly = fillEmptyOnly
                                     )
                                     generationMessage = result.message
                                     refresh()

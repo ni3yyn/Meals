@@ -59,7 +59,7 @@ fun PlanScreen(
     preferences: AppPreferences,
     snapshot: MealsSnapshot,
     isGenerating: Boolean,
-    onGenerate: () -> Unit,
+    onGenerate: (Boolean) -> Unit,
     onSetMeal: (Int, String, String?) -> Unit,
     onToggleLock: (String) -> Unit,
     onToggleCooked: (String) -> Unit,
@@ -69,6 +69,7 @@ fun PlanScreen(
 ) {
     var showBudgetInfo by rememberSaveable { mutableStateOf(false) }
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
+    var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
     val recipesById = snapshot.recipes.associateBy { it.id }
 
     val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
@@ -173,8 +174,15 @@ fun PlanScreen(
             }
         }
         item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Checkbox(
+                    checked = fillEmptyOnly,
+                    onCheckedChange = { fillEmptyOnly = it }
+                )
+                Text("املأ الوجبات الفارغة فقط", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+            }
             Button(
-                onClick = onGenerate,
+                onClick = { onGenerate(fillEmptyOnly) },
                 enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Forest),
