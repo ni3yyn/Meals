@@ -45,6 +45,10 @@ jobs:
 
       - name: Launch minified release build on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # GitHub-hosted Linux runners may not expose KVM. Explicitly allow
+          # the emulator's TCG software CPU backend when hardware accel is absent.
+          ANDROID_I_WANT_MY_TCG: "yes"
         with:
           api-level: 35
           arch: x86_64
