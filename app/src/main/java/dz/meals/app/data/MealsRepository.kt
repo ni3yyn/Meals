@@ -14,6 +14,7 @@ import dz.meals.app.data.local.RecipeIngredientEntity
 import dz.meals.app.data.local.RecipeStepEntity
 import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.calculateBasket
+import dz.meals.app.domain.findLockedAllergyConflict
 import java.time.LocalDate
 import java.util.UUID
 
