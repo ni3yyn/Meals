@@ -448,27 +448,20 @@ private fun SettingsDialog(
                         label = { Text("ابحثي عن مكوّن") },
                         singleLine = true
                     )
-                    if (searchIngredient.isBlank()) {
-                        Text(
-                            "ابدئي بكتابة اسم المكوّن لعرض الاختيارات.",
-                            color = dz.meals.app.ui.theme.MutedInk,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    } else {
-                        ingredients.filter { ingredient ->
+                    ingredients.filter { ingredient ->
+                        searchIngredient.isBlank() ||
                             ingredient.nameAr.contains(searchIngredient, true) ||
-                                ingredient.nameFr.contains(searchIngredient, true) ||
-                                ingredient.aliases.any { it.contains(searchIngredient, true) }
-                        }.take(8).forEach { ingredient ->
-                            MealsCheckRow(
-                                title = ingredient.nameAr,
-                                supportingText = ingredient.nameFr,
-                                checked = ingredient.id in dislikes,
-                                onCheckedChange = { checked ->
-                                    dislikes = if (checked) dislikes + ingredient.id else dislikes - ingredient.id
-                                }
-                            )
-                        }
+                            ingredient.nameFr.contains(searchIngredient, true) ||
+                            ingredient.aliases.any { it.contains(searchIngredient, true) }
+                    }.take(10).forEach { ingredient ->
+                        MealsCheckRow(
+                            title = ingredient.nameAr,
+                            supportingText = ingredient.nameFr,
+                            checked = ingredient.id in dislikes,
+                            onCheckedChange = { checked ->
+                                dislikes = if (checked) dislikes + ingredient.id else dislikes - ingredient.id
+                            }
+                        )
                     }
                     Text("كم دقيقة تفضلين لقضاءها في الطبخ؟", style = MaterialTheme.typography.titleMedium)
                     OutlinedTextField(
