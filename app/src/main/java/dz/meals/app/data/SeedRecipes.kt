@@ -97,7 +97,7 @@ object SeedRecipes {
                 RecipeIngredient("pasta", 300.0, "g"),
                 RecipeIngredient("tomato", 250.0, "g"),
                 RecipeIngredient("onion", 100.0, "g"),
-                RecipeIngredient("garlic", 2.0, "clove"),
+                RecipeIngredient("garlic", 2.0, "piece"),
                 RecipeIngredient("tomato-paste", 30.0, "g"),
                 RecipeIngredient("oil", 15.0, "ml")
             ),

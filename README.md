@@ -13,9 +13,11 @@ The app opens directly into the planner. No authentication, email, phone number,
 - Configurable allergy exclusions applied as hard recipe filters.
 - Arabic/French recipe and ingredient-alias search.
 - Exact pantry deductions; approximate stock is a reminder and is never deducted.
+- Optional pantry expiry dates and storage notes, stored locally.
 - Consolidated shopping requirements and whole-pack rounding.
 - Consumed-ingredient value separated from cash needed to buy packages.
-- Manual shopping items and persistent check-off state.
+- Manual shopping items with in-place editing and persistent check-off state, grouped by ingredient category.
+- Local price observations with pack size, date, shop context and wilaya; reported values remain unverified and device-local.
 - Weekly budget, wilaya and household preferences stored locally.
 - R8 minification, obfuscation and resource shrinking in release builds.
 

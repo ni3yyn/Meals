@@ -12,10 +12,11 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 - Search by Arabic/French recipe name, description and ingredient aliases.
 - Seven-day planner with lunch and dinner slots, manual recipe assignment, serving adjustments and meal locking.
 - Deterministic local week generator. It preserves locked slots and excludes recipes intersecting configured allergy IDs.
-- Pantry exact-quantity records and approximate reminders. Only numeric exact stock can reduce basket requirements.
+- Pantry exact-quantity records and approximate reminders, with optional user-entered expiry dates and storage notes. Only numeric exact stock can reduce basket requirements.
 - Whole-week ingredient aggregation by canonical ingredient ID and unit.
 - Separate consumed ingredient value and purchase cash outlay, with whole retail pack rounding when pack size is known.
-- Persistent shopping checkboxes and user-added shopping items.
+- Persistent shopping checkboxes, category-grouped rows and editable user-added shopping items.
+- Local price-report capture with pack quantity, DZD price, wilaya, observation timestamp and shop context. Exact-wilaya observations take precedence over national and demo values.
 - Unit tests for serving scaling, exact/approximate pantry handling, package rounding and catalogue integrity.
 - Release R8 minification, obfuscation and resource shrinking.
 
@@ -46,11 +47,18 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 3. Exact stock reduces the amount to buy.
 4. Approximate reminders are visible but never treated as exact quantities.
 
+### Price reports
+1. Select an ingredient and enter the observed pack size in its canonical base unit.
+2. Enter the price, shop context and the currently selected wilaya.
+3. The app timestamps the observation and stores it locally as an unverified user report.
+4. The basket prefers a report from the selected wilaya, then a national observation, then a clearly labelled demo value.
+5. Reports are not uploaded, moderated or shared with other devices in this version.
+
 ### Shopping
 1. Aggregate repeated ingredients across planned meals.
 2. Display recipe requirement, pantry deduction and purchase quantity separately.
 3. Round purchase quantity up to complete packages when pack-size data exists.
-4. Preserve checked state and allow manual additions.
+4. Preserve checked state, group ingredients by category and allow manual additions or edits.
 
 ## Cost and price integrity
 The app distinguishes consumed ingredient value from cash required to buy full packages. A recipe requiring 120 g can have a 120 g consumed value while requiring a 500 g package purchase. Remaining package contents can be used later.
