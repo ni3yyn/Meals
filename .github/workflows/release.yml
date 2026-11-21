@@ -1,8 +1,11 @@
 name: Signed Android release
 
 on:
+  # Publish a signed production APK after every update merged or pushed to main.
+  # The tag is created by this workflow, so tag pushes are deliberately not
+  # release triggers; this prevents the release from triggering itself again.
   push:
-    tags: ["v*"]
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
