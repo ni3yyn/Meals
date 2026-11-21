@@ -7,7 +7,6 @@ Meals now has a dedicated `:shared` Kotlin Multiplatform library. It builds Andr
 - `android` (Android KMP library target)
 - `iosArm64` (physical iPhones/iPads)
 - `iosSimulatorArm64` (Apple Silicon simulators)
-- `iosX64` (Intel simulator compatibility)
 
 The shared module produces a static `MealsShared` framework for Xcode integration.
 

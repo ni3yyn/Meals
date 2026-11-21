@@ -555,6 +555,37 @@ private fun ShoppingItemCard(
 }
 
 
+
+private fun buildShoppingShareText(rows: List<ShoppingListItem>, snapshot: MealsSnapshot): String = buildString {
+    appendLine("قائمة مشتريات مائدتي")
+    appendLine("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd())
+    if (snapshot.basket.actualSpendDzd > 0.0) {
+        appendLine("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd())
+    }
+    appendLine()
+    rows.groupBy { it.category }.toSortedMap().forEach { (category, items) ->
+        appendLine(category)
+        items.forEach { item ->
+            append(if (item.checked) "[x] " else "[ ] ")
+            append(item.name)
+            append(" — ")
+            append(item.purchaseQuantity.prettyQuantity())
+            append(" ")
+            append(item.unit)
+            item.cashOutlayDzd?.let { append(" · " + it.toInt().formatDzd()) }
+            if (item.isUnavailable) append(" · غير متوفر")
+            if (item.storeNote.isNotBlank()) append(" · " + item.storeNote)
+            appendLine()
+        }
+        appendLine()
+    }
+    if (snapshot.basket.unknownPriceCount > 0) {
+        appendLine("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.")
+    }
+    append("الأسعار تقديرية وليست ضماناً لسعر المحل أو التوفر.")
+}
+
+
 private fun channelName(value: String): String = when (value) {
     "market" -> "سوق"
     "grocery" -> "بقالة"

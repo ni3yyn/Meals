@@ -18,8 +18,7 @@ kotlin {
 
     val iosTargets = listOf(
         iosArm64(),
-        iosSimulatorArm64(),
-        iosX64()
+        iosSimulatorArm64()
     )
 
     iosTargets.forEach { target ->
