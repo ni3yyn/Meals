@@ -63,6 +63,9 @@ fun ShoppingScreen(
     snapshot: MealsSnapshot,
     ingredients: List<IngredientMaster>,
     wilaya: String,
+    commune: String,
+    shoppingChannel: String,
+    preferredShop: String,
     onToggleItem: (String, Boolean) -> Unit,
     onAddCustomItem: (String, Double, String, Double?) -> Unit,
     onEditCustomItem: (String, String, Double, String) -> Unit,
@@ -156,7 +159,11 @@ fun ShoppingScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("حسّن تقديرات منطقتك", fontWeight = FontWeight.SemiBold)
-                    Text("أضف سعراً شاهدته في محل أو سوق في $wilaya.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "أضف سعراً شاهدته في $wilaya" + if (commune.isNotBlank()) " · $commune" else "",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 OutlinedButton(onClick = { priceDialog = true }) { Text("إبلاغ عن سعر") }
             }
@@ -351,6 +358,10 @@ fun ShoppingScreen(
         PriceReportDialog(
             ingredients = ingredients,
             wilaya = wilaya,
+            defaultShopContext = listOf(
+                channelName(shoppingChannel),
+                preferredShop
+            ).filter { it.isNotBlank() }.joinToString(" · "),
             onDismiss = { priceDialog = false },
             onSubmit = { ingredientId, packQuantity, amount, context ->
                 onRecordPrice(ingredientId, packQuantity, amount, context)
@@ -364,6 +375,7 @@ fun ShoppingScreen(
 private fun PriceReportDialog(
     ingredients: List<IngredientMaster>,
     wilaya: String,
+    defaultShopContext: String,
     onDismiss: () -> Unit,
     onSubmit: (String, Double, Double, String) -> Unit
 ) {
@@ -371,7 +383,9 @@ private fun PriceReportDialog(
     var ingredientMenu by rememberSaveable { mutableStateOf(false) }
     var packQuantityText by rememberSaveable { mutableStateOf("1") }
     var priceText by rememberSaveable { mutableStateOf("") }
-    var shopContext by rememberSaveable { mutableStateOf("سوق / بقالة") }
+    var shopContext by rememberSaveable(wilaya, defaultShopContext) {
+        mutableStateOf(defaultShopContext.ifBlank { "سوق / بقالة" })
+    }
     val selectedIngredient = ingredients.firstOrNull { it.id == selectedId }
 
     AlertDialog(
@@ -580,4 +594,16 @@ private fun buildShoppingShareText(rows: List<ShoppingListItem>, snapshot: Meals
         appendLine("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.")
     }
     append("الأسعار تقديرية وليست ضماناً لسعر المحل أو التوفر.")
+}
+
+
+private fun channelName(value: String): String = when (value) {
+    "market" -> "سوق"
+    "grocery" -> "بقالة"
+    "supermarket" -> "متجر كبير"
+    "butcher" -> "ملحمة"
+    "poultry" -> "محل دواجن"
+    "fishmonger" -> "بائع سمك"
+    "bakery" -> "مخبزة"
+    else -> "مكان تسوق آخر"
 }

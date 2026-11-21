@@ -22,7 +22,7 @@ The app opens directly into the planner. No authentication, email, phone number,
 - Consumed-ingredient value separated from cash needed to buy packages.
 - Week-specific shopping lists with category grouping, persistent checks, editable generated purchase amounts, shop notes, unavailable flags, actual-spend entry and optional prices for custom items.
 - Local price observations with pack size, date, shop context and wilaya; reported values remain unverified and device-local.
-- Weekly budget, wilaya and household preferences stored locally.
+- Weekly budget, wilaya, optional commune, shopping channel and preferred shop stored locally.
 - R8 minification, obfuscation and resource shrinking in release builds.
 
 **Price warning:** bundled observations are explicitly tagged as demo values, not current Algerian market prices. No live retailer or government price feed is connected yet.

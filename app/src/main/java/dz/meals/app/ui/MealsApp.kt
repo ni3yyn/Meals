@@ -206,6 +206,9 @@ fun MealsApp() {
                         snapshot = snapshot,
                         ingredients = snapshot.ingredients,
                         wilaya = preferences.wilaya,
+                        commune = preferences.commune,
+                        shoppingChannel = preferences.shoppingChannel,
+                        preferredShop = preferences.preferredShop,
                         onToggleItem = { id, checked -> perform { repository.toggleShoppingItem(id, checked) } },
                         onAddCustomItem = { name, quantity, unit, estimatedPrice ->
                             perform { repository.addCustomShoppingItem(weekStartIso, name, quantity, unit, estimatedPrice) }
@@ -243,7 +246,8 @@ fun MealsApp() {
             onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer ->
                 scope.launch {
                     preferencesStore.saveSettings(
-                        budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer
+                        budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer,
+                        commune, shoppingChannel, preferredShop
                     )
                     showSettings = false
                     refresh()
@@ -268,10 +272,13 @@ private fun SettingsDialog(
     onDismiss: () -> Unit,
     ingredients: List<dz.meals.app.data.IngredientMaster>,
     isFirstSetup: Boolean,
-    onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int) -> Unit
+    onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int, String, String, String) -> Unit
 ) {
     var budgetText by rememberSaveable(preferences.weeklyBudgetDzd) { mutableStateOf(preferences.weeklyBudgetDzd.toString()) }
     var wilayaText by rememberSaveable(preferences.wilaya) { mutableStateOf(preferences.wilaya) }
+    var communeText by rememberSaveable(preferences.commune) { mutableStateOf(preferences.commune) }
+    var shoppingChannel by rememberSaveable(preferences.shoppingChannel) { mutableStateOf(preferences.shoppingChannel) }
+    var preferredShop by rememberSaveable(preferences.preferredShop) { mutableStateOf(preferences.preferredShop) }
     var servingsText by rememberSaveable(preferences.householdServings) { mutableStateOf(preferences.householdServings.toString()) }
     var allergies by rememberSaveable(preferences.allergyIds) { mutableStateOf(preferences.allergyIds) }
     var slots by rememberSaveable(preferences.mealSlots) { mutableStateOf(preferences.mealSlots) }
@@ -314,6 +321,42 @@ private fun SettingsDialog(
                 )
                 Text("الولاية", modifier = Modifier.padding(top = 12.dp))
                 OutlinedTextField(value = wilayaText, onValueChange = { wilayaText = it.take(40) }, singleLine = true)
+                Text("البلدية (اختياري)", modifier = Modifier.padding(top = 8.dp))
+                OutlinedTextField(
+                    value = communeText,
+                    onValueChange = { communeText = it.take(60) },
+                    singleLine = true,
+                    placeholder = { Text("اسم البلدية") }
+                )
+                Text("مكان التسوق المعتاد", modifier = Modifier.padding(top = 10.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        "market" to "سوق",
+                        "grocery" to "بقالة",
+                        "supermarket" to "متجر كبير",
+                        "butcher" to "ملحمة",
+                        "poultry" to "دجاج",
+                        "fishmonger" to "سمك",
+                        "bakery" to "مخبزة",
+                        "other" to "أخرى"
+                    ).forEach { channel ->
+                        androidx.compose.material3.FilterChip(
+                            selected = shoppingChannel == channel.first,
+                            onClick = { shoppingChannel = channel.first },
+                            label = { Text(channel.second) }
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = preferredShop,
+                    onValueChange = { preferredShop = it.take(80) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("اسم المحل المفضل (اختياري)") },
+                    singleLine = true
+                )
                 Text("الوجبات التي تريد تخطيطها", modifier = Modifier.padding(top = 12.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
                 listOf("breakfast" to "الفطور", "lunch" to "الغداء", "dinner" to "العشاء").forEach { (id, label) ->
                     androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -399,7 +442,8 @@ private fun SettingsDialog(
                     if (budget != null && servings != null && servings in 1..12) {
                         onSave(
                             budget, wilayaText, servings, allergies, slots, dislikes, diet,
-                            maxMinutes.toIntOrNull() ?: 60, buffer.toIntOrNull() ?: 5
+                            maxMinutes.toIntOrNull() ?: 60, buffer.toIntOrNull() ?: 5,
+                            communeText, shoppingChannel, preferredShop
                         )
                     }
                 },

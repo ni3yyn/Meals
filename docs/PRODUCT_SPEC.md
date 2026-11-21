@@ -6,7 +6,7 @@ This is a native Android app for Algeria. It deliberately starts directly in loc
 ## Implemented milestone
 - Kotlin, Jetpack Compose and Material 3; Arabic RTL interface.
 - Room persistence for canonical ingredients, recipes, recipe ingredients, bilingual preparation steps, week slots, pantry items, price observations and shopping items.
-- DataStore for budget, wilaya, household servings, selected meal slots, allergies, vegetarian/vegan pattern, soft disliked-ingredient preferences, preferred maximum cook time, budget buffer and local first-run setup completion.
+- DataStore for budget, wilaya, optional commune, shopping channel and preferred shop, household servings, selected meal slots, allergies, vegetarian/vegan pattern, soft disliked-ingredient preferences, preferred maximum cook time, budget buffer and local first-run setup completion.
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
