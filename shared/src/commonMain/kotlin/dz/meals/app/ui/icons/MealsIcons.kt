@@ -4,6 +4,31 @@ import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dz.meals.app.shared.generated.resources.Res
+import dz.meals.app.shared.generated.resources.meals_icon_plan
+import dz.meals.app.shared.generated.resources.meals_icon_cookbook
+import dz.meals.app.shared.generated.resources.meals_icon_basket
+import dz.meals.app.shared.generated.resources.meals_icon_pantry
+import dz.meals.app.shared.generated.resources.meals_icon_settings
+import dz.meals.app.shared.generated.resources.meals_icon_update
+import dz.meals.app.shared.generated.resources.meals_icon_download
+import dz.meals.app.shared.generated.resources.meals_icon_refresh
+import dz.meals.app.shared.generated.resources.meals_icon_check
+import dz.meals.app.shared.generated.resources.meals_icon_chevron_right
+import dz.meals.app.shared.generated.resources.meals_icon_close
+import dz.meals.app.shared.generated.resources.meals_icon_add
+import dz.meals.app.shared.generated.resources.meals_icon_wallet
+import dz.meals.app.shared.generated.resources.meals_icon_arrow_back
+import dz.meals.app.shared.generated.resources.meals_icon_arrow_forward
+import dz.meals.app.shared.generated.resources.meals_icon_lock
+import dz.meals.app.shared.generated.resources.meals_icon_lock_open
+import dz.meals.app.shared.generated.resources.meals_icon_meal
+import dz.meals.app.shared.generated.resources.meals_icon_search
+import dz.meals.app.shared.generated.resources.meals_icon_star
+import dz.meals.app.shared.generated.resources.meals_icon_star_outline
+import dz.meals.app.shared.generated.resources.meals_icon_clock
+import dz.meals.app.shared.generated.resources.meals_icon_info
+import dz.meals.app.shared.generated.resources.meals_icon_edit
+import dz.meals.app.shared.generated.resources.meals_icon_delete
 import org.jetbrains.compose.resources.painterResource
 
 /**
