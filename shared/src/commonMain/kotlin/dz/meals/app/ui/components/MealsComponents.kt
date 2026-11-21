@@ -51,6 +51,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.geometry.Offset
@@ -534,15 +538,28 @@ fun MealsCheckbox(
             contentAlignment = Alignment.Center
         ) {
             if (checked) {
-                MealsIcon(
-                    name = MealsIconName.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp).graphicsLayer {
+                Canvas(
+                    modifier = Modifier.size(14.dp).graphicsLayer {
                         scaleX = checkScale
                         scaleY = checkScale
                         alpha = checkScale
                     }
-                )
+                ) {
+                    val mark = Path().apply {
+                        moveTo(size.width * 0.16f, size.height * 0.52f)
+                        lineTo(size.width * 0.40f, size.height * 0.76f)
+                        lineTo(size.width * 0.86f, size.height * 0.24f)
+                    }
+                    drawPath(
+                        path = mark,
+                        color = Color.White,
+                        style = Stroke(
+                            width = size.minDimension * 0.15f,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                }
             }
         }
     }
