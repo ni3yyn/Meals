@@ -59,6 +59,15 @@ interface MealsDao {
     suspend fun getPlanMeals(weekStartIso: String): List<PlanMealEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCookedMealDeduction(item: CookedMealDeductionEntity)
+
+    @Query("SELECT * FROM cooked_meal_deductions WHERE mealId = :mealId")
+    suspend fun getCookedMealDeductions(mealId: String): List<CookedMealDeductionEntity>
+
+    @Query("DELETE FROM cooked_meal_deductions WHERE mealId = :mealId")
+    suspend fun deleteCookedMealDeductions(mealId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPlanMeal(item: PlanMealEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -182,6 +182,14 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun cookedMealOnlyDeductsExactAvailablePantryQuantity() {
+        assertEquals(150.0, exactPantryDeduction(200.0, 150.0, false), 0.0001)
+        assertEquals(0.0, exactPantryDeduction(200.0, null, true), 0.0001)
+        assertEquals(0.0, exactPantryDeduction(200.0, 150.0, true), 0.0001)
+        assertEquals(0.0, exactPantryDeduction(0.0, 150.0, false), 0.0001)
+    }
+
+    @Test
     fun seededCatalogueHasConsistentUnitsAndAllergenMetadata() {
         SeedRecipes.validateCatalogue()
     }

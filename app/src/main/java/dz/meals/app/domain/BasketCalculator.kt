@@ -12,6 +12,11 @@ private data class RequirementKey(val ingredientId: String, val unit: String)
 
 private const val MAX_PRICE_AGE_MILLIS = 30L * 24L * 60L * 60L * 1000L
 
+fun exactPantryDeduction(requiredQuantity: Double, availableQuantity: Double?, approximate: Boolean): Double {
+    if (approximate || availableQuantity == null || requiredQuantity <= 0.0 || availableQuantity <= 0.0) return 0.0
+    return minOf(requiredQuantity, availableQuantity)
+}
+
 fun isRecipeAllowed(
     recipe: MealRecipe,
     ingredientCategories: Map<String, String>,

@@ -64,7 +64,8 @@ data class PlanMealEntity(
     val mealSlot: String,
     val recipeId: String?,
     val servings: Int,
-    val locked: Boolean
+    val locked: Boolean,
+    @ColumnInfo(defaultValue = "0") val isCooked: Boolean = false
 )
 
 @Entity(
@@ -142,4 +143,16 @@ data class PlanRunEntity(
     val budgetDzd: Int,
     val wilaya: String,
     val mealSlotsCsv: String
+)
+
+
+@Entity(
+    tableName = "cooked_meal_deductions",
+    primaryKeys = ["mealId", "ingredientId"]
+)
+data class CookedMealDeductionEntity(
+    val mealId: String,
+    val ingredientId: String,
+    val unit: String,
+    val quantityBase: Double
 )

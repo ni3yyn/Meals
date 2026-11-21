@@ -2,6 +2,7 @@ package dz.meals.app.data
 
 import android.content.Context
 import androidx.room.withTransaction
+import dz.meals.app.data.local.CookedMealDeductionEntity
 import dz.meals.app.data.local.FavoriteRecipeEntity
 import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MealsDatabase
@@ -210,7 +211,7 @@ class MealsRepository(context: Context) {
             return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)
         }
         val locked = dao.getPlanMeals(weekStartIso)
-            .filter { it.locked && it.mealSlot in validSlots }
+            .filter { (it.locked || it.isCooked) && it.mealSlot in validSlots }
             .map { it.toModel() }
         val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
         if (lockedConflict != null) {
@@ -314,6 +315,68 @@ class MealsRepository(context: Context) {
     suspend fun toggleMealLock(id: String, weekStartIso: String) {
         val meal = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id } ?: return
         dao.upsertPlanMeal(meal.copy(locked = !meal.locked))
+    }
+
+    suspend fun toggleMealCooked(id: String, weekStartIso: String) {
+        val current = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id } ?: return
+        val recipe = current.recipeId?.let { recipeId -> loadRecipes().firstOrNull { it.id == recipeId } } ?: return
+        database.withTransaction {
+            if (!current.isCooked) {
+                val factor = current.servings.toDouble() / recipe.baseServings.coerceAtLeast(1)
+                val required = recipe.ingredients.filterNot { it.optional }
+                    .groupBy { it.ingredientId to it.unit }
+                required.forEach { (key, parts) ->
+                    val needed = parts.sumOf { it.quantityBase * factor }
+                    val stock = dao.getPantryItems().firstOrNull {
+                        it.ingredientId == key.first && it.unit == key.second
+                    } ?: return@forEach
+                    val deducted = exactPantryDeduction(needed, stock.quantityBase, stock.isApproximate)
+                    if (deducted > 0.0) {
+                        dao.upsertPantryItem(stock.copy(quantityBase = (stock.quantityBase ?: 0.0) - deducted))
+                        dao.upsertCookedMealDeduction(
+                            CookedMealDeductionEntity(
+                                mealId = current.id,
+                                ingredientId = key.first,
+                                unit = key.second,
+                                quantityBase = deducted
+                            )
+                        )
+                    }
+                }
+                dao.upsertPlanMeal(current.copy(isCooked = true))
+            } else {
+                dao.getCookedMealDeductions(current.id).forEach { deduction ->
+                    val stock = dao.getPantryItems().firstOrNull {
+                        it.ingredientId == deduction.ingredientId && it.unit == deduction.unit
+                    }
+                    if (stock == null) {
+                        dao.upsertPantryItem(
+                            PantryItemEntity(
+                                id = deduction.ingredientId,
+                                ingredientId = deduction.ingredientId,
+                                quantityBase = deduction.quantityBase,
+                                unit = deduction.unit,
+                                isApproximate = false,
+                                note = "استُعيد بعد التراجع عن تسجيل الطهي",
+                                expiryAtEpochMillis = null
+                            )
+                        )
+                    } else if (!stock.isApproximate && stock.quantityBase != null) {
+                        dao.upsertPantryItem(stock.copy(quantityBase = stock.quantityBase + deduction.quantityBase))
+                    } else {
+                        dao.upsertPantryItem(
+                            stock.copy(
+                                quantityBase = deduction.quantityBase,
+                                isApproximate = false,
+                                note = (stock.note + " · استُعيد بعد التراجع عن تسجيل الطهي").trim(' ', '·')
+                            )
+                        )
+                    }
+                }
+                dao.deleteCookedMealDeductions(current.id)
+                dao.upsertPlanMeal(current.copy(isCooked = false))
+            }
+        }
     }
 
     suspend fun adjustMealServings(id: String, weekStartIso: String, delta: Int) {
@@ -567,7 +630,8 @@ private fun PlanMealEntity.toModel() = PlannedMeal(
     mealSlot = mealSlot,
     recipeId = recipeId,
     servings = servings,
-    locked = locked
+    locked = locked,
+    isCooked = isCooked
 )
 
 private fun PlannedMeal.toEntity() = PlanMealEntity(
@@ -577,7 +641,8 @@ private fun PlannedMeal.toEntity() = PlanMealEntity(
     mealSlot = mealSlot,
     recipeId = recipeId,
     servings = servings,
-    locked = locked
+    locked = locked,
+    isCooked = isCooked
 )
 
 private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = ShoppingListItem(

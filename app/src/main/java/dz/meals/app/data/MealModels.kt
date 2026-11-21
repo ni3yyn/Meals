@@ -100,7 +100,8 @@ data class PlannedMeal(
     val mealSlot: String,
     val recipeId: String?,
     val servings: Int,
-    val locked: Boolean
+    val locked: Boolean,
+    val isCooked: Boolean = false
 )
 
 data class PriceObservationSummary(

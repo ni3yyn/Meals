@@ -18,9 +18,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PriceObservationEntity::class,
         ShoppingItemEntity::class,
         FavoriteRecipeEntity::class,
-        PlanRunEntity::class
+        PlanRunEntity::class,
+        CookedMealDeductionEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -63,6 +64,20 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE plan_meals ADD COLUMN isCooked INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS cooked_meal_deductions (" +
+                        "mealId TEXT NOT NULL, " +
+                        "ingredientId TEXT NOT NULL, " +
+                        "unit TEXT NOT NULL, " +
+                        "quantityBase REAL NOT NULL, " +
+                        "PRIMARY KEY(mealId, ingredientId))"
+                )
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -71,7 +86,7 @@ abstract class MealsDatabase : RoomDatabase() {
                     context.applicationContext,
                     MealsDatabase::class.java,
                     "meals_local.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { INSTANCE = it }
             }
     }
 }
