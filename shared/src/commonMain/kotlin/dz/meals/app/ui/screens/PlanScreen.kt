@@ -1,10 +1,8 @@
 package dz.meals.app.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,13 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsAlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -300,11 +293,12 @@ private fun SlotRow(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(9.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Text(
                 title,
@@ -313,26 +307,20 @@ private fun SlotRow(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = recipe?.nameAr ?: "لم يتم اختيار وجبة بعد",
+                text = recipe?.nameAr ?: "لم تُحدّد بعد",
+                modifier = Modifier.weight(1f),
                 color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             if (meal != null && recipe != null) {
                 Text(
-                    recipe.durationMinutes.toString() + " دقيقة",
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (meal?.isCooked == true) {
-                Text(
-                    "تم الطهي وتحديث المخزون",
-                    color = Forest,
+                    if (meal.isCooked) "تم الطهي" else recipe.durationMinutes.toString() + " دقيقة",
+                    color = if (meal.isCooked) Forest else MutedInk,
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
+                    maxLines = 1
                 )
             }
         }
@@ -367,9 +355,13 @@ private fun SlotRow(
                 }
                 IconButton(
                     onClick = onToggleLock,
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    MealsIcon(name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen, contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة", modifier = Modifier.size(25.dp))
+                    MealsIcon(
+                        name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen,
+                        contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
+                        modifier = Modifier.size(23.dp)
+                    )
                 }
             }
             Row(
@@ -405,7 +397,7 @@ private fun SlotRow(
             onDismissRequest = { chooseRecipe = false },
             title = { Text("اختر وصفة لـ " + title) },
             text = {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     items(recipes, key = { it.id }) { item ->
                         TextButton(
                             onClick = {
@@ -414,12 +406,23 @@ private fun SlotRow(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(Modifier.fillMaxWidth()) {
-                                Text(item.nameAr, fontWeight = FontWeight.SemiBold)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    item.nameAr,
+                                    modifier = Modifier.weight(1f),
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                                 Text(
                                     item.durationMinutes.toString() + " دقيقة · " + item.baseServings + " حصص",
                                     color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -438,4 +441,5 @@ private fun SlotRow(
             }
         )
     }
+}
 }
