@@ -96,7 +96,7 @@ fun PantryScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 122.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (search.isNotBlank()) {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
@@ -30,8 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -67,6 +66,8 @@ import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
 import dz.meals.app.data.currentWeekStartIso
 import dz.meals.app.ui.components.*
+import dev.chrisbanes.haze.HazeInput
+import dev.chrisbanes.haze.hazeSource
 import dz.meals.app.ui.screens.PantryScreen
 import dz.meals.app.ui.screens.PlanScreen
 import dz.meals.app.ui.screens.RecipesScreen
@@ -166,6 +167,15 @@ fun MealsApp() {
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         MealsBackdrop {
+        val hazeState = LocalMealsHazeState.current
+        val navigationItems = remember {
+            listOf(
+                MealsNavigationItem("الخطة", Icons.Outlined.CalendarMonth),
+                MealsNavigationItem("الوصفات", Icons.Outlined.RestaurantMenu),
+                MealsNavigationItem("المشتريات", Icons.Outlined.ShoppingCart),
+                MealsNavigationItem("المخزون", Icons.Outlined.Kitchen)
+            )
+        }
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
@@ -194,41 +204,21 @@ fun MealsApp() {
                 )
             },
             bottomBar = {
-                NavigationBar(
-                    modifier = Modifier.clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                    tonalElevation = 0.dp
-                ) {
-                    NavigationBarItem(
-                        selected = selectedTab == AppTab.Plan,
-                        onClick = { selectedTab = AppTab.Plan },
-                        icon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null) },
-                        label = { Text("الخطة") }
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == AppTab.Recipes,
-                        onClick = { selectedTab = AppTab.Recipes },
-                        icon = { Icon(Icons.Outlined.RestaurantMenu, contentDescription = null) },
-                        label = { Text("الوصفات") }
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == AppTab.Shopping,
-                        onClick = { selectedTab = AppTab.Shopping },
-                        icon = { Icon(Icons.Outlined.ShoppingCart, contentDescription = null) },
-                        label = { Text("المشتريات") }
-                    )
-                    NavigationBarItem(
-                        selected = selectedTab == AppTab.Pantry,
-                        onClick = { selectedTab = AppTab.Pantry },
-                        icon = { Icon(Icons.Outlined.Kitchen, contentDescription = null) },
-                        label = { Text("المخزون") }
-                    )
-                }
+                MealsFrostedBottomBar(
+                    items = navigationItems,
+                    selectedIndex = selectedTab.ordinal,
+                    onItemSelected = { index ->
+                        selectedTab = AppTab.entries.getOrElse(index) { AppTab.Plan }
+                    },
+                    hazeState = hazeState
+                )
             }
         ) { innerPadding ->
             androidx.compose.foundation.layout.Box(
-                modifier = Modifier.fillMaxSize()
-                    .padding(innerPadding)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding())
+                    .hazeSource(hazeState, zIndex = 1f)
             ) {
                 when (selectedTab) {
                     AppTab.Plan -> PlanScreen(

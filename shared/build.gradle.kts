@@ -39,6 +39,7 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.haze.core)
             implementation(libs.haze.glass)
+            implementation(libs.haze.blur)
         }
     }
 }

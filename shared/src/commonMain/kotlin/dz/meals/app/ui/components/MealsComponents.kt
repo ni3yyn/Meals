@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,6 +66,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -74,6 +76,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazePerformanceMode
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import dev.chrisbanes.haze.glass.GlassOptics
@@ -705,6 +711,157 @@ fun MealsBottomSheet(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             content = content
+        )
+    }
+}
+
+/**
+ * A navigation destination used by the shared frosted bottom bar.
+ * Kept platform-neutral so the same navigation surface can be used by Android
+ * and iOS hosts while each host keeps ownership of its actual navigation state.
+ */
+data class MealsNavigationItem(
+    val label: String,
+    val icon: ImageVector
+)
+
+/**
+ * Floating frosted navigation capsule based on Haze's source-backed Blur API.
+ *
+ * One Haze node is used for the entire bar, not one per destination. The
+ * scrolling screen is captured as a sibling Haze source, so its cards move
+ * naturally beneath the capsule. A translucent tint preserves label contrast;
+ * a fine white rim supplies the light-catching glass edge.
+ */
+@Composable
+fun MealsFrostedBottomBar(
+    items: List<MealsNavigationItem>,
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    hazeState: HazeState,
+    modifier: Modifier = Modifier
+) {
+    val capsuleShape = RoundedCornerShape(32.dp)
+    val blurStyle = remember {
+        HazeBlurStyle {
+            blurRadius(25.dp)
+            noiseFactor(0.045f)
+            colorEffects(
+                listOf(
+                    HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.46f))
+                )
+            )
+            fallbackColorEffect(
+                HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
+            )
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 18.dp)
+            .padding(bottom = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(76.dp)
+                .clip(capsuleShape)
+                .hazeBlur(
+                    input = HazeInput.Sources(hazeState),
+                    style = blurStyle,
+                    performanceMode = HazePerformanceMode.Default,
+                    expandLayerBounds = false
+                )
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.25f),
+                            Color(0xFFFFFCF7).copy(alpha = 0.22f),
+                            Color(0xFFF4ECE5).copy(alpha = 0.31f)
+                        )
+                    ),
+                    capsuleShape
+                )
+                .border(
+                    BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.98f),
+                                Color.White.copy(alpha = 0.64f),
+                                Color(0xFFE5D9CF).copy(alpha = 0.78f)
+                            )
+                        )
+                    ),
+                    capsuleShape
+                )
+                .padding(horizontal = 7.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            items.forEachIndexed { index, item ->
+                val selected = index == selectedIndex
+                val foreground by animateColorAsState(
+                    targetValue = if (selected) ForestDark else MutedInk,
+                    label = "mealsNavForeground$index"
+                )
+                val iconSize by animateFloatAsState(
+                    targetValue = if (selected) 1f else 0.93f,
+                    animationSpec = tween(durationMillis = 180),
+                    label = "mealsNavIconScale$index"
+                )
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(25.dp))
+                        .clickable(
+                            onClick = { onItemSelected(index) },
+                            role = Role.Tab
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label,
+                        tint = foreground,
+                        modifier = Modifier.size(23.dp * iconSize)
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = item.label,
+                        color = foreground,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        // The hairline is drawn inside the already-clipped capsule, so it
+        // cannot create a second rectangular surface or escape the rounded rim.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 58.dp, vertical = 1.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.98f),
+                            Color.White.copy(alpha = 0.82f),
+                            Color.Transparent
+                        )
+                    )
+                )
         )
     }
 }
