@@ -82,7 +82,7 @@ class MealsRepository(context: Context) {
     suspend fun snapshot(
         weekStartIso: String,
         selectedWilaya: String? = null,
-        selectedMealSlots: Set<String> = MealSlots.ids
+        selectedMealSlots: Set<String> = MealSlots.ids.toSet()
     ): MealsSnapshot {
         ensureInitialized()
         val ingredients = dao.getIngredients().map { it.toModel() }
@@ -189,7 +189,7 @@ class MealsRepository(context: Context) {
         householdServings: Int,
         allergyIds: Set<String>,
         selectedWilaya: String? = null,
-        selectedMealSlots: Set<String> = MealSlots.ids,
+        selectedMealSlots: Set<String> = MealSlots.ids.toSet(),
         dislikedIngredientIds: Set<String> = emptySet(),
         dietPattern: String = "none",
         maxCookingMinutes: Int = 60,
