@@ -39,7 +39,12 @@ data class AppPreferences(
     val weeklyBudgetDzd: Int = 15_000,
     val wilaya: String = "الجزائر",
     val householdServings: Int = 3,
-    val allergyIds: Set<String> = emptySet()
+    val allergyIds: Set<String> = emptySet(),
+    val mealSlots: Set<String> = setOf("breakfast", "lunch", "dinner"),
+    val dislikedIngredientIds: Set<String> = emptySet(),
+    val dietPattern: String = "none",
+    val maxCookingMinutes: Int = 60,
+    val budgetBufferPercent: Int = 5
 )
 
 data class PantryItem(
@@ -68,7 +73,10 @@ data class ShoppingListItem(
     val isApproximatePantry: Boolean,
     val checked: Boolean,
     val userAdded: Boolean,
-    val category: String = "أخرى"
+    val category: String = "أخرى",
+    val storeNote: String = "",
+    val isUnavailable: Boolean = false,
+    val actualSpentDzd: Double? = null
 )
 
 data class BasketSummary(
@@ -76,7 +84,8 @@ data class BasketSummary(
     val consumedValueDzd: Double = 0.0,
     val purchaseOutlayDzd: Double = 0.0,
     val unknownPriceCount: Int = 0,
-    val hasDemoPrices: Boolean = false
+    val hasDemoPrices: Boolean = false,
+    val actualSpendDzd: Double = 0.0
 )
 
 object MealSlots {
@@ -108,6 +117,15 @@ data class PriceObservationSummary(
     val isStale: Boolean = false
 )
 
+data class PlanRunSummary(
+    val engineVersion: String,
+    val generatedAtEpochMillis: Long,
+    val priceSnapshotAtEpochMillis: Long,
+    val budgetDzd: Int,
+    val wilaya: String,
+    val mealSlots: Set<String>
+)
+
 data class MealsSnapshot(
     val recipes: List<MealRecipe> = emptyList(),
     val ingredients: List<IngredientMaster> = emptyList(),
@@ -116,5 +134,6 @@ data class MealsSnapshot(
     val shoppingItems: List<ShoppingListItem> = emptyList(),
     val priceObservations: List<PriceObservationSummary> = emptyList(),
     val favoriteRecipeIds: Set<String> = emptySet(),
+    val planRun: PlanRunSummary? = null,
     val basket: BasketSummary = BasketSummary()
 )

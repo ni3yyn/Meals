@@ -43,6 +43,12 @@ interface MealsDao {
     @Query("SELECT * FROM recipes ORDER BY nameAr")
     suspend fun getRecipes(): List<RecipeEntity>
 
+    @Query("SELECT * FROM plan_runs WHERE weekStartIso = :weekStartIso LIMIT 1")
+    suspend fun getPlanRun(weekStartIso: String): PlanRunEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPlanRun(item: PlanRunEntity)
+
     @Query("SELECT * FROM recipe_ingredients ORDER BY recipeId")
     suspend fun getRecipeIngredients(): List<RecipeIngredientEntity>
 
@@ -84,6 +90,9 @@ interface MealsDao {
 
     @Query("UPDATE shopping_items SET checked = :checked, updatedAtEpochMillis = :updatedAt WHERE id = :id")
     suspend fun setShoppingItemChecked(id: String, checked: Boolean, updatedAt: Long)
+
+    @Query("SELECT * FROM shopping_items WHERE id = :id LIMIT 1")
+    suspend fun getShoppingItem(id: String): ShoppingItemEntity?
 
     @Query("SELECT * FROM shopping_items WHERE id = :id AND userAdded = 1 LIMIT 1")
     suspend fun getCustomShoppingItem(id: String): ShoppingItemEntity?

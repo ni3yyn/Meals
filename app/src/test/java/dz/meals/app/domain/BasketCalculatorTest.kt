@@ -147,6 +147,15 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun preferencesDefaultToThreeMealSlotsAndBoundSettings() {
+        val defaults = dz.meals.app.data.AppPreferences()
+        assertEquals(setOf("breakfast", "lunch", "dinner"), defaults.mealSlots)
+        assertEquals("none", defaults.dietPattern)
+        assertTrue(defaults.budgetBufferPercent in 0..30)
+        assertTrue(defaults.maxCookingMinutes in 10..240)
+    }
+
+    @Test
     fun seededCatalogueHasConsistentUnitsAndAllergenMetadata() {
         SeedRecipes.validateCatalogue()
     }

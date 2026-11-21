@@ -1,5 +1,6 @@
 package dz.meals.app.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -113,7 +114,11 @@ data class ShoppingItemEntity(
     val isApproximatePantry: Boolean,
     val checked: Boolean,
     val userAdded: Boolean,
-    val updatedAtEpochMillis: Long
+    val updatedAtEpochMillis: Long,
+    val purchaseQuantityOverride: Double? = null,
+    @ColumnInfo(defaultValue = "''") val storeNote: String = "",
+    @ColumnInfo(defaultValue = "0") val isUnavailable: Boolean = false,
+    val actualSpentDzd: Double? = null
 )
 
 
@@ -121,4 +126,16 @@ data class ShoppingItemEntity(
 data class FavoriteRecipeEntity(
     @PrimaryKey val recipeId: String,
     val addedAtEpochMillis: Long
+)
+
+
+@Entity(tableName = "plan_runs")
+data class PlanRunEntity(
+    @PrimaryKey val weekStartIso: String,
+    val engineVersion: String,
+    val generatedAtEpochMillis: Long,
+    val priceSnapshotAtEpochMillis: Long,
+    val budgetDzd: Int,
+    val wilaya: String,
+    val mealSlotsCsv: String
 )

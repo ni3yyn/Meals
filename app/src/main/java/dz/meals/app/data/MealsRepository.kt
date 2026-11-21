@@ -8,6 +8,7 @@ import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.MealsDao
 import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PlanMealEntity
+import dz.meals.app.data.local.PlanRunEntity
 import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.data.local.RecipeEntity
 import dz.meals.app.data.local.RecipeIngredientEntity
@@ -78,11 +79,17 @@ class MealsRepository(context: Context) {
         }
     }
 
-    suspend fun snapshot(weekStartIso: String, selectedWilaya: String? = null): MealsSnapshot {
+    suspend fun snapshot(
+        weekStartIso: String,
+        selectedWilaya: String? = null,
+        selectedMealSlots: Set<String> = MealSlots.ids
+    ): MealsSnapshot {
         ensureInitialized()
         val ingredients = dao.getIngredients().map { it.toModel() }
         val recipes = loadRecipes()
-        val planned = dao.getPlanMeals(weekStartIso).map { it.toModel() }
+        val planned = dao.getPlanMeals(weekStartIso)
+            .filter { it.mealSlot in selectedMealSlots }
+            .map { it.toModel() }
         val pantryEntities = dao.getPantryItems()
         val pantry = pantryEntities.map { entity ->
             val master = ingredients.firstOrNull { it.id == entity.ingredientId }
@@ -117,7 +124,7 @@ class MealsRepository(context: Context) {
                 customName = names[line.ingredientId]?.nameAr ?: line.name,
                 requiredQuantity = line.requiredQuantity,
                 pantryQuantity = line.pantryQuantity,
-                purchaseQuantity = line.purchaseQuantity,
+                purchaseQuantity = old?.purchaseQuantityOverride ?: line.purchaseQuantity,
                 unit = line.unit,
                 consumedValueDzd = line.consumedValueDzd,
                 cashOutlayDzd = line.cashOutlayDzd,
@@ -126,7 +133,11 @@ class MealsRepository(context: Context) {
                 isApproximatePantry = line.isApproximatePantry,
                 checked = old?.checked ?: false,
                 userAdded = false,
-                updatedAtEpochMillis = System.currentTimeMillis()
+                updatedAtEpochMillis = System.currentTimeMillis(),
+                purchaseQuantityOverride = old?.purchaseQuantityOverride,
+                storeNote = old?.storeNote.orEmpty(),
+                isUnavailable = old?.isUnavailable ?: false,
+                actualSpentDzd = old?.actualSpentDzd
             )
         }
         database.withTransaction {
@@ -134,6 +145,7 @@ class MealsRepository(context: Context) {
             if (autoItems.isNotEmpty()) dao.upsertShoppingItems(autoItems)
         }
         val shoppingItems = dao.getShoppingItems().map { it.toModel(names[it.ingredientId]) }
+        val savedRun = dao.getPlanRun(weekStartIso)
         return MealsSnapshot(
             recipes = recipes,
             ingredients = ingredients,
@@ -161,10 +173,12 @@ class MealsRepository(context: Context) {
                 )
             }.sortedByDescending { it.observedAtEpochMillis ?: 0L },
             favoriteRecipeIds = favoriteRecipeIds,
+            planRun = savedRun?.toModel(),
             basket = basket.copy(
                 items = shoppingItems,
                 purchaseOutlayDzd = autoItems.sumOf { it.cashOutlayDzd ?: 0.0 },
-                unknownPriceCount = autoItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 }
+                unknownPriceCount = autoItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
+                actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 }
             )
         )
     }
@@ -174,11 +188,22 @@ class MealsRepository(context: Context) {
         weeklyBudgetDzd: Int,
         householdServings: Int,
         allergyIds: Set<String>,
-        selectedWilaya: String? = null
+        selectedWilaya: String? = null,
+        selectedMealSlots: Set<String> = MealSlots.ids,
+        dislikedIngredientIds: Set<String> = emptySet(),
+        dietPattern: String = "none",
+        maxCookingMinutes: Int = 60,
+        budgetBufferPercent: Int = 5
     ): GenerationResult {
         ensureInitialized()
         val recipes = loadRecipes()
-        val locked = dao.getPlanMeals(weekStartIso).filter { it.locked }.map { it.toModel() }
+        val validSlots = selectedMealSlots.intersect(MealSlots.ids.toSet())
+        if (validSlots.isEmpty()) {
+            return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)
+        }
+        val locked = dao.getPlanMeals(weekStartIso)
+            .filter { it.locked && it.mealSlot in validSlots }
+            .map { it.toModel() }
         val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
         if (lockedConflict != null) {
             return GenerationResult(
@@ -188,16 +213,27 @@ class MealsRepository(context: Context) {
                 budgetDzd = weeklyBudgetDzd
             )
         }
-        val allowed = recipes.filter { it.allergens.intersect(allergyIds).isEmpty() }
+        val ingredientsById = dao.getIngredients().associateBy { it.id }
+        val allowed = recipes.filter { recipe ->
+            recipe.allergens.intersect(allergyIds).isEmpty() &&
+                when (dietPattern) {
+                    "vegetarian" -> recipe.ingredients.none { ingredientsById[it.ingredientId]?.category == "لحوم ودواجن" }
+                    "vegan" -> recipe.ingredients.none {
+                        ingredientsById[it.ingredientId]?.category in setOf("لحوم ودواجن", "ألبان وبيض")
+                    }
+                    else -> true
+                }
+        }
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
         if (allowed.isEmpty()) {
-            return GenerationResult(false, "لا توجد وصفات متاحة بعد تطبيق قيود الحساسية. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
+            return GenerationResult(false, "لا توجد وصفات متاحة بعد تطبيق قيود الحساسية والنمط الغذائي. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
         }
 
         val slots = (0 until 7).flatMap { day ->
-            MealSlots.ids.map { slot -> "$weekStartIso-$day-$slot" to (day to slot) }
+            MealSlots.ids.filter { it in validSlots }.map { slot -> "$weekStartIso-$day-$slot" to (day to slot) }
         }
+        val targetBudget = weeklyBudgetDzd * (100 - budgetBufferPercent.coerceIn(0, 30)) / 100.0
         val chosen = locked.associateBy { it.id }.toMutableMap()
         val repeats = locked.mapNotNull { it.recipeId }.groupingBy { it }.eachCount().toMutableMap()
 
@@ -213,8 +249,13 @@ class MealsRepository(context: Context) {
                 )
                 val basket = calculateBasket(trial, recipes, pantry, prices, selectedWilaya = selectedWilaya)
                 val repeatPenalty = (repeats[recipe.id] ?: 0) * 420.0
-                val overBudgetPenalty = (basket.purchaseOutlayDzd - weeklyBudgetDzd).coerceAtLeast(0.0) * 3.0
-                basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty
+                val overBudgetPenalty = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0) * 3.0
+                val dislikedPenalty = recipe.ingredients
+                    .filter { it.ingredientId in dislikedIngredientIds }
+                    .sumOf { it.quantityBase.coerceAtMost(500.0) } * 2.0
+                val timePenalty = (recipe.durationMinutes - maxCookingMinutes.coerceIn(10, 240))
+                    .coerceAtLeast(0) * 25.0
+                basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty + dislikedPenalty + timePenalty
             } ?: allowed.minBy { it.id }
 
             chosen[id] = PlannedMeal(
@@ -229,8 +270,23 @@ class MealsRepository(context: Context) {
             repeats[candidate.id] = (repeats[candidate.id] ?: 0) + 1
         }
 
-        dao.deleteWeek(weekStartIso)
-        dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
+        val priceSnapshotAt = prices.mapNotNull { it.observedAtEpochMillis }.maxOrNull() ?: 0L
+        val generatedAt = System.currentTimeMillis()
+        database.withTransaction {
+            dao.deleteWeek(weekStartIso)
+            dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
+            dao.upsertPlanRun(
+                PlanRunEntity(
+                    weekStartIso = weekStartIso,
+                    engineVersion = "0.3.0",
+                    generatedAtEpochMillis = generatedAt,
+                    priceSnapshotAtEpochMillis = priceSnapshotAt,
+                    budgetDzd = weeklyBudgetDzd,
+                    wilaya = selectedWilaya.orEmpty(),
+                    mealSlotsCsv = validSlots.sorted().joinToString(",")
+                )
+            )
+        }
         val result = calculateBasket(chosen.values.toList(), recipes, pantry, prices, selectedWilaya = selectedWilaya)
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
         return GenerationResult(
@@ -375,6 +431,30 @@ class MealsRepository(context: Context) {
         )
     }
 
+    suspend fun updateShoppingItemDetails(
+        id: String,
+        purchaseQuantity: Double?,
+        storeNote: String,
+        unavailable: Boolean,
+        actualSpentDzd: Double?
+    ) {
+        val current = dao.getShoppingItem(id) ?: return
+        if (purchaseQuantity != null && purchaseQuantity <= 0.0) return
+        if (actualSpentDzd != null && actualSpentDzd < 0.0) return
+        dao.upsertShoppingItems(
+            listOf(
+                current.copy(
+                    purchaseQuantityOverride = purchaseQuantity,
+                    purchaseQuantity = purchaseQuantity ?: current.purchaseQuantity,
+                    storeNote = storeNote.trim().take(100),
+                    isUnavailable = unavailable,
+                    actualSpentDzd = actualSpentDzd,
+                    updatedAtEpochMillis = System.currentTimeMillis()
+                )
+            )
+        )
+    }
+
     suspend fun updateCustomShoppingItem(id: String, name: String, quantity: Double, unit: String) {
         val cleanName = name.trim()
         if (cleanName.isEmpty() || quantity <= 0.0) return
@@ -512,7 +592,19 @@ private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = Shopping
     isApproximatePantry = isApproximatePantry,
     checked = checked,
     userAdded = userAdded,
-    category = ingredient?.category ?: "أخرى"
+    category = ingredient?.category ?: "أخرى",
+    storeNote = storeNote,
+    isUnavailable = isUnavailable,
+    actualSpentDzd = actualSpentDzd
+)
+
+private fun PlanRunEntity.toModel() = PlanRunSummary(
+    engineVersion = engineVersion,
+    generatedAtEpochMillis = generatedAtEpochMillis,
+    priceSnapshotAtEpochMillis = priceSnapshotAtEpochMillis,
+    budgetDzd = budgetDzd,
+    wilaya = wilaya,
+    mealSlots = mealSlotsCsv.split(",").filter { it.isNotBlank() }.toSet()
 )
 
 fun currentWeekStartIso(date: LocalDate = LocalDate.now()): String =
