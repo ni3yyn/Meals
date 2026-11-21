@@ -25,7 +25,6 @@ import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dz.meals.app.BuildConfig
 import dz.meals.app.data.AppPreferences
@@ -71,6 +69,8 @@ import dz.meals.app.ui.screens.PlanScreen
 import dz.meals.app.ui.screens.RecipesScreen
 import dz.meals.app.ui.screens.ShoppingScreen
 import dz.meals.app.ui.theme.Cream
+import dz.meals.app.ui.theme.DEFAULT_MEALS_LOCALE_TAG
+import dz.meals.app.ui.theme.mealsLayoutDirection
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -85,7 +85,15 @@ private enum class AppTab(val title: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MealsApp() {
+fun MealsApp(localeTag: String = DEFAULT_MEALS_LOCALE_TAG) {
+    val layoutDirection = remember(localeTag) { mealsLayoutDirection(localeTag) }
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+        MealsAppContent()
+    }
+}
+
+@Composable
+private fun MealsAppContent() {
     val context = LocalContext.current
     val preferencesStore = remember(context) { PreferencesStore(context) }
     val repository = remember(context) { MealsRepository(context) }
@@ -163,8 +171,7 @@ fun MealsApp() {
         if (!preferences.hasCompletedSetup) showSettings = true
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        MealsBackdrop {
+    MealsBackdrop {
         val hazeState = requireNotNull(LocalMealsHazeState.current) {
             "MealsApp must be hosted inside MealsBackdrop so the shared Haze source is available."
         }
@@ -315,76 +322,76 @@ fun MealsApp() {
                 }
             }
         }
-        }
-    }
-
-    if (showSettings) {
-        SettingsDialog(
-            preferences = preferences,
-            ingredients = snapshot.ingredients,
-            isFirstSetup = !preferences.hasCompletedSetup,
-            onDismiss = { showSettings = false },
-            onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer, commune, shoppingChannel, preferredShop ->
-                scope.launch {
-                    preferencesStore.saveSettings(
-                        budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer,
-                        commune, shoppingChannel, preferredShop
-                    )
-                    showSettings = false
-                    refresh()
+        if (showSettings) {
+            SettingsDialog(
+                preferences = preferences,
+                ingredients = snapshot.ingredients,
+                isFirstSetup = !preferences.hasCompletedSetup,
+                onDismiss = { showSettings = false },
+                onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer, commune, shoppingChannel, preferredShop ->
+                    scope.launch {
+                        preferencesStore.saveSettings(
+                            budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer,
+                            commune, shoppingChannel, preferredShop
+                        )
+                        showSettings = false
+                        refresh()
+                    }
                 }
-            }
-        )
-    }
+            )
+        }
 
-    if (showUpdateDialog) {
-        MealsDialog(
-            title = "تحديث التطبيق",
-            subtitle = "الإصدار الحالي ${BuildConfig.VERSION_NAME}",
-            onDismiss = { showUpdateDialog = false }
-        ) {
-            MealsCard(
-                containerColor = dz.meals.app.ui.theme.SoftGreen,
-                borderColor = null,
-                contentPadding = 16.dp
+        if (showUpdateDialog) {
+            MealsDialog(
+                title = "تحديث التطبيق",
+                subtitle = "الإصدار الحالي ${BuildConfig.VERSION_NAME}",
+                onDismiss = { showUpdateDialog = false }
             ) {
-                Text(
-                    updateStatus,
-                    color = dz.meals.app.ui.theme.ForestDark,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                availableUpdate?.let { update ->
+                MealsCard(
+                    containerColor = dz.meals.app.ui.theme.SoftGreen,
+                    borderColor = null,
+                    contentPadding = 16.dp
+                ) {
                     Text(
-                        "الإصدار الجديد: ${update.version}",
+                        updateStatus,
                         color = dz.meals.app.ui.theme.ForestDark,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.bodyMedium
                     )
+                    availableUpdate?.let { update ->
+                        Text(
+                            "الإصدار الجديد: ${update.version}",
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
+                MealsPrimaryButton(
+                    label = if (isCheckingForUpdates) "جارٍ التحقق..." else "التحقق من وجود تحديثات",
+                    onClick = { checkForAppUpdates() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isCheckingForUpdates,
+                    icon = Icons.Outlined.Refresh
+                )
+                MealsSecondaryButton(
+                    label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
+                    onClick = { openLatestApk() },
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.Download
+                )
             }
-            MealsPrimaryButton(
-                label = if (isCheckingForUpdates) "جارٍ التحقق..." else "التحقق من وجود تحديثات",
-                onClick = { checkForAppUpdates() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isCheckingForUpdates,
-                icon = Icons.Outlined.Refresh
-            )
-            MealsSecondaryButton(
-                label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
-                onClick = { openLatestApk() },
-                modifier = Modifier.fillMaxWidth(),
-                icon = Icons.Outlined.Download
+        }
+
+        generationMessage?.let { message ->
+            MealsAlertDialog(
+                onDismissRequest = { generationMessage = null },
+                title = { Text("نتيجة إنشاء الخطة") },
+                text = { Text(message) },
+                confirmButton = { TextButton(onClick = { generationMessage = null }) { Text("حسناً") } }
             )
         }
-    }
+        }
 
-    generationMessage?.let { message ->
-        AlertDialog(
-            onDismissRequest = { generationMessage = null },
-            title = { Text("نتيجة إنشاء الخطة") },
-            text = { Text(message) },
-            confirmButton = { TextButton(onClick = { generationMessage = null }) { Text("حسناً") } }
-        )
-    }
+
 }
 
 @Composable

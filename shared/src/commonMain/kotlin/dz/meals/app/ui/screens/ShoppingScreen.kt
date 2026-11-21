@@ -20,9 +20,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ShoppingBasket
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -227,7 +225,7 @@ fun ShoppingScreen(
     }
 
     if (addDialog) {
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { addDialog = false },
             title = { Text("إضافة عنصر يدوي") },
             text = {
@@ -278,7 +276,7 @@ fun ShoppingScreen(
     }
 
     if (editItemId != null) {
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { editItemId = null },
             title = { Text("تعديل العنصر") },
             text = {
@@ -384,7 +382,7 @@ private fun PriceReportDialog(
     }
     val selectedIngredient = ingredients.firstOrNull { it.id == selectedId }
 
-    AlertDialog(
+    MealsAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("تسجيل ملاحظة سعر") },
         text = {
@@ -502,10 +500,11 @@ private fun ShoppingItemCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Paper),
-        border = BorderStroke(1.dp, Border),
-        shape = RoundedCornerShape(20.dp)
+    MealsCard(
+        containerColor = Paper,
+        borderColor = Border,
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = 0.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),

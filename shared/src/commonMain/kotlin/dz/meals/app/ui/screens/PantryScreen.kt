@@ -18,7 +18,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Kitchen
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.AlertDialog
+import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -240,7 +240,7 @@ private fun PantryAddDialog(
     }
     val expiryIsValid = expiryText.isBlank() || parsedExpiry != null
 
-    AlertDialog(
+    MealsAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (existing == null) "إضافة " + ingredient.nameAr else "تعديل " + ingredient.nameAr) },
         text = {

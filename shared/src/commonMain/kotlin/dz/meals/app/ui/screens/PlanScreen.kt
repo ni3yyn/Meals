@@ -21,7 +21,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.AlertDialog
+import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -321,7 +321,7 @@ fun PlanScreen(
     }
 
     mealAwaitingCookConfirmation?.let { mealId ->
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { mealAwaitingCookConfirmation = null },
             title = { Text("تأكيد تسجيل الطهي") },
             text = {
@@ -340,7 +340,7 @@ fun PlanScreen(
     }
 
     if (showBudgetInfo) {
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { showBudgetInfo = false },
             title = { Text("قيمة الاستهلاك ومبلغ الشراء") },
             text = {
@@ -473,7 +473,7 @@ private fun SlotRow(
     }
 
     if (chooseRecipe) {
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { chooseRecipe = false },
             title = { Text("اختر وصفة لـ " + title) },
             text = {

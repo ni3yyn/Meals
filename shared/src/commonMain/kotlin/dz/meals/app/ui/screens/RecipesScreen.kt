@@ -26,7 +26,7 @@ import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.AlertDialog
+import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -201,7 +201,7 @@ fun RecipesScreen(
 
     val detail = selectedRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
     if (detail != null) {
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { selectedRecipeId = null },
             title = { Text(detail.nameAr) },
             text = {
@@ -249,7 +249,7 @@ fun RecipesScreen(
     if (cookingRecipe != null) {
         val stepCount = cookingRecipe.stepsAr.size
         val safeStepIndex = cookingStepIndex.coerceIn(0, (stepCount - 1).coerceAtLeast(0))
-        AlertDialog(
+        MealsAlertDialog(
             onDismissRequest = { cookingRecipeId = null },
             title = { Text(cookingRecipe.nameAr) },
             text = {

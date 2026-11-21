@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -515,16 +516,18 @@ fun MealsCheckRow(
     supportingText: String? = null,
     enabled: Boolean = true
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).toggleable(
+    MealsCard(
+        modifier = modifier.fillMaxWidth().toggleable(
             value = checked,
             enabled = enabled,
             role = Role.Checkbox,
             onValueChange = onCheckedChange
         ),
+        containerColor = if (checked) SoftGreen.copy(alpha = 0.78f) else Paper,
+        contentPadding = 0.dp,
+        borderColor = if (checked) Forest.copy(alpha = 0.28f) else Border.copy(alpha = 0.72f),
         shape = RoundedCornerShape(18.dp),
-        color = if (checked) SoftGreen.copy(alpha = 0.78f) else Paper,
-        border = BorderStroke(1.dp, if (checked) Forest.copy(alpha = 0.28f) else Border.copy(alpha = 0.72f))
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 13.dp),
@@ -560,12 +563,16 @@ fun MealsChoiceTile(
     description: String? = null,
     icon: ImageVector? = null
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+    MealsCard(
+        modifier = modifier.fillMaxWidth().clickable(
+            onClick = onClick,
+            role = Role.Button
+        ),
+        containerColor = if (selected) SoftGreen else Paper,
+        contentPadding = 0.dp,
+        borderColor = if (selected) Forest.copy(alpha = 0.42f) else Border.copy(alpha = 0.72f),
         shape = LargeTileShape,
-        color = if (selected) SoftGreen else Paper,
-        border = BorderStroke(1.dp, if (selected) Forest.copy(alpha = 0.42f) else Border.copy(alpha = 0.72f))
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 15.dp),
@@ -659,6 +666,44 @@ fun MealsIllustrationBadge(
 }
 
 @Composable
+fun MealsAlertDialog(
+    onDismissRequest: () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissButton: (@Composable () -> Unit)? = null,
+    title: (@Composable () -> Unit)? = null,
+    text: (@Composable () -> Unit)? = null,
+    properties: DialogProperties = DialogProperties()
+) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = properties
+    ) {
+        MealsGlassSurface(
+            modifier = modifier
+                .fillMaxWidth()
+                .widthIn(max = 560.dp)
+                .padding(horizontal = 18.dp),
+            contentPadding = 22.dp,
+            shape = RoundedCornerShape(29.dp),
+            tintColor = Color(0xFFFFF6EC),
+            tintAlpha = 0.34f
+        ) {
+            title?.invoke()
+            text?.invoke()
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                dismissButton?.invoke()
+                confirmButton()
+            }
+        }
+    }
+}
+
+@Composable
 fun MealsDialog(
     title: String,
     onDismiss: () -> Unit,
@@ -676,14 +721,15 @@ fun MealsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        MealsGlassSurface(
             modifier = modifier.fillMaxWidth().widthIn(max = 540.dp).padding(horizontal = 18.dp),
+            tintColor = Color(0xFFFFF6EC),
+            tintAlpha = 0.38f,
             shape = RoundedCornerShape(30.dp),
-            color = Paper,
-            shadowElevation = 12.dp
+            contentPadding = 22.dp
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(22.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -736,15 +782,23 @@ fun MealsNavigationDrawer(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
+            val drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
             ModalDrawerSheet(
-                drawerContainerColor = Paper,
-                drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
+                drawerContainerColor = Color.Transparent,
+                drawerShape = drawerShape
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    content = drawerContent
-                )
+                MealsGlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = drawerShape,
+                    contentPadding = 20.dp,
+                    tintAlpha = 0.36f
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        content = drawerContent
+                    )
+                }
             }
         },
         scrimColor = Ink.copy(alpha = 0.28f),
@@ -763,7 +817,7 @@ fun MealsBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-        containerColor = Paper,
+        containerColor = Color.Transparent,
         dragHandle = {
             Box(
                 modifier = Modifier.padding(top = 12.dp, bottom = 8.dp).size(width = 42.dp, height = 5.dp)
@@ -771,11 +825,18 @@ fun MealsBottomSheet(
             )
         }
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            content = content
-        )
+        MealsGlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+            contentPadding = 22.dp,
+            tintAlpha = 0.38f
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                content = content
+            )
+        }
     }
 }
 
