@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,9 +69,16 @@ import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.ui.theme.SoftPink
 
-private val LargeTileShape = RoundedCornerShape(24.dp)
+private val LargeTileShape = RoundedCornerShape(26.dp)
 private val ButtonShape = RoundedCornerShape(22.dp)
 
+/**
+ * The shared elevated surface used for budgets, summaries and grouped content.
+ *
+ * It deliberately avoids a flat Material card fill: the warm translucent
+ * highlight, fine double-tone edge and soft elevation reproduce the layered
+ * porcelain/glass surfaces from the Mida visual system without per-card blur.
+ */
 @Composable
 fun MealsCard(
     modifier: Modifier = Modifier,
@@ -79,22 +87,51 @@ fun MealsCard(
     contentPadding: Dp = 18.dp,
     borderColor: Color? = Border.copy(alpha = 0.72f),
     shape: Shape = LargeTileShape,
-    shadowElevation: Dp = 1.dp,
+    shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val faceHighlight = remember(containerColor) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.34f),
+                Color.White.copy(alpha = 0.08f),
+                Color(0xFFE8C9BA).copy(alpha = 0.08f)
+            )
+        )
+    }
+    val edgeHighlight = remember(borderColor) {
+        borderColor?.let { edge ->
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = 0.98f),
+                    edge.copy(alpha = 0.72f),
+                    edge.copy(alpha = 0.48f)
+                )
+            )
+        }
+    }
+
     Surface(
         modifier = modifier,
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
-        border = borderColor?.let { BorderStroke(1.dp, it) },
+        border = edgeHighlight?.let { BorderStroke(1.dp, it) },
         shadowElevation = shadowElevation
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            content = content
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(faceHighlight, shape)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                content = content
+            )
+        }
     }
 }
 
