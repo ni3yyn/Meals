@@ -101,6 +101,12 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun weekStartsOnMondayForAlgerianMealPlanning() {
+        assertEquals("2026-11-16", dz.meals.app.data.currentWeekStartIso(java.time.LocalDate.parse("2026-11-21")))
+        assertEquals("2026-11-23", dz.meals.app.data.currentWeekStartIso(java.time.LocalDate.parse("2026-11-24")))
+    }
+
+    @Test
     fun seededCatalogueHasConsistentUnitsAndAllergenMetadata() {
         SeedRecipes.validateCatalogue()
     }

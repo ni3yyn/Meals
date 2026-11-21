@@ -67,7 +67,7 @@ fun MealsApp() {
     val repository = remember(context) { MealsRepository(context) }
     val preferences by preferencesStore.preferences.collectAsState(initial = AppPreferences())
     val scope = rememberCoroutineScope()
-    val weekStartIso = remember { currentWeekStartIso() }
+    var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }
 
     var snapshot by remember { mutableStateOf(MealsSnapshot()) }
@@ -173,7 +173,9 @@ fun MealsApp() {
                             }
                         },
                         onToggleLock = { id -> perform { repository.toggleMealLock(id, weekStartIso) } },
-                        onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } }
+                        onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
+                        onPreviousWeek = { weekStartIso = LocalDate.parse(weekStartIso).minusWeeks(1).toString() },
+                        onNextWeek = { weekStartIso = LocalDate.parse(weekStartIso).plusWeeks(1).toString() }
                     )
                     AppTab.Recipes -> RecipesScreen(
                         recipes = snapshot.recipes,

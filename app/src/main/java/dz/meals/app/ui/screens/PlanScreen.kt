@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Restaurant
@@ -60,7 +62,9 @@ fun PlanScreen(
     onGenerate: () -> Unit,
     onSetMeal: (Int, String, String?) -> Unit,
     onToggleLock: (String) -> Unit,
-    onAdjustServings: (String, Int) -> Unit
+    onAdjustServings: (String, Int) -> Unit,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit
 ) {
     var showBudgetInfo by rememberSaveable { mutableStateOf(false) }
     val recipesById = snapshot.recipes.associateBy { it.id }
@@ -71,13 +75,25 @@ fun PlanScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    weekStart.format(DateTimeFormatter.ofPattern("d MMM", Locale("ar", "DZ"))) +
-                        " - " + weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("ar", "DZ"))),
-                    color = MutedInk
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        weekStart.format(DateTimeFormatter.ofPattern("d MMM", Locale("ar", "DZ"))) +
+                            " - " + weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("ar", "DZ"))),
+                        color = MutedInk
+                    )
+                }
+                IconButton(onClick = onPreviousWeek) {
+                    Icon(Icons.Outlined.ArrowForward, contentDescription = "الأسبوع السابق", tint = Forest)
+                }
+                IconButton(onClick = onNextWeek) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "الأسبوع التالي", tint = Forest)
+                }
             }
         }
         item {
