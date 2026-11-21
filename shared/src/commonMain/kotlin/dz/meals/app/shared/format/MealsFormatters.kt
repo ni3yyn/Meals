@@ -69,6 +69,14 @@ fun formatHouseholdUnit(unit: String): String = when (unit.trim().lowercase()) {
     else -> unit
 }
 
+/** Unit displayed when a person reports a market pack price. */
+fun formatPriceInputUnit(unit: String): String = when (unit.trim().lowercase()) {
+    "g" -> "كغ"
+    "ml" -> "لتر"
+    "piece" -> "حبة"
+    else -> unit
+}
+
 fun epochMillisToLocalDate(epochMillis: Long): LocalDate =
     Instant.fromEpochMilliseconds(epochMillis)
         .toLocalDateTime(TimeZone.currentSystemDefault())
