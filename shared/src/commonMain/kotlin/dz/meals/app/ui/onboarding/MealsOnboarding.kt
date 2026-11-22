@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -190,3 +190,200 @@ fun MealsOnboarding(
                 )
             )
         )
+
+        Crossfade(targetState = pendingFinish != null, label = "mealsOnboardingFinale") { finishing ->
+            if (finishing) {
+                Finale()
+            } else {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .imePadding()
+                        .padding(horizontal = 18.dp)
+                ) {
+                    Header(current = current, onBack = { goTo(current - 1) })
+
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        userScrollEnabled = false,
+                        beyondViewportPageCount = 0
+                    ) { page ->
+                        val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                        when (page) {
+                            0 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "أهلاً بك في مائدتي",
+                                subtitle = "نرتّب لكِ وجبات الأسبوع وقائمة التسوق حسب ميزانية أسرتك.",
+                                art = MealsArt.Bowl,
+                                satellites = listOf(
+                                    Satellite(-0.42f, -0.30f, 0.24f, 0.10f, MealsIconName.Plan),
+                                    Satellite(0.44f, 0.28f, 0.22f, 0.55f, MealsIconName.Basket),
+                                    Satellite(0.36f, -0.42f, 0.16f, 0.30f, MealsIconName.Cookbook)
+                                )
+                            ) {
+                                InfoRow(MealsIconName.Lock, "بدون حساب أو رقم هاتف", "تبقى تفضيلاتك على هذا الجهاز فقط.")
+                                InfoRow(MealsIconName.Check, "يعمل بدون إنترنت", "الخطة وقائمة التسوق متاحتان دائماً.")
+                                InfoRow(MealsIconName.Wallet, "ضمن ميزانيتك", "نختار الوصفات بما يناسب ما تريدين إنفاقه.")
+                            }
+
+                            1 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "كم ميزانيتك للأسبوع؟",
+                                subtitle = "نبني الخطة وقائمة التسوق ضمن هذا المبلغ.",
+                                art = MealsArt.Budget,
+                                satellites = listOf(
+                                    Satellite(-0.42f, 0.30f, 0.22f, 0.20f, MealsIconName.Wallet),
+                                    Satellite(0.44f, -0.30f, 0.20f, 0.60f, MealsIconName.Basket),
+                                    Satellite(-0.30f, -0.44f, 0.14f, 0.40f, MealsIconName.Star)
+                                )
+                            ) {
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    StepperButton("−") { budget = (budget - 500).coerceAtLeast(500) }
+                                    MealsAnimatedCount(
+                                        value = budget.formatDzd(),
+                                        color = Ink,
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                    StepperButton("+") { budget = (budget + 500).coerceAtMost(500_000) }
+                                }
+                                Slider(
+                                    value = budget.coerceIn(3_000, 60_000).toFloat(),
+                                    onValueChange = { budget = (it / 500f).roundToInt() * 500 },
+                                    valueRange = 3_000f..60_000f,
+                                    colors = glassSliderColors()
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf(5_000, 8_000, 12_000, 20_000, 30_000).forEach { preset ->
+                                        BubbleChip(preset.formatDzd(), budget == preset) { budget = preset }
+                                    }
+                                }
+                            }
+
+                            2 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "كم شخصاً نطبخ له؟",
+                                subtitle = "نضبط الكميات وقائمة التسوق على عدد الحصص.",
+                                art = MealsArt.Family,
+                                artCount = servings,
+                                satellites = listOf(
+                                    Satellite(-0.42f, -0.28f, 0.22f, 0.15f, MealsIconName.Meal),
+                                    Satellite(0.44f, 0.30f, 0.18f, 0.65f, MealsIconName.Star)
+                                )
+                            ) {
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    StepperButton("−") { servings = (servings - 1).coerceAtLeast(1) }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        MealsAnimatedCount(
+                                            value = servings.toString(),
+                                            color = Ink,
+                                            style = MaterialTheme.typography.displayMedium,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
+                                        Text("أشخاص نطبخ لهم عادةً", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    StepperButton("+") { servings = (servings + 1).coerceAtMost(12) }
+                                }
+                                MealsCheckRow(
+                                    title = "لا توجد حساسية غذائية معروفة",
+                                    supportingText = "إن وُجدت حساسية أو كان هناك شك، تابعي الخطوات التالية.",
+                                    checked = noKnownAllergies,
+                                    onCheckedChange = { noKnownAllergies = it }
+                                )
+                                if (noKnownAllergies) {
+                                    MealsSecondaryButton(
+                                        label = "إعداد سريع بالقيم الافتراضية",
+                                        onClick = { pendingFinish = { onQuickStart(budget, servings) } },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = budget > 0 && servings in 1..12
+                                    )
+                                }
+                            }
+
+                            3 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "ما الوجبات التي نخطط لها؟",
+                                subtitle = "اختاري ما تحتاجينه فقط، ويمكنك تغييره لاحقاً.",
+                                art = MealsArt.Lunch,
+                                satellites = listOf(
+                                    Satellite(-0.44f, -0.26f, 0.26f, 0.10f, art = MealsArt.Breakfast),
+                                    Satellite(0.44f, 0.26f, 0.26f, 0.55f, art = MealsArt.Dinner)
+                                )
+                            ) {
+                                SlotTile(MealsArt.Breakfast, "الفطور", "وجبة الصباح", "breakfast" in slots) {
+                                    slots = if ("breakfast" in slots) slots - "breakfast" else slots + "breakfast"
+                                }
+                                SlotTile(MealsArt.Lunch, "الغداء", "الوجبة الرئيسية", "lunch" in slots) {
+                                    slots = if ("lunch" in slots) slots - "lunch" else slots + "lunch"
+                                }
+                                SlotTile(MealsArt.Dinner, "العشاء", "وجبة المساء", "dinner" in slots) {
+                                    slots = if ("dinner" in slots) slots - "dinner" else slots + "dinner"
+                                }
+                            }
+
+                            4 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "هل هناك ما يجب تجنبه؟",
+                                subtitle = "نستبعد الوصفات التي قد لا تناسب عائلتك.",
+                                art = MealsArt.Allergy,
+                                satellites = listOf(
+                                    Satellite(-0.42f, 0.30f, 0.20f, 0.20f, MealsIconName.Info),
+                                    Satellite(0.44f, -0.28f, 0.20f, 0.60f, MealsIconName.Check)
+                                )
+                            ) {
+                                Text("الحساسية الغذائية", style = MaterialTheme.typography.titleMedium, color = Ink)
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf("gluten" to "الغلوتين", "egg" to "البيض", "milk" to "الحليب").forEach { (id, label) ->
+                                        BubbleChip(label, id in allergies) {
+                                            allergies = if (id in allergies) allergies - id else allergies + id
+                                        }
+                                    }
+                                }
+                                Text("النمط الغذائي", style = MaterialTheme.typography.titleMedium, color = Ink)
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf("none" to "عادي", "vegetarian" to "نباتي", "vegan" to "نباتي صرف").forEach { (id, label) ->
+                                        BubbleChip(label, diet == id) { diet = id }
+                                    }
+                                }
+                            }
+
+                            5 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "كم تفضلين أن تطبخي؟",
+                                subtitle = "نختار وصفات تناسب وقتك وميزانيتك.",
+                                art = MealsArt.Clock,
+                                satellites = listOf(
+                                    Satellite(-0.42f, -0.28f, 0.22f, 0.15f, MealsIconName.Clock),
+                                    Satellite(0.44f, 0.30f, 0.20f, 0.60f, MealsIconName.Meal)
+                                )
+                            ) {
+                                Text("أقصى وقت للطبخ", style = MaterialTheme.typography.titleMedium, color = Ink)
+                                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    MealsAnimatedCount(
+                                        value = maxMinutes.toString(),
+                                        color = Ink,
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                    Text("دقيقة", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                                }
