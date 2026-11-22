@@ -211,7 +211,7 @@ fun PlanScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         MealsIcon(
-                            name = MealsIconName.Info,
+                            name = MealsIconName.Check,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )
