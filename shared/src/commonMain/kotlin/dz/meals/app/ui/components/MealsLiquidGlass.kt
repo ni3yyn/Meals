@@ -22,10 +22,8 @@ object MealsLiquidGlass {
     const val SurfaceOpacity = 0.20f
     /** Control faces are more opaque than cards so actions remain distinct on glass surfaces. */
     const val ControlOpacity = 0.46f
-    /** Content cards use a quiet porcelain material rather than functional Liquid Glass. */
-    const val ContentOpacity = 0.94f
-    /** Modal material is more substantial on the bright ivory backdrop. */
-    const val ModalOpacity = 0.72f
+    /** A softly frosted tint that still lets the blurred backdrop show through. */
+    const val ModalOpacity = 0.32f
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
@@ -134,17 +132,17 @@ object MealsLiquidGlass {
 
     fun cardFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.98f),
-            tint.copy(alpha = ContentOpacity),
-            tint.copy(alpha = 0.92f)
+            Color.White.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity)
         )
     )
 
     fun heroFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.98f),
-            tint.copy(alpha = ContentOpacity),
-            tint.copy(alpha = 0.92f)
+            Color.White.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity)
         )
     )
 
@@ -174,7 +172,7 @@ object MealsLiquidGlass {
     )
 
     val ControlBlurStyle = HazeBlurStyle {
-        blurRadius(5.dp)
+        blurRadius(8.dp)
         noiseFactor(0.002f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color.White.copy(alpha = ControlOpacity)))
@@ -185,7 +183,7 @@ object MealsLiquidGlass {
     }
 
     val ModalBlurStyle = HazeBlurStyle {
-        blurRadius(8.dp)
+        blurRadius(12.dp)
         noiseFactor(0.002f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity)))
@@ -196,7 +194,7 @@ object MealsLiquidGlass {
     }
 
     val SurfaceBlurStyle = HazeBlurStyle {
-        blurRadius(3.dp)
+        blurRadius(9.dp)
         noiseFactor(0.002f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity)))
