@@ -292,9 +292,9 @@ fun MealsPressable(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     role: Role = Role.Button,
+    shape: Shape = MealsLiquidGlass.ControlShape,
     /** When non-null, exposes checked state through toggleable semantics. */
     checked: Boolean? = null,
-    shape: Shape = MealsLiquidGlass.ControlShape,
     content: @Composable BoxScope.() -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
@@ -302,10 +302,9 @@ fun MealsPressable(
     val (pointerPressed, setPointerPressed) = remember { mutableStateOf(false) }
     val pressed = enabled && (interactionPressed || pointerPressed)
 
-    // Observe the raw DOWN/UP stream alongside clickable. clickable remains
-    // responsible for semantics, accessibility and invoking onClick; this
-    // observer only drives the visual state, before scroll/click recognition
-    // can postpone the feedback. A tiny release tail keeps quick taps visible.
+    // Observe the raw DOWN/UP stream alongside the semantic click/toggle
+    // modifier. It only drives visual state, before gesture recognition can
+    // postpone feedback. A tiny release tail keeps quick taps visible.
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.958f else 1f,
         animationSpec = androidx.compose.animation.core.spring(
@@ -876,38 +875,40 @@ fun MealsCheckRow(
     supportingText: String? = null,
     enabled: Boolean = true
 ) {
+    val shape = RoundedCornerShape(18.dp)
     MealsPressable(
         onClick = { onCheckedChange(!checked) },
         modifier = modifier.fillMaxWidth(),
         enabled = enabled,
         role = Role.Checkbox,
-        checked = checked,
-        shape = RoundedCornerShape(18.dp)
+        shape = shape,
+        checked = checked
     ) {
         MealsCard(
             modifier = Modifier.fillMaxWidth(),
             containerColor = if (checked) WarmSurface else Paper,
             contentPadding = 0.dp,
             borderColor = if (checked) TextAccent.copy(alpha = 0.32f) else Border.copy(alpha = 0.72f),
-            shape = RoundedCornerShape(18.dp),
+            shape = shape,
             shadowElevation = 0.dp
         ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 13.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, color = Ink, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                supportingText?.let {
-                    Text(it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 13.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(title, color = Ink, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    supportingText?.let {
+                        Text(it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
+                MealsCheckbox(
+                    checked = checked,
+                    onCheckedChange = null,
+                    enabled = enabled
+                )
             }
-            MealsCheckbox(
-                checked = checked,
-                onCheckedChange = null,
-                enabled = enabled
-            )
         }
     }
 }
