@@ -118,7 +118,6 @@ fun PlanScreen(
                             MealsIconName.Basket,
                             contentDescription = "المشتريات",
                             modifier = Modifier.size(22.dp),
-                            tint = Forest
                         )
                     }
                 }
@@ -132,7 +131,6 @@ fun PlanScreen(
                             MealsIconName.ArrowForward,
                             contentDescription = "الأسبوع السابق",
                             modifier = Modifier.size(21.dp),
-                            tint = ForestDark
                         )
                     }
                     Text(
@@ -147,7 +145,6 @@ fun PlanScreen(
                             MealsIconName.ArrowBack,
                             contentDescription = "الأسبوع التالي",
                             modifier = Modifier.size(21.dp),
-                            tint = ForestDark
                         )
                     }
                 }

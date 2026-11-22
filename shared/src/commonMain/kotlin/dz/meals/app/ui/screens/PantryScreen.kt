@@ -1,10 +1,8 @@
 package dz.meals.app.ui.screens
 
-import androidx.compose.ui.graphics.Color
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsTextButton
-import dz.meals.app.ui.theme.ForestDark
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -180,10 +178,10 @@ fun PantryScreen(
                                         selectedIngredientId = item.ingredientId
                                     }
                                 ) {
-                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(20.dp), tint = ForestDark)
+                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(20.dp))
                                 }
                                 MealsIconAction(onClick = { onRemove(item.id) }) {
-                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp), tint = Color(0xFFB65E53))
+                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp))
                                 }
                             }
                         }

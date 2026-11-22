@@ -1,10 +1,8 @@
 package dz.meals.app.ui.screens
 
-import androidx.compose.ui.graphics.Color
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsTextButton
-import dz.meals.app.ui.theme.ForestDark
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -691,11 +689,11 @@ private fun ShoppingItemCard(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 MealsIconAction(onClick = onEdit) {
-                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(20.dp), tint = ForestDark)
+                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(20.dp))
                 }
                 if (item.userAdded) {
                     MealsIconAction(onClick = onDelete) {
-                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp), tint = Color(0xFFB65E53))
+                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp))
                     }
                 }
             }

@@ -205,7 +205,6 @@ private fun MealsAppContent() {
                                 MealsIconName.Update,
                                 contentDescription = "تحديث التطبيق",
                                 modifier = Modifier.size(22.dp),
-                                tint = dz.meals.app.ui.theme.ForestDark
                             )
                         }
                         MealsIconButton(
@@ -216,7 +215,6 @@ private fun MealsAppContent() {
                                 MealsIconName.Settings,
                                 contentDescription = "الإعدادات",
                                 modifier = Modifier.size(22.dp),
-                                tint = dz.meals.app.ui.theme.ForestDark
                             )
                         }
                     },

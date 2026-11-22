@@ -1,16 +1,12 @@
 package dz.meals.app.ui.icons
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_icon_add
@@ -38,16 +34,16 @@ import dz.meals.app.shared.generated.resources.meals_icon_star
 import dz.meals.app.shared.generated.resources.meals_icon_star_outline
 import dz.meals.app.shared.generated.resources.meals_icon_update
 import dz.meals.app.shared.generated.resources.meals_icon_wallet
+import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.animateLottieCompositionAsState
+import io.github.alexzhirkevich.compottie.rememberLottieComposition
+import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
-import dz.meals.app.ui.theme.Forest
-import dz.meals.app.ui.theme.MutedInk
-
 /**
- * Meals' bespoke vector vocabulary. These are artwork owned by the app,
- * not glyphs from a reusable third-party icon pack. Every source vector is
- * stroke-only; selected state changes tint and motion, never to a filled glyph.
+ * The shared Meals icon vocabulary, rendered with With Icons' soft-3D assets.
+ * Artwork is multi-colour and volume-shaded, so callers must not tint it.
  */
 enum class MealsIconName {
     Plan,
@@ -77,24 +73,28 @@ enum class MealsIconName {
     Delete
 }
 
+/**
+ * Static soft-3D artwork for buttons, cards, labels and other app actions.
+ * Keep the supplied modifier responsible for the rendered size.
+ */
 @Composable
 fun MealsIcon(
     name: MealsIconName,
     contentDescription: String? = null,
-    modifier: Modifier = Modifier,
-    tint: Color? = null
+    modifier: Modifier = Modifier
 ) {
     Image(
         painter = painterResource(name.drawable()),
         contentDescription = contentDescription,
-        colorFilter = tint?.let { ColorFilter.tint(it) },
-        modifier = modifier.graphicsLayer {
-            scaleX = 1.10f
-            scaleY = 1.10f
-        }
+        modifier = modifier
     )
 }
 
+/**
+ * A destination icon with a small spring response and a one-shot soft-3D
+ * animation on entry. The cookbook morphs from a closed book to an open one.
+ * When a destination becomes inactive, its calm resting artwork is shown.
+ */
 @Composable
 fun MealsNavigationIcon(
     name: MealsIconName,
@@ -103,28 +103,67 @@ fun MealsNavigationIcon(
     modifier: Modifier = Modifier
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (selected) 1.13f else 1f,
+        targetValue = if (selected) 1.06f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
         ),
         label = "mealsNavigationIconScale"
     )
-    val tint by animateColorAsState(
-        targetValue = if (selected) Forest else MutedInk,
-        animationSpec = tween(durationMillis = 150),
-        label = "mealsNavigationIconTint"
+    val animatedModifier = modifier.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+    val animationFile = name.navigationAnimationFile()
+
+    if (animationFile == null) {
+        Image(
+            painter = painterResource(name.drawable()),
+            contentDescription = contentDescription,
+            modifier = animatedModifier
+        )
+        return
+    }
+
+    val compositionResult = rememberLottieComposition(animationFile) {
+        LottieCompositionSpec.JsonString(
+            Res.readBytes("files/$animationFile").decodeToString()
+        )
+    }
+    val composition by compositionResult
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        isPlaying = selected,
+        restartOnPlay = true,
+        iterations = 1,
+        speed = 1.04f
     )
 
-    Image(
-        painter = painterResource(name.drawable()),
-        contentDescription = contentDescription,
-        colorFilter = ColorFilter.tint(tint),
-        modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
-    )
+    if (selected && composition != null) {
+        Image(
+            painter = rememberLottiePainter(
+                composition = composition,
+                progress = { progress },
+                enableExpressions = false
+            ),
+            contentDescription = contentDescription,
+            modifier = animatedModifier
+        )
+    } else {
+        Image(
+            painter = painterResource(name.drawable()),
+            contentDescription = contentDescription,
+            modifier = animatedModifier
+        )
+    }
+}
+
+private fun MealsIconName.navigationAnimationFile(): String? = when (this) {
+    MealsIconName.Plan -> "meals_nav_plan.json"
+    MealsIconName.Cookbook -> "meals_nav_cookbook.json"
+    MealsIconName.Basket -> "meals_nav_basket.json"
+    MealsIconName.Pantry -> "meals_nav_pantry.json"
+    else -> null
 }
 
 private fun MealsIconName.drawable(): DrawableResource = when (this) {

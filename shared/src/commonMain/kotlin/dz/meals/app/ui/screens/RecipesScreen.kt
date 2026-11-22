@@ -37,7 +37,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
@@ -57,7 +56,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import dz.meals.app.ui.components.MealsSearchBar
-import dz.meals.app.ui.theme.ForestDark
 
 private val recipeCategories = listOf("الكل", "المفضلة", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
@@ -162,7 +160,6 @@ fun RecipesScreen(
                                     name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline,
                                     contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة",
                                     modifier = Modifier.size(22.dp),
-                                    tint = if (recipe.id in favoriteRecipeIds) Color(0xFFD3A24E) else MutedInk
                                 )
                             }
                         }
@@ -176,7 +173,6 @@ fun RecipesScreen(
                                 MealsIconName.Clock,
                                 contentDescription = null,
                                 modifier = Modifier.size(17.dp),
-                                tint = MutedInk
                             )
                             Text(
                                 recipe.durationMinutes.toString() + " د",
@@ -207,7 +203,6 @@ fun RecipesScreen(
                                     MealsIconName.Info,
                                     contentDescription = "تفاصيل الوصفة",
                                     modifier = Modifier.size(20.dp),
-                                    tint = ForestDark
                                 )
                             }
                             MealsIconAction(onClick = { onAddRecipe(recipe.id) }) {
@@ -215,7 +210,6 @@ fun RecipesScreen(
                                     MealsIconName.Add,
                                     contentDescription = "أضف إلى الأسبوع",
                                     modifier = Modifier.size(20.dp),
-                                    tint = ForestDark
                                 )
                             }
                         }
