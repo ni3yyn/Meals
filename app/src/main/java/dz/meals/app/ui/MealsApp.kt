@@ -2,6 +2,24 @@ package dz.meals.app.ui
 
 import dz.meals.app.MealsStartupLogger
 
+import androidx.compose.animation.core.tween
+
+import androidx.compose.animation.core.FastOutSlowInEasing
+
+import androidx.compose.animation.slideOutVertically
+
+import androidx.compose.animation.slideInVertically
+
+import androidx.compose.animation.scaleOut
+
+import androidx.compose.animation.scaleIn
+
+import androidx.compose.animation.fadeOut
+
+import androidx.compose.animation.fadeIn
+
+import androidx.compose.animation.AnimatedVisibility
+
 import android.content.Intent
 import android.net.Uri
 
@@ -72,6 +90,7 @@ import dz.meals.app.ui.screens.ShoppingScreen
 import dz.meals.app.ui.theme.Cream
 import dz.meals.app.ui.theme.DEFAULT_MEALS_LOCALE_TAG
 import dz.meals.app.ui.theme.mealsLayoutDirection
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -130,11 +149,14 @@ private fun MealsAppContent() {
     val preferencesStore = remember(context) { PreferencesStore(context) }
     val repository = remember(context) { MealsRepository(context) }
     val updateChecker = remember { AppUpdateChecker() }
-    // DataStore emits asynchronously. Start with setup marked complete so the temporary
-    // default value cannot open first-run onboarding for returning users.
-    val preferences by preferencesStore.preferences.collectAsState(
-        initial = AppPreferences(hasCompletedSetup = true)
-    )
+    // Keep the first frame neutral until DataStore has emitted the real setup state.
+    // This prevents a one-frame home-screen flash before first-run onboarding appears.
+    val preferencesFlow = remember(preferencesStore) {
+        preferencesStore.preferences.map { stored -> stored as AppPreferences? }
+    }
+    val storedPreferences by preferencesFlow.collectAsState(initial = null)
+    val preferencesLoaded = storedPreferences != null
+    val preferences = storedPreferences ?: AppPreferences(hasCompletedSetup = true)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
@@ -228,6 +250,20 @@ private fun MealsAppContent() {
                 MealsNavigationItem("المخزون", MealsIconName.Pantry)
             )
         }
+        AnimatedVisibility(
+            visible = preferencesLoaded && preferences.hasCompletedSetup,
+            modifier = Modifier.fillMaxSize(),
+            enter = fadeIn(
+                animationSpec = tween(560, easing = FastOutSlowInEasing)
+            ) + scaleIn(
+                initialScale = 0.975f,
+                animationSpec = tween(660, easing = FastOutSlowInEasing)
+            ) + slideInVertically(
+                initialOffsetY = { fullHeight -> fullHeight / 44 },
+                animationSpec = tween(660, easing = FastOutSlowInEasing)
+            ),
+            exit = fadeOut(animationSpec = tween(120))
+        ) {
         Scaffold(
             containerColor = Color.Transparent,
             snackbarHost = {
@@ -405,7 +441,26 @@ private fun MealsAppContent() {
                 }
             }
         }
-        if (!preferences.hasCompletedSetup) {
+        }
+
+        AnimatedVisibility(
+            visible = preferencesLoaded && !preferences.hasCompletedSetup,
+            modifier = Modifier.fillMaxSize(),
+            enter = fadeIn(animationSpec = tween(240, easing = FastOutSlowInEasing)) +
+                scaleIn(
+                    initialScale = 1.012f,
+                    animationSpec = tween(300, easing = FastOutSlowInEasing)
+                ),
+            exit = fadeOut(
+                animationSpec = tween(500, easing = FastOutSlowInEasing)
+            ) + scaleOut(
+                targetScale = 1.024f,
+                animationSpec = tween(620, easing = FastOutSlowInEasing)
+            ) + slideOutVertically(
+                targetOffsetY = { fullHeight -> -fullHeight / 42 },
+                animationSpec = tween(620, easing = FastOutSlowInEasing)
+            )
+        ) {
             MealsOnboarding(
                 initial = preferences,
                 ingredients = snapshot.ingredients,
@@ -451,6 +506,8 @@ private fun MealsAppContent() {
                     androidx.activity.compose.BackHandler(enabled = enabled, onBack = onBack)
                 }
             )
+        }
+
         }
 
         if (showSettings) {
