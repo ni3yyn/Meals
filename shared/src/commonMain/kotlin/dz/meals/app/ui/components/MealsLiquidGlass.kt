@@ -45,8 +45,8 @@ object MealsLiquidGlass {
         return Shadow(
             radius = (10f + depth * 1.5f).dp,
             spread = 0.dp,
-            color = Color(0xFF686257).copy(
-                alpha = (0.045f + depth * 0.006f).coerceIn(0.045f, 0.085f)
+            color = Color(0xFF736C61).copy(
+                alpha = (0.025f + depth * 0.004f).coerceIn(0.025f, 0.055f)
             ),
             offset = DpOffset(
                 x = 0.dp,
