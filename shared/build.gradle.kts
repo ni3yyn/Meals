@@ -36,7 +36,7 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
-            implementation(libs.prismal.agsl)
+            implementation("com.github.styropyr0:PrismalAGSL:Prismal:v1.0.7")
         }
 
         commonMain.dependencies {

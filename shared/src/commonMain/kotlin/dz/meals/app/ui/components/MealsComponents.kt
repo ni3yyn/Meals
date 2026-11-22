@@ -557,6 +557,7 @@ fun MealsLiquidGlassTextField(
         face = MealsLiquidGlass.controlFace(),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        blurRadius = MealsLiquidGlass.ControlBlurRadius,
         rim = rim,
         sideGlintHeight = 17.dp
     ) {
