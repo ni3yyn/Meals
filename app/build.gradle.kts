@@ -154,5 +154,7 @@ dependencies {
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
+    // AndroidX Test references these compile-time annotations during R8 of release tests.
+    androidTestImplementation("com.google.errorprone:error_prone_annotations:2.53.0")
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

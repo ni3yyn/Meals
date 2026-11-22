@@ -33,9 +33,8 @@ import dz.meals.app.ui.theme.MutedInk
 private val SelectionShape = RoundedCornerShape(15.dp)
 
 /**
- * The same source-backed liquid-glass material used by Meals controls:
- * 12dp Haze blur, translucent porcelain face, bright gradient rim,
- * inner highlight and a restrained green-tinted lift.
+ * The same source-backed glass material used by Meals controls, including
+ * the non-uniform outer catchlight and inset optical bevel.
  */
 @Composable
 private fun MealsSelectionGlass(
@@ -48,10 +47,10 @@ private fun MealsSelectionGlass(
     val face = if (selected) {
         Brush.verticalGradient(
             listOf(
-                Color.White.copy(alpha = 0.46f),
-                Color(0xFFEAF4EC).copy(alpha = 0.40f),
-                Color(0xFFDCEBDD).copy(alpha = 0.42f),
-                Color.White.copy(alpha = 0.38f)
+                Color.White.copy(alpha = 0.48f),
+                Color(0xFFFFFEFC).copy(alpha = 0.40f),
+                Color(0xFFF3EFE9).copy(alpha = 0.34f),
+                Color.White.copy(alpha = 0.40f)
             )
         )
     } else {
@@ -60,10 +59,10 @@ private fun MealsSelectionGlass(
     val rim = if (selected) {
         Brush.verticalGradient(
             listOf(
-                Color.White.copy(alpha = 1f),
-                Color.White.copy(alpha = 0.90f),
-                Color(0xFFC9DDCE).copy(alpha = 0.78f),
-                Color.White.copy(alpha = 0.94f)
+                Color.White.copy(alpha = 0.98f),
+                Color.White.copy(alpha = 0.76f),
+                Color.White.copy(alpha = 0.38f),
+                Color.White.copy(alpha = 0.88f)
             )
         )
     } else {
@@ -76,8 +75,8 @@ private fun MealsSelectionGlass(
                 elevation = if (selected) 3.dp else 2.dp,
                 shape = SelectionShape,
                 clip = false,
-                ambientColor = Color(0xFF78917F).copy(alpha = 0.12f),
-                spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
+                ambientColor = Color(0xFFB7AA9F).copy(alpha = 0.13f),
+                spotColor = Color(0xFF8F8278).copy(alpha = 0.075f)
             )
             .clip(SelectionShape)
             .mealsGlassBlur(
@@ -88,19 +87,14 @@ private fun MealsSelectionGlass(
                 blurRadius = MealsLiquidGlass.ControlBlurRadius
             )
             .background(face, SelectionShape)
-            .border(BorderStroke(1.15.dp, rim), SelectionShape)
-            .padding(1.dp)
-            .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), SelectionShape),
+            .mealsOpticalEdges(
+                shape = SelectionShape,
+                baseRim = rim,
+                depth = 1f,
+                sideGlintHeight = 17.dp
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 1.dp)
-                .fillMaxWidth(0.64f)
-                .height(1.dp)
-                .background(MealsLiquidGlass.specular(), SelectionShape)
-        )
         content()
     }
 }

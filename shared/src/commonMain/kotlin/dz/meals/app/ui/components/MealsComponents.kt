@@ -124,13 +124,19 @@ private fun MealsLiquidGlassFrame(
     val resolvedGlassBackdrop = glassBackdrop
         ?: LocalMealsCardGlassBackdrop.current
         ?: LocalMealsScreenGlassBackdrop.current
+    val isPressed = LocalMealsGlassPressed.current
+    val opticalDepth by animateFloatAsState(
+        targetValue = if (isPressed) 0.62f else 1f,
+        animationSpec = tween(durationMillis = 105),
+        label = "mealsGlassOpticalDepth"
+    )
     val surfaceModifier = modifier
         .shadow(
-            elevation = elevation,
+            elevation = elevation * opticalDepth,
             shape = shape,
             clip = false,
-            ambientColor = Color(0xFF78917F).copy(alpha = 0.12f),
-            spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
+            ambientColor = Color(0xFFB7AA9F).copy(alpha = 0.13f),
+            spotColor = Color(0xFF8F8278).copy(alpha = 0.075f)
         )
         .clip(shape)
         .mealsGlassBlur(
@@ -141,31 +147,14 @@ private fun MealsLiquidGlassFrame(
             blurRadius = blurRadius
         )
         .background(face, shape)
-        .border(BorderStroke(1.15.dp, rim), shape)
+        .mealsOpticalEdges(
+            shape = shape,
+            baseRim = rim,
+            depth = opticalDepth,
+            sideGlintHeight = sideGlintHeight
+        )
 
     Box(modifier = surfaceModifier, contentAlignment = Alignment.TopStart) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(1.dp)
-                .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), shape)
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 1.dp)
-                .fillMaxWidth(0.62f)
-                .height(1.dp)
-                .background(MealsLiquidGlass.specular(), CircleShape)
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
-                .width(1.dp)
-                .height(sideGlintHeight)
-                .background(MealsLiquidGlass.sideGlint(), CircleShape)
-        )
         content()
     }
 }
@@ -213,6 +202,7 @@ val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
 val LocalMealsScreenGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
+internal val LocalMealsGlassPressed = staticCompositionLocalOf { false }
 
 
 /**
@@ -278,7 +268,7 @@ fun MealsPressable(
         label = "mealsSharedPressScale"
     )
     val highlight by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.20f else 0f,
+        targetValue = if (pressed && enabled) 0.16f else 0f,
         animationSpec = tween(90),
         label = "mealsSharedPressHighlight"
     )
@@ -295,7 +285,9 @@ fun MealsPressable(
             ),
         contentAlignment = Alignment.Center
     ) {
-        content()
+        CompositionLocalProvider(LocalMealsGlassPressed provides (pressed && enabled)) {
+            content()
+        }
         if (highlight > 0.001f) {
             Box(Modifier.matchParentSize().background(Color.White.copy(alpha = highlight), shape))
         }
