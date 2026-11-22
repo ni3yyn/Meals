@@ -41,6 +41,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.drawRect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -71,6 +76,35 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 private const val LATEST_APK_DOWNLOAD_URL = "https://github.com/ni3yyn/Meals/releases/latest/download/meals.apk"
+
+/**
+ * Fade only the app bar's lower edge into the content beneath it.
+ *
+ * This is an alpha mask, not a painted gradient or shadow: pixels at the
+ * bottom of the bar progressively reveal what is behind it.
+ */
+private fun Modifier.fadeBottomEdgeMask(fadeHeight: androidx.compose.ui.unit.Dp): Modifier =
+    graphicsLayer {
+        compositingStrategy = CompositingStrategy.Offscreen
+    }.drawWithContent {
+        drawContent()
+        val fadePx = fadeHeight.toPx().coerceAtMost(size.height)
+        if (fadePx > 0f && size.height > 0f) {
+            val fadeStart = (size.height - fadePx).coerceAtLeast(0f)
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0f to Color.Black,
+                        (fadeStart / size.height).coerceIn(0f, 1f) to Color.Black,
+                        1f to Color.Transparent
+                    ),
+                    startY = 0f,
+                    endY = size.height
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
+    }
 
 private enum class AppTab(val title: String) {
     Plan("الخطة"),
@@ -248,6 +282,7 @@ private fun MealsAppContent() {
                             )
                         }
                     },
+                    modifier = Modifier.fadeBottomEdgeMask(14.dp),
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             },
