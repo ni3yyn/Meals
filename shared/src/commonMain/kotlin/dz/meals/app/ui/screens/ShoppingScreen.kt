@@ -721,7 +721,6 @@ private fun PriceReportDialog(
     onSubmit: (String, Double, Double, String) -> Unit
 ) {
     var selectedId by rememberSaveable { mutableStateOf(ingredients.firstOrNull()?.id.orEmpty()) }
-    var ingredientMenu by rememberSaveable { mutableStateOf(false) }
     var packQuantityText by rememberSaveable { mutableStateOf("1") }
     var priceText by rememberSaveable { mutableStateOf("") }
     var shopContext by rememberSaveable(wilaya, defaultShopContext) {
