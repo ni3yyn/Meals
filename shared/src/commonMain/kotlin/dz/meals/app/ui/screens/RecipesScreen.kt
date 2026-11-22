@@ -189,7 +189,7 @@ fun RecipesScreen(
                             Spacer(Modifier.weight(1f))
                             Text(
                                 recipe.category,
-                                color = dz.meals.app.ui.theme.TextAccent,
+                                color = Forest,
                                 fontWeight = FontWeight.SemiBold,
                                 style = MaterialTheme.typography.labelMedium
                             )
@@ -291,7 +291,7 @@ fun RecipesScreen(
                         Text(
                             if (stepCount == 0) "لا توجد خطوات مسجلة بعد"
                             else "الخطوة " + (safeStepIndex + 1) + " من " + stepCount,
-                            color = dz.meals.app.ui.theme.TextAccent,
+                            color = Forest,
                             fontWeight = FontWeight.Bold
                         )
                         androidx.compose.material3.LinearProgressIndicator(

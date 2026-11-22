@@ -103,7 +103,7 @@ fun PantryScreen(
         ) {
             if (search.isNotBlank()) {
                 item {
-                    Text("نتائج البحث", style = MaterialTheme.typography.titleMedium, color = TextAccent)
+                    Text("نتائج البحث", style = MaterialTheme.typography.titleMedium, color = dz.meals.app.ui.theme.TextAccent)
                 }
                 items(matchingIngredients, key = { "search-" + it.id }) { ingredient ->
                     MealsTextButton(
@@ -132,7 +132,7 @@ fun PantryScreen(
             }
 
             item {
-                Text("المخزون الحالي (" + pantry.size + ")", style = MaterialTheme.typography.titleMedium, color = TextAccent)
+                Text("المخزون الحالي (" + pantry.size + ")", style = MaterialTheme.typography.titleMedium, color = dz.meals.app.ui.theme.TextAccent)
             }
 
             if (pantry.isEmpty()) {

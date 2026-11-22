@@ -163,7 +163,7 @@ fun ShoppingScreen(
                     ) {
                         Text(
                             "المبلغ المتوقع",
-                            color = dz.meals.app.ui.theme.TextAccent,
+                            color = dz.meals.app.ui.theme.ForestDark,
                             style = MaterialTheme.typography.labelMedium
                         )
                         Text(
@@ -186,7 +186,7 @@ fun ShoppingScreen(
                     ) {
                         Text(
                             "تم جمعه",
-                            color = dz.meals.app.ui.theme.TextAccent,
+                            color = dz.meals.app.ui.theme.ForestDark,
                             style = MaterialTheme.typography.labelMedium
                         )
                         Text(
@@ -209,7 +209,7 @@ fun ShoppingScreen(
                     ) {
                         Text(
                             if (remainingCount == 0) "اكتملت القائمة" else "$remainingCount عناصر متبقية",
-                            color = dz.meals.app.ui.theme.BodyInk,
+                            color = ForestDark,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -246,7 +246,7 @@ fun ShoppingScreen(
                             else ->
                                 "${snapshot.basket.unknownPriceCount} عناصر دون سعر"
                         },
-                        color = dz.meals.app.ui.theme.BodyInk,
+                        color = dz.meals.app.ui.theme.ForestDark,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -395,7 +395,7 @@ fun ShoppingScreen(
                                 ) {
                                     Text(
                                         category,
-                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        color = Forest,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )

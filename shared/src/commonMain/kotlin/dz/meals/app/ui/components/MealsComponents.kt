@@ -863,7 +863,7 @@ fun MealsProgressBar(
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(7.dp)) {
         if (label != null) {
-            Text(label, color = dz.meals.app.ui.theme.TextAccent, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text(label, color = ForestDark, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
         LinearProgressIndicator(
             progress = { progress.coerceIn(0f, 1f) },
