@@ -135,6 +135,7 @@ tasks.configureEach {
 dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore.preferences)
