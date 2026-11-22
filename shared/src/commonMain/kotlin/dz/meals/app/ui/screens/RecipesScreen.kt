@@ -1,5 +1,9 @@
 package dz.meals.app.ui.screens
 
+import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.components.MealsSecondaryButton
+import dz.meals.app.ui.components.MealsTextButton
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -140,7 +144,7 @@ fun RecipesScreen(
                                 Text(recipe.descriptionAr, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
                                 Text(recipe.nameFr, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             }
-                            IconButton(onClick = { onToggleFavorite(recipe.id) }) {
+                            MealsIconAction(onClick = { onToggleFavorite(recipe.id) }) {
                                 MealsIcon(name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline, contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة", modifier = Modifier.size(27.dp))
                             }
                         }
@@ -165,7 +169,7 @@ fun RecipesScreen(
                                 modifier = Modifier.weight(1f),
                                 icon = MealsIconName.Add
                             )
-                            TextButton(onClick = { selectedRecipeId = recipe.id }) {
+                            MealsTextButton(onClick = { selectedRecipeId = recipe.id }) {
                                 MealsIcon(MealsIconName.Info, contentDescription = null, modifier = Modifier.size(23.dp))
                                 Text("التفاصيل")
                             }
@@ -212,24 +216,24 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = { onAddRecipe(detail.id); selectedRecipeId = null }) {
-                        Text("أضف إلى الأسبوع")
-                    }
-                    TextButton(
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MealsPrimaryButton(
+                        label = "أضف إلى الأسبوع",
+                        onClick = { onAddRecipe(detail.id); selectedRecipeId = null }
+                    )
+                    MealsSecondaryButton(
+                        label = "ابدأ الطبخ",
                         onClick = {
                             cookingRecipeId = detail.id
                             cookingStepIndex = 0
                             cookingServings = detail.baseServings
                             selectedRecipeId = null
                         }
-                    ) {
-                        Text("ابدأ الطبخ")
-                    }
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { selectedRecipeId = null }) { Text("إغلاق") }
+                MealsSecondaryButton(label = "إغلاق", onClick = { selectedRecipeId = null })
             }
         )
     }
@@ -266,12 +270,12 @@ fun RecipesScreen(
                     item {
                         Text("عدد الحصص", fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(
+                            MealsTextButton(
                                 onClick = { cookingServings = (cookingServings - 1).coerceAtLeast(1) },
                                 enabled = cookingServings > 1
                             ) { Text("−") }
                             Text(cookingServings.toString(), fontWeight = FontWeight.Bold)
-                            TextButton(
+                            MealsTextButton(
                                 onClick = { cookingServings = (cookingServings + 1).coerceAtMost(12) },
                                 enabled = cookingServings < 12
                             ) { Text("+") }
@@ -305,7 +309,8 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                MealsPrimaryButton(
+                    label = if (safeStepIndex < stepCount - 1) "الخطوة التالية" else "إنهاء الطبخ",
                     onClick = {
                         if (safeStepIndex < stepCount - 1) {
                             cookingStepIndex = safeStepIndex + 1
@@ -313,17 +318,16 @@ fun RecipesScreen(
                             cookingRecipeId = null
                         }
                     }
-                ) {
-                    Text(if (safeStepIndex < stepCount - 1) "الخطوة التالية" else "إنهاء الطبخ")
-                }
+                )
             },
             dismissButton = {
-                Row {
-                    TextButton(
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MealsSecondaryButton(
+                        label = "السابق",
                         onClick = { cookingStepIndex = (safeStepIndex - 1).coerceAtLeast(0) },
                         enabled = safeStepIndex > 0
-                    ) { Text("السابق") }
-                    TextButton(onClick = { cookingRecipeId = null }) { Text("إغلاق") }
+                    )
+                    MealsTextButton(onClick = { cookingRecipeId = null }) { Text("إغلاق") }
                 }
             }
         )

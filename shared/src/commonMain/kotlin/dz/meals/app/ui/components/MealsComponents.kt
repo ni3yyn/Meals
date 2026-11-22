@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,7 +97,7 @@ import dz.meals.app.ui.icons.MealsIconName
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = RoundedCornerShape(26.dp)
-private val ButtonShape = RoundedCornerShape(22.dp)
+private val ButtonShape = RoundedCornerShape(16.dp)
 
 /**
  * One immutable blur recipe shared by every card. LazyColumn only composes
@@ -313,7 +314,7 @@ fun MealsPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: MealsIconName? = null,
-    showArrow: Boolean = true
+    showArrow: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
@@ -322,7 +323,7 @@ fun MealsPrimaryButton(
         animationSpec = tween(durationMillis = 150),
         label = "mealsPrimaryButtonScale"
     )
-    val buttonShape = remember { RoundedCornerShape(26.dp) }
+    val buttonShape = remember { RoundedCornerShape(17.dp) }
     val buttonBrush = remember {
         Brush.linearGradient(
             colors = listOf(
@@ -353,11 +354,10 @@ fun MealsPrimaryButton(
         color = Color.Transparent,
         contentColor = Color.White,
         border = BorderStroke(1.dp, buttonEdge),
-        shadowElevation = if (enabled) 7.dp else 0.dp
+        shadowElevation = if (enabled) 4.dp else 0.dp
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .clip(buttonShape)
                 .clickable(
                     interactionSource = interactionSource,
@@ -454,11 +454,10 @@ fun MealsSecondaryButton(
         color = Color.Transparent,
         contentColor = if (enabled) ForestDark else MutedInk,
         border = BorderStroke(1.dp, edgeBrush),
-        shadowElevation = if (enabled) 3.dp else 0.dp
+        shadowElevation = if (enabled) 2.dp else 0.dp
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .clip(buttonShape)
                 .clickable(
                     interactionSource = interactionSource,
@@ -497,6 +496,117 @@ fun MealsSecondaryButton(
                 Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
             }
         }
+    }
+}
+
+@Composable
+fun MealsTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color = ForestDark,
+    content: @Composable RowScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.985f else 1f,
+        animationSpec = tween(durationMillis = 120),
+        label = "mealsTextButtonScale"
+    )
+    CompositionLocalProvider(LocalContentColor provides if (enabled) color else MutedInk) {
+        Row(
+            modifier = modifier
+                .defaultMinSize(minHeight = 44.dp)
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick
+                )
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
+    }
+}
+
+/** Icon-only action with a generous hit target and no decorative backplate or ripple. */
+@Composable
+fun MealsIconAction(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.92f else 1f,
+        animationSpec = tween(durationMillis = 110),
+        label = "mealsIconActionScale"
+    )
+    Box(
+        modifier = modifier
+            .defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) { content() }
+}
+
+/** Raised icon control for persistent app-level actions such as Settings and Update. */
+@Composable
+fun MealsIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    size: Dp = 44.dp,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.965f else 1f,
+        animationSpec = tween(durationMillis = 120),
+        label = "mealsIconButtonScale"
+    )
+    val shape = RoundedCornerShape(14.dp)
+    Surface(
+        modifier = modifier.size(size).graphicsLayer { scaleX = scale; scaleY = scale },
+        shape = shape,
+        color = if (enabled) Paper.copy(alpha = 0.84f) else Paper.copy(alpha = 0.58f),
+        contentColor = ForestDark,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.92f)),
+        shadowElevation = if (enabled) 2.dp else 0.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick
+                )
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.50f), Color.Transparent, Border.copy(alpha = 0.12f))
+                    ),
+                    shape
+                ),
+            contentAlignment = Alignment.Center
+        ) { content() }
     }
 }
 
@@ -768,8 +878,8 @@ fun MealsAlertDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    dismissButton?.invoke()
                     confirmButton()
+                    dismissButton?.invoke()
                 }
             }
         }
@@ -813,8 +923,13 @@ fun MealsDialog(
                         }
                     }
                     if (showCloseButton) {
-                        IconButton(onClick = onDismiss) {
-                            MealsIcon(MealsIconName.Close, contentDescription = "إغلاق", modifier = Modifier.size(25.dp))
+                        MealsIconAction(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
+                            MealsIcon(
+                                MealsIconName.Close,
+                                contentDescription = "إغلاق",
+                                modifier = Modifier.size(20.dp),
+                                tint = MutedInk
+                            )
                         }
                     }
                 }
@@ -825,18 +940,19 @@ fun MealsDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (dismissLabel != null) {
-                            TextButton(
-                                onClick = onDismissAction ?: onDismiss,
-                                modifier = Modifier.weight(1f)
-                            ) { Text(dismissLabel, color = MutedInk) }
-                        }
                         if (confirmLabel != null && onConfirm != null) {
                             MealsPrimaryButton(
                                 label = confirmLabel,
                                 onClick = onConfirm,
                                 modifier = Modifier.weight(1f),
                                 enabled = confirmEnabled
+                            )
+                        }
+                        if (dismissLabel != null) {
+                            MealsSecondaryButton(
+                                label = dismissLabel,
+                                onClick = onDismissAction ?: onDismiss,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -939,7 +1055,7 @@ fun MealsFrostedBottomBar(
     hazeState: HazeState,
     modifier: Modifier = Modifier
 ) {
-    val capsuleShape = RoundedCornerShape(32.dp)
+    val capsuleShape = RoundedCornerShape(27.dp)
     val blurStyle = remember {
         HazeBlurStyle {
             blurRadius(25.dp)
@@ -965,7 +1081,8 @@ fun MealsFrostedBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(76.dp)
+                .height(72.dp)
+                .shadow(10.dp, capsuleShape, clip = false)
                 .clip(capsuleShape)
                 .hazeBlur(
                     input = HazeInput.Sources(hazeState),
@@ -1006,25 +1123,29 @@ fun MealsFrostedBottomBar(
                     targetValue = if (selected) ForestDark else MutedInk,
                     label = "mealsNavForeground$index"
                 )
-                val iconSize by animateFloatAsState(
-                    targetValue = if (selected) 1f else 0.93f,
-                    animationSpec = tween(durationMillis = 180),
-                    label = "mealsNavIconScale$index"
-                )
-
+                val interactionSource = remember { MutableInteractionSource() }
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(25.dp))
+                        .clip(RoundedCornerShape(18.dp))
                         .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
                             onClick = { onItemSelected(index) },
                             role = Role.Tab
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    MealsIcon(name = item.icon, contentDescription = item.label, modifier = Modifier.size(25.dp * iconSize))
+                    Box(
+                        modifier = Modifier
+                            .size(width = 18.dp, height = 3.dp)
+                            .clip(CircleShape)
+                            .background(if (selected) ForestDark else Color.Transparent)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    MealsIcon(name = item.icon, contentDescription = item.label, modifier = Modifier.size(23.dp), tint = foreground)
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = item.label,

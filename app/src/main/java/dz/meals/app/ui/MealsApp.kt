@@ -193,17 +193,27 @@ private fun MealsAppContent() {
                         }
                     },
                     actions = {
-                        IconButton(
+                        MealsIconButton(
                             onClick = { showUpdateDialog = true },
-                            modifier = Modifier.padding(end = 6.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftGreen)
+                            modifier = Modifier.padding(end = 6.dp)
                         ) {
-                            MealsIcon(MealsIconName.Update, contentDescription = "تحديث التطبيق", modifier = Modifier.size(25.dp))
+                            MealsIcon(
+                                MealsIconName.Update,
+                                contentDescription = "تحديث التطبيق",
+                                modifier = Modifier.size(22.dp),
+                                tint = dz.meals.app.ui.theme.ForestDark
+                            )
                         }
-                        IconButton(
+                        MealsIconButton(
                             onClick = { showSettings = true },
-                            modifier = Modifier.padding(end = 10.dp).clip(CircleShape).background(dz.meals.app.ui.theme.SoftPink)
+                            modifier = Modifier.padding(end = 10.dp)
                         ) {
-                            MealsIcon(MealsIconName.Settings, contentDescription = "الإعدادات", modifier = Modifier.size(25.dp))
+                            MealsIcon(
+                                MealsIconName.Settings,
+                                contentDescription = "الإعدادات",
+                                modifier = Modifier.size(22.dp),
+                                tint = dz.meals.app.ui.theme.ForestDark
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -411,7 +421,13 @@ private fun MealsAppContent() {
                 onDismissRequest = { generationMessage = null },
                 title = { Text("نتيجة إنشاء الخطة") },
                 text = { Text(message) },
-                confirmButton = { TextButton(onClick = { generationMessage = null }) { Text("حسناً") } }
+                confirmButton = {
+                    MealsPrimaryButton(
+                        label = "حسناً",
+                        onClick = { generationMessage = null },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             )
         }
         }
@@ -533,7 +549,8 @@ private fun SettingsDialog(
                             checked = noKnownAllergies,
                             onCheckedChange = { noKnownAllergies = it }
                         )
-                        TextButton(
+                        MealsPrimaryButton(
+                            label = "ابدئي الآن بالإعدادات الأساسية",
                             onClick = {
                                 val budget = budgetText.toIntOrNull()
                                 val servings = servingsText.toIntOrNull()
@@ -543,9 +560,7 @@ private fun SettingsDialog(
                             },
                             enabled = noKnownAllergies && validStep,
                             modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("ابدئي الآن بالإعدادات الأساسية")
-                        }
+                        )
                         Text(
                             "سنستخدم اختيارات افتراضية لبقية التفضيلات. يمكنك تعديلها لاحقاً من الإعدادات.",
                             color = dz.meals.app.ui.theme.MutedInk,

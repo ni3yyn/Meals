@@ -3,6 +3,8 @@ package dz.meals.app.ui.icons
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_icon_plan
@@ -68,11 +70,13 @@ Delete
 fun MealsIcon(
     name: MealsIconName,
     contentDescription: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tint: Color? = null
 ) {
     Image(
         painter = painterResource(name.drawable()),
         contentDescription = contentDescription,
+        colorFilter = tint?.let { ColorFilter.tint(it) },
         modifier = modifier.graphicsLayer {
             scaleX = 1.18f
             scaleY = 1.18f

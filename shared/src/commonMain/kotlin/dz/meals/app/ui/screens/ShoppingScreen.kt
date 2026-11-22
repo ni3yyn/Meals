@@ -1,5 +1,11 @@
 package dz.meals.app.ui.screens
 
+import androidx.compose.ui.graphics.Color
+import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.components.MealsSecondaryButton
+import dz.meals.app.ui.components.MealsTextButton
+import dz.meals.app.ui.theme.ForestDark
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -112,13 +118,13 @@ fun ShoppingScreen(
                 ) {
                     Text("قائمة المشتريات", style = MaterialTheme.typography.headlineMedium)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(
+                        MealsTextButton(
                             onClick = { onShareList(buildShoppingShareText(rows, snapshot)) },
                             enabled = rows.isNotEmpty()
                         ) {
                             Text("مشاركة")
                         }
-                        TextButton(onClick = { addDialog = true }) {
+                        MealsTextButton(onClick = { addDialog = true }) {
                             MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(19.dp))
                             Text("إضافة")
                         }
@@ -201,11 +207,11 @@ fun ShoppingScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = { priceDialog = true }) {
+                    MealsTextButton(onClick = { priceDialog = true }) {
                         Text("تسجيل سعر")
                     }
                     if (snapshot.priceObservations.isNotEmpty()) {
-                        TextButton(onClick = { showPriceHistory = !showPriceHistory }) {
+                        MealsTextButton(onClick = { showPriceHistory = !showPriceHistory }) {
                             Text(if (showPriceHistory) "إخفاء آخر الأسعار" else "آخر الأسعار")
                         }
                     }
@@ -235,14 +241,14 @@ fun ShoppingScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { showPurchased = false }) {
+                    MealsTextButton(onClick = { showPurchased = false }) {
                         Text(
                             "المتبقي ($remainingCount)",
                             color = if (!showPurchased) Forest else MutedInk,
                             fontWeight = if (!showPurchased) FontWeight.Bold else FontWeight.Medium
                         )
                     }
-                    TextButton(onClick = { showPurchased = true }) {
+                    MealsTextButton(onClick = { showPurchased = true }) {
                         Text(
                             "كل العناصر (${rows.size})",
                             color = if (showPurchased) Forest else MutedInk,
@@ -281,7 +287,7 @@ fun ShoppingScreen(
                         MealsIllustrationBadge(icon = MealsIconName.Basket, size = 60.dp)
                         Text("اكتملت القائمة", style = MaterialTheme.typography.titleLarge)
                         Text("جمعتِ كل العناصر المطلوبة.", color = MutedInk)
-                        TextButton(onClick = { showPurchased = true }) {
+                        MealsTextButton(onClick = { showPurchased = true }) {
                             Text("عرض العناصر التي جمعتها")
                         }
                     }
@@ -349,7 +355,7 @@ fun ShoppingScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                MealsTextButton(
                     onClick = {
                         val quantity = itemQuantity.replace(',', '.').toDoubleOrNull()
                         val estimatedPrice = itemEstimatedPrice.takeIf { it.isNotBlank() }
@@ -370,7 +376,7 @@ fun ShoppingScreen(
                         (itemEstimatedPrice.isBlank() || (itemEstimatedPrice.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 ) { Text("إضافة") }
             },
-            dismissButton = { TextButton(onClick = { addDialog = false }) { Text("إلغاء") } }
+            dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = { addDialog = false }) }
         )
     }
 
@@ -419,7 +425,7 @@ fun ShoppingScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                MealsTextButton(
                     onClick = {
                         val id = editItemId
                         val quantity = editQuantity.replace(',', '.').toDoubleOrNull()
@@ -443,7 +449,7 @@ fun ShoppingScreen(
                         (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 ) { Text("حفظ التعديل") }
             },
-            dismissButton = { TextButton(onClick = { editItemId = null }) { Text("إلغاء") } }
+            dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = { editItemId = null }) }
         )
     }
 
@@ -487,9 +493,11 @@ private fun PriceReportDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box {
-                    OutlinedButton(onClick = { ingredientMenu = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(selectedIngredient?.nameAr ?: "اختر المكوّن")
-                    }
+                    MealsSecondaryButton(
+                        label = selectedIngredient?.nameAr ?: "اختر المكوّن",
+                        onClick = { ingredientMenu = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     DropdownMenu(
                         expanded = ingredientMenu,
                         onDismissRequest = { ingredientMenu = false },
@@ -544,7 +552,7 @@ private fun PriceReportDialog(
         confirmButton = {
             val packQuantity = packQuantityText.replace(',', '.').toDoubleOrNull()
             val amount = priceText.replace(',', '.').toDoubleOrNull()
-            TextButton(
+            MealsTextButton(
                 onClick = {
                     if (selectedIngredient != null && packQuantity != null && amount != null) {
                         val baseUnitMultiplier = when (selectedIngredient.baseUnit) {
@@ -557,7 +565,7 @@ private fun PriceReportDialog(
                 enabled = selectedIngredient != null && (packQuantity ?: 0.0) > 0.0 && (amount ?: 0.0) > 0.0
             ) { Text("حفظ البلاغ") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء") } }
+        dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = onDismiss) }
     )
 }
 
@@ -682,12 +690,12 @@ private fun ShoppingItemCard(
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                TextButton(onClick = onEdit) {
-                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(20.dp))
+                MealsIconAction(onClick = onEdit) {
+                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(20.dp), tint = ForestDark)
                 }
                 if (item.userAdded) {
-                    TextButton(onClick = onDelete) {
-                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp))
+                    MealsIconAction(onClick = onDelete) {
+                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp), tint = Color(0xFFB65E53))
                     }
                 }
             }

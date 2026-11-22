@@ -1,5 +1,11 @@
 package dz.meals.app.ui.screens
 
+import androidx.compose.ui.graphics.Color
+import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.components.MealsSecondaryButton
+import dz.meals.app.ui.components.MealsTextButton
+import dz.meals.app.ui.theme.ForestDark
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -101,7 +107,7 @@ fun PantryScreen(
                     Text("نتائج البحث", style = MaterialTheme.typography.titleMedium, color = Forest)
                 }
                 items(matchingIngredients, key = { "search-" + it.id }) { ingredient ->
-                    TextButton(
+                    MealsTextButton(
                         onClick = {
                             editingItem = pantry.firstOrNull { it.ingredientId == ingredient.id }
                             selectedIngredientId = ingredient.id
@@ -168,15 +174,16 @@ fun PantryScreen(
                                 }
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                TextButton(onClick = {
-                                    editingItem = item
-                                    selectedIngredientId = item.ingredientId
-                                }) {
-                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(21.dp))
-                                    Text("تعديل")
+                                MealsIconAction(
+                                    onClick = {
+                                        editingItem = item
+                                        selectedIngredientId = item.ingredientId
+                                    }
+                                ) {
+                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(20.dp), tint = ForestDark)
                                 }
-                                TextButton(onClick = { onRemove(item.id) }) {
-                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(21.dp))
+                                MealsIconAction(onClick = { onRemove(item.id) }) {
+                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp), tint = Color(0xFFB65E53))
                                 }
                             }
                         }
@@ -276,7 +283,7 @@ private fun PantryAddDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            MealsTextButton(
                 onClick = {
                     val exactQuantity = if (approximate) null else quantity.replace(',', '.').toDoubleOrNull()
                     onSave(exactQuantity, approximate, note.trim(), parsedExpiry)
@@ -284,7 +291,7 @@ private fun PantryAddDialog(
                 enabled = expiryIsValid && (approximate || ((quantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0))
             ) { Text("حفظ") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("إلغاء") } }
+        dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = onDismiss) }
     )
 }
 

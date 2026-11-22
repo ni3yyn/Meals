@@ -1,5 +1,9 @@
 package dz.meals.app.ui.screens
 
+import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.components.MealsTextButton
+import dz.meals.app.ui.theme.ForestDark
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
@@ -115,41 +119,14 @@ fun PlanScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape)
-                            .background(Paper.copy(alpha = 0.68f))
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                onClick = onOpenShoppingList
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        MealsIcon(MealsIconName.Basket, contentDescription = "المشتريات", modifier = Modifier.size(21.dp))
+                    MealsIconAction(onClick = onOpenShoppingList, modifier = Modifier.size(44.dp)) {
+                        MealsIcon(MealsIconName.Basket, contentDescription = "المشتريات", modifier = Modifier.size(22.dp), tint = Forest)
                     }
-                    Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape)
-                            .background(Paper.copy(alpha = 0.68f))
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                onClick = onPreviousWeek
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(23.dp))
+                    MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(44.dp)) {
+                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(21.dp), tint = ForestDark)
                     }
-                    Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape)
-                            .background(Paper.copy(alpha = 0.68f))
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                onClick = onNextWeek
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(23.dp))
+                    MealsIconAction(onClick = onNextWeek, modifier = Modifier.size(44.dp)) {
+                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(21.dp), tint = ForestDark)
                     }
                 }
             }
@@ -437,13 +414,16 @@ fun PlanScreen(
                 Text("سيُخصم من المخزون فقط ما تملكه بكمية دقيقة. الكميات التقريبية لن تُخصم. يمكنك التراجع من الوجبة نفسها لاستعادة ما خُصم.")
             },
             confirmButton = {
-                TextButton(onClick = {
-                    onToggleCooked(mealId)
-                    mealAwaitingCookConfirmation = null
-                }) { Text("تأكيد وخصم المخزون الدقيق") }
+                MealsPrimaryButton(
+                    label = "تأكيد وخصم المخزون الدقيق",
+                    onClick = {
+                        onToggleCooked(mealId)
+                        mealAwaitingCookConfirmation = null
+                    }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { mealAwaitingCookConfirmation = null }) { Text("إلغاء") }
+                MealsSecondaryButton(label = "إلغاء", onClick = { mealAwaitingCookConfirmation = null })
             }
         )
     }
@@ -504,10 +484,10 @@ private fun SlotRow(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
+                    MealsIconAction(
                         onClick = { onAdjustServings(-1) },
                         enabled = meal.servings > 1 && !meal.isCooked,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
                         Text("−", color = Forest, style = MaterialTheme.typography.titleLarge)
                     }
@@ -517,17 +497,17 @@ private fun SlotRow(
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(horizontal = 2.dp)
                     )
-                    IconButton(
+                    MealsIconAction(
                         onClick = { onAdjustServings(1) },
                         enabled = meal.servings < 12 && !meal.isCooked,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
                         Text("+", color = Forest, style = MaterialTheme.typography.titleLarge)
                     }
                 }
-                IconButton(
+                MealsIconAction(
                     onClick = onToggleLock,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     MealsIcon(
                         name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen,
@@ -571,7 +551,7 @@ private fun SlotRow(
             text = {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     items(recipes, key = { it.id }) { item ->
-                        TextButton(
+                        MealsTextButton(
                             onClick = {
                                 onSelect(item.id)
                                 chooseRecipe = false
@@ -602,14 +582,15 @@ private fun SlotRow(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { onSelect(null); chooseRecipe = false }) {
+                MealsTextButton(
+                    onClick = { onSelect(null); chooseRecipe = false },
+                    color = androidx.compose.ui.graphics.Color(0xFFB65E53)
+                ) {
                     Text("إفراغ الوجبة")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { chooseRecipe = false }) {
-                    Text("إلغاء")
-                }
+                MealsSecondaryButton(label = "إلغاء", onClick = { chooseRecipe = false })
             }
         )
     }
