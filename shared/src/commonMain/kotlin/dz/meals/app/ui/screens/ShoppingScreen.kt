@@ -2,6 +2,10 @@ package dz.meals.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -33,6 +37,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableFloatStateOf
@@ -127,6 +132,11 @@ fun ShoppingScreen(
     }
 
     val rows = snapshot.shoppingItems
+    // Remember the prior IDs so only genuinely new rows receive the arrival motion.
+    val previousShoppingItemIds = remember { mutableStateOf(rows.map { it.id }.toSet()) }
+    val currentShoppingItemIds = rows.map { it.id }.toSet()
+    val newlyAddedItemIds = currentShoppingItemIds - previousShoppingItemIds.value
+    SideEffect { previousShoppingItemIds.value = currentShoppingItemIds }
     val checkedCount = rows.count { it.checked }
     val remainingCount = rows.size - checkedCount
     val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
@@ -491,22 +501,38 @@ fun ShoppingScreen(
                                                         .background(Border.copy(alpha = 0.78f))
                                                 )
                                             }
-                                            ShoppingItemRow(
-                                                item = item,
-                                                onToggle = { onToggleItem(item.id, !item.checked) },
-                                                onEdit = {
-                                                    editItemId = item.id
-                                                    editName = item.name
-                                                    editQuantity = item.purchaseQuantity.prettyQuantity()
-                                                    editUnit = item.unit
-                                                    editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
-                                                    editStoreNote = item.storeNote
-                                                    editActualSpent = item.actualSpentDzd?.toString().orEmpty()
-                                                    editUnavailable = item.isUnavailable
-                                                    editUserAdded = item.userAdded
-                                                },
-                                                onDelete = { onDeleteCustomItem(item.id) }
-                                            )
+                                            val isNewlyAdded = remember(item.id) { item.id in newlyAddedItemIds }
+                                            AnimatedVisibility(
+                                                visible = true,
+                                                enter = if (isNewlyAdded) {
+                                                    slideInHorizontally(
+                                                        initialOffsetX = { width -> width / 3 },
+                                                        animationSpec = spring(dampingRatio = 0.74f, stiffness = 430f)
+                                                    ) + fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) +
+                                                        scaleIn(
+                                                            initialScale = 0.94f,
+                                                            animationSpec = spring(dampingRatio = 0.76f, stiffness = 430f)
+                                                        )
+                                                } else EnterTransition.None,
+                                                exit = ExitTransition.None
+                                            ) {
+                                                ShoppingItemRow(
+                                                    item = item,
+                                                    onToggle = { onToggleItem(item.id, !item.checked) },
+                                                    onEdit = {
+                                                        editItemId = item.id
+                                                        editName = item.name
+                                                        editQuantity = item.purchaseQuantity.prettyQuantity()
+                                                        editUnit = item.unit
+                                                        editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
+                                                        editStoreNote = item.storeNote
+                                                        editActualSpent = item.actualSpentDzd?.toString().orEmpty()
+                                                        editUnavailable = item.isUnavailable
+                                                        editUserAdded = item.userAdded
+                                                    },
+                                                    onDelete = { onDeleteCustomItem(item.id) }
+                                                )
+                                            }
                                         }
                                     }
                                 }
