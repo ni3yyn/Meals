@@ -74,6 +74,8 @@ import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PriceObservationSummary
 import dz.meals.app.data.ShoppingListItem
 import dz.meals.app.ui.theme.Border
+import dz.meals.app.ui.theme.BodyInk
+import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.WarmSurface
