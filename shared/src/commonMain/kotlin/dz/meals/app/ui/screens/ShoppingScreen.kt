@@ -71,7 +71,7 @@ import dz.meals.app.data.ShoppingListItem
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
-import dz.meals.app.ui.theme.SoftGreen
+import dz.meals.app.ui.theme.WarmSurface
 import dz.meals.app.ui.theme.SoftPink
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -176,7 +176,7 @@ fun ShoppingScreen(
         item(key = "shopping-summary") {
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
-                tintColor = SoftGreen,
+                tintColor = WarmSurface,
                 contentPadding = 16.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {
@@ -364,7 +364,7 @@ fun ShoppingScreen(
             ) {
                 MealsCard(
                     modifier = Modifier.fillMaxWidth(),
-                    containerColor = SoftGreen.copy(alpha = 0.82f),
+                    containerColor = WarmSurface.copy(alpha = 0.90f),
                     borderColor = null,
                     contentPadding = 12.dp,
                     shadowElevation = 1.dp
