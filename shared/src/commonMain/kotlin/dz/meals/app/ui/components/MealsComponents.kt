@@ -1256,11 +1256,11 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
                 drawRect(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFF8E9E1),
-                            Color(0xFFF4EAD5),
-                            Color(0xFFE7EEDC),
-                            Color(0xFFF3E1DB),
-                            Color(0xFFFFF1E7)
+                            Color(0xFFFFFEFC),
+                            Color(0xFFFBF9F4),
+                            Color(0xFFF7F3EA),
+                            Color(0xFFF2EDE3),
+                            Color(0xFFFAF8F3)
                         ),
                         start = Offset.Zero,
                         end = Offset(size.width, size.height)
@@ -1268,34 +1268,36 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
                 )
 
                 val radius = maxOf(size.width, size.height) * 0.60f
+                // Soft ivory/off-white aurora with barely-there beige undertones.
+                // The clouds blend into the base instead of introducing pastel colours.
                 drawCloud(
                     center = Offset(size.width * 0.04f, size.height * 0.10f),
-                    color = Color(0xFFE8BFB5),
+                    color = Color(0xFFF1EADF),
                     radius = radius
                 )
                 drawCloud(
                     center = Offset(size.width * 0.50f, -size.height * 0.06f),
-                    color = Color(0xFFC8DDBF),
+                    color = Color(0xFFFFFFFF),
                     radius = radius * 1.04f
                 )
                 drawCloud(
                     center = Offset(size.width * 1.02f, size.height * 0.13f),
-                    color = Color(0xFFEBD8A8),
+                    color = Color(0xFFEAE3D6),
                     radius = radius * 0.88f
                 )
                 drawCloud(
                     center = Offset(size.width * 1.04f, size.height * 0.59f),
-                    color = Color(0xFFE8C3C0),
+                    color = Color(0xFFF8F5EE),
                     radius = radius * 0.94f
                 )
                 drawCloud(
                     center = Offset(size.width * 0.02f, size.height * 1.02f),
-                    color = Color(0xFFD1E2C8),
+                    color = Color(0xFFF4EFE5),
                     radius = radius * 0.98f
                 )
                 drawCloud(
                     center = Offset(size.width * 0.93f, size.height * 0.98f),
-                    color = Color(0xFFECC9B9),
+                    color = Color(0xFFEDE6D9),
                     radius = radius * 0.92f
                 )
             }
@@ -1313,8 +1315,8 @@ private fun DrawScope.drawCloud(
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                color.copy(alpha = 0.70f),
-                color.copy(alpha = 0.32f),
+                color.copy(alpha = 0.46f),
+                color.copy(alpha = 0.18f),
                 Color.Transparent
             ),
             center = center,
