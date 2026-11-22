@@ -1,10 +1,5 @@
 package dz.meals.app.ui.onboarding
 
-private val DefaultMealsOnboardingMotion = mutableStateOf(0f)
-internal val LocalMealsOnboardingMotionClock = staticCompositionLocalOf<State<Float>> {
-    DefaultMealsOnboardingMotion
-}
-
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -32,9 +27,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.theme.Tangerine
 import kotlin.math.PI
-import kotlin.math.floor
+import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
+
+private val DefaultMealsOnboardingMotion = mutableStateOf(0f)
+internal val LocalMealsOnboardingMotionClock = staticCompositionLocalOf<State<Float>> {
+    DefaultMealsOnboardingMotion
+}
 
 /**
  * A Meals Liquid Glass bubble.
