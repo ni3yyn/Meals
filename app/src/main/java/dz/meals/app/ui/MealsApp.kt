@@ -321,6 +321,7 @@ private fun MealsAppContent() {
                         favoriteRecipeIds = snapshot.favoriteRecipeIds,
                         onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                         onAddRecipe = { id ->
+                            generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
                             perform { repository.addRecipeToNextSlot(weekStartIso, id, preferences.householdServings) }
                             selectedTab = AppTab.Plan
                         }
@@ -342,7 +343,10 @@ private fun MealsAppContent() {
                                 context.startActivity(Intent.createChooser(send, "مشاركة قائمة المشتريات"))
                             }
                         },
-                        onToggleItem = { id, checked -> perform { repository.toggleShoppingItem(id, checked) } },
+                        onToggleItem = { id, checked ->
+                            generationMessage = if (checked) "تم جمع العنصر من قائمة المشتريات" else "أُعيد العنصر إلى قائمة المشتريات"
+                            perform { repository.toggleShoppingItem(id, checked) }
+                        },
                         onAddCustomItem = { name, quantity, unit, estimatedPrice ->
                             perform { repository.addCustomShoppingItem(weekStartIso, name, quantity, unit, estimatedPrice) }
                         },
