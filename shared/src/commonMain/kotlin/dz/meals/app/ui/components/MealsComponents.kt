@@ -57,10 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
@@ -81,7 +78,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -1288,96 +1285,11 @@ data class MealsNavigationItem(
 )
 
 /**
- * A navigation capsule whose top perimeter itself lifts into a moving glass
- * crest. The crest is part of the actual clip/blur/rim outline, not a second
- * shape drawn over the navbar.
- */
-private class MealsNavigationRimShape(
-    private val bumpCenter: Dp,
-    private val bumpWidth: Dp,
-    private val rise: Dp = 6.5.dp,
-    private val topEdgeInset: Dp = 8.dp
-) : Shape {
-    override fun createOutline(
-        size: androidx.compose.ui.geometry.Size,
-        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
-        density: androidx.compose.ui.unit.Density
-    ): Outline {
-        val width = size.width
-        val height = size.height
-        val radius = with(density) { 26.dp.toPx() }
-            .coerceAtMost(minOf(width / 2f, height / 2f))
-        val minimumInsetPx = with(density) { 1.dp.toPx() }
-        val edgeY = with(density) { topEdgeInset.toPx() }
-            .coerceIn(minimumInsetPx, height * 0.2f)
-        val crestY = (edgeY - with(density) { rise.toPx() })
-            .coerceAtLeast(minimumInsetPx)
-        val center = with(density) { bumpCenter.toPx() }
-            .coerceIn(radius, width - radius)
-        val crestWidth = with(density) { bumpWidth.toPx() }
-            .coerceAtMost((width - radius * 2f).coerceAtLeast(0f))
-        val left = (center - crestWidth / 2f).coerceIn(radius, width - radius)
-        val right = (center + crestWidth / 2f).coerceIn(radius, width - radius)
-        val cornerControl = radius * 0.55228475f
-
-        // A broad, symmetrical cubic crest with horizontal tangents at both
-        // shoulders and at its crown. This keeps the contour smooth while it
-        // travels, without the tight S-curves that caused the previous shape
-        // to pinch and distort near the active tab.
-        val shoulderControl = crestWidth * 0.18f
-        val path = Path().apply {
-            moveTo(radius, edgeY)
-            lineTo(left, edgeY)
-            cubicTo(
-                left + shoulderControl, edgeY,
-                center - shoulderControl, crestY,
-                center, crestY
-            )
-            cubicTo(
-                center + shoulderControl, crestY,
-                right - shoulderControl, edgeY,
-                right, edgeY
-            )
-            lineTo(width - radius, edgeY)
-
-            // Four quarter-round corners use the standard cubic circle
-            // approximation so the perimeter remains continuous and smooth.
-            cubicTo(
-                width - radius + cornerControl, edgeY,
-                width, edgeY + radius - cornerControl,
-                width, edgeY + radius
-            )
-            lineTo(width, height - radius)
-            cubicTo(
-                width, height - radius + cornerControl,
-                width - radius + cornerControl, height,
-                width - radius, height
-            )
-            lineTo(radius, height)
-            cubicTo(
-                radius - cornerControl, height,
-                0f, height - radius + cornerControl,
-                0f, height - radius
-            )
-            lineTo(0f, edgeY + radius)
-            cubicTo(
-                0f, edgeY + radius - cornerControl,
-                radius - cornerControl, edgeY,
-                radius, edgeY
-            )
-            close()
-        }
-        return Outline.Generic(path)
-    }
-}
-
-/**
- * Floating frosted navigation capsule based on Haze's source-backed Blur API.
+ * Floating frosted navigation capsule with a fixed glass perimeter.
  *
- * The selected destination changes the actual capsule outline: the top optical
- * rim and its blur-clipped glass face travel together as one continuous shape.
- * The fixed 72 dp height is retained; content receives extra top inset so the
- * animated destination icon can spring without touching the upper rim.
+ * The selected tab is indicated by a separate translucent lens that slides
+ * inside the capsule. The blur, face and optical rim therefore keep one stable
+ * rounded outline while only the lightweight indicator position animates.
  */
 @Composable
 fun MealsFrostedBottomBar(
@@ -1394,10 +1306,9 @@ fun MealsFrostedBottomBar(
         val itemCount = items.size.coerceAtLeast(1)
         val tabGap = 2.dp
         val tabSlotWidth = (maxWidth - 14.dp - tabGap * (itemCount - 1)) / itemCount
-        val bumpWidth = (tabSlotWidth * 0.66f).coerceIn(38.dp, 50.dp)
         val activeIndex = selectedIndex.coerceIn(0, itemCount - 1)
-        // Arabic is RTL: the first tab is visually on the right, so the
-        // moving rim crest must follow the same visual order as the Row.
+        // Row follows layout direction. Convert its logical item index to a
+        // physical left-to-right slot so the overlay tracks correctly in RTL.
         val visualIndex = if (
             androidx.compose.ui.platform.LocalLayoutDirection.current ==
             androidx.compose.ui.unit.LayoutDirection.Rtl
@@ -1406,25 +1317,18 @@ fun MealsFrostedBottomBar(
         } else {
             activeIndex
         }
-        val bumpTargetX = 7.dp +
-            tabSlotWidth * visualIndex +
-            tabGap * visualIndex +
-            (tabSlotWidth - bumpWidth) / 2
-        val bumpOffsetX by animateDpAsState(
-            targetValue = bumpTargetX,
-            animationSpec = spring(dampingRatio = 0.78f, stiffness = 430f),
-            label = "mealsNavGlassBumpPosition"
+        val indicatorIndex by animateFloatAsState(
+            targetValue = visualIndex.toFloat(),
+            animationSpec = tween(
+                durationMillis = 280,
+                easing = FastOutSlowInEasing
+            ),
+            label = "mealsNavIndicatorPosition"
         )
-        val navigationShape = remember(bumpOffsetX, bumpWidth) {
-            MealsNavigationRimShape(
-                bumpCenter = bumpOffsetX + bumpWidth / 2,
-                bumpWidth = bumpWidth
-            )
-        }
 
         MealsLiquidGlassFrame(
             modifier = Modifier.fillMaxWidth().height(72.dp),
-            shape = navigationShape,
+            shape = MealsLiquidGlass.NavigationShape,
             elevation = 10.dp,
             face = MealsLiquidGlass.controlFace(),
             hazeState = hazeState,
@@ -1434,6 +1338,37 @@ fun MealsFrostedBottomBar(
             rim = MealsLiquidGlass.controlRim(),
             sideGlintHeight = 30.dp
         ) {
+            if (items.isNotEmpty()) {
+                val indicatorShape = RoundedCornerShape(18.dp)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 7.dp, top = 12.dp)
+                        .width(tabSlotWidth)
+                        .height(55.dp)
+                        .graphicsLayer {
+                            // Read the animated value in the layer block so the
+                            // indicator moves without rebuilding the navbar tree.
+                            translationX = ((tabSlotWidth + tabGap) * indicatorIndex).toPx()
+                        }
+                        .clip(indicatorShape)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.48f),
+                                    SoftOrange.copy(alpha = 0.28f),
+                                    Color.White.copy(alpha = 0.18f)
+                                )
+                            )
+                        )
+                        .border(
+                            width = 0.65.dp,
+                            shape = indicatorShape,
+                            brush = MealsLiquidGlass.innerRim()
+                        )
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth().height(72.dp)
                     .padding(horizontal = 7.dp)
