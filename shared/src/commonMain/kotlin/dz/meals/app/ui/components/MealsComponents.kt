@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -100,6 +102,8 @@ import dz.meals.app.ui.icons.MealsIconName
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = MealsLiquidGlass.CardShape
@@ -278,19 +282,54 @@ fun MealsPressable(
     content: @Composable BoxScope.() -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
+    val interactionPressed by source.collectIsPressedAsState()
+    // clickable intentionally delays PressInteraction inside scrollable parents
+    // to avoid flashes while a gesture turns into scrolling. Observe the raw
+    // pointer-down in the Initial pass so the visual response is immediate,
+    // while clickable continues to own tap, keyboard and accessibility actions.
+    val pointerPressed = remember { mutableStateOf(false) }
+    val pressed = enabled && (pointerPressed.value || interactionPressed)
     val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.965f else 1f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = 900f),
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = tween(if (pressed) 55 else 100),
         label = "mealsSharedPressScale"
     )
     val highlight by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.12f else 0f,
-        animationSpec = tween(70),
+        targetValue = if (pressed) 0.16f else 0f,
+        animationSpec = tween(if (pressed) 45 else 90),
         label = "mealsSharedPressHighlight"
     )
     Box(
         modifier = modifier
+            .pointerInput(enabled) {
+                if (!enabled) {
+                    pointerPressed.value = false
+                    return@pointerInput
+                }
+                awaitEachGesture {
+                    val down = awaitFirstDown(
+                        requireUnconsumed = false,
+                        pass = PointerEventPass.Initial
+                    )
+                    pointerPressed.value = true
+                    try {
+                        var isInitialDownEvent = true
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Final)
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                            // The clickable node may consume the down itself. Ignore that
+                            // first event; later consumption means a parent scroll won.
+                            if (isInitialDownEvent) {
+                                isInitialDownEvent = false
+                                continue
+                            }
+                            if (!change.pressed || change.isConsumed) break
+                        }
+                    } finally {
+                        pointerPressed.value = false
+                    }
+                }
+            }
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = source,
