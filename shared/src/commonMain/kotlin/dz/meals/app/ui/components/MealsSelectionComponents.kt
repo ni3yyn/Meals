@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.ForestDark
-import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
@@ -79,7 +77,7 @@ fun MealsFilterChips(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        role = Role.Checkbox
+                        role = Role.RadioButton
                     ) { onSelect(item) }
                     .padding(horizontal = 15.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
