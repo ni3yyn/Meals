@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
@@ -630,7 +631,7 @@ private fun MealsLiquidGlassIconControl(
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = 1.dp, vertical = 10.dp)
+                .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
                 .width(1.dp)
                 .height(17.dp)
                 .background(
