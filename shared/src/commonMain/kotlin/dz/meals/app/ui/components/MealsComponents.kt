@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -320,10 +321,11 @@ private fun MealsLiquidGlassControl(
     // AI AGENTS / MAINTAINERS: DO NOT replace this conditional with fillMaxSize(),
     // fillMaxHeight(), or a fixed height. Only fixedSize icon controls may fill
     // their supplied bounds. Normal buttons must fill width and wrap vertically.
+    // wrapContentHeight() clears inherited minimum height while preserving the max ceiling.
     val frameModifier = if (fixedSize != null) {
         Modifier.fillMaxSize()
     } else {
-        Modifier.fillMaxWidth()
+        Modifier.fillMaxWidth().wrapContentHeight()
     }
 
     MealsPressable(
