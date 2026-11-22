@@ -219,7 +219,7 @@ fun RecipesScreen(
                             }
                         }
                     }
-                }                }
+                }
             }
             if (filtered.isEmpty()) {
                 item {
