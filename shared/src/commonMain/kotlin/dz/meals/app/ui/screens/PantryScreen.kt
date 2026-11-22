@@ -19,12 +19,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsAlertDialog
+import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -82,7 +82,7 @@ fun PantryScreen(
         ) {
             Text("المخزون المنزلي", style = MaterialTheme.typography.headlineMedium)
             Text("ابحث عن مكوّن لإضافته أو عدّل كمية موجودة في البيت.", color = MutedInk)
-            OutlinedTextField(
+            MealsLiquidGlassTextField(
                 value = search,
                 onValueChange = { search = it.take(60) },
                 modifier = Modifier.fillMaxWidth(),
@@ -250,7 +250,7 @@ private fun PantryAddDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("الوحدة: " + formatHouseholdUnit(ingredient.baseUnit), color = MutedInk)
-                OutlinedTextField(
+                MealsLiquidGlassTextField(
                     value = quantity,
                     onValueChange = { quantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                     label = { Text("الكمية (" + formatHouseholdUnit(ingredient.baseUnit) + ")") },
@@ -262,14 +262,14 @@ private fun PantryAddDialog(
                     MealsCheckbox(checked = approximate, onCheckedChange = { approximate = it })
                     Text("لدي كمية تقريبية فقط")
                 }
-                OutlinedTextField(
+                MealsLiquidGlassTextField(
                     value = expiryText,
                     onValueChange = { expiryText = it.take(10) },
                     label = { Text("تاريخ الانتهاء (YYYY-MM-DD، اختياري)") },
                     singleLine = true,
                     isError = !expiryIsValid
                 )
-                OutlinedTextField(
+                MealsLiquidGlassTextField(
                     value = note,
                     onValueChange = { note = it.take(120) },
                     label = { Text("ملاحظة أو مكان التخزين (اختياري)") },

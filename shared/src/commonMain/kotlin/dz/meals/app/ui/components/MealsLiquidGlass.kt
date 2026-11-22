@@ -51,6 +51,14 @@ object MealsLiquidGlass {
         )
     )
 
+    fun errorRim(): Brush = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.98f),
+            Color(0xFFE7B1AA).copy(alpha = 0.86f),
+            Color(0xFFB64A45).copy(alpha = 0.88f)
+        )
+    )
+
     fun innerRim(): Brush = Brush.verticalGradient(
         colors = listOf(
             Color.White.copy(alpha = 0.74f),

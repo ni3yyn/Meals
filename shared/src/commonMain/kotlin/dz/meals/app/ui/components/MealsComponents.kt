@@ -35,6 +35,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
@@ -98,6 +99,7 @@ import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsNavigationIcon
 import dz.meals.app.ui.icons.MealsIconName
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
@@ -507,6 +509,66 @@ fun MealsIconButton(
         size = size,
         content = content
     )
+}
+
+@Composable
+fun MealsLiquidGlassTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    suffix: (@Composable () -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    enabled: Boolean = true,
+    isError: Boolean = false,
+    singleLine: Boolean = true
+) {
+    val rim = if (isError) MealsLiquidGlass.errorRim() else MealsLiquidGlass.controlRim()
+    MealsLiquidGlassFrame(
+        modifier = modifier.fillMaxWidth(),
+        shape = MealsLiquidGlass.ControlShape,
+        elevation = if (enabled) MealsLiquidGlass.SurfaceElevation else 0.dp,
+        face = MealsLiquidGlass.controlFace(),
+        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+        blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        rim = rim,
+        sideGlintHeight = 17.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            if (label != null) {
+                CompositionLocalProvider(
+                    LocalContentColor provides if (isError) Color(0xFFB64A45) else MutedInk,
+                    LocalTextStyle provides MaterialTheme.typography.labelMedium
+                ) {
+                    Box { label() }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 27.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                leadingIcon?.invoke()
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.weight(1f),
+                    enabled = enabled,
+                    singleLine = singleLine,
+                    keyboardOptions = keyboardOptions,
+                    cursorBrush = SolidColor(Forest),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = if (enabled) Ink else MutedInk
+                    )
+                )
+                suffix?.invoke()
+            }
+        }
+    }
 }
 
 @Composable

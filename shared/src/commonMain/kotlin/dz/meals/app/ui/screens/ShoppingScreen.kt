@@ -20,11 +20,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsAlertDialog
+import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -335,16 +335,16 @@ fun ShoppingScreen(
             title = { Text("إضافة عنصر يدوي") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = itemName, onValueChange = { itemName = it }, label = { Text("اسم العنصر") }, singleLine = true)
-                    OutlinedTextField(
+                    MealsLiquidGlassTextField(value = itemName, onValueChange = { itemName = it }, label = { Text("اسم العنصر") }, singleLine = true)
+                    MealsLiquidGlassTextField(
                         value = itemQuantity,
                         onValueChange = { itemQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                         label = { Text("الكمية") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
-                    OutlinedTextField(value = itemUnit, onValueChange = { itemUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
-                    OutlinedTextField(
+                    MealsLiquidGlassTextField(value = itemUnit, onValueChange = { itemUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
+                    MealsLiquidGlassTextField(
                         value = itemEstimatedPrice,
                         onValueChange = { itemEstimatedPrice = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                         label = { Text("السعر الإجمالي التقديري (اختياري)") },
@@ -387,17 +387,17 @@ fun ShoppingScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (editUserAdded) {
-                        OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("اسم العنصر") }, singleLine = true)
-                        OutlinedTextField(
+                        MealsLiquidGlassTextField(value = editName, onValueChange = { editName = it }, label = { Text("اسم العنصر") }, singleLine = true)
+                        MealsLiquidGlassTextField(
                             value = editQuantity,
                             onValueChange = { editQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                             label = { Text("الكمية المطلوبة") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true
                         )
-                        OutlinedTextField(value = editUnit, onValueChange = { editUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
+                        MealsLiquidGlassTextField(value = editUnit, onValueChange = { editUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
                     } else {
-                        OutlinedTextField(
+                        MealsLiquidGlassTextField(
                             value = editPurchaseQuantity,
                             onValueChange = { editPurchaseQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                             label = { Text("كمية الشراء المعدلة (اتركها فارغة لإعادة التلقائي)") },
@@ -405,7 +405,7 @@ fun ShoppingScreen(
                             singleLine = true
                         )
                     }
-                    OutlinedTextField(
+                    MealsLiquidGlassTextField(
                         value = editStoreNote,
                         onValueChange = { editStoreNote = it.take(100) },
                         label = { Text("ملاحظة للمحل") },
@@ -415,7 +415,7 @@ fun ShoppingScreen(
                         MealsCheckbox(checked = editUnavailable, onCheckedChange = { editUnavailable = it })
                         Text("غير متوفر حالياً")
                     }
-                    OutlinedTextField(
+                    MealsLiquidGlassTextField(
                         value = editActualSpent,
                         onValueChange = { editActualSpent = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                         label = { Text("ما دفعته فعلياً (دج، اختياري)") },
@@ -521,14 +521,14 @@ private fun PriceReportDialog(
                     color = MutedInk,
                     style = MaterialTheme.typography.bodySmall
                 )
-                OutlinedTextField(
+                MealsLiquidGlassTextField(
                     value = packQuantityText,
                     onValueChange = { packQuantityText = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                     label = { Text("حجم العبوة أو الكمية المباعة (" + (selectedIngredient?.baseUnit?.let { formatPriceInputUnit(it) } ?: "وحدة") + ")") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
-                OutlinedTextField(
+                MealsLiquidGlassTextField(
                     value = priceText,
                     onValueChange = { priceText = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                     label = { Text("السعر بالدينار الجزائري") },
@@ -536,7 +536,7 @@ private fun PriceReportDialog(
                     suffix = { Text("دج") },
                     singleLine = true
                 )
-                OutlinedTextField(
+                MealsLiquidGlassTextField(
                     value = shopContext,
                     onValueChange = { shopContext = it.take(60) },
                     label = { Text("نوع المحل أو اسمه") },
