@@ -1,9 +1,11 @@
 package dz.meals.app.ui.onboarding
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -575,29 +577,82 @@ private fun Header(current: Int, onBack: () -> Unit) {
                 }
             }
         }
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(PageCount) { i -> ProgressDot(active = i == current, passed = i < current) }
-        }
+        MealsOnboardingPager(
+            current = current,
+            modifier = Modifier.weight(1f)
+        )
         Spacer(Modifier.size(44.dp))
     }
 }
 
 @Composable
-private fun ProgressDot(active: Boolean, passed: Boolean) {
-    val width by animateDpAsState(if (active) 26.dp else 8.dp, label = "mealsDotWidth")
-    val color by animateColorAsState(
-        when {
-            active -> TextAccent
-            passed -> Tangerine
-            else -> Color.White.copy(alpha = 0.75f)
-        },
-        label = "mealsDotColor"
-    )
-    Box(Modifier.width(width).height(8.dp).clip(CircleShape).background(color))
+private fun MealsOnboardingPager(
+    current: Int,
+    modifier: Modifier = Modifier
+) {
+    val active = (current + 1).coerceIn(1, PageCount)
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "مائدتي",
+                color = TextAccent,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "%02d / %02d".format(active, PageCount),
+                color = MutedInk,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Row(
+            modifier = Modifier
+                .width(176.dp)
+                .height(9.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.48f))
+                .border(0.8.dp, Color.White.copy(alpha = 0.82f), CircleShape)
+                .padding(1.5.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(PageCount) { index ->
+                val weight by animateFloatAsState(
+                    targetValue = if (index == current) 1.9f else 1f,
+                    animationSpec = tween(260, easing = FastOutSlowInEasing),
+                    label = "mealsPagerSegmentWeight$index"
+                )
+                val segmentFill = when {
+                    index == current -> Brush.verticalGradient(
+                        listOf(Color(0xFFB77B57), TextAccent, Tangerine)
+                    )
+                    index < current -> Brush.verticalGradient(
+                        listOf(Tangerine.copy(alpha = 0.92f), Color(0xFFE5A078))
+                    )
+                    else -> Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.58f), Color.White.copy(alpha = 0.30f))
+                    )
+                }
+                Box(
+                    Modifier
+                        .weight(weight)
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(segmentFill)
+                )
+            }
+        }
+    }
 }
 
 /** Hero illustration in a glass bubble on top, title and a glass panel below. */
