@@ -9,6 +9,7 @@ Kitchen-equipment awareness and recipe filtering based on equipment are intentio
 
 ## Implemented
 - Arabic-first Compose interface with right-to-left layout.
+- Full-screen first-run onboarding (`shared/.../ui/onboarding`) with Compose-drawn vector illustrations and refraction-free Liquid Glass bubbles.
 - KMP `:shared` module targeting Android, iOS devices and iOS simulators.
 - Shared Compose component library, Mida theme and color tokens in `shared/src/commonMain`.
 - Shared Kotlin data models and bundled Algerian ingredient/recipe catalogue in `commonMain`.
