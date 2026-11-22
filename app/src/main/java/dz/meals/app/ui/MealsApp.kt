@@ -282,7 +282,6 @@ private fun MealsAppContent() {
                         onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
                         onPreviousWeek = { weekStartIso = LocalDate.parse(weekStartIso).minusWeeks(1).toString() },
                         onNextWeek = { weekStartIso = LocalDate.parse(weekStartIso).plusWeeks(1).toString() },
-                        onOpenShoppingList = { selectedTab = AppTab.Shopping }
                     )
                     AppTab.Recipes -> RecipesScreen(
                         recipes = snapshot.recipes,

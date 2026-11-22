@@ -85,7 +85,6 @@ fun PlanScreen(
     onAdjustServings: (String, Int) -> Unit,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
-    onOpenShoppingList: () -> Unit
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
@@ -108,20 +107,7 @@ fun PlanScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.weight(1f))
-                    MealsIconAction(onClick = onOpenShoppingList, modifier = Modifier.size(44.dp)) {
-                        MealsIcon(
-                            MealsIconName.Basket,
-                            contentDescription = "المشتريات",
-                            modifier = Modifier.size(30.dp),
-                        )
-                    }
-                }
+                Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -313,20 +299,6 @@ fun PlanScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(if (isExpanded) dz.meals.app.ui.theme.Forest.copy(alpha = 0.14f) else dz.meals.app.ui.theme.SoftGreen),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            (day + 1).toString(),
-                            color = dz.meals.app.ui.theme.ForestDark,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
@@ -566,18 +538,18 @@ private fun SlotRow(
                 MealsIconButton(
                     onClick = { onAdjustServings(-1) },
                     enabled = meal.servings > 1 && !meal.isCooked,
-                    modifier = Modifier.size(36.dp),
-                    size = 36.dp
+                    modifier = Modifier.size(44.dp),
+                    size = 44.dp
                 ) {
-                    Text("−", color = Forest, style = MaterialTheme.typography.titleLarge)
+                    Text("−", color = Forest, style = MaterialTheme.typography.headlineSmall)
                 }
                 MealsIconButton(
                     onClick = { onAdjustServings(1) },
                     enabled = meal.servings < 12 && !meal.isCooked,
-                    modifier = Modifier.size(36.dp),
-                    size = 36.dp
+                    modifier = Modifier.size(44.dp),
+                    size = 44.dp
                 ) {
-                    Text("+", color = Forest, style = MaterialTheme.typography.titleLarge)
+                    Text("+", color = Forest, style = MaterialTheme.typography.headlineSmall)
                 }
             }
 
