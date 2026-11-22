@@ -190,6 +190,7 @@ fun MealsOnboarding(
                 )
             )
         )
+        MealsAmbientBubbles()
 
         Crossfade(targetState = pendingFinish != null, label = "mealsOnboardingFinale") { finishing ->
             if (finishing) {
