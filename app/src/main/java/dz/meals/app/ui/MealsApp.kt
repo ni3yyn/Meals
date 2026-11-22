@@ -203,7 +203,7 @@ private fun MealsAppContent() {
                 SnackbarHost(snackbarHostState) { data ->
                     MealsGlassSurface(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        tintColor = dz.meals.app.ui.theme.SoftGreen,
+                        tintColor = dz.meals.app.ui.theme.WarmSurface,
                         contentPadding = 13.dp,
                         shape = RoundedCornerShape(20.dp)
                     ) {
@@ -419,7 +419,7 @@ private fun MealsAppContent() {
                 onDismissRequest = { showUpdateDialog = false }
             ) {
                 MealsCard(
-                    containerColor = dz.meals.app.ui.theme.SoftGreen,
+                    containerColor = dz.meals.app.ui.theme.WarmSurface,
                     borderColor = null,
                     contentPadding = 16.dp
                 ) {
@@ -730,7 +730,7 @@ private fun SettingsDialog(
                         singleLine = true
                     )
                     MealsCard(
-                        containerColor = dz.meals.app.ui.theme.SoftGreen,
+                        containerColor = dz.meals.app.ui.theme.WarmSurface,
                         borderColor = null,
                         contentPadding = 14.dp
                     ) {
