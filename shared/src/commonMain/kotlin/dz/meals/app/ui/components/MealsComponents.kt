@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
@@ -100,43 +101,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.graphics.SolidColor
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
-private val MealsCardShape = RoundedCornerShape(26.dp)
-
-/**
- * One immutable blur recipe shared by every card. LazyColumn only composes
- * visible items, so only on-screen cards own active Haze nodes.
- */
-private val MealsCardBlurStyle = HazeBlurStyle {
-    // Match the frosted bottom navigation's stronger glass diffusion.
-    blurRadius(25.dp)
-    noiseFactor(0.045f)
-    colorEffects(
-        listOf(
-            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.46f))
-        )
-    )
-    fallbackColorEffect(
-        HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
-    )
-}
-
-/**
- * A lighter blur treatment for small floating controls. The source is the
- * atmospheric backdrop already captured by MealsBackdrop, so glass buttons
- * do not sample themselves or neighbouring cards.
- */
-private val MealsIconButtonBlurStyle = HazeBlurStyle {
-    blurRadius(15.dp)
-    noiseFactor(0.025f)
-    colorEffects(
-        listOf(
-            HazeColorEffect.tint(Color.White.copy(alpha = 0.18f))
-        )
-    )
-    fallbackColorEffect(
-        HazeColorEffect.tint(Color(0xFFFFFEFC).copy(alpha = 0.54f))
-    )
-}
+private val MealsCardShape = MealsLiquidGlass.CardShape
 
 /**
  * The shared elevated surface used for budgets, summaries and grouped content.
@@ -146,6 +111,78 @@ private val MealsIconButtonBlurStyle = HazeBlurStyle {
  * shadow. The dedicated card source contains only the cloudy backdrop.
  */
 @Composable
+private fun MealsLiquidGlassFrame(
+    modifier: Modifier = Modifier,
+    shape: Shape,
+    elevation: Dp,
+    face: Brush,
+    hazeState: HazeState? = null,
+    blurStyle: HazeBlurStyle? = null,
+    rim: Brush = MealsLiquidGlass.controlRim(),
+    sideGlintHeight: Dp = 17.dp,
+    interactionSource: MutableInteractionSource? = null,
+    enabled: Boolean = true,
+    onClick: (() -> Unit)? = null,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val surfaceModifier = modifier
+        .shadow(elevation = elevation, shape = shape, clip = false)
+        .clip(shape)
+        .then(
+            if (hazeState != null && blurStyle != null) {
+                Modifier.hazeBlur(
+                    input = HazeInput.Sources(hazeState),
+                    style = blurStyle,
+                    performanceMode = HazePerformanceMode.Default
+                )
+            } else {
+                Modifier
+            }
+        )
+        .background(face, shape)
+        .border(BorderStroke(1.15.dp, rim), shape)
+        .then(
+            if (onClick != null && interactionSource != null) {
+                Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick
+                )
+            } else {
+                Modifier
+            }
+        )
+
+    Box(modifier = surfaceModifier, contentAlignment = Alignment.TopStart) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(1.dp)
+                .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), shape)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 1.dp)
+                .fillMaxWidth(0.62f)
+                .height(1.dp)
+                .background(MealsLiquidGlass.specular(), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
+                .width(1.dp)
+                .height(sideGlintHeight)
+                .background(MealsLiquidGlass.sideGlint(), CircleShape)
+        )
+        content()
+    }
+}
+
+@Composable
 fun MealsCard(
     modifier: Modifier = Modifier,
     containerColor: Color = Paper,
@@ -153,98 +190,51 @@ fun MealsCard(
     contentPadding: Dp = 18.dp,
     borderColor: Color? = Border.copy(alpha = 0.72f),
     shape: Shape = MealsCardShape,
-    @Suppress("UNUSED_PARAMETER") shadowElevation: Dp = 5.dp,
+    shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val cardHazeState = LocalMealsCardHazeState.current
     val usesLightContent = contentColor == Color.White
-    // Keep the face as a light glaze, not an opaque fill over the live blur.
     val surfaceAlpha = if (usesLightContent) 0.34f else 0.27f
-
     val face = remember(containerColor, usesLightContent, surfaceAlpha) {
-        Brush.verticalGradient(
-            colors = if (usesLightContent) {
-                listOf(
-                    Color.White.copy(alpha = 0.18f),
-                    containerColor.copy(alpha = surfaceAlpha),
-                    containerColor.copy(alpha = 0.40f)
-                )
-            } else {
-                listOf(
-                    Color.White.copy(alpha = 0.24f),
-                    containerColor.copy(alpha = surfaceAlpha),
-                    containerColor.copy(alpha = 0.34f)
-                )
-            }
-        )
+        MealsLiquidGlass.cardFace(containerColor, usesLightContent, surfaceAlpha)
     }
     val rim = remember(borderColor) {
-        val lowerEdge = borderColor ?: Color(0xFFEADFD7)
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.98f),
-                Color.White.copy(alpha = 0.72f),
-                lowerEdge.copy(alpha = 0.64f)
-            )
-        )
+        MealsLiquidGlass.surfaceRim(borderColor ?: Color(0xFFEADFD7))
     }
 
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .then(
-                if (cardHazeState != null) {
-                    Modifier.hazeBlur(
-                        input = HazeInput.Sources(cardHazeState),
-                        style = MealsCardBlurStyle,
-                        performanceMode = HazePerformanceMode.Default
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .background(face, shape)
-            .border(BorderStroke(1.dp, rim), shape)
+    MealsLiquidGlassFrame(
+        modifier = modifier,
+        shape = shape,
+        elevation = shadowElevation.coerceIn(0.dp, 3.dp),
+        face = face,
+        hazeState = cardHazeState,
+        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+        rim = rim,
+        sideGlintHeight = 23.dp
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(contentPadding),
+                modifier = Modifier.fillMaxWidth().padding(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 content = content
             )
         }
-
-        // A restrained specular hairline gives the card a raised glass lip
-        // without placing a RenderNode elevation shadow under a translucent fill.
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 34.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.94f),
-                            Color.White.copy(alpha = 0.76f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
     }
 }
 
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
 
+
 /**
  * High-emphasis hero surface using the exact same backdrop blur material as
  * every MealsCard. The hero differs only in scale and content spacing; it does
  * not use the separate refraction/elevation path that can read as a dark shadow.
+ */
+/**
+ * Large-format glass surface for hero areas, dialogs and sheets. It shares the
+ * same double rim and specular treatment as the smaller Meals controls.
  */
 @Composable
 fun MealsGlassSurface(
@@ -252,88 +242,42 @@ fun MealsGlassSurface(
     tintColor: Color = Color(0xFFFFF6EC),
     tintAlpha: Float = 0.34f,
     contentPadding: Dp = 18.dp,
-    shape: RoundedCornerShape = RoundedCornerShape(29.dp),
+    shape: RoundedCornerShape = MealsLiquidGlass.HeroShape,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current
-    // The hero gets a little more body than a regular card, while staying
-    // in the same see-through range as the bottom navigation capsule.
-    val surfaceAlpha = (0.24f + tintAlpha.coerceIn(0f, 0.5f) * 0.16f)
-        .coerceIn(0.24f, 0.34f)
+    val surfaceAlpha = (0.24f + tintAlpha.coerceIn(0f, 0.5f) * 0.16f).coerceIn(0.24f, 0.34f)
     val face = remember(tintColor, surfaceAlpha) {
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.24f),
-                tintColor.copy(alpha = surfaceAlpha),
-                tintColor.copy(alpha = (surfaceAlpha + 0.07f).coerceAtMost(0.42f))
-            )
-        )
-    }
-    val rim = remember {
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.98f),
-                Color.White.copy(alpha = 0.72f),
-                Color(0xFFEADFD7).copy(alpha = 0.64f)
-            )
-        )
+        MealsLiquidGlass.heroFace(tintColor, surfaceAlpha)
     }
 
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .then(
-                if (hazeState != null) {
-                    Modifier.hazeBlur(
-                        input = HazeInput.Sources(hazeState),
-                        style = MealsCardBlurStyle,
-                        performanceMode = HazePerformanceMode.Default
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .background(face, shape)
-            .border(BorderStroke(1.dp, rim), shape)
+    MealsLiquidGlassFrame(
+        modifier = modifier,
+        shape = shape,
+        elevation = MealsLiquidGlass.SurfaceElevation,
+        face = face,
+        hazeState = hazeState,
+        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+        sideGlintHeight = 27.dp
     ) {
-        CompositionLocalProvider(
-            LocalContentColor provides MaterialTheme.colorScheme.onSurface
-        ) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(contentPadding),
+                modifier = Modifier.fillMaxWidth().padding(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 content = content
             )
         }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 38.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.96f),
-                            Color.White.copy(alpha = 0.78f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
     }
 }
 
+
 @Composable
-private fun MealsRaisedControl(
+private fun MealsLiquidGlassControl(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     minHeight: Dp = 44.dp,
+    fixedSize: Dp? = null,
     horizontalPadding: Dp = 12.dp,
     verticalPadding: Dp = 8.dp,
     contentColor: Color = ForestDark,
@@ -342,65 +286,52 @@ private fun MealsRaisedControl(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.965f else 1f,
-        animationSpec = tween(durationMillis = 120),
-        label = "mealsRaisedControlScale"
+        targetValue = if (pressed && enabled) MealsLiquidGlass.PressedScale else 1f,
+        animationSpec = tween(durationMillis = MealsLiquidGlass.PressDurationMillis),
+        label = "mealsLiquidGlassControlScale"
     )
-    val shape = remember { RoundedCornerShape(14.dp) }
-    val faceColor = if (enabled) Paper else Color(0xFFF0ECE6)
+    val contentModifier = if (fixedSize != null) {
+        Modifier.fillMaxSize()
+    } else {
+        Modifier.fillMaxWidth().defaultMinSize(minHeight = minHeight)
+    }
 
-    Box(
+    MealsLiquidGlassFrame(
         modifier = modifier
-            .defaultMinSize(minHeight = minHeight)
+            .then(if (fixedSize != null) Modifier.size(fixedSize) else Modifier.defaultMinSize(minHeight = minHeight))
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
-            .shadow(
-                elevation = if (enabled) 2.dp else 0.dp,
-                shape = shape,
-                clip = false
-            )
-            .clip(shape)
-            .background(faceColor, shape)
-            .border(
-                BorderStroke(1.dp, Color.White.copy(alpha = 0.94f)),
-                shape
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.Button,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
+            },
+        shape = MealsLiquidGlass.ControlShape,
+        elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
+        face = MealsLiquidGlass.controlFace(),
+        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+        blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        rim = MealsLiquidGlass.controlRim(),
+        sideGlintHeight = 17.dp,
+        interactionSource = interactionSource,
+        enabled = enabled,
+        onClick = onClick
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = minHeight)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.34f),
-                            Color.Transparent,
-                            Border.copy(alpha = 0.08f)
-                        )
-                    ),
-                    shape
-                )
-                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
             CompositionLocalProvider(
                 LocalContentColor provides if (enabled) contentColor else MutedInk
             ) {
-                content()
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(
+                        horizontal = horizontalPadding,
+                        vertical = verticalPadding
+                    ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun MealsPrimaryButton(
@@ -411,7 +342,7 @@ fun MealsPrimaryButton(
     icon: MealsIconName? = null,
     showArrow: Boolean = false
 ) {
-    MealsRaisedControl(
+    MealsLiquidGlassControl(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
@@ -460,7 +391,7 @@ fun MealsSecondaryButton(
     enabled: Boolean = true,
     icon: MealsIconName? = null
 ) {
-    MealsRaisedControl(
+    MealsLiquidGlassControl(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
@@ -499,7 +430,7 @@ fun MealsTextButton(
     color: Color = ForestDark,
     content: @Composable RowScope.() -> Unit
 ) {
-    MealsRaisedControl(
+    MealsLiquidGlassControl(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
@@ -529,135 +460,21 @@ private fun MealsLiquidGlassIconControl(
     size: Dp = 44.dp,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.955f else 1f,
-        animationSpec = tween(durationMillis = 120),
-        label = "mealsLiquidGlassIconScale"
+    MealsLiquidGlassControl(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        minHeight = size,
+        fixedSize = size,
+        horizontalPadding = 0.dp,
+        verticalPadding = 0.dp,
+        content = content
     )
-    val shape = remember { RoundedCornerShape(15.dp) }
-    val hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current
-
-    val face = Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.54f),
-            Color(0xFFF8FCF9).copy(alpha = 0.31f),
-            Color(0xFFE4F0E7).copy(alpha = 0.19f),
-            Color.White.copy(alpha = 0.38f)
-        )
-    )
-    val rim = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.99f),
-            0.24f to Color.White.copy(alpha = 0.86f),
-            0.58f to Color(0xFFDDEBE1).copy(alpha = 0.62f),
-            1f to Color.White.copy(alpha = 0.94f)
-        )
-    )
-    val innerRim = Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.74f),
-            Color.White.copy(alpha = 0.18f),
-            Color(0xFFDDEBE1).copy(alpha = 0.30f)
-        )
-    )
-    val specular = Brush.horizontalGradient(
-        colors = listOf(
-            Color.Transparent,
-            Color.White.copy(alpha = 0.98f),
-            Color.White.copy(alpha = 0.88f),
-            Color.Transparent
-        )
-    )
-
-    Box(
-        modifier = modifier
-            .size(size)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .shadow(
-                elevation = if (enabled) 3.dp else 0.dp,
-                shape = shape,
-                clip = false
-            )
-            .clip(shape)
-            .then(
-                if (hazeState != null) {
-                    Modifier.hazeBlur(
-                        input = HazeInput.Sources(hazeState),
-                        style = MealsIconButtonBlurStyle,
-                        performanceMode = HazePerformanceMode.Default
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .background(face, shape)
-            .border(BorderStroke(1.15.dp, rim), shape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.Button,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        // Fine inset edge: it creates a second, softer reflection inside the rim.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(1.dp)
-                .border(
-                    BorderStroke(0.65.dp, innerRim),
-                    RoundedCornerShape(14.dp)
-                )
-        )
-
-        // Narrow upper specular reflection, not a full-width flat white stripe.
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 1.dp)
-                .fillMaxWidth(0.62f)
-                .height(1.dp)
-                .background(specular, CircleShape)
-        )
-
-        // A short side glint gives the rim depth without a harsh outer stroke.
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
-                .width(1.dp)
-                .height(17.dp)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.86f),
-                            Color.Transparent
-                        )
-                    ),
-                    CircleShape
-                )
-        )
-
-        Box(
-            modifier = Modifier.graphicsLayer {
-                alpha = if (enabled) 1f else 0.42f
-            },
-            contentAlignment = Alignment.Center
-        ) {
-            content()
-        }
-    }
 }
 
 /** A 44dp liquid-glass icon action with a consistent white optical rim. */
+
+
 @Composable
 fun MealsIconAction(
     onClick: () -> Unit,
@@ -699,49 +516,51 @@ fun MealsSearchBar(
     placeholder: String,
     modifier: Modifier = Modifier
 ) {
-    val shape = RoundedCornerShape(15.dp)
-
-    Row(
-        modifier = modifier
-            .shadow(2.dp, shape, clip = false)
-            .clip(shape)
-            .background(Paper, shape)
-            .border(
-                BorderStroke(1.dp, Color.White.copy(alpha = 0.94f)),
-                shape
-            )
-            .padding(horizontal = 14.dp, vertical = 13.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    MealsLiquidGlassFrame(
+        modifier = modifier.fillMaxWidth(),
+        shape = MealsLiquidGlass.ControlShape,
+        elevation = MealsLiquidGlass.ControlElevation,
+        face = MealsLiquidGlass.controlFace(),
+        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+        blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        rim = MealsLiquidGlass.controlRim(),
+        sideGlintHeight = 17.dp
     ) {
-        MealsIcon(
-            name = MealsIconName.Search,
-            contentDescription = null,
-            modifier = Modifier.size(21.dp),
-            tint = ForestDark
-        )
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-            cursorBrush = SolidColor(Forest),
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink),
-            decorationBox = { innerTextField ->
-                Box {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            color = MutedInk,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            MealsIcon(
+                name = MealsIconName.Search,
+                contentDescription = null,
+                modifier = Modifier.size(21.dp),
+                tint = ForestDark
+            )
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                cursorBrush = SolidColor(Forest),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (value.isEmpty()) {
+                            Text(
+                                text = placeholder,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 }
-            }
-        )
+            )
+        }
     }
 }
+
 
 @Composable
 fun MealsCheckbox(
@@ -751,12 +570,12 @@ fun MealsCheckbox(
     enabled: Boolean = true
 ) {
     val fillColor by animateColorAsState(
-        targetValue = if (checked) ForestDark else Color.White.copy(alpha = 0.82f),
+        targetValue = if (checked) ForestDark else Color.White.copy(alpha = 0.34f),
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxFill"
     )
     val edgeColor by animateColorAsState(
-        targetValue = if (checked) ForestDark else MutedInk.copy(alpha = 0.48f),
+        targetValue = if (checked) ForestDark else Color.White.copy(alpha = 0.96f),
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxEdge"
     )
@@ -784,8 +603,24 @@ fun MealsCheckbox(
             modifier = Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(fillColor)
-                .border(BorderStroke(1.5.dp, edgeColor), RoundedCornerShape(8.dp)),
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            fillColor.copy(alpha = if (checked) 0.94f else 0.74f),
+                            fillColor.copy(alpha = if (checked) 0.78f else 0.26f)
+                        )
+                    ),
+                    RoundedCornerShape(8.dp)
+                )
+                .border(
+                    BorderStroke(
+                        1.15.dp,
+                        Brush.verticalGradient(
+                            listOf(Color.White.copy(alpha = 0.98f), edgeColor.copy(alpha = 0.58f))
+                        )
+                    ),
+                    RoundedCornerShape(8.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             if (checked) {
@@ -955,18 +790,24 @@ fun MealsIllustrationBadge(
     background: Color = SoftGreen,
     size: Dp = 54.dp
 ) {
-    Box(
-        modifier = modifier
-            .shadow(7.dp, CircleShape, clip = false)
-            .size(size)
-            .clip(CircleShape)
-            .background(background)
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.96f)), CircleShape),
-        contentAlignment = Alignment.Center
+    MealsLiquidGlassFrame(
+        modifier = modifier.size(size),
+        shape = CircleShape,
+        elevation = MealsLiquidGlass.ControlElevation,
+        face = MealsLiquidGlass.illustrationFace(background),
+        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+        blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        rim = MealsLiquidGlass.controlRim(),
+        sideGlintHeight = size * 0.42f
     ) {
-        MealsIcon(icon, contentDescription = null, modifier = Modifier.size(size * 0.78f))
+        MealsIcon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.Center).size(size * 0.72f)
+        )
     }
 }
+
 
 @Composable
 fun MealsAlertDialog(
@@ -1188,133 +1029,69 @@ fun MealsFrostedBottomBar(
     hazeState: HazeState,
     modifier: Modifier = Modifier
 ) {
-    val capsuleShape = RoundedCornerShape(27.dp)
-    val blurStyle = remember {
-        HazeBlurStyle {
-            blurRadius(25.dp)
-            noiseFactor(0.045f)
-            colorEffects(
-                listOf(
-                    HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.46f))
-                )
-            )
-            fallbackColorEffect(
-                HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
-            )
-        }
-    }
-
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 18.dp)
-            .padding(bottom = 8.dp)
+        modifier = modifier.fillMaxWidth().navigationBarsPadding()
+            .padding(horizontal = 18.dp).padding(bottom = 8.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .shadow(10.dp, capsuleShape, clip = false)
-                .clip(capsuleShape)
-                .hazeBlur(
-                    input = HazeInput.Sources(hazeState),
-                    style = blurStyle,
-                    performanceMode = HazePerformanceMode.Default,
-                    expandLayerBounds = false
-                )
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.25f),
-                            Color(0xFFFFFCF7).copy(alpha = 0.22f),
-                            Color(0xFFF4ECE5).copy(alpha = 0.31f)
-                        )
-                    ),
-                    capsuleShape
-                )
-                .border(
-                    BorderStroke(
-                        1.dp,
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.98f),
-                                Color.White.copy(alpha = 0.64f),
-                                Color(0xFFE5D9CF).copy(alpha = 0.78f)
-                            )
-                        )
-                    ),
-                    capsuleShape
-                )
-                .padding(horizontal = 7.dp, vertical = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically
+        MealsLiquidGlassFrame(
+            modifier = Modifier.fillMaxWidth().height(72.dp),
+            shape = MealsLiquidGlass.NavigationShape,
+            elevation = 10.dp,
+            face = MealsLiquidGlass.controlFace(),
+            hazeState = hazeState,
+            blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+            rim = MealsLiquidGlass.controlRim(),
+            sideGlintHeight = 30.dp
         ) {
-            items.forEachIndexed { index, item ->
-                val selected = index == selectedIndex
-                val foreground by animateColorAsState(
-                    targetValue = if (selected) ForestDark else MutedInk,
-                    label = "mealsNavForeground$index"
-                )
-                val interactionSource = remember { MutableInteractionSource() }
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(18.dp))
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = { onItemSelected(index) },
-                            role = Role.Tab
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 18.dp, height = 3.dp)
-                            .clip(CircleShape)
-                            .background(if (selected) ForestDark else Color.Transparent)
+            Row(
+                modifier = Modifier.fillMaxWidth().height(72.dp)
+                    .padding(horizontal = 7.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEachIndexed { index, item ->
+                    val selected = index == selectedIndex
+                    val foreground by animateColorAsState(
+                        targetValue = if (selected) ForestDark else MutedInk,
+                        label = "mealsNavForeground$index"
                     )
-                    Spacer(Modifier.height(4.dp))
-                    MealsNavigationIcon(
-                        name = item.icon,
-                        selected = selected,
-                        contentDescription = item.label,
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = item.label,
-                        color = foreground,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1
-                    )
+                    val interactionSource = remember { MutableInteractionSource() }
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxHeight()
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = { onItemSelected(index) },
+                                role = Role.Tab
+                            ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier.size(width = 18.dp, height = 3.dp)
+                                .clip(CircleShape)
+                                .background(if (selected) ForestDark else Color.Transparent)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        MealsNavigationIcon(
+                            name = item.icon,
+                            selected = selected,
+                            contentDescription = item.label,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = item.label,
+                            color = foreground,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
-
-        // The hairline is drawn inside the already-clipped capsule, so it
-        // cannot create a second rectangular surface or escape the rounded rim.
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 58.dp, vertical = 1.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.98f),
-                            Color.White.copy(alpha = 0.82f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
     }
 }
 
