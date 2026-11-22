@@ -33,28 +33,12 @@ fun <T> MealsBubblyTransition(
         modifier = modifier,
         transitionSpec = {
             (
-                fadeIn(animationSpec = tween(durationMillis = 160)) +
-                    scaleIn(
-                        initialScale = 0.94f,
-                        animationSpec = spring(
-                            dampingRatio = 0.76f,
-                            stiffness = 520f
-                        )
-                    ) +
+                fadeIn(animationSpec = tween(durationMillis = 100)) +
                     slideInVertically(
-                        initialOffsetY = { fullHeight -> fullHeight / 40 },
-                        animationSpec = spring(
-                            dampingRatio = 0.84f,
-                            stiffness = 520f
-                        )
+                        initialOffsetY = { fullHeight -> fullHeight / 80 },
+                        animationSpec = spring(dampingRatio = 0.9f, stiffness = 900f)
                     )
-                ) togetherWith (
-                fadeOut(animationSpec = tween(durationMillis = 95)) +
-                    scaleOut(
-                        targetScale = 0.985f,
-                        animationSpec = tween(durationMillis = 105)
-                    )
-                )
+            ) togetherWith fadeOut(animationSpec = tween(durationMillis = 70))
         },
         contentAlignment = contentAlignment,
         label = label,
