@@ -1,26 +1,22 @@
 package dz.meals.app.ui.onboarding
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+private val DefaultMealsOnboardingMotion = mutableStateOf(0f)
+internal val LocalMealsOnboardingMotionClock = staticCompositionLocalOf<State<Float>> {
+    DefaultMealsOnboardingMotion
+}
+
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -36,7 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.theme.Tangerine
 import kotlin.math.PI
-import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.floor
 import kotlin.math.sin
 
@@ -56,37 +52,26 @@ fun MealsGlassBubble(
     modifier: Modifier = Modifier,
     tint: Color = Color(0xFFFFF8F1),
     floatDistance: Dp = 7.dp,
-    floatMillis: Int = 3800,
-    /** 0..1 offset so neighbouring bubbles never bob in lockstep. */
+    /** 0..1 phase offset; all bubbles share one frame clock. */
     phase: Float = 0f,
     content: @Composable BoxScope.() -> Unit = {}
 ) {
-    val transition = rememberInfiniteTransition(label = "mealsBubbleFloat")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(floatMillis, easing = LinearEasing), RepeatMode.Restart),
-        label = "mealsBubbleT"
-    )
-
-    var appeared by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { appeared = true }
-    val pop by animateFloatAsState(
-        targetValue = if (appeared) 1f else 0f,
-        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessLow),
-        label = "mealsBubblePop"
-    )
-
+    val motionClock = LocalMealsOnboardingMotionClock.current
     Box(
         modifier = modifier
             .size(size)
             .graphicsLayer {
-                val a = (t + phase) * 2f * PI.toFloat()
-                translationY = sin(a) * floatDistance.toPx()
-                translationX = cos(a * 0.8f) * floatDistance.toPx() * 0.35f
-                scaleX = pop
-                scaleY = pop
-                alpha = pop.coerceIn(0f, 1f)
+                // Match both axes to the same whole-cycle frequency. The old
+                // 0.8x horizontal frequency jumped when the 0..1 clock reset.
+                if (floatDistance > 0.dp) {
+                    val angle = (motionClock.value + phase) * 2f * PI.toFloat()
+                    val distance = floatDistance.toPx()
+                    translationY = sin(angle) * distance
+                    translationX = cos(angle) * distance * 0.35f
+                } else {
+                    translationX = 0f
+                    translationY = 0f
+                }
             }
             .drawBehind {
                 drawGlassBubble(
@@ -235,31 +220,49 @@ internal fun DrawScope.drawGlassBubble(
 @Composable
 fun MealsAmbientBubbles(
     modifier: Modifier = Modifier,
-    count: Int = 11
+    count: Int = 7
 ) {
-    val transition = rememberInfiniteTransition(label = "mealsAmbientBubbles")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(46_000, easing = LinearEasing), RepeatMode.Restart),
-        label = "mealsAmbientT"
-    )
+    val motionClock = LocalMealsOnboardingMotionClock.current
     Canvas(modifier.fillMaxSize()) {
-        for (i in 0 until count) {
+        val t = motionClock.value
+        val visibleCount = count.coerceIn(0, 9)
+        for (i in 0 until visibleCount) {
             val seedX = ((i * 37) % 100) / 100f
-            val seedR = 7f + ((i * 13) % 19)
-            val offset = (i * 0.173f) % 1f
+            val radius = (7f + ((i * 13) % 19)) * density
+            val phaseOffset = (i * 0.173f) % 1f
             val speed = 1 + (i % 3)
-            val progress = ((t * speed) + offset).let { it - floor(it) }
+            val progress = (t * speed + phaseOffset).let { it - floor(it) }
             val y = size.height * (1.08f - progress * 1.2f)
-            val wobble = sin((progress * 2f * PI.toFloat()) + i) * 14.dp.toPx()
+            val wobble = sin(progress * 2f * PI.toFloat() + i) * 14.dp.toPx()
             val x = size.width * (0.06f + seedX * 0.88f) + wobble
-            val fade = (FastOutSlowInEasing.transform((progress * 4f).coerceIn(0f, 1f)) *
-                FastOutSlowInEasing.transform(((1f - progress) * 4f).coerceIn(0f, 1f)))
-            drawGlassBubble(
-                center = Offset(x, y),
-                radius = seedR.dp.toPx(),
-                alpha = 0.55f * fade
+            val fadeIn = (progress * 4f).coerceIn(0f, 1f)
+            val fadeOut = ((1f - progress) * 4f).coerceIn(0f, 1f)
+            val fade = fadeIn * fadeOut * 0.55f
+            if (fade <= 0.01f) continue
+
+            val center = Offset(x, y)
+            // Ambient bubbles are deliberately lightweight: flat translucent
+            // bodies, one fine rim and one short glint. Hero bubbles retain the
+            // full multi-layer glass treatment in drawGlassBubble().
+            drawCircle(
+                color = Color.White.copy(alpha = 0.10f * fade),
+                radius = radius,
+                center = center
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.54f * fade),
+                radius = radius * 0.96f,
+                center = center,
+                style = Stroke(width = 0.9.dp.toPx())
+            )
+            drawArc(
+                color = Color.White.copy(alpha = 0.75f * fade),
+                startAngle = 202f,
+                sweepAngle = 48f,
+                useCenter = false,
+                topLeft = Offset(center.x - radius * 0.72f, center.y - radius * 0.72f),
+                size = Size(radius * 1.44f, radius * 1.44f),
+                style = Stroke(width = 1.1.dp.toPx(), cap = StrokeCap.Round)
             )
         }
     }
