@@ -88,7 +88,7 @@ import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** Everything the first-run flow collects; mirrors the arguments of \`saveSettings\`. */
+/** Everything the first-run flow collects; mirrors the arguments of `saveSettings`. */
 data class MealsOnboardingResult(
     val weeklyBudgetDzd: Int,
     val wilaya: String,
@@ -120,10 +120,10 @@ private class Satellite(
 /**
  * Full-screen, first-run experience: one idea per page, a big illustration
  * inside a refraction-free Liquid Glass bubble, and the same glass cards and
- * buttons as the rest of the app. Must be hosted inside \`MealsBackdrop\`.
+ * buttons as the rest of the app. Must be hosted inside `MealsBackdrop`.
  *
  * @param backHandler lets the platform host wire its system-back handling
- * (for example Android's \`BackHandler\`) without this module depending on it.
+ * (for example Android's `BackHandler`) without this module depending on it.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
