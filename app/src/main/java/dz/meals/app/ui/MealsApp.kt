@@ -649,6 +649,7 @@ private fun SettingsDialog(
                 }
             }
         },
+        confirmActionClosesSheet = step == 4,
         confirmEnabled = validStep,
         dismissLabel = when {
             step > 0 -> "السابق"
@@ -656,6 +657,7 @@ private fun SettingsDialog(
             else -> "إغلاق"
         },
         onDismissAction = { if (step > 0) step -= 1 else onDismiss() },
+        dismissActionClosesSheet = step == 0,
         showCloseButton = !isFirstSetup
     ) {
         MealsProgressBar(
@@ -711,13 +713,14 @@ private fun SettingsDialog(
                             checked = noKnownAllergies,
                             onCheckedChange = { noKnownAllergies = it }
                         )
+                        val dismissSheet = mealsSheetDismissAction()
                         MealsPrimaryButton(
                             label = "ابدئي الآن",
                             onClick = {
                                 val budget = budgetText.toIntOrNull()
                                 val servings = servingsText.toIntOrNull()
                                 if (noKnownAllergies && budget != null && budget > 0 && servings != null && servings in 1..12) {
-                                    onQuickStart(budget, servings)
+                                    dismissSheet { onQuickStart(budget, servings) }
                                 }
                             },
                             enabled = noKnownAllergies && validStep,

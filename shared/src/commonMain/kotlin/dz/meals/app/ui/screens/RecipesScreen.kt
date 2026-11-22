@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsBottomSheet
+import dz.meals.app.ui.components.mealsSheetDismissAction
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -256,20 +257,24 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsPrimaryButton(
                     label = "أضف للخطة",
-                    onClick = { onAddRecipe(detail.id); selectedRecipeId = null },
+                    onClick = { dismissSheet { onAddRecipe(detail.id); selectedRecipeId = null } },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             dismissButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsSecondaryButton(
                     label = "ابدأ الطبخ",
                     onClick = {
-                        cookingRecipeId = detail.id
-                        cookingStepIndex = 0
-                        cookingServings = detail.baseServings
-                        selectedRecipeId = null
+                        dismissSheet {
+                            cookingRecipeId = detail.id
+                            cookingStepIndex = 0
+                            cookingServings = detail.baseServings
+                            selectedRecipeId = null
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -353,13 +358,14 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsPrimaryButton(
                     label = if (safeStepIndex < stepCount - 1) "التالي" else "إنهاء",
                     onClick = {
                         if (safeStepIndex < stepCount - 1) {
                             cookingStepIndex = safeStepIndex + 1
                         } else {
-                            cookingRecipeId = null
+                            dismissSheet { cookingRecipeId = null }
                         }
                     },
                     modifier = Modifier.fillMaxWidth()

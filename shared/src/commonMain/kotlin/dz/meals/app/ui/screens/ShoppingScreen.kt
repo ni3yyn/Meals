@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import dz.meals.app.ui.components.MealsBottomSheet
+import dz.meals.app.ui.components.mealsSheetDismissAction
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsCheckbox
 import dz.meals.app.ui.components.MealsGlassSurface
@@ -572,6 +573,7 @@ fun ShoppingScreen(
                 }
             },
             confirmButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsPrimaryButton(
                     label = "إضافة",
                     onClick = {
@@ -581,13 +583,15 @@ fun ShoppingScreen(
                         if (quantity != null && quantity > 0 && itemName.isNotBlank() &&
                             (itemEstimatedPrice.isBlank() || (estimatedPrice != null && estimatedPrice >= 0.0))
                         ) {
-                            addedFeedback = itemName.trim()
-                            onAddCustomItem(itemName, quantity, itemUnit, estimatedPrice)
-                            itemName = ""
-                            itemQuantity = "1"
-                            itemUnit = "حبة"
-                            itemEstimatedPrice = ""
-                            addDialog = false
+                            dismissSheet {
+                                addedFeedback = itemName.trim()
+                                onAddCustomItem(itemName, quantity, itemUnit, estimatedPrice)
+                                itemName = ""
+                                itemQuantity = "1"
+                                itemUnit = "حبة"
+                                itemEstimatedPrice = ""
+                                addDialog = false
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -597,9 +601,10 @@ fun ShoppingScreen(
                 )
             },
             dismissButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsSecondaryButton(
                     label = "إلغاء",
-                    onClick = { addDialog = false },
+                    onClick = { dismissSheet { addDialog = false } },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -651,6 +656,7 @@ fun ShoppingScreen(
                 }
             },
             confirmButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsPrimaryButton(
                     label = "حفظ التعديل",
                     onClick = {
@@ -666,9 +672,11 @@ fun ShoppingScreen(
                             editPurchaseQuantity.isBlank() || (purchaseQuantity != null && purchaseQuantity > 0.0)
                         }
                         if (id != null && valid && (actualSpent == null || actualSpent >= 0.0)) {
-                            if (editUserAdded && quantity != null) onEditCustomItem(id, editName, quantity, editUnit)
-                            onUpdateItemDetails(id, purchaseQuantity, editStoreNote, editUnavailable, actualSpent)
-                            editItemId = null
+                            dismissSheet {
+                                if (editUserAdded && quantity != null) onEditCustomItem(id, editName, quantity, editUnit)
+                                onUpdateItemDetails(id, purchaseQuantity, editStoreNote, editUnavailable, actualSpent)
+                                editItemId = null
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -678,9 +686,10 @@ fun ShoppingScreen(
                 )
             },
             dismissButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsSecondaryButton(
                     label = "إلغاء",
-                    onClick = { editItemId = null },
+                    onClick = { dismissSheet { editItemId = null } },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -791,6 +800,7 @@ private fun PriceReportDialog(
             }
         },
         confirmButton = {
+            val dismissSheet = mealsSheetDismissAction()
             val packQuantity = packQuantityText.replace(',', '.').toDoubleOrNull()
             val amount = priceText.replace(',', '.').toDoubleOrNull()
             MealsPrimaryButton(
@@ -801,7 +811,9 @@ private fun PriceReportDialog(
                             "g", "ml" -> 1000.0
                             else -> 1.0
                         }
-                        onSubmit(selectedIngredient.id, packQuantity * baseUnitMultiplier, amount, shopContext)
+                        dismissSheet {
+                            onSubmit(selectedIngredient.id, packQuantity * baseUnitMultiplier, amount, shopContext)
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -809,9 +821,10 @@ private fun PriceReportDialog(
             )
         },
         dismissButton = {
+            val dismissSheet = mealsSheetDismissAction()
             MealsSecondaryButton(
                 label = "إلغاء",
-                onClick = onDismiss,
+                onClick = { dismissSheet { onDismiss() } },
                 modifier = Modifier.fillMaxWidth()
             )
         }

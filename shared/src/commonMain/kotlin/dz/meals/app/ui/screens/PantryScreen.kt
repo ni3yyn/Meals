@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsBottomSheet
+import dz.meals.app.ui.components.mealsSheetDismissAction
 import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -281,20 +282,22 @@ private fun PantryAddDialog(
             }
         },
         confirmButton = {
+            val dismissSheet = mealsSheetDismissAction()
             MealsPrimaryButton(
                 label = "حفظ",
                 onClick = {
                     val exactQuantity = if (approximate) null else quantity.replace(',', '.').toDoubleOrNull()
-                    onSave(exactQuantity, approximate, note.trim(), parsedExpiry)
+                    dismissSheet { onSave(exactQuantity, approximate, note.trim(), parsedExpiry) }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = expiryIsValid && (approximate || ((quantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0))
             )
         },
         dismissButton = {
+            val dismissSheet = mealsSheetDismissAction()
             MealsSecondaryButton(
                 label = "إلغاء",
-                onClick = onDismiss,
+                onClick = { dismissSheet { onDismiss() } },
                 modifier = Modifier.fillMaxWidth()
             )
         }

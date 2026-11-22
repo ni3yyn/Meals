@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsBottomSheet
+import dz.meals.app.ui.components.mealsSheetDismissAction
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -471,19 +472,23 @@ fun PlanScreen(
                 Text("سيُخصم من المخزون فقط ما تملكه بكمية دقيقة. الكميات التقريبية لن تُخصم. يمكنك التراجع من الوجبة نفسها لاستعادة ما خُصم.")
             },
             confirmButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsPrimaryButton(
                     label = "تأكيد الطهي",
                     onClick = {
-                        onToggleCooked(mealId)
-                        mealAwaitingCookConfirmation = null
+                        dismissSheet {
+                            onToggleCooked(mealId)
+                            mealAwaitingCookConfirmation = null
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             dismissButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsSecondaryButton(
                     label = "إلغاء",
-                    onClick = { mealAwaitingCookConfirmation = null },
+                    onClick = { dismissSheet { mealAwaitingCookConfirmation = null } },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -675,12 +680,15 @@ private fun SlotRow(
             onDismissRequest = { chooseRecipe = false },
             title = { Text("اختر وصفة لـ " + title) },
             text = {
+                val dismissSheet = mealsSheetDismissAction()
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     items(recipes, key = { it.id }) { item ->
                         MealsTextButton(
                             onClick = {
-                                onSelect(item.id)
-                                chooseRecipe = false
+                                dismissSheet {
+                                    onSelect(item.id)
+                                    chooseRecipe = false
+                                }
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -708,17 +716,19 @@ private fun SlotRow(
                 }
             },
             confirmButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsSecondaryButton(
                     label = "إفراغ الوجبة",
-                    onClick = { onSelect(null); chooseRecipe = false },
+                    onClick = { dismissSheet { onSelect(null); chooseRecipe = false } },
                     modifier = Modifier.fillMaxWidth(),
                     contentColor = androidx.compose.ui.graphics.Color(0xFFB65E53)
                 )
             },
             dismissButton = {
+                val dismissSheet = mealsSheetDismissAction()
                 MealsSecondaryButton(
                     label = "إلغاء",
-                    onClick = { chooseRecipe = false },
+                    onClick = { dismissSheet { chooseRecipe = false } },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

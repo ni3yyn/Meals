@@ -27,6 +27,11 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -52,6 +58,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -282,6 +289,18 @@ fun MealsGlassDot(
 
 
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
+private val LocalMealsSheetDismissAction =
+    staticCompositionLocalOf<(afterDismiss: () -> Unit) -> Unit> {
+        { afterDismiss -> afterDismiss() }
+    }
+
+/**
+ * Returns the active sheet's animated close action from inside its content slots.
+ * The supplied action runs only after the sheet has completed its hide animation.
+ */
+@Composable
+fun mealsSheetDismissAction(): (afterDismiss: () -> Unit) -> Unit =
+    LocalMealsSheetDismissAction.current
 val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
 val LocalMealsScreenGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
@@ -1119,6 +1138,7 @@ private fun MealsModalSurface(
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
                 modifier = (if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
+                    .navigationBarsPadding()
                     .padding(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 content = content
@@ -1146,17 +1166,49 @@ fun MealsBottomSheet(
     dismissButton: (@Composable () -> Unit)? = null,
     confirmLabel: String? = null,
     onConfirm: (() -> Unit)? = null,
+    confirmActionClosesSheet: Boolean = false,
     confirmEnabled: Boolean = true,
     dismissLabel: String? = null,
     onDismissAction: (() -> Unit)? = null,
+    dismissActionClosesSheet: Boolean = false,
     showCloseButton: Boolean = true,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetScope = rememberCoroutineScope()
+    val dismissStarted = remember { mutableStateOf(false) }
+    val dismissSheet: (afterDismiss: () -> Unit) -> Unit = remember(
+        sheetState,
+        sheetScope,
+        dismissStarted
+    ) {
+        { afterDismiss ->
+            if (!dismissStarted.value) {
+                dismissStarted.value = true
+                sheetScope.launch {
+                    sheetState.hide()
+                    if (!sheetState.isVisible) {
+                        afterDismiss()
+                    } else {
+                        dismissStarted.value = false
+                    }
+                }
+            }
+        }
+    }
     val topShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
 
+    CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
+        contentWindowInsets = {
+            // Let the sheet glass extend to the physical bottom edge. Its own
+            // content reserves navigation space below, while IME and top safe
+            // insets remain handled by Material 3.
+            BottomSheetDefaults.modalWindowInsets
+                .only(WindowInsetsSides.Top)
+                .union(WindowInsets.ime)
+        },
         sheetState = sheetState,
         shape = topShape,
         containerColor = Color.Transparent,
@@ -1235,7 +1287,7 @@ fun MealsBottomSheet(
                         }
                         if (showCloseButton) {
                             MealsIconButton(
-                                onClick = onDismissRequest,
+                                onClick = { dismissSheet { onDismissRequest() } },
                                 modifier = Modifier.size(44.dp),
                                 size = 44.dp
                             ) {
@@ -1285,7 +1337,13 @@ fun MealsBottomSheet(
                         if (confirmLabel != null && onConfirm != null) {
                             MealsPrimaryButton(
                                 label = confirmLabel,
-                                onClick = onConfirm,
+                                onClick = {
+                                    if (confirmActionClosesSheet) {
+                                        dismissSheet { onConfirm() }
+                                    } else {
+                                        onConfirm()
+                                    }
+                                },
                                 modifier = Modifier.weight(1f),
                                 enabled = confirmEnabled
                             )
@@ -1293,7 +1351,15 @@ fun MealsBottomSheet(
                         if (dismissLabel != null) {
                             MealsSecondaryButton(
                                 label = dismissLabel,
-                                onClick = onDismissAction ?: onDismissRequest,
+                                onClick = {
+                                    when {
+                                        onDismissAction == null ->
+                                            dismissSheet { onDismissRequest() }
+                                        dismissActionClosesSheet ->
+                                            dismissSheet { onDismissAction() }
+                                        else -> onDismissAction()
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -1302,6 +1368,7 @@ fun MealsBottomSheet(
                 }
             }
         }
+    }
     }
 }
 
