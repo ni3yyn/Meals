@@ -1,16 +1,8 @@
 name: iOS shared framework
 
-# Keep commonMain UI, formatting, and state changes linkable on both Apple targets.
+# Reusable only; no automatic or manual runs.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "shared/**"
-      - "gradle/**"
-      - "*.gradle.kts"
-      - "gradle.properties"
-      - ".github/workflows/ios-framework.yml"
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
