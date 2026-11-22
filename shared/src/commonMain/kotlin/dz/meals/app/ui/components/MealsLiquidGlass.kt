@@ -20,9 +20,11 @@ object MealsLiquidGlass {
     /** One shared transparency level for everyday glass faces. */
     const val SurfaceOpacity = 0.20f
     /** Control faces are more opaque than cards so actions remain distinct on glass surfaces. */
-    const val ControlOpacity = 0.34f
-    /** A stronger translucent tint keeps the blurred page visible while preserving legibility. */
-    const val ModalOpacity = 0.24f
+    const val ControlOpacity = 0.46f
+    /** Content cards use a quiet porcelain material rather than functional Liquid Glass. */
+    const val ContentOpacity = 0.94f
+    /** Modal material is more substantial on the bright ivory backdrop. */
+    const val ModalOpacity = 0.72f
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
@@ -56,18 +58,27 @@ object MealsLiquidGlass {
     fun controlFace(): Brush = Brush.verticalGradient(
         colors = listOf(
             Color.White.copy(alpha = ControlOpacity),
-            Color(0xFFF8FCF9).copy(alpha = ControlOpacity),
-            Color(0xFFE4F0E7).copy(alpha = ControlOpacity),
-            Color.White.copy(alpha = ControlOpacity)
+            Color(0xFFF3F7F0).copy(alpha = ControlOpacity),
+            Color(0xFFDDEBDD).copy(alpha = ControlOpacity),
+            Color(0xFFF5F7F1).copy(alpha = ControlOpacity)
+        )
+    )
+
+    /** A confident branded fill for the single most important action in a group. */
+    fun primaryActionFace(): Brush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF438C62),
+            Color(0xFF2B6F4B),
+            Color(0xFF245D3F)
         )
     )
 
     fun controlRim(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.99f),
-            0.24f to Color.White.copy(alpha = 0.86f),
-            0.58f to Color(0xFFDDEBE1).copy(alpha = 0.62f),
-            1f to Color.White.copy(alpha = 0.94f)
+            0f to Color.White.copy(alpha = 1f),
+            0.22f to Color.White.copy(alpha = 0.94f),
+            0.56f to Color(0xFFC9D9CB).copy(alpha = 0.90f),
+            1f to Color(0xFF718B77)
         )
     )
 
@@ -112,19 +123,27 @@ object MealsLiquidGlass {
         )
     )
 
+    fun contentRim(rimColor: Color = Color(0xFFE1D9CD)): Brush = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.94f),
+            Color(0xFFECE6DC),
+            rimColor
+        )
+    )
+
     fun cardFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity)
+            Color.White.copy(alpha = 0.98f),
+            tint.copy(alpha = ContentOpacity),
+            tint.copy(alpha = 0.92f)
         )
     )
 
     fun heroFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity)
+            Color.White.copy(alpha = 0.98f),
+            tint.copy(alpha = ContentOpacity),
+            tint.copy(alpha = 0.92f)
         )
     )
 
