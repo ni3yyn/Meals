@@ -70,7 +70,8 @@ fun MealsIllustration(
     )
 
     Canvas(modifier.size(size)) {
-        val phase = 0f
+        // A settled static pose avoids repainting these detailed vector paths per frame.
+        val phase = 1f
         val s = this.size.minDimension / 200f
         scale(s, Offset.Zero) {
             when (art) {
