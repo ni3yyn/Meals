@@ -34,10 +34,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle 9.6.0
+      - name: Set up Gradle and restore caches
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "9.6.0"
+          gradle-version: wrapper
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Verify Apple build environment
         run: |
@@ -47,8 +48,7 @@ jobs:
           test -d "$ANDROID_HOME/platforms/android-37.1"
 
       - name: Link iOS frameworks
-        run: |
-          gradle :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon --stacktrace
+        run: ./gradlew :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
 
       - name: Upload iOS frameworks
         uses: actions/upload-artifact@v7
