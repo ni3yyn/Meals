@@ -4,6 +4,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.graphics.shadow.Shadow
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dz.meals.app.ui.theme.Border
@@ -29,8 +31,28 @@ object MealsLiquidGlass {
     val NavigationShape = RoundedCornerShape(27.dp)
 
     val ControlElevation = 3.dp
-    val SurfaceElevation = 2.dp
-    val ModalElevation = 1.dp
+    val SurfaceElevation = 4.dp
+    val ModalElevation = 6.dp
+
+    /**
+     * A warm, diffuse shadow that complements the bright double rim.
+     * Radius and opacity rise gently with surface size/elevation so small
+     * controls stay quiet while sheets and hero surfaces feel more lifted.
+     */
+    fun softShadow(elevation: Dp): Shadow {
+        val depth = elevation.value.coerceAtLeast(0f)
+        return Shadow(
+            radius = (10f + depth * 1.5f).dp,
+            spread = 0.dp,
+            color = Color(0xFF686257).copy(
+                alpha = (0.045f + depth * 0.006f).coerceIn(0.045f, 0.085f)
+            ),
+            offset = DpOffset(
+                x = 0.dp,
+                y = (2f + depth * 0.5f).dp
+            )
+        )
+    }
     fun controlFace(): Brush = Brush.verticalGradient(
         colors = listOf(
             Color.White.copy(alpha = ControlOpacity),
