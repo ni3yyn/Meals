@@ -132,8 +132,8 @@ object MealsLiquidGlass {
     )
 
     val ControlBlurStyle = HazeBlurStyle {
-        blurRadius(12.dp)
-        noiseFactor(0.014f)
+        blurRadius(5.dp)
+        noiseFactor(0.002f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color.White.copy(alpha = ControlOpacity)))
         )
@@ -143,8 +143,8 @@ object MealsLiquidGlass {
     }
 
     val ModalBlurStyle = HazeBlurStyle {
-        blurRadius(20.dp)
-        noiseFactor(0.015f)
+        blurRadius(3.dp)
+        noiseFactor(0.002f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity)))
         )
@@ -155,7 +155,7 @@ object MealsLiquidGlass {
 
     val SurfaceBlurStyle = HazeBlurStyle {
         blurRadius(8.dp)
-        noiseFactor(0.02f)
+        noiseFactor(0.002f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity)))
         )
