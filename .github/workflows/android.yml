@@ -41,7 +41,7 @@ jobs:
           gradle-version: "9.6.0"
 
       - name: Run unit tests
-        run: gradle testDebugUnitTest --no-daemon
+        run: gradle testReleaseUnitTest --no-daemon
 
       - name: Launch minified release build on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
