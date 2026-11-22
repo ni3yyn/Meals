@@ -40,11 +40,13 @@ object MealsLiquidGlass {
     val CardShape = RoundedCornerShape(26.dp)
     val HeroShape = RoundedCornerShape(29.dp)
     val ModalShape = RoundedCornerShape(30.dp)
+    val DropdownShape = RoundedCornerShape(19.dp)
     val NavigationShape = RoundedCornerShape(27.dp)
 
     val ControlElevation = 3.dp
     val SurfaceElevation = 2.dp
     val ModalElevation = 1.dp
+    val DropdownElevation = 7.dp
     fun controlFace(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
             0f to Color.White.copy(alpha = 0.42f),

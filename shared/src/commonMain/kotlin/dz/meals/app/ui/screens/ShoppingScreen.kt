@@ -32,8 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import dz.meals.app.ui.components.MealsGlassDropdown
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -736,33 +735,18 @@ private fun PriceReportDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Box {
-                        MealsSecondaryButton(
-                            label = "اختيار المكوّن",
-                            onClick = { ingredientMenu = true },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        DropdownMenu(
-                            expanded = ingredientMenu,
-                            onDismissRequest = { ingredientMenu = false },
-                            modifier = Modifier.heightIn(max = 300.dp)
-                        ) {
-                            ingredients.forEach { ingredient ->
-                                DropdownMenuItem(
-                                    text = { Text(ingredient.nameAr + " · " + ingredient.nameFr) },
-                                    onClick = {
-                                        selectedId = ingredient.id
-                                        packQuantityText = "1"
-                                        ingredientMenu = false
-                                    }
-                                )
-                            }
+                    MealsGlassDropdown(
+                        selectedOption = selectedIngredient,
+                        options = ingredients,
+                        optionLabel = { it.nameAr },
+                        optionSupportingText = { it.nameFr },
+                        placeholder = "اختيار المكوّن",
+                        modifier = Modifier.fillMaxWidth(),
+                        maxMenuHeight = 300.dp,
+                        onOptionSelected = { ingredient ->
+                            selectedId = ingredient.id
+                            packQuantityText = "1"
                         }
-                    }
-                    Text(
-                        selectedIngredient?.nameAr ?: "لم يُحدّد",
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Text(

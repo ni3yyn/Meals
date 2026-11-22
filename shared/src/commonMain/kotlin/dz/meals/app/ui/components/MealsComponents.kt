@@ -46,6 +46,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
@@ -713,6 +714,202 @@ fun MealsIconButton(
         size = size,
         content = content
     )
+}
+
+/**
+ * Reusable Meals dropdown: one branded glass trigger and one source-blurred
+ * menu surface. It intentionally keeps option rows flat, reserving the glass
+ * rim for the menu perimeter rather than stacking cards inside the popup.
+ */
+@Composable
+fun <T> MealsGlassDropdown(
+    selectedOption: T?,
+    options: List<T>,
+    optionLabel: (T) -> String,
+    onOptionSelected: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "اختر...",
+    optionSupportingText: ((T) -> String?)? = null,
+    leadingIcon: MealsIconName? = null,
+    enabled: Boolean = true,
+    maxMenuHeight: Dp = 300.dp
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expanded) 270f else 90f,
+        animationSpec = tween(durationMillis = 190, easing = FastOutSlowInEasing),
+        label = "mealsDropdownArrowRotation"
+    )
+
+    BoxWithConstraints(modifier = modifier) {
+        val menuMinWidth = maxWidth
+
+        MealsPressable(
+            onClick = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
+            shape = MealsLiquidGlass.ControlShape
+        ) {
+            MealsLiquidGlassFrame(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MealsLiquidGlass.ControlShape,
+                elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
+                face = MealsLiquidGlass.controlFace(),
+                hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
+                blurStyle = MealsLiquidGlass.ControlBlurStyle,
+                blurRadius = MealsLiquidGlass.ControlBlurRadius,
+                forceHazeBlur = true,
+                rim = MealsLiquidGlass.controlRim(),
+                sideGlintHeight = 17.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 52.dp)
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (leadingIcon != null) {
+                        MealsIcon(
+                            name = leadingIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(25.dp)
+                        )
+                    }
+
+                    Text(
+                        text = selectedOption?.let(optionLabel) ?: placeholder,
+                        modifier = Modifier.weight(1f),
+                        color = if (selectedOption == null) MutedInk else Ink,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (selectedOption == null) FontWeight.Medium else FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    MealsIcon(
+                        name = MealsIconName.ChevronRight,
+                        contentDescription = if (expanded) "إغلاق القائمة" else "فتح القائمة",
+                        modifier = Modifier
+                            .size(23.dp)
+                            .graphicsLayer { rotationZ = arrowRotation }
+                    )
+                }
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .widthIn(min = menuMinWidth)
+                .heightIn(max = maxMenuHeight),
+            shape = MealsLiquidGlass.DropdownShape,
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            border = null
+        ) {
+            MealsLiquidGlassFrame(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MealsLiquidGlass.DropdownShape,
+                elevation = MealsLiquidGlass.DropdownElevation,
+                face = MealsLiquidGlass.modalFace(Color(0xFFFFF8F1)),
+                hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
+                blurStyle = MealsLiquidGlass.ModalBlurStyle,
+                blurRadius = MealsLiquidGlass.ModalBlurRadius,
+                forceHazeBlur = true,
+                rim = MealsLiquidGlass.modalRim(),
+                sideGlintHeight = 25.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 7.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    if (options.isEmpty()) {
+                        Text(
+                            text = "لا توجد خيارات متاحة",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 14.dp),
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        options.forEach { option ->
+                            val selected = option == selectedOption
+                            MealsPressable(
+                                onClick = {
+                                    onOptionSelected(option)
+                                    expanded = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 50.dp)
+                                    .padding(horizontal = 2.dp),
+                                shape = RoundedCornerShape(11.dp)
+                            ) {
+                                val pressed = LocalMealsGlassPressed.current
+                                val rowShape = RoundedCornerShape(11.dp)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(rowShape)
+                                        .background(
+                                            when {
+                                                selected -> SoftOrange.copy(alpha = 0.58f)
+                                                pressed -> Color.White.copy(alpha = 0.30f)
+                                                else -> Color.Transparent
+                                            },
+                                            rowShape
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                                    ) {
+                                        Text(
+                                            text = optionLabel(option),
+                                            color = if (selected) TextAccent else Ink,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        optionSupportingText?.invoke(option)
+                                            ?.takeIf { it.isNotBlank() }
+                                            ?.let { supporting ->
+                                                Text(
+                                                    text = supporting,
+                                                    color = MutedInk,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                    }
+
+                                    if (selected) {
+                                        MealsIcon(
+                                            name = MealsIconName.Check,
+                                            contentDescription = "محدد",
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
