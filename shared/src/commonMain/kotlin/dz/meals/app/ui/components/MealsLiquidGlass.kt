@@ -30,7 +30,7 @@ object MealsLiquidGlass {
     /** Control faces are more opaque than cards so actions remain distinct on glass surfaces. */
     const val ControlOpacity = 0.34f
     /** A stronger translucent tint keeps the blurred page visible while preserving legibility. */
-    const val ModalOpacity = 0.24f
+    const val ModalOpacity = 0.32f
 
     val ControlBlurRadius = 12.dp
     val SurfaceBlurRadius = 8.dp

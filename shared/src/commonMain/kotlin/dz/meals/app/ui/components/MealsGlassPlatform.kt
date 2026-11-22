@@ -39,3 +39,10 @@ expect fun Modifier.mealsHazeSource(
     state: HazeState,
     zIndex: Float = 0f
 ): Modifier
+
+/**
+ * Adds a subtle native blur-behind effect to the platform dialog hosting a modal sheet.
+ * Platforms without a separate modal window can keep this as a no-op.
+ */
+@Composable
+expect fun MealsModalWindowBlur()

@@ -121,13 +121,21 @@ private fun MealsLiquidGlassFrame(
     blurStyle: HazeBlurStyle? = null,
     blurRadius: Dp = MealsLiquidGlass.SurfaceBlurRadius,
     glassBackdrop: MealsGlassBackdrop? = null,
+    /** Use source-backed Haze when the surface lives in a separate modal window. */
+    forceHazeBlur: Boolean = false,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val resolvedGlassBackdrop = glassBackdrop
-        ?: LocalMealsCardGlassBackdrop.current
-        ?: LocalMealsScreenGlassBackdrop.current
+    // Prismal captures within the activity window. ModalBottomSheet is hosted
+    // in a separate dialog window, so it must consume Haze's cross-window source.
+    val resolvedGlassBackdrop = if (forceHazeBlur) {
+        null
+    } else {
+        glassBackdrop
+            ?: LocalMealsCardGlassBackdrop.current
+            ?: LocalMealsScreenGlassBackdrop.current
+    }
     val isPressed = LocalMealsGlassPressed.current
     val opticalDepth by animateFloatAsState(
         targetValue = if (isPressed) 0.62f else 1f,
@@ -922,6 +930,7 @@ private fun MealsModalSurface(
     elevation: Dp = MealsLiquidGlass.ModalElevation,
     hazeStateOverride: HazeState? = null,
     glassBackdropOverride: MealsGlassBackdrop? = null,
+    forceHazeBlur: Boolean = false,
     fillHeight: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -939,6 +948,7 @@ private fun MealsModalSurface(
         blurStyle = MealsLiquidGlass.ModalBlurStyle,
         blurRadius = MealsLiquidGlass.ModalBlurRadius,
         glassBackdrop = glassBackdropOverride,
+        forceHazeBlur = forceHazeBlur,
         rim = MealsLiquidGlass.modalRim(),
         sideGlintHeight = 30.dp
     ) {
@@ -987,7 +997,7 @@ fun MealsBottomSheet(
         shape = topShape,
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        scrimColor = Ink.copy(alpha = 0.30f),
+        scrimColor = Color(0xFFFFF8F1).copy(alpha = 0.14f),
         tonalElevation = 0.dp,
         dragHandle = {
             Box(
@@ -1006,6 +1016,10 @@ fun MealsBottomSheet(
             )
         }
     ) {
+        // The sheet is in a separate Android dialog window. Enable a subtle
+        // platform blur behind the full modal window where the device supports it.
+        MealsModalWindowBlur()
+
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             // IMPORTANT: this is a ceiling, never a target height. Keep the sheet
             // content-driven so short dialogs stay compact and only long content
@@ -1022,7 +1036,8 @@ fun MealsBottomSheet(
                 shape = topShape,
                 elevation = MealsLiquidGlass.ModalElevation,
                 hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
-                glassBackdropOverride = LocalMealsScreenGlassBackdrop.current
+                glassBackdropOverride = null,
+                forceHazeBlur = true
             ) {
                 Column(
                     modifier = Modifier
