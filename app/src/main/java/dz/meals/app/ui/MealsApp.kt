@@ -58,6 +58,7 @@ import dz.meals.app.data.AppUpdateChecker
 import dz.meals.app.data.AppUpdateCheckResult
 import dz.meals.app.data.AppUpdateInfo
 import dz.meals.app.data.MealsRepository
+import dz.meals.app.ui.onboarding.MealsOnboarding
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
 import dz.meals.app.data.currentWeekStartIso
@@ -204,10 +205,6 @@ private fun MealsAppContent() {
         MealsStartupLogger.markOnce("Initial repository initialization completed")
         refresh()
         MealsStartupLogger.markOnce("Initial meal snapshot loaded")
-    }
-
-    LaunchedEffect(preferences.hasCompletedSetup) {
-        if (!preferences.hasCompletedSetup) showSettings = true
     }
 
     LaunchedEffect(generationMessage) {
@@ -408,6 +405,54 @@ private fun MealsAppContent() {
                 }
             }
         }
+        if (!preferences.hasCompletedSetup) {
+            MealsOnboarding(
+                initial = preferences,
+                ingredients = snapshot.ingredients,
+                onQuickStart = { budget, servings ->
+                    scope.launch {
+                        preferencesStore.saveSettings(
+                            budget,
+                            preferences.wilaya,
+                            servings,
+                            emptySet(),
+                            preferences.mealSlots,
+                            emptySet(),
+                            "none",
+                            preferences.maxCookingMinutes,
+                            preferences.budgetBufferPercent,
+                            preferences.commune,
+                            preferences.shoppingChannel,
+                            preferences.preferredShop
+                        )
+                        refresh()
+                    }
+                },
+                onFinish = { result ->
+                    scope.launch {
+                        preferencesStore.saveSettings(
+                            result.weeklyBudgetDzd,
+                            result.wilaya,
+                            result.householdServings,
+                            result.allergyIds,
+                            result.mealSlots,
+                            result.dislikedIngredientIds,
+                            result.dietPattern,
+                            result.maxCookingMinutes,
+                            result.budgetBufferPercent,
+                            result.commune,
+                            result.shoppingChannel,
+                            result.preferredShop
+                        )
+                        refresh()
+                    }
+                },
+                backHandler = { enabled, onBack ->
+                    androidx.activity.compose.BackHandler(enabled = enabled, onBack = onBack)
+                }
+            )
+        }
+
         if (showSettings) {
             SettingsDialog(
                 preferences = preferences,
