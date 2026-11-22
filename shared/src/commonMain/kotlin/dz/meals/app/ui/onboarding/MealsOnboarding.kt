@@ -386,4 +386,203 @@ fun MealsOnboarding(
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                     Text("دقيقة", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                                }                                Slider(
+                                    value = maxMinutes.toFloat(),
+                                    onValueChange = { maxMinutes = ((it / 5f).roundToInt() * 5).coerceIn(10, 240) },
+                                    valueRange = 10f..240f,
+                                    colors = glassSliderColors()
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf(20, 30, 45, 60, 90).forEach { m ->
+                                        BubbleChip("$m د", maxMinutes == m) { maxMinutes = m }
+                                    }
                                 }
+                                Text("هامش أمان الميزانية", style = MaterialTheme.typography.titleMedium, color = Ink)
+                                Text(
+                                    "نحتفظ بنسبة $buffer% كاحتياط حتى لا تتجاوزي ميزانيتك.",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Slider(
+                                    value = buffer.toFloat(),
+                                    onValueChange = { buffer = it.roundToInt().coerceIn(0, 30) },
+                                    valueRange = 0f..30f,
+                                    colors = glassSliderColors()
+                                )
+                            }
+
+                            6 -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "مكونات تفضلين تقليلها؟",
+                                subtitle = "اختياري، وهي تفضيلات مرنة وليست قيود حساسية.",
+                                art = MealsArt.Basket,
+                                satellites = listOf(
+                                    Satellite(-0.42f, 0.30f, 0.20f, 0.25f, MealsIconName.Search),
+                                    Satellite(0.44f, -0.28f, 0.20f, 0.65f, MealsIconName.Pantry)
+                                )
+                            ) {
+                                MealsLiquidGlassTextField(
+                                    value = query,
+                                    onValueChange = { query = it },
+                                    label = { Text("ابحثي عن مكوّن") }
+                                )
+                                val visible = remember(query, ingredients, dislikes) {
+                                    val matches = ingredients.filter { ing ->
+                                        query.isBlank() ||
+                                            ing.nameAr.contains(query, true) ||
+                                            ing.nameFr.contains(query, true) ||
+                                            ing.aliases.any { it.contains(query, true) }
+                                    }
+                                    (matches.filter { it.id in dislikes } + matches.filter { it.id !in dislikes }).take(18)
+                                }
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    visible.forEach { ing ->
+                                        BubbleChip(ing.nameAr, ing.id in dislikes) {
+                                            dislikes = if (ing.id in dislikes) dislikes - ing.id else dislikes + ing.id
+                                        }
+                                    }
+                                }
+                                if (dislikes.isNotEmpty()) {
+                                    Text(
+                                        "تم اختيار ${dislikes.size}",
+                                        color = TextAccent,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
+
+                            else -> StepLayout(
+                                pageOffset = pageOffset,
+                                title = "أين تتسوقين عادة؟",
+                                subtitle = "تساعدنا على تنظيم قائمة التسوق. لا نستخدم موقعك تلقائياً.",
+                                art = MealsArt.Market,
+                                satellites = listOf(
+                                    Satellite(-0.42f, -0.28f, 0.22f, 0.10f, MealsIconName.Basket),
+                                    Satellite(0.44f, 0.30f, 0.18f, 0.55f, MealsIconName.Wallet)
+                                )
+                            ) {
+                                MealsLiquidGlassTextField(
+                                    value = wilaya,
+                                    onValueChange = { wilaya = it.take(40) },
+                                    label = { Text("الولاية") }
+                                )
+                                MealsLiquidGlassTextField(
+                                    value = commune,
+                                    onValueChange = { commune = it.take(60) },
+                                    label = { Text("البلدية (اختياري)") }
+                                )
+                                Text("مكان التسوق المعتاد", style = MaterialTheme.typography.titleMedium, color = Ink)
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf(
+                                        "market" to "السوق", "grocery" to "بقالة", "supermarket" to "متجر كبير",
+                                        "butcher" to "ملحمة", "poultry" to "دجاج", "fishmonger" to "سمك",
+                                        "bakery" to "مخبزة", "other" to "أخرى"
+                                    ).forEach { (id, label) ->
+                                        BubbleChip(label, channel == id) { channel = id }
+                                    }
+                                }
+                                MealsLiquidGlassTextField(
+                                    value = shop,
+                                    onValueChange = { shop = it.take(80) },
+                                    label = { Text("اسم المحل المفضل (اختياري)") }
+                                )
+                            }
+                        }
+                    }
+
+                    MealsPrimaryButton(
+                        label = when (current) {
+                            0 -> "هيا نبدأ"
+                            LastPage -> "حفظ وابدأ"
+                            else -> "التالي"
+                        },
+                        onClick = {
+                            if (current < LastPage) {
+                                goTo(current + 1)
+                            } else {
+                                val result = MealsOnboardingResult(
+                                    weeklyBudgetDzd = budget,
+                                    wilaya = wilaya.ifBlank { initial.wilaya },
+                                    householdServings = servings,
+                                    allergyIds = allergies,
+                                    mealSlots = slots,
+                                    dislikedIngredientIds = dislikes,
+                                    dietPattern = diet,
+                                    maxCookingMinutes = maxMinutes,
+                                    budgetBufferPercent = buffer,
+                                    commune = commune,
+                                    shoppingChannel = channel,
+                                    preferredShop = shop
+                                )
+                                pendingFinish = { onFinish(result) }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 14.dp),
+                        enabled = valid,
+                        showArrow = current != LastPage
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────── building blocks ───────────────────────────────
+
+@Composable
+private fun Header(current: Int, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(44.dp)) {
+            if (current > 0) {
+                // In a right-to-left layout "back" points to the right, which is the app's ArrowForward.
+                MealsIconButton(onClick = onBack) {
+                    MealsIcon(MealsIconName.ArrowForward, contentDescription = "رجوع", modifier = Modifier.size(26.dp))
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(PageCount) { i -> ProgressDot(active = i == current, passed = i < current) }
+        }
+        Spacer(Modifier.size(44.dp))
+    }
+}
+
+@Composable
+private fun ProgressDot(active: Boolean, passed: Boolean) {
+    val width by animateDpAsState(if (active) 26.dp else 8.dp, label = "mealsDotWidth")
+    val color by animateColorAsState(
+        when {
+            active -> TextAccent
+            passed -> Tangerine
+            else -> Color.White.copy(alpha = 0.75f)
+        },
+        label = "mealsDotColor"
+    )
+    Box(Modifier.width(width).height(8.dp).clip(CircleShape).background(color))
+}
+
+/** Hero illustration in a glass bubble on top, title and a glass panel below. */
+@Composable
+private fun StepLayout(
+    pageOffset: Float,
+    title: String,
+    subtitle: String,
+    art: MealsArt,
+    satellites: List<Satellite>,
+    artCount: Int = 3,
