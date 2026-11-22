@@ -249,34 +249,40 @@ fun PlanScreen(
             }
         }
         item {
-            Column(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(0.92f).clip(RoundedCornerShape(17.dp))
+                        .background(Color.White.copy(alpha = 0.28f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) { fillEmptyOnly = !fillEmptyOnly }
+                        .padding(start = 5.dp, end = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     MealsCheckbox(
                         checked = fillEmptyOnly,
                         onCheckedChange = { fillEmptyOnly = it }
                     )
                     Text(
-                        "املأ الوجبات الفارغة فقط",
-                        modifier = Modifier.weight(1f).clickable(
-                            indication = null,
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                        ) { fillEmptyOnly = !fillEmptyOnly },
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodyMedium
+                        "املأ الفارغة فقط",
+                        modifier = Modifier.weight(1f),
+                        color = dz.meals.app.ui.theme.Ink,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2
                     )
                 }
                 MealsPrimaryButton(
                     label = if (isGenerating) "جارٍ الإنشاء" else "أنشئ الخطة",
                     onClick = { onGenerate(fillEmptyOnly) },
                     enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1.08f),
                     icon = MealsIconName.Refresh,
                     showArrow = false
                 )

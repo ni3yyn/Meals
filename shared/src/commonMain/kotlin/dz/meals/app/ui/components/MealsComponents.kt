@@ -1233,10 +1233,11 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
                 drawRect(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFFFF4ED),
-                            Cream,
-                            Color(0xFFF5F1DE),
-                            Color(0xFFFFF0EA)
+                            Color(0xFFF8E9E1),
+                            Color(0xFFF4EAD5),
+                            Color(0xFFE7EEDC),
+                            Color(0xFFF3E1DB),
+                            Color(0xFFFFF1E7)
                         ),
                         start = Offset.Zero,
                         end = Offset(size.width, size.height)
@@ -1246,32 +1247,32 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
                 val radius = maxOf(size.width, size.height) * 0.60f
                 drawCloud(
                     center = Offset(size.width * 0.04f, size.height * 0.10f),
-                    color = Color(0xFFF0D2C8),
+                    color = Color(0xFFE8BFB5),
                     radius = radius
                 )
                 drawCloud(
                     center = Offset(size.width * 0.50f, -size.height * 0.06f),
-                    color = Color(0xFFDCE8CF),
+                    color = Color(0xFFC8DDBF),
                     radius = radius * 1.04f
                 )
                 drawCloud(
                     center = Offset(size.width * 1.02f, size.height * 0.13f),
-                    color = Color(0xFFF1E4BB),
+                    color = Color(0xFFEBD8A8),
                     radius = radius * 0.88f
                 )
                 drawCloud(
                     center = Offset(size.width * 1.04f, size.height * 0.59f),
-                    color = Color(0xFFF4DAD7),
+                    color = Color(0xFFE8C3C0),
                     radius = radius * 0.94f
                 )
                 drawCloud(
                     center = Offset(size.width * 0.02f, size.height * 1.02f),
-                    color = Color(0xFFE0EBD8),
+                    color = Color(0xFFD1E2C8),
                     radius = radius * 0.98f
                 )
                 drawCloud(
                     center = Offset(size.width * 0.93f, size.height * 0.98f),
-                    color = Color(0xFFF2D9CE),
+                    color = Color(0xFFECC9B9),
                     radius = radius * 0.92f
                 )
             }
