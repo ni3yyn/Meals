@@ -1,11 +1,17 @@
 package dz.meals.app.ui.onboarding
 
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -73,6 +79,7 @@ import dz.meals.app.ui.components.MealsAnimatedCount
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsGlassSurface
+import dz.meals.app.ui.components.MealsGlassDot
 import dz.meals.app.ui.components.MealsIconButton
 import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import dz.meals.app.ui.components.MealsPressable
@@ -92,6 +99,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -214,7 +223,44 @@ fun MealsOnboarding(
         )
         MealsAmbientBubbles()
 
-        Crossfade(targetState = pendingFinish != null, label = "mealsOnboardingFinale") { finishing ->
+        AnimatedContent(
+            targetState = pendingFinish != null,
+            modifier = Modifier.fillMaxSize(),
+            transitionSpec = {
+                if (targetState) {
+                    (
+                        fadeIn(tween(420, easing = FastOutSlowInEasing)) +
+                            scaleIn(
+                                initialScale = 0.94f,
+                                animationSpec = tween(580, easing = FastOutSlowInEasing)
+                            ) +
+                            slideInVertically(
+                                initialOffsetY = { height -> height / 24 },
+                                animationSpec = tween(580, easing = FastOutSlowInEasing)
+                            )
+                    ) togetherWith (
+                        fadeOut(tween(260, easing = FastOutSlowInEasing)) +
+                            scaleOut(
+                                targetScale = 1.035f,
+                                animationSpec = tween(360, easing = FastOutSlowInEasing)
+                            ) +
+                            slideOutVertically(
+                                targetOffsetY = { height -> -height / 28 },
+                                animationSpec = tween(360, easing = FastOutSlowInEasing)
+                            )
+                    )
+                } else {
+                    (
+                        fadeIn(tween(360, easing = FastOutSlowInEasing)) +
+                            scaleIn(
+                                initialScale = 1.012f,
+                                animationSpec = tween(360, easing = FastOutSlowInEasing)
+                            )
+                    ) togetherWith fadeOut(tween(220, easing = FastOutSlowInEasing))
+                }
+            },
+            label = "mealsOnboardingFinishTransition"
+        ) { finishing ->
             if (finishing) {
                 Finale()
             } else {
@@ -618,39 +664,14 @@ private fun MealsOnboardingPager(
             )
         }
         Row(
-            modifier = Modifier
-                .width(176.dp)
-                .height(9.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.48f))
-                .border(0.8.dp, Color.White.copy(alpha = 0.82f), CircleShape)
-                .padding(1.5.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.height(24.dp).padding(top = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             repeat(PageCount) { index ->
-                val weight by animateFloatAsState(
-                    targetValue = if (index == current) 1.9f else 1f,
-                    animationSpec = tween(260, easing = FastOutSlowInEasing),
-                    label = "mealsPagerSegmentWeight$index"
-                )
-                val segmentFill = when {
-                    index == current -> Brush.verticalGradient(
-                        listOf(Color(0xFFB77B57), TextAccent, Tangerine)
-                    )
-                    index < current -> Brush.verticalGradient(
-                        listOf(Tangerine.copy(alpha = 0.92f), Color(0xFFE5A078))
-                    )
-                    else -> Brush.verticalGradient(
-                        listOf(Color.White.copy(alpha = 0.58f), Color.White.copy(alpha = 0.30f))
-                    )
-                }
-                Box(
-                    Modifier
-                        .weight(weight)
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(segmentFill)
+                MealsGlassDot(
+                    selected = index == current,
+                    completed = index < current
                 )
             }
         }
@@ -868,12 +889,46 @@ private fun Finale() {
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(14.dp))
+        MealsGlassLoadingDots()
+        Spacer(Modifier.height(10.dp))
         Text(
             "نختار وصفات تناسب ميزانيتك وتفضيلاتك.",
             color = MutedInk,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@Composable
+private fun MealsGlassLoadingDots() {
+    val motionClock = LocalMealsOnboardingMotionClock.current
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(4) { index ->
+            Box(
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer {
+                        // Three complete waves per shared 12-second clock keep
+                        // every dot's position identical when the clock loops.
+                        val angle = (motionClock.value * 3f + index * 0.25f) * 6.2831855f
+                        val wave = sin(angle)
+                        val pulse = (cos(angle) + 1f) * 0.5f
+                        translationY = -wave * 5.dp.toPx()
+                        translationX = cos(angle) * 1.2.dp.toPx()
+                        val scale = 0.82f + pulse * 0.42f
+                        scaleX = scale
+                        scaleY = scale
+                        alpha = 0.72f + pulse * 0.28f
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                MealsGlassDot(selected = false)
+            }
+        }
     }
 }
