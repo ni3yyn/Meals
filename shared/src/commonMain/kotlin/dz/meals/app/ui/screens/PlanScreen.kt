@@ -3,6 +3,7 @@ package dz.meals.app.ui.screens
 import androidx.compose.ui.text.style.TextAlign
 
 import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.components.MealsIconButton
 import dz.meals.app.ui.components.MealsTextButton
 import dz.meals.app.ui.theme.ForestDark
 
@@ -463,35 +464,49 @@ private fun SlotRow(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                title,
-                color = Forest,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
+            MealsIcon(
+                name = MealsIconName.Meal,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp)
             )
-            Text(
-                text = recipe?.nameAr ?: "لم تُحدّد بعد",
+            Column(
                 modifier = Modifier.weight(1f),
-                color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-            if (meal != null && recipe != null) {
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
                 Text(
-                    if (meal.isCooked) "تم الطهي" else recipe.durationMinutes.toString() + " دقيقة",
-                    color = if (meal.isCooked) Forest else MutedInk,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1
+                    title,
+                    color = Forest,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
                 )
+                Text(
+                    recipe?.nameAr ?: "لم تُحدّد بعد",
+                    color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+            if (meal != null && recipe != null) {
+                MealsIconButton(
+                    onClick = onToggleLock,
+                    modifier = Modifier.size(40.dp),
+                    size = 40.dp
+                ) {
+                    MealsIcon(
+                        name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen,
+                        contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
+                        modifier = Modifier.size(27.dp)
+                    )
+                }
             }
         }
 
@@ -499,66 +514,114 @@ private fun SlotRow(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MealsIconAction(
-                        onClick = { onAdjustServings(-1) },
-                        enabled = meal.servings > 1 && !meal.isCooked,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Text("−", color = Forest, style = MaterialTheme.typography.titleLarge)
-                    }
-                    Text(
-                        meal.servings.toString() + " حصص",
-                        color = dz.meals.app.ui.theme.Ink,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = 2.dp)
-                    )
-                    MealsIconAction(
-                        onClick = { onAdjustServings(1) },
-                        enabled = meal.servings < 12 && !meal.isCooked,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Text("+", color = Forest, style = MaterialTheme.typography.titleLarge)
-                    }
-                }
-                MealsIconAction(
-                    onClick = onToggleLock,
-                    modifier = Modifier.size(44.dp)
+                MealsIcon(
+                    name = MealsIconName.Clock,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    recipe.durationMinutes.toString() + " دقيقة",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(width = 1.dp, height = 18.dp)
+                        .background(Border.copy(alpha = 0.8f))
+                )
+                MealsIcon(
+                    name = MealsIconName.Meal,
+                    contentDescription = null,
+                    modifier = Modifier.size(23.dp)
+                )
+                Text(
+                    meal.servings.toString() + " حصص",
+                    color = dz.meals.app.ui.theme.Ink,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                MealsIconButton(
+                    onClick = { onAdjustServings(-1) },
+                    enabled = meal.servings > 1 && !meal.isCooked,
+                    modifier = Modifier.size(36.dp),
+                    size = 36.dp
                 ) {
-                    MealsIcon(
-                        name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen,
-                        contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
-                        modifier = Modifier.size(23.dp)
-                    )
+                    Text("−", color = Forest, style = MaterialTheme.typography.titleLarge)
+                }
+                MealsIconButton(
+                    onClick = { onAdjustServings(1) },
+                    enabled = meal.servings < 12 && !meal.isCooked,
+                    modifier = Modifier.size(36.dp),
+                    size = 36.dp
+                ) {
+                    Text("+", color = Forest, style = MaterialTheme.typography.titleLarge)
                 }
             }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MealsPrimaryButton(
-                    label = if (meal.isCooked) "تراجع" else "تم الطهي",
+                MealsTextButton(
                     onClick = onToggleCooked,
-                    modifier = Modifier.weight(1f),
-                    showArrow = false
-                )
-                MealsSecondaryButton(
-                    label = "تغيير",
+                    compact = true
+                ) {
+                    MealsIcon(
+                        name = MealsIconName.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        if (meal.isCooked) "تراجع عن الطهي" else "تم الطهي",
+                        color = ForestDark,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                MealsTextButton(
                     onClick = { chooseRecipe = true },
-                    modifier = Modifier.weight(1f),
-                    icon = MealsIconName.Refresh
-                )
+                    compact = true
+                ) {
+                    MealsIcon(
+                        name = MealsIconName.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        "تغيير",
+                        color = ForestDark,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         } else {
-            MealsSecondaryButton(
-                label = "إضافة وصفة",
-                onClick = { chooseRecipe = true },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                icon = MealsIconName.Add
-            )
+                horizontalArrangement = Arrangement.Start
+            ) {
+                MealsTextButton(
+                    onClick = { chooseRecipe = true },
+                    compact = true
+                ) {
+                    MealsIcon(
+                        name = MealsIconName.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        "إضافة وصفة",
+                        color = ForestDark,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
         }
     }
 

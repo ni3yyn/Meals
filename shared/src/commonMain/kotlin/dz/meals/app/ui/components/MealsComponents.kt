@@ -427,30 +427,26 @@ fun MealsTextButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     color: Color = ForestDark,
+    compact: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
     MealsLiquidGlassControl(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        minHeight = 44.dp,
-        horizontalPadding = 10.dp,
-        verticalPadding = 6.dp,
+        minHeight = if (compact) 38.dp else 44.dp,
+        horizontalPadding = if (compact) 8.dp else 10.dp,
+        verticalPadding = if (compact) 4.dp else 6.dp,
         contentColor = color
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             content = content
         )
     }
 }
 
-/**
- * One glass material for all icon-only controls. Its face stays translucent,
- * the outer rim is a multi-stop white highlight, and the inset hairline adds
- * the second optical edge that makes the surface read as liquid glass.
- */
 @Composable
 private fun MealsLiquidGlassIconControl(
     onClick: () -> Unit,
