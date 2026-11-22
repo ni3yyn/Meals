@@ -274,13 +274,13 @@ fun MealsPressable(
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.925f else 1f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.58f, stiffness = 620f),
+        targetValue = if (pressed && enabled) 0.965f else 1f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = 900f),
         label = "mealsSharedPressScale"
     )
     val highlight by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.20f else 0f,
-        animationSpec = tween(90),
+        targetValue = if (pressed && enabled) 0.12f else 0f,
+        animationSpec = tween(70),
         label = "mealsSharedPressHighlight"
     )
     Box(
