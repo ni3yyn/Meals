@@ -176,7 +176,7 @@ fun PlanScreen(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text("ميزانية الأسبوع", color = dz.meals.app.ui.theme.ForestDark, style = MaterialTheme.typography.labelMedium)
+                        Text("ميزانية الأسبوع", color = dz.meals.app.ui.theme.TextAccent, style = MaterialTheme.typography.labelMedium)
                         Text(
                             preferences.weeklyBudgetDzd.formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
@@ -191,7 +191,7 @@ fun PlanScreen(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text("الشراء المتوقع", color = dz.meals.app.ui.theme.ForestDark, style = MaterialTheme.typography.labelMedium)
+                        Text("الشراء المتوقع", color = dz.meals.app.ui.theme.TextAccent, style = MaterialTheme.typography.labelMedium)
                         Text(
                             snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
@@ -224,7 +224,7 @@ fun PlanScreen(
                                 else ->
                                     snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر."
                             },
-                            color = dz.meals.app.ui.theme.ForestDark,
+                            color = dz.meals.app.ui.theme.BodyInk,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium
                         )
@@ -663,7 +663,7 @@ private fun SlotRow(
                     )
                     Text(
                         "إضافة وصفة",
-                        color = ForestDark,
+                        color = dz.meals.app.ui.theme.TextAccent,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
                     )
