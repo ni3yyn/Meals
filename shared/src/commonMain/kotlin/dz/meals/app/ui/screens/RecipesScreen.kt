@@ -145,7 +145,7 @@ fun RecipesScreen(
                                 MealsIcon(
                                     MealsIconName.Meal,
                                     contentDescription = null,
-                                    modifier = Modifier.size(27.dp)
+                                    modifier = Modifier.size(33.dp)
                                 )
                             }
                             Text(
@@ -159,7 +159,7 @@ fun RecipesScreen(
                                 MealsIcon(
                                     name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline,
                                     contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة",
-                                    modifier = Modifier.size(22.dp),
+                                    modifier = Modifier.size(30.dp),
                                 )
                             }
                         }
@@ -172,7 +172,7 @@ fun RecipesScreen(
                             MealsIcon(
                                 MealsIconName.Clock,
                                 contentDescription = null,
-                                modifier = Modifier.size(17.dp),
+                                modifier = Modifier.size(22.dp),
                             )
                             Text(
                                 recipe.durationMinutes.toString() + " د",
@@ -202,14 +202,14 @@ fun RecipesScreen(
                                 MealsIcon(
                                     MealsIconName.Info,
                                     contentDescription = "تفاصيل الوصفة",
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(30.dp),
                                 )
                             }
                             MealsIconAction(onClick = { onAddRecipe(recipe.id) }) {
                                 MealsIcon(
                                     MealsIconName.Add,
                                     contentDescription = "أضف إلى الأسبوع",
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(30.dp),
                                 )
                             }
                         }

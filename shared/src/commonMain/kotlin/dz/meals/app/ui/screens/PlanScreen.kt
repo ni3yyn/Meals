@@ -118,7 +118,7 @@ fun PlanScreen(
                         MealsIcon(
                             MealsIconName.Basket,
                             contentDescription = "المشتريات",
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(30.dp),
                         )
                     }
                 }
@@ -131,7 +131,7 @@ fun PlanScreen(
                         MealsIcon(
                             MealsIconName.ArrowForward,
                             contentDescription = "الأسبوع السابق",
-                            modifier = Modifier.size(21.dp),
+                            modifier = Modifier.size(29.dp),
                         )
                     }
                     Text(
@@ -145,7 +145,7 @@ fun PlanScreen(
                         MealsIcon(
                             MealsIconName.ArrowBack,
                             contentDescription = "الأسبوع التالي",
-                            modifier = Modifier.size(21.dp),
+                            modifier = Modifier.size(29.dp),
                         )
                     }
                 }
@@ -350,7 +350,7 @@ fun PlanScreen(
                     MealsIcon(
                         name = MealsIconName.ChevronRight,
                         contentDescription = if (isExpanded) "طي اليوم" else "عرض وجبات اليوم",
-                        modifier = Modifier.size(22.dp).graphicsLayer {
+                        modifier = Modifier.size(28.dp).graphicsLayer {
                             rotationZ = if (isExpanded) 90f else 0f
                         }
                     )
@@ -504,7 +504,7 @@ private fun SlotRow(
                     MealsIcon(
                         name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen,
                         contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
-                        modifier = Modifier.size(27.dp)
+                        modifier = Modifier.size(31.dp)
                     )
                 }
             }
@@ -520,7 +520,7 @@ private fun SlotRow(
                     MealsIcon(
                         name = MealsIconName.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(27.dp)
                     )
                     Text(
                         "تم الطهي",
@@ -532,7 +532,7 @@ private fun SlotRow(
                     MealsIcon(
                         name = MealsIconName.Clock,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(27.dp)
                     )
                     Text(
                         recipe.durationMinutes.toString() + " دقيقة",
@@ -550,7 +550,7 @@ private fun SlotRow(
                 MealsIcon(
                     name = MealsIconName.Meal,
                     contentDescription = null,
-                    modifier = Modifier.size(23.dp)
+                    modifier = Modifier.size(26.dp)
                 )
                 Text(
                     meal.servings.toString() + " حصص",
@@ -588,7 +588,7 @@ private fun SlotRow(
                     MealsIcon(
                         name = MealsIconName.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                     Text(
                         if (meal.isCooked) "تراجع عن الطهي" else "تم الطهي",
@@ -604,7 +604,7 @@ private fun SlotRow(
                     MealsIcon(
                         name = MealsIconName.Refresh,
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                     Text(
                         "تغيير",
@@ -626,7 +626,7 @@ private fun SlotRow(
                     MealsIcon(
                         name = MealsIconName.Add,
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                     Text(
                         "إضافة وصفة",

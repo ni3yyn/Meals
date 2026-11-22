@@ -84,7 +84,7 @@ fun PantryScreen(
                 value = search,
                 onValueChange = { search = it.take(60) },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { MealsIcon(MealsIconName.Search, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                leadingIcon = { MealsIcon(MealsIconName.Search, contentDescription = null, modifier = Modifier.size(26.dp)) },
                 label = { Text("ابحث بالعربية أو الفرنسية أو الدارجة") },
                 singleLine = true
             )
@@ -121,7 +121,7 @@ fun PantryScreen(
                                 Text(ingredient.nameAr, color = MaterialTheme.colorScheme.onSurface)
                                 Text(ingredient.nameFr + " · " + ingredient.baseUnit, color = MutedInk, style = MaterialTheme.typography.bodySmall)
                             }
-                            MealsIcon(MealsIconName.Add, contentDescription = "إضافة أو تعديل", modifier = Modifier.size(23.dp))
+                            MealsIcon(MealsIconName.Add, contentDescription = "إضافة أو تعديل", modifier = Modifier.size(28.dp))
                         }
                     }
                 }
@@ -178,10 +178,10 @@ fun PantryScreen(
                                         selectedIngredientId = item.ingredientId
                                     }
                                 ) {
-                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(20.dp))
+                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(30.dp))
                                 }
                                 MealsIconAction(onClick = { onRemove(item.id) }) {
-                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp))
+                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(30.dp))
                                 }
                             }
                         }

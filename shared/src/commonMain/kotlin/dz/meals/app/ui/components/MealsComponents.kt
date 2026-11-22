@@ -361,7 +361,7 @@ fun MealsPrimaryButton(
                 MealsIcon(
                     name = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(22.dp),
                 )
                 Spacer(Modifier.size(8.dp))
             }
@@ -376,7 +376,7 @@ fun MealsPrimaryButton(
                 MealsIcon(
                     MealsIconName.ChevronRight,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -407,7 +407,7 @@ fun MealsSecondaryButton(
                 MealsIcon(
                     name = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(17.dp),
+                    modifier = Modifier.size(21.dp),
                 )
                 Spacer(Modifier.size(7.dp))
             }
@@ -589,7 +589,7 @@ fun MealsSearchBar(
             MealsIcon(
                 name = MealsIconName.Search,
                 contentDescription = null,
-                modifier = Modifier.size(21.dp),
+                modifier = Modifier.size(26.dp),
             )
             BasicTextField(
                 value = value,
@@ -778,7 +778,7 @@ fun MealsChoiceTile(
                         .background(if (selected) Color.White.copy(alpha = 0.78f) else SoftPink),
                     contentAlignment = Alignment.Center
                 ) {
-                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(28.dp))
+                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(34.dp))
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -790,7 +790,7 @@ fun MealsChoiceTile(
                     modifier = Modifier.size(27.dp).clip(CircleShape).background(Forest),
                     contentAlignment = Alignment.Center
                 ) {
-                    MealsIcon(name = MealsIconName.Check, contentDescription = "محدد", modifier = Modifier.size(20.dp))
+                    MealsIcon(name = MealsIconName.Check, contentDescription = "محدد", modifier = Modifier.size(23.dp))
                 }
             } else {
                 Box(
@@ -857,7 +857,7 @@ fun MealsIllustrationBadge(
         MealsIcon(
             icon,
             contentDescription = null,
-            modifier = Modifier.align(Alignment.Center).size(size * 0.72f)
+            modifier = Modifier.align(Alignment.Center).size(size * 0.78f)
         )
     }
 }
@@ -955,7 +955,7 @@ fun MealsDialog(
                             MealsIcon(
                                 MealsIconName.Close,
                                 contentDescription = "إغلاق",
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(30.dp),
                             )
                         }
                     }
@@ -1131,7 +1131,7 @@ fun MealsFrostedBottomBar(
                             name = item.icon,
                             selected = selected,
                             contentDescription = item.label,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(31.dp)
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(

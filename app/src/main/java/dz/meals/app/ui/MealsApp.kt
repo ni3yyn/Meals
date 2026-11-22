@@ -204,7 +204,7 @@ private fun MealsAppContent() {
                             MealsIcon(
                                 MealsIconName.Update,
                                 contentDescription = "تحديث التطبيق",
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(30.dp),
                             )
                         }
                         MealsIconButton(
@@ -214,7 +214,7 @@ private fun MealsAppContent() {
                             MealsIcon(
                                 MealsIconName.Settings,
                                 contentDescription = "الإعدادات",
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(30.dp),
                             )
                         }
                     },

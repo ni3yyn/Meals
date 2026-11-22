@@ -123,7 +123,7 @@ fun ShoppingScreen(
                             Text("مشاركة")
                         }
                         MealsTextButton(onClick = { addDialog = true }) {
-                            MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(19.dp))
+                            MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(24.dp))
                             Text("إضافة")
                         }
                     }
@@ -689,11 +689,11 @@ private fun ShoppingItemCard(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 MealsIconAction(onClick = onEdit) {
-                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(20.dp))
+                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(30.dp))
                 }
                 if (item.userAdded) {
                     MealsIconAction(onClick = onDelete) {
-                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(20.dp))
+                        MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(30.dp))
                     }
                 }
             }
