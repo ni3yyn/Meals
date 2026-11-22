@@ -1,10 +1,8 @@
 name: Android CI
 
+# Temporarily paused on push and pull requests while the signed release pipeline
+# is the single source of Android build validation. Manual runs remain available.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -24,6 +22,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.6.0"
+          cache-read-only: false
+
       - name: Install Android SDK platform
         shell: bash
         run: |
@@ -35,29 +39,22 @@ jobs:
           set -o pipefail
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.1" "build-tools;36.0.0" "platform-tools"
 
-      - name: Set up Gradle 9.6.0
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: "9.6.0"
-
       - name: Run unit tests
-        run: gradle testReleaseUnitTest --no-daemon
+        run: gradle testReleaseUnitTest --no-daemon --build-cache --parallel
 
       - name: Launch minified release build on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          # GitHub-hosted Linux runners may not expose KVM. Explicitly allow
-          # the emulator's TCG software CPU backend when hardware accel is absent.
           ANDROID_I_WANT_MY_TCG: "yes"
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: gradle :app:connectedReleaseAndroidTest --no-daemon
+          script: gradle :app:connectedReleaseAndroidTest --no-daemon --build-cache --parallel
 
       - name: Assemble debug APK
-        run: gradle assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon --build-cache --parallel
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
