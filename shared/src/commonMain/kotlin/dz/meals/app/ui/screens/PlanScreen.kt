@@ -7,7 +7,6 @@ import dz.meals.app.ui.components.MealsTextButton
 import dz.meals.app.ui.theme.ForestDark
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
@@ -292,7 +291,7 @@ fun PlanScreen(
             LaunchedEffect(isExpanded) {
                 if (isExpanded) {
                     // Reveal the expanded card after its height transition has settled.
-                    delay(190)
+                    delay(230)
                     bringIntoViewRequester.bringIntoView()
                 }
             }
@@ -300,10 +299,9 @@ fun PlanScreen(
             MealsCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .bringIntoViewRequester(bringIntoViewRequester)
-                    .animateContentSize(animationSpec = tween(durationMillis = 180)),
+                    .bringIntoViewRequester(bringIntoViewRequester),
                 containerColor = Paper,
-                borderColor = if (isExpanded) Forest.copy(alpha = 0.28f) else Border,
+                borderColor = if (isExpanded) Forest else Border,
                 contentPadding = 0.dp
             ) {
                 Row(
