@@ -12,7 +12,7 @@
 
     <style name="Theme.Mida.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/mida_splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_mida_mark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_mida_splash</item>
         <item name="postSplashScreenTheme">@style/Theme.Mida</item>
     </style>
 </resources>
