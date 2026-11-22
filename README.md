@@ -1,4 +1,4 @@
-# مائدتي (Meals)
+# mida
 
 Kotlin Multiplatform meal planner for Algeria, built with Jetpack Compose and Compose Multiplatform. Android remains the current application host; reusable UI, theme tokens, domain models and the recipe catalogue are being shared through the `:shared` module. Android and iOS targets are configured, while iOS persistence and the complete iOS app host remain in the migration roadmap.
 
@@ -54,7 +54,7 @@ Pushing a `v*` version tag or manually dispatching the signed release workflow p
 
 The release workflow requires these repository Actions secrets:
 
-- `ANDROID_KEYSTORE_BASE64`: the Base64-encoded, persistent Meals release keystore.
+- `ANDROID_KEYSTORE_BASE64`: the Base64-encoded, persistent mida release keystore.
 - `ANDROID_KEYSTORE_PASSWORD`: that keystore's password.
 - `ANDROID_KEY_ALIAS`: the key alias.
 - `ANDROID_KEY_PASSWORD`: the key password.

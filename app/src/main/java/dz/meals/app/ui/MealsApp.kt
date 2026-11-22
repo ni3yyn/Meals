@@ -2,6 +2,10 @@ package dz.meals.app.ui
 
 import dz.meals.app.MealsStartupLogger
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+
 import androidx.compose.animation.core.tween
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -133,17 +137,51 @@ private enum class AppTab(val title: String) {
     Pantry("المخزون")
 }
 
+@Composable
+fun MidaBrandLogo(
+    modifier: Modifier = Modifier,
+    iconSize: androidx.compose.ui.unit.Dp = 52.dp,
+    showWordmark: Boolean = true
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(9.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painterResource(id = dz.meals.app.R.drawable.ic_mida_mark),
+            contentDescription = "mida",
+            modifier = Modifier.size(iconSize)
+        )
+        if (showWordmark) {
+            Text(
+                text = "mida",
+                color = dz.meals.app.ui.theme.Ink,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MealsApp(localeTag: String = DEFAULT_MEALS_LOCALE_TAG) {
+fun MealsApp(
+    localeTag: String = DEFAULT_MEALS_LOCALE_TAG,
+    onInitialContentReady: () -> Unit = {},
+    onExit: () -> Unit = {}
+) {
     val layoutDirection = remember(localeTag) { mealsLayoutDirection(localeTag) }
     CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-        MealsAppContent()
+        MealsAppContent(onInitialContentReady = onInitialContentReady, onExit = onExit)
     }
 }
 
 @Composable
-private fun MealsAppContent() {
+private fun MealsAppContent(
+    onInitialContentReady: () -> Unit,
+    onExit: () -> Unit
+) {
     MealsStartupLogger.markOnce("MealsAppContent entered")
     val context = LocalContext.current
     val preferencesStore = remember(context) { PreferencesStore(context) }
@@ -168,9 +206,17 @@ private fun MealsAppContent() {
     var isGenerating by remember { mutableStateOf(false) }
     var generationMessage by remember { mutableStateOf<String?>(null) }
     var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
+    var showExitConfirmation by rememberSaveable { mutableStateOf(false) }
+    var hasSignalledInitialReadiness by remember { mutableStateOf(false) }
     var isCheckingForUpdates by remember { mutableStateOf(false) }
     var updateStatus by remember { mutableStateOf("تحققي من توفر إصدار أحدث من التطبيق.") }
     var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
+
+    BackHandler(
+        enabled = preferencesLoaded && preferences.hasCompletedSetup &&
+            !showSettings && !showUpdateDialog && !showExitConfirmation,
+        onBack = { showExitConfirmation = true }
+    )
 
     suspend fun refresh() {
         snapshot = repository.snapshot(weekStartIso, preferences.wilaya, preferences.mealSlots)
@@ -206,7 +252,7 @@ private fun MealsAppContent() {
             context.startActivity(
                 Intent.createChooser(
                     Intent(Intent.ACTION_VIEW, Uri.parse(url)),
-                    "تنزيل مائدتي"
+                    "تنزيل mida"
                 )
             )
         } catch (_: Exception) {
@@ -221,12 +267,21 @@ private fun MealsAppContent() {
         }
     }
 
-    LaunchedEffect(repository, weekStartIso, preferences.wilaya, preferences.mealSlots) {
-        MealsStartupLogger.markOnce("Initial repository initialization started")
-        repository.ensureInitialized()
-        MealsStartupLogger.markOnce("Initial repository initialization completed")
-        refresh()
-        MealsStartupLogger.markOnce("Initial meal snapshot loaded")
+    LaunchedEffect(repository, weekStartIso, preferences.wilaya, preferences.mealSlots, preferencesLoaded) {
+        try {
+            MealsStartupLogger.markOnce("Initial repository initialization started")
+            repository.ensureInitialized()
+            MealsStartupLogger.markOnce("Initial repository initialization completed")
+            refresh()
+            MealsStartupLogger.markOnce("Initial meal snapshot loaded")
+        } finally {
+            // Keep the native splash only through the small local preferences
+            // and first snapshot read; never add an arbitrary fixed delay.
+            if (preferencesLoaded && !hasSignalledInitialReadiness) {
+                hasSignalledInitialReadiness = true
+                onInitialContentReady()
+            }
+        }
     }
 
     LaunchedEffect(generationMessage) {
@@ -290,7 +345,7 @@ private fun MealsAppContent() {
                     title = {
                         Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)) {
                             Text("صباح الخير", style = MaterialTheme.typography.titleLarge)
-                            Text("مائدتي · " + selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("mida · " + selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
                     actions = {
@@ -404,7 +459,7 @@ private fun MealsAppContent() {
                         onShareList = { body ->
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات مائدتي")
+                                putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات mida")
                                 putExtra(Intent.EXTRA_TEXT, body)
                             }
                             runCatching {
@@ -590,6 +645,38 @@ private fun MealsAppContent() {
                     )
                 }
             }
+        }
+
+        if (showExitConfirmation) {
+            MealsBottomSheet(
+                titleText = "الخروج من mida؟",
+                subtitle = "هل تريد إغلاق التطبيق الآن؟",
+                onDismissRequest = { showExitConfirmation = false },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(9.dp)
+                    ) {
+                        MidaBrandLogo(
+                            modifier = Modifier.padding(vertical = 2.dp),
+                            iconSize = 58.dp
+                        )
+                        Text(
+                            "ستبقى خطتك ومخزونك محفوظين على هذا الجهاز.",
+                            color = dz.meals.app.ui.theme.MutedInk,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                },
+                confirmLabel = "خروج",
+                onConfirm = onExit,
+                confirmActionClosesSheet = true,
+                dismissLabel = "البقاء",
+                onDismissAction = { showExitConfirmation = false },
+                dismissActionClosesSheet = true,
+                showCloseButton = false
+            )
         }
 
         }

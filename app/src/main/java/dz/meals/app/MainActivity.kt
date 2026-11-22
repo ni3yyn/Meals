@@ -6,15 +6,30 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import dz.meals.app.ui.MealsApp
 import dz.meals.app.ui.theme.MidaTheme
 
 class MainActivity : ComponentActivity() {
+    private var isInitialContentReady = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         MealsStartupLogger.mark("MainActivity.onCreate entered")
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition { !isInitialContentReady }
+        splashScreen.setOnExitAnimationListener { provider ->
+            provider.view.animate()
+                .alpha(0f)
+                .translationY(-12f)
+                .scaleX(0.98f)
+                .scaleY(0.98f)
+                .setDuration(210L)
+                .withEndAction { provider.remove() }
+                .start()
+        }
         MealsStartupLogger.mark("MainActivity.super.onCreate completed")
 
         configureSystemBars()
@@ -24,7 +39,10 @@ class MainActivity : ComponentActivity() {
             MealsStartupLogger.markOnce("First Compose content pass entered")
             MidaTheme {
                 MealsStartupLogger.markOnce("MidaTheme composition entered")
-                MealsApp()
+                MealsApp(
+                    onInitialContentReady = { isInitialContentReady = true },
+                    onExit = { finish() }
+                )
             }
         }
         MealsStartupLogger.mark("MainActivity.setContent returned")
