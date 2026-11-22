@@ -8,18 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import dz.meals.app.ui.MealsApp
 import dz.meals.app.ui.theme.MidaTheme
-
-private val TajawalAndroidFontFamily = FontFamily(
-    Font(R.font.tajawal_regular, weight = FontWeight.Normal),
-    Font(R.font.tajawal_medium, weight = FontWeight.Medium),
-    Font(R.font.tajawal_bold, weight = FontWeight.Bold),
-    Font(R.font.tajawal_extra_bold, weight = FontWeight.ExtraBold)
-)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +22,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MealsStartupLogger.markOnce("First Compose content pass entered")
-            MidaTheme(fontFamily = TajawalAndroidFontFamily) {
+            MidaTheme {
                 MealsStartupLogger.markOnce("MidaTheme composition entered")
                 MealsApp()
             }
