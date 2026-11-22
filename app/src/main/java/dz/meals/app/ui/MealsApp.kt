@@ -58,7 +58,6 @@ import dz.meals.app.data.currentWeekStartIso
 import dz.meals.app.ui.components.*
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
-import dev.chrisbanes.haze.hazeSource
 import dz.meals.app.ui.screens.PantryScreen
 import dz.meals.app.ui.screens.PlanScreen
 import dz.meals.app.ui.screens.RecipesScreen
@@ -178,6 +177,9 @@ private fun MealsAppContent() {
         val hazeState = requireNotNull(LocalMealsHazeState.current) {
             "MealsApp must be hosted inside MealsBackdrop so the shared Haze source is available."
         }
+        val screenGlassBackdrop = requireNotNull(LocalMealsScreenGlassBackdrop.current) {
+            "MealsApp must be hosted inside MealsBackdrop so the shared glass source is available."
+        }
         val navigationItems = remember {
             listOf(
                 MealsNavigationItem("الخطة", MealsIconName.Plan),
@@ -236,7 +238,8 @@ private fun MealsAppContent() {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = innerPadding.calculateTopPadding())
-                    .hazeSource(hazeState, zIndex = 1f)
+                    .mealsHazeSource(hazeState, zIndex = 1f)
+                    .mealsGlassSource(screenGlassBackdrop)
             ) {
                 MealsBubblyTransition(
                     targetState = selectedTab,

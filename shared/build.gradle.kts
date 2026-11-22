@@ -35,6 +35,10 @@ kotlin {
     }
 
     sourceSets {
+        androidMain.dependencies {
+            implementation(libs.prismal.agsl)
+        }
+
         commonMain.dependencies {
             api(compose.animation)
             api(compose.runtime)

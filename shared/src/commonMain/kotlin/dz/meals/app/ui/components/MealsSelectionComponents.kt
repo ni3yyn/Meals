@@ -27,9 +27,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeInput
-import dev.chrisbanes.haze.HazePerformanceMode
-import dev.chrisbanes.haze.blur.hazeBlur
 import dz.meals.app.ui.theme.ForestDark
 import dz.meals.app.ui.theme.MutedInk
 
@@ -47,6 +44,7 @@ private fun MealsSelectionGlass(
     content: @Composable () -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current
+    val glassBackdrop = LocalMealsCardGlassBackdrop.current ?: LocalMealsScreenGlassBackdrop.current
     val face = if (selected) {
         Brush.verticalGradient(
             listOf(
@@ -82,14 +80,12 @@ private fun MealsSelectionGlass(
                 spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
             )
             .clip(SelectionShape)
-            .then(
-                if (hazeState != null) {
-                    Modifier.hazeBlur(
-                        input = HazeInput.Sources(hazeState),
-                        style = MealsLiquidGlass.ControlBlurStyle,
-                        performanceMode = HazePerformanceMode.Default
-                    )
-                } else Modifier
+            .mealsGlassBlur(
+                backdrop = glassBackdrop,
+                hazeState = hazeState,
+                blurStyle = MealsLiquidGlass.ControlBlurStyle,
+                shape = SelectionShape,
+                blurRadius = MealsLiquidGlass.ControlBlurRadius
             )
             .background(face, SelectionShape)
             .border(BorderStroke(1.15.dp, rim), SelectionShape)

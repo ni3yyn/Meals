@@ -22,6 +22,10 @@ object MealsLiquidGlass {
     /** A stronger translucent tint keeps the blurred page visible while preserving legibility. */
     const val ModalOpacity = 0.24f
 
+    val ControlBlurRadius = 12.dp
+    val SurfaceBlurRadius = 8.dp
+    val ModalBlurRadius = 20.dp
+
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
     val HeroShape = RoundedCornerShape(29.dp)

@@ -77,13 +77,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
-import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.hazeBlur
-import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
@@ -119,10 +115,15 @@ private fun MealsLiquidGlassFrame(
     face: Brush,
     hazeState: HazeState? = null,
     blurStyle: HazeBlurStyle? = null,
+    blurRadius: Dp = MealsLiquidGlass.SurfaceBlurRadius,
+    glassBackdrop: MealsGlassBackdrop? = null,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val resolvedGlassBackdrop = glassBackdrop
+        ?: LocalMealsCardGlassBackdrop.current
+        ?: LocalMealsScreenGlassBackdrop.current
     val surfaceModifier = modifier
         .shadow(
             elevation = elevation,
@@ -132,16 +133,12 @@ private fun MealsLiquidGlassFrame(
             spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
         )
         .clip(shape)
-        .then(
-            if (hazeState != null && blurStyle != null) {
-                Modifier.hazeBlur(
-                    input = HazeInput.Sources(hazeState),
-                    style = blurStyle,
-                    performanceMode = HazePerformanceMode.Default
-                )
-            } else {
-                Modifier
-            }
+        .mealsGlassBlur(
+            backdrop = resolvedGlassBackdrop,
+            hazeState = hazeState,
+            blurStyle = blurStyle,
+            shape = shape,
+            blurRadius = blurRadius
         )
         .background(face, shape)
         .border(BorderStroke(1.15.dp, rim), shape)
@@ -214,6 +211,8 @@ fun MealsCard(
 
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
+val LocalMealsCardGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
+val LocalMealsScreenGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
 
 
 /**
@@ -336,6 +335,7 @@ private fun MealsLiquidGlassControl(
             face = MealsLiquidGlass.controlFace(),
             hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
             blurStyle = MealsLiquidGlass.ControlBlurStyle,
+            blurRadius = MealsLiquidGlass.ControlBlurRadius,
             rim = MealsLiquidGlass.controlRim(),
             sideGlintHeight = 17.dp
         ) {
@@ -610,6 +610,7 @@ fun MealsSearchBar(
         face = MealsLiquidGlass.controlFace(),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        blurRadius = MealsLiquidGlass.ControlBlurRadius,
         rim = MealsLiquidGlass.controlRim(),
         sideGlintHeight = 17.dp
     ) {
@@ -883,6 +884,7 @@ fun MealsIllustrationBadge(
         face = MealsLiquidGlass.illustrationFace(background),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        blurRadius = MealsLiquidGlass.ControlBlurRadius,
         rim = MealsLiquidGlass.controlRim(),
         sideGlintHeight = size * 0.42f
     ) {
@@ -907,6 +909,7 @@ private fun MealsModalSurface(
     shape: Shape = MealsLiquidGlass.ModalShape,
     elevation: Dp = MealsLiquidGlass.ModalElevation,
     hazeStateOverride: HazeState? = null,
+    glassBackdropOverride: MealsGlassBackdrop? = null,
     fillHeight: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -922,6 +925,8 @@ private fun MealsModalSurface(
         face = face,
         hazeState = hazeState,
         blurStyle = MealsLiquidGlass.ModalBlurStyle,
+        blurRadius = MealsLiquidGlass.ModalBlurRadius,
+        glassBackdrop = glassBackdropOverride,
         rim = MealsLiquidGlass.modalRim(),
         sideGlintHeight = 30.dp
     ) {
@@ -1000,7 +1005,8 @@ fun MealsBottomSheet(
                 contentPadding = 0.dp,
                 shape = topShape,
                 elevation = MealsLiquidGlass.ModalElevation,
-                hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current
+                hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
+                glassBackdropOverride = LocalMealsScreenGlassBackdrop.current
             ) {
                 Column(
                     modifier = Modifier
@@ -1123,6 +1129,7 @@ fun MealsNavigationDrawer(
                     modifier = Modifier.fillMaxWidth(),
                     shape = drawerShape,
                     contentPadding = 20.dp,
+                    glassBackdropOverride = LocalMealsScreenGlassBackdrop.current,
                     fillHeight = true
                 ) {
                     Column(
@@ -1175,6 +1182,8 @@ fun MealsFrostedBottomBar(
             face = MealsLiquidGlass.controlFace(),
             hazeState = hazeState,
             blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+            blurRadius = MealsLiquidGlass.SurfaceBlurRadius,
+            glassBackdrop = LocalMealsScreenGlassBackdrop.current,
             rim = MealsLiquidGlass.controlRim(),
             sideGlintHeight = 30.dp
         ) {
@@ -1237,21 +1246,26 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
     // preventing a card from sampling itself or neighbouring card outputs.
     val hazeState = rememberHazeState()
     val cardHazeState = rememberHazeState()
+    val cardGlassBackdrop = rememberMealsGlassBackdrop()
+    val screenGlassBackdrop = rememberMealsGlassBackdrop()
 
     CompositionLocalProvider(
         LocalMealsHazeState provides hazeState,
-        LocalMealsCardHazeState provides cardHazeState
+        LocalMealsCardHazeState provides cardHazeState,
+        LocalMealsCardGlassBackdrop provides cardGlassBackdrop,
+        LocalMealsScreenGlassBackdrop provides screenGlassBackdrop
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .hazeSource(cardHazeState)
+                    .mealsHazeSource(cardHazeState)
+                    .mealsGlassSource(cardGlassBackdrop)
             ) {
             Canvas(
                 Modifier
                     .fillMaxSize()
-                    .hazeSource(hazeState)
+                    .mealsHazeSource(hazeState)
             ) {
                 drawRect(
                     Brush.linearGradient(
