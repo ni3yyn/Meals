@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,9 +63,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
@@ -94,6 +93,10 @@ import dz.meals.app.ui.theme.SoftPink
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsNavigationIcon
 import dz.meals.app.ui.icons.MealsIconName
+import dz.meals.app.shared.generated.resources.Res
+import dz.meals.app.shared.generated.resources.meals_kitchen_background
+import androidx.compose.ui.layout.ContentScale
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
@@ -106,7 +109,7 @@ private val MealsCardShape = MealsLiquidGlass.CardShape
  *
  * Each card uses Haze's source-backed Blur with a shared restrained style,
  * a translucent porcelain tint, fine white rim and no platform elevation
- * shadow. The dedicated card source contains only the cloudy backdrop.
+ * shadow. The dedicated card source contains only the fixed kitchen artwork.
  */
 @Composable
 private fun MealsLiquidGlassFrame(
@@ -1255,7 +1258,7 @@ fun MealsFrostedBottomBar(
 @Composable
 fun MealsBackdrop(content: @Composable () -> Unit) {
     // The full-screen state is used by the floating navigation so it can blur
-    // moving content. The card state is isolated to the atmospheric canvas,
+    // moving content. The card state is isolated to the fixed background artwork,
     // preventing a card from sampling itself or neighbouring card outputs.
     val hazeState = rememberHazeState()
     val cardHazeState = rememberHazeState()
@@ -1275,79 +1278,17 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
                     .mealsHazeSource(cardHazeState)
                     .mealsGlassSource(cardGlassBackdrop)
             ) {
-            Canvas(
-                Modifier
-                    .fillMaxSize()
-                    .mealsHazeSource(hazeState)
-            ) {
-                drawRect(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFF8E9E1),
-                            Color(0xFFF4EAD5),
-                            Color(0xFFE7EEDC),
-                            Color(0xFFF3E1DB),
-                            Color(0xFFFFF1E7)
-                        ),
-                        start = Offset.Zero,
-                        end = Offset(size.width, size.height)
-                    )
+                // This sits behind the Scaffold, so it stays fixed while tab content scrolls.
+                Image(
+                    painter = painterResource(Res.drawable.meals_kitchen_background),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .mealsHazeSource(hazeState)
                 )
-
-                val radius = maxOf(size.width, size.height) * 0.60f
-                drawCloud(
-                    center = Offset(size.width * 0.04f, size.height * 0.10f),
-                    color = Color(0xFFE8BFB5),
-                    radius = radius
-                )
-                drawCloud(
-                    center = Offset(size.width * 0.50f, -size.height * 0.06f),
-                    color = Color(0xFFC8DDBF),
-                    radius = radius * 1.04f
-                )
-                drawCloud(
-                    center = Offset(size.width * 1.02f, size.height * 0.13f),
-                    color = Color(0xFFEBD8A8),
-                    radius = radius * 0.88f
-                )
-                drawCloud(
-                    center = Offset(size.width * 1.04f, size.height * 0.59f),
-                    color = Color(0xFFE8C3C0),
-                    radius = radius * 0.94f
-                )
-                drawCloud(
-                    center = Offset(size.width * 0.02f, size.height * 1.02f),
-                    color = Color(0xFFD1E2C8),
-                    radius = radius * 0.98f
-                )
-                drawCloud(
-                    center = Offset(size.width * 0.93f, size.height * 0.98f),
-                    color = Color(0xFFECC9B9),
-                    radius = radius * 0.92f
-                )
-            }
             }
             content()
         }
     }
-}
-
-private fun DrawScope.drawCloud(
-    center: Offset,
-    color: Color,
-    radius: Float
-) {
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(
-                color.copy(alpha = 0.70f),
-                color.copy(alpha = 0.32f),
-                Color.Transparent
-            ),
-            center = center,
-            radius = radius
-        ),
-        radius = radius,
-        center = center
-    )
 }
