@@ -677,7 +677,10 @@ private fun SlotRow(
             onDismissRequest = { chooseRecipe = false },
             title = { Text("اختر وصفة لـ " + title) },
             text = {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                LazyColumn(
+                    modifier = Modifier.height((recipes.size * 42).coerceIn(42, 420).dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     items(recipes, key = { it.id }) { item ->
                         MealsTextButton(
                             onClick = {
