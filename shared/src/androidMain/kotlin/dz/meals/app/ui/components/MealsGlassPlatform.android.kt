@@ -1,9 +1,12 @@
 package dz.meals.app.ui.components
 
+import android.graphics.Color as AndroidColor
 import android.os.Build
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
@@ -75,6 +78,30 @@ actual fun MealsModalWindowBlur() {
     val window = (view.parent as? DialogWindowProvider)?.window ?: return
     val blurRadiusPx = with(LocalDensity.current) { 18.dp.roundToPx() }
 
+    // ModalBottomSheet owns a separate Dialog window; configuring the Activity
+    // window alone does not affect it. Apply edge-to-edge navigation once, before
+    // the first dialog frame, so Android never inserts its default solid/scrim bar.
+    // This is a static window configuration: no navigation-bar alpha animation,
+    // scrim interpolation, or per-frame system-bar updates are used.
+    DisposableEffect(window) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = AndroidColor.TRANSPARENT
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+            window.navigationBarDividerColor = AndroidColor.TRANSPARENT
+        }
+
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            // Match the app's warm, light surfaces with dark navigation glyphs.
+            isAppearanceLightNavigationBars = true
+        }
+
+        onDispose { }
+    }
+
+    // Keep the optional blur-behind effect independent from system-bar state.
+    // A density change may update blur radius, but never touches nav-bar opacity.
     DisposableEffect(window, blurRadiusPx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val hadBlurBehindFlag =
