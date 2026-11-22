@@ -125,7 +125,7 @@ jobs:
           APP_VERSION_CODE: ${{ steps.release.outputs.version_code }}
         run: |
           set -euo pipefail
-          gradle :app:testDebugUnitTest :app:assembleRelease :app:lintRelease --no-daemon --stacktrace \
+          gradle :app:testReleaseUnitTest :app:assembleRelease :app:lintRelease --no-daemon --stacktrace \
             -PappVersionCode="$APP_VERSION_CODE" \
             -PappVersionName="$APP_VERSION" \
             -PreleaseKeystorePath="$RUNNER_TEMP/meals-release.jks" \
