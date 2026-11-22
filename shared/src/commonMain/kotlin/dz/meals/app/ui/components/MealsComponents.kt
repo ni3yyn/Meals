@@ -82,10 +82,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazePerformanceMode
-import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.rememberHazeState
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
@@ -110,8 +109,8 @@ private val MealsCardShape = MealsLiquidGlass.CardShape
 
 /**
  * The shared elevated Liquid Glass surface used for budgets, summaries and
- * grouped content. It frosts the isolated atmospheric backdrop, then layers
- * a translucent tint, bright double rim and restrained optical reflections.
+ * grouped content. It refracts and diffuses the isolated atmospheric backdrop,
+ * then layers a translucent tint, pure-white optical rims and lens reflections.
  */
 @Composable
 private fun MealsLiquidGlassFrame(
@@ -120,7 +119,6 @@ private fun MealsLiquidGlassFrame(
     elevation: Dp,
     face: Brush,
     hazeState: HazeState? = null,
-    blurStyle: HazeBlurStyle? = null,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
     showOpticalHighlights: Boolean = true,
@@ -138,37 +136,46 @@ private fun MealsLiquidGlassFrame(
         Modifier
     }
 
+    val glassShape = shape as? RoundedCornerShape ?: MealsLiquidGlass.ControlShape
+    val glassStyle = remember(glassShape) {
+        MealsLiquidGlass.lensStyle(glassShape)
+    }
+    val glassModifier = if (hazeState != null) {
+        Modifier.hazeGlass(
+            input = HazeInput.Sources(hazeState),
+            style = glassStyle,
+            performanceMode = HazePerformanceMode.Default
+        )
+    } else {
+        Modifier
+    }
+
     val surfaceModifier = modifier
         .then(surfaceShadow)
+        .then(glassModifier)
         .clip(shape)
-        .then(
-            if (hazeState != null && blurStyle != null) {
-                Modifier.hazeBlur(
-                    input = HazeInput.Sources(hazeState),
-                    style = blurStyle,
-                    performanceMode = HazePerformanceMode.Default
-                )
-            } else {
-                Modifier
-            }
-        )
         .background(face, shape)
-        .border(BorderStroke(1.15.dp, rim), shape)
+        .border(BorderStroke(1.3.dp, rim), shape)
 
     Box(modifier = surfaceModifier, contentAlignment = Alignment.TopStart) {
         if (showOpticalHighlights) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
+                    .background(MealsLiquidGlass.lensReflection(), shape)
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
                     .padding(1.dp)
-                    .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), shape)
+                    .border(BorderStroke(0.75.dp, MealsLiquidGlass.innerRim()), shape)
             )
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 1.dp)
-                    .fillMaxWidth(0.62f)
-                    .height(1.dp)
+                    .fillMaxWidth(0.66f)
+                    .height(1.4.dp)
                     .background(MealsLiquidGlass.specular(), CircleShape)
             )
             Box(
@@ -177,6 +184,14 @@ private fun MealsLiquidGlassFrame(
                     .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
                     .width(1.dp)
                     .height(sideGlintHeight)
+                    .background(MealsLiquidGlass.sideGlint(), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 1.dp, top = 18.dp, bottom = 18.dp)
+                    .width(1.dp)
+                    .height(sideGlintHeight * 0.72f)
                     .background(MealsLiquidGlass.sideGlint(), CircleShape)
             )
         }
@@ -190,7 +205,7 @@ fun MealsCard(
     containerColor: Color = Paper,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     contentPadding: Dp = 18.dp,
-    borderColor: Color? = Color(0xFFDAD3C7),
+    @Suppress("UNUSED_PARAMETER") borderColor: Color? = Color(0xFFDAD3C7),
     shape: Shape = MealsCardShape,
     shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
@@ -199,7 +214,7 @@ fun MealsCard(
         MealsLiquidGlass.cardFace(containerColor)
     }
     val rim = remember(borderColor) {
-        MealsLiquidGlass.surfaceRim(borderColor ?: Color(0xFFEADFD7))
+        MealsLiquidGlass.surfaceRim()
     }
 
     MealsLiquidGlassFrame(
@@ -208,7 +223,6 @@ fun MealsCard(
         elevation = shadowElevation.coerceIn(0.dp, 4.dp),
         face = face,
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
         rim = rim,
         sideGlintHeight = 23.dp,
         showOpticalHighlights = true
@@ -254,7 +268,6 @@ fun MealsGlassSurface(
         elevation = MealsLiquidGlass.SurfaceElevation,
         face = face,
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
         rim = MealsLiquidGlass.surfaceRim(),
         sideGlintHeight = 27.dp,
         showOpticalHighlights = true
@@ -383,8 +396,7 @@ private fun MealsLiquidGlassControl(
             elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
             face = face,
             hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-            blurStyle = MealsLiquidGlass.ControlBlurStyle,
-            rim = rim,
+                rim = rim,
             sideGlintHeight = 17.dp
         ) {
         Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
@@ -606,7 +618,6 @@ fun MealsLiquidGlassTextField(
         elevation = if (enabled) MealsLiquidGlass.SurfaceElevation else 0.dp,
         face = MealsLiquidGlass.controlFace(),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-        blurStyle = MealsLiquidGlass.ControlBlurStyle,
         rim = rim,
         sideGlintHeight = 17.dp
     ) {
@@ -659,7 +670,6 @@ fun MealsSearchBar(
         elevation = MealsLiquidGlass.ControlElevation,
         face = MealsLiquidGlass.controlFace(),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-        blurStyle = MealsLiquidGlass.ControlBlurStyle,
         rim = MealsLiquidGlass.controlRim(),
         sideGlintHeight = 17.dp
     ) {
@@ -932,7 +942,6 @@ fun MealsIllustrationBadge(
         elevation = MealsLiquidGlass.ControlElevation,
         face = MealsLiquidGlass.illustrationFace(background),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-        blurStyle = MealsLiquidGlass.ControlBlurStyle,
         rim = MealsLiquidGlass.controlRim(),
         sideGlintHeight = size * 0.42f
     ) {
@@ -971,7 +980,6 @@ private fun MealsModalSurface(
         elevation = elevation,
         face = face,
         hazeState = hazeState,
-        blurStyle = MealsLiquidGlass.ModalBlurStyle,
         rim = MealsLiquidGlass.modalRim(),
         sideGlintHeight = 30.dp
     ) {
@@ -1224,8 +1232,7 @@ fun MealsFrostedBottomBar(
             elevation = 10.dp,
             face = MealsLiquidGlass.controlFace(),
             hazeState = hazeState,
-            blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
-            rim = MealsLiquidGlass.controlRim(),
+                rim = MealsLiquidGlass.controlRim(),
             sideGlintHeight = 30.dp
         ) {
             Row(
