@@ -31,7 +31,7 @@ private val MidaColors = lightColorScheme(
     surface = Paper,
     onSurface = Ink,
     surfaceVariant = SoftGreen,
-    onSurfaceVariant = MutedInk,
+    onSurfaceVariant = BodyInk,
     outline = Border,
     outlineVariant = Border.copy(alpha = 0.65f),
     error = Color(0xFFB64A45),

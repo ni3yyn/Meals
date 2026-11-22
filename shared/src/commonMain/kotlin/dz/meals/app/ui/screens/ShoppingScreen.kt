@@ -163,7 +163,7 @@ fun ShoppingScreen(
                     ) {
                         Text(
                             "المبلغ المتوقع",
-                            color = dz.meals.app.ui.theme.ForestDark,
+                            color = dz.meals.app.ui.theme.TextAccent,
                             style = MaterialTheme.typography.labelMedium
                         )
                         Text(
@@ -186,7 +186,7 @@ fun ShoppingScreen(
                     ) {
                         Text(
                             "تم جمعه",
-                            color = dz.meals.app.ui.theme.ForestDark,
+                            color = dz.meals.app.ui.theme.TextAccent,
                             style = MaterialTheme.typography.labelMedium
                         )
                         Text(
@@ -209,7 +209,7 @@ fun ShoppingScreen(
                     ) {
                         Text(
                             if (remainingCount == 0) "اكتملت القائمة" else "$remainingCount عناصر متبقية",
-                            color = ForestDark,
+                            color = dz.meals.app.ui.theme.BodyInk,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -231,7 +231,7 @@ fun ShoppingScreen(
                 if (snapshot.basket.actualSpendDzd > 0.0) {
                     Text(
                         "المدفوع فعلياً: ${snapshot.basket.actualSpendDzd.toInt().formatDzd()}",
-                        color = ForestDark,
+                        color = dz.meals.app.ui.theme.BodyInk,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium
                     )
@@ -246,7 +246,7 @@ fun ShoppingScreen(
                             else ->
                                 "${snapshot.basket.unknownPriceCount} عناصر دون سعر"
                         },
-                        color = dz.meals.app.ui.theme.ForestDark,
+                        color = dz.meals.app.ui.theme.BodyInk,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -395,7 +395,7 @@ fun ShoppingScreen(
                                 ) {
                                     Text(
                                         category,
-                                        color = Forest,
+                                        color = dz.meals.app.ui.theme.TextAccent,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )
