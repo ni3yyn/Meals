@@ -256,7 +256,7 @@ fun RecipesScreen(
             },
             confirmButton = {
                 MealsPrimaryButton(
-                    label = "أضف إلى الأسبوع",
+                    label = "أضف للخطة",
                     onClick = { onAddRecipe(detail.id); selectedRecipeId = null },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -348,7 +348,7 @@ fun RecipesScreen(
             },
             confirmButton = {
                 MealsPrimaryButton(
-                    label = if (safeStepIndex < stepCount - 1) "الخطوة التالية" else "إنهاء الطبخ",
+                    label = if (safeStepIndex < stepCount - 1) "التالي" else "إنهاء",
                     onClick = {
                         if (safeStepIndex < stepCount - 1) {
                             cookingStepIndex = safeStepIndex + 1

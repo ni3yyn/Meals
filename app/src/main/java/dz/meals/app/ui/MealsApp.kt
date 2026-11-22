@@ -414,7 +414,7 @@ private fun MealsAppContent() {
                         icon = MealsIconName.Refresh
                     )
                     MealsSecondaryButton(
-                        label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
+                        label = "تنزيل",
                         onClick = { openLatestApk() },
                         modifier = Modifier.weight(1f),
                         icon = MealsIconName.Download
@@ -557,7 +557,7 @@ private fun SettingsDialog(
                             onCheckedChange = { noKnownAllergies = it }
                         )
                         MealsPrimaryButton(
-                            label = "ابدئي الآن بالإعدادات الأساسية",
+                            label = "ابدئي الآن",
                             onClick = {
                                 val budget = budgetText.toIntOrNull()
                                 val servings = servingsText.toIntOrNull()

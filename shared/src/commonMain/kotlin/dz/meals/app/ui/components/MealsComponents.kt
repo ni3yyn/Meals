@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.animateColorAsState
@@ -126,7 +127,13 @@ private fun MealsLiquidGlassFrame(
     content: @Composable BoxScope.() -> Unit
 ) {
     val surfaceModifier = modifier
-        .shadow(elevation = elevation, shape = shape, clip = false)
+        .shadow(
+            elevation = elevation,
+            shape = shape,
+            clip = false,
+            ambientColor = Color(0xFF78917F).copy(alpha = 0.12f),
+            spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
+        )
         .clip(shape)
         .then(
             if (hazeState != null && blurStyle != null) {
@@ -363,7 +370,10 @@ fun MealsPrimaryButton(
                 text = label,
                 color = ForestDark,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
             if (showArrow) {
                 Spacer(Modifier.size(8.dp))
@@ -411,7 +421,10 @@ fun MealsSecondaryButton(
                 text = label,
                 color = contentColor,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -870,10 +883,11 @@ private fun MealsModalSurface(
     contentPadding: Dp = 22.dp,
     shape: Shape = MealsLiquidGlass.ModalShape,
     elevation: Dp = MealsLiquidGlass.ModalElevation,
+    hazeStateOverride: HazeState? = null,
     fillHeight: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val hazeState = LocalMealsCardHazeState.current
+    val hazeState = hazeStateOverride ?: LocalMealsCardHazeState.current
     val face = remember(tintColor) {
         MealsLiquidGlass.modalFace(tintColor)
     }
@@ -884,7 +898,7 @@ private fun MealsModalSurface(
         elevation = elevation,
         face = face,
         hazeState = hazeState,
-        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+        blurStyle = MealsLiquidGlass.ModalBlurStyle,
         rim = MealsLiquidGlass.modalRim(),
         sideGlintHeight = 30.dp
     ) {
@@ -962,7 +976,8 @@ fun MealsBottomSheet(
                     .heightIn(max = maxSheetHeight),
                 contentPadding = 0.dp,
                 shape = topShape,
-                elevation = MealsLiquidGlass.ModalElevation
+                elevation = MealsLiquidGlass.ModalElevation,
+                hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current
             ) {
                 Column(
                     modifier = Modifier

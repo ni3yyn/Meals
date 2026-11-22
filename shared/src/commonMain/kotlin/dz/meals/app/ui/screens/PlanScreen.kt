@@ -254,7 +254,7 @@ fun PlanScreen(
                     )
                 }
                 MealsPrimaryButton(
-                    label = if (isGenerating) "جارٍ إنشاء الخطة..." else "أنشئ خطة 7 أيام",
+                    label = if (isGenerating) "جارٍ الإنشاء" else "أنشئ الخطة",
                     onClick = { onGenerate(fillEmptyOnly) },
                     enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth(),
@@ -508,7 +508,7 @@ private fun SlotRow(
                 ) {
                     MealsIcon(
                         name = if (meal.locked) MealsIconName.Lock else MealsIconName.LockOpen,
-                        contentDescription = if (meal.locked) "إلغاء قفل الوجبة" else "قفل الوجبة",
+                        contentDescription = if (meal.locked) "فتح الوجبة" else "قفل الوجبة",
                         modifier = Modifier.size(31.dp)
                     )
                 }
@@ -588,7 +588,7 @@ private fun SlotRow(
             ) {
                 if (meal.isCooked) {
                     MealsSecondaryButton(
-                        label = "تراجع عن الطهي",
+                        label = "تراجع",
                         onClick = onToggleCooked,
                         modifier = Modifier.weight(1f),
                         icon = MealsIconName.Check

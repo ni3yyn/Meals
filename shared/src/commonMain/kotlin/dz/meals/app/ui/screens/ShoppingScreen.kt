@@ -211,7 +211,7 @@ fun ShoppingScreen(
                     }
                     if (snapshot.priceObservations.isNotEmpty()) {
                         MealsTextButton(onClick = { showPriceHistory = !showPriceHistory }) {
-                            Text(if (showPriceHistory) "إخفاء آخر الأسعار" else "آخر الأسعار")
+                            Text(if (showPriceHistory) "إخفاء الأسعار" else "آخر الأسعار")
                         }
                     }
                 }
@@ -287,7 +287,7 @@ fun ShoppingScreen(
                         Text("اكتملت القائمة", style = MaterialTheme.typography.titleLarge)
                         Text("جمعتِ كل العناصر المطلوبة.", color = MutedInk)
                         MealsTextButton(onClick = { showPurchased = true }) {
-                            Text("عرض العناصر التي جمعتها")
+                            Text("عرض المشتريات")
                         }
                     }
                 }
@@ -507,28 +507,35 @@ private fun PriceReportDialog(
         title = { Text("تسجيل ملاحظة سعر") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box {
-                    MealsSecondaryButton(
-                        label = selectedIngredient?.nameAr ?: "اختر المكوّن",
-                        onClick = { ingredientMenu = true },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    DropdownMenu(
-                        expanded = ingredientMenu,
-                        onDismissRequest = { ingredientMenu = false },
-                        modifier = Modifier.heightIn(max = 300.dp)
-                    ) {
-                        ingredients.forEach { ingredient ->
-                            DropdownMenuItem(
-                                text = { Text(ingredient.nameAr + " · " + ingredient.nameFr) },
-                                onClick = {
-                                    selectedId = ingredient.id
-                                    packQuantityText = "1"
-                                    ingredientMenu = false
-                                }
-                            )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box {
+                        MealsSecondaryButton(
+                            label = "اختيار المكوّن",
+                            onClick = { ingredientMenu = true },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        DropdownMenu(
+                            expanded = ingredientMenu,
+                            onDismissRequest = { ingredientMenu = false },
+                            modifier = Modifier.heightIn(max = 300.dp)
+                        ) {
+                            ingredients.forEach { ingredient ->
+                                DropdownMenuItem(
+                                    text = { Text(ingredient.nameAr + " · " + ingredient.nameFr) },
+                                    onClick = {
+                                        selectedId = ingredient.id
+                                        packQuantityText = "1"
+                                        ingredientMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
+                    Text(
+                        selectedIngredient?.nameAr ?: "لم يُحدّد",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 Text(
                     "الوحدة الأساسية: " + (selectedIngredient?.baseUnit?.let { formatHouseholdUnit(it) } ?: "—") +

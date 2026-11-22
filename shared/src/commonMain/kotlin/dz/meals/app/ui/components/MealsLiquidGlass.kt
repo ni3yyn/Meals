@@ -15,8 +15,10 @@ import dz.meals.app.ui.theme.Border
  * icon actions, search fields, cards, dialogs and navigation share one finish.
  */
 object MealsLiquidGlass {
-    /** One shared transparency level for every glass face and blur tint. */
+    /** One shared transparency level for everyday glass faces. */
     const val SurfaceOpacity = 0.20f
+    /** Overlay sheets let more of the live page show through. */
+    const val ModalOpacity = 0.14f
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
@@ -24,9 +26,9 @@ object MealsLiquidGlass {
     val ModalShape = RoundedCornerShape(30.dp)
     val NavigationShape = RoundedCornerShape(27.dp)
 
-    val ControlElevation = 3.dp
+    val ControlElevation = 1.dp
     val SurfaceElevation = 2.dp
-    val ModalElevation = 2.dp
+    val ModalElevation = 1.dp
     val PressDurationMillis = 120
     const val PressedScale = 0.955f
 
@@ -107,9 +109,9 @@ object MealsLiquidGlass {
 
     fun modalFace(tint: Color = Color(0xFFFFF8F1)): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity)
+            Color.White.copy(alpha = ModalOpacity),
+            tint.copy(alpha = ModalOpacity),
+            tint.copy(alpha = ModalOpacity)
         )
     )
 
@@ -138,6 +140,17 @@ object MealsLiquidGlass {
         )
         fallbackColorEffect(
             HazeColorEffect.tint(Color(0xFFFFFEFC).copy(alpha = SurfaceOpacity))
+        )
+    }
+
+    val ModalBlurStyle = HazeBlurStyle {
+        blurRadius(5.dp)
+        noiseFactor(0.012f)
+        colorEffects(
+            listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity)))
+        )
+        fallbackColorEffect(
+            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity))
         )
     }
 
