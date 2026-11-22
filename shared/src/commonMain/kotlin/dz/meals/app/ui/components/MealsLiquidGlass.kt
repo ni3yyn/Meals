@@ -304,7 +304,7 @@ internal fun Modifier.mealsOpticalEdges(
         // The soft outer catchlight sits beneath a more precise, directional white rim.
         drawOutline(
             outline = outline,
-            brush = Color.White.copy(alpha = 0.12f * edgeDepth),
+            color = Color.White.copy(alpha = 0.12f * edgeDepth),
             style = Stroke(width = 2.5.dp.toPx())
         )
         drawOutline(
