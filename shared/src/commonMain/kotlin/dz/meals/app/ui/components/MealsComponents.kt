@@ -55,7 +55,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -204,7 +203,7 @@ fun MealsCard(
     MealsLiquidGlassFrame(
         modifier = modifier,
         shape = shape,
-        elevation = shadowElevation.coerceIn(0.dp, 3.dp),
+        elevation = shadowElevation.coerceIn(0.dp, 4.dp),
         face = face,
         hazeState = cardHazeState,
         blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
