@@ -295,7 +295,7 @@ fun PlanScreen(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { expandedDay = if (isExpanded) -1 else day }
-                        .padding(horizontal = 15.dp, vertical = 13.dp),
+                        .padding(horizontal = 15.dp, vertical = 15.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {

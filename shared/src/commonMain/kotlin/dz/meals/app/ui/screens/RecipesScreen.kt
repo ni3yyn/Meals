@@ -5,7 +5,6 @@ import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsTextButton
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsBottomSheet
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -56,8 +53,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import dz.meals.app.ui.components.MealsSearchBar
+import dz.meals.app.ui.components.MealsFilterChips
+import dz.meals.app.ui.components.MealsSubtabsIndicator
 
-private val recipeCategories = listOf("الكل", "المفضلة", "اقتصادي", "سريع", "تقليدي", "عائلي")
+private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
 @Composable
 fun RecipesScreen(
@@ -70,6 +69,7 @@ fun RecipesScreen(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
+    var showFavorites by rememberSaveable { mutableStateOf(false) }
     var selectedRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
     var cookingRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
@@ -79,9 +79,8 @@ fun RecipesScreen(
     val filtered = recipes.filter { recipe ->
         val aliases = recipe.ingredients.flatMap { ingredientNames[it.ingredientId]?.aliases.orEmpty() }
         recipe.allergens.intersect(allergyIds).isEmpty() &&
-            (category == "الكل" ||
-                (category == "المفضلة" && recipe.id in favoriteRecipeIds) ||
-                (category != "المفضلة" && recipe.category == category)) &&
+            (!showFavorites || recipe.id in favoriteRecipeIds) &&
+            (category == "الكل" || recipe.category == category) &&
             (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
                 recipe.nameFr.contains(query.trim(), true) ||
                 recipe.descriptionAr.contains(query.trim(), true) ||
@@ -102,14 +101,17 @@ fun RecipesScreen(
                 placeholder = "ابحث عن وصفة أو مكوّن...",
                 modifier = Modifier.fillMaxWidth()
             )
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                recipeCategories.forEach { item ->
-                    FilterChip(selected = category == item, onClick = { category = item }, label = { Text(item) })
-                }
-            }
+            MealsSubtabsIndicator(
+                items = listOf("كل الوصفات", "المفضلة"),
+                selected = if (showFavorites) "المفضلة" else "كل الوصفات",
+                onSelect = { showFavorites = it == "المفضلة" }
+            )
+            MealsFilterChips(
+                items = recipeCategories,
+                selected = category,
+                onSelect = { category = it },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         LazyColumn(
@@ -219,7 +221,7 @@ fun RecipesScreen(
             if (filtered.isEmpty()) {
                 item {
                     Text(
-                        if (category == "المفضلة") "لم تحفظ وصفات في المفضلة بعد."
+                        if (showFavorites) "لم تحفظ وصفات في المفضلة بعد."
                         else if (recipes.any { it.allergens.intersect(allergyIds).isNotEmpty() }) "لا توجد وصفات مطابقة. قد تكون قيود الحساسية تستبعد بعض النتائج."
                         else "لا توجد وصفات مطابقة لبحثك.",
                         color = MutedInk,
