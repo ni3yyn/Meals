@@ -256,7 +256,7 @@ fun PlanScreen(
             ) {
                 Row(
                     modifier = Modifier.weight(0.92f).clip(RoundedCornerShape(17.dp))
-                        .background(Color.White.copy(alpha = 0.28f))
+                        .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.28f))
                         .clickable(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
