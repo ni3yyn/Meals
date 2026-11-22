@@ -347,6 +347,11 @@ fun PlanScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    MealsIllustrationBadge(
+                        icon = MealsIconName.Meal,
+                        background = dz.meals.app.ui.theme.SoftGreen.copy(alpha = 0.82f),
+                        size = 42.dp
+                    )
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(3.dp)
