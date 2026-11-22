@@ -1206,7 +1206,7 @@ fun MealsBottomSheet(
             // Let the sheet glass extend to the physical bottom edge. Its own
             // content reserves navigation space below, while IME and top safe
             // insets remain handled by Material 3.
-            BottomSheetDefaults.modalWindowInsets
+            BottomSheetDefaults.windowInsets
                 .only(WindowInsetsSides.Top)
                 .union(WindowInsets.ime)
         },
