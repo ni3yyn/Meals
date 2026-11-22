@@ -1,15 +1,15 @@
 package dz.meals.app.ui.components
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.graphics.shadow.Shadow
-import dev.chrisbanes.haze.blur.HazeBlurStyle
-import dev.chrisbanes.haze.blur.HazeColorEffect
-import dz.meals.app.ui.theme.Border
+import dev.chrisbanes.haze.glass.GlassOptics
+import dev.chrisbanes.haze.glass.GlassStyle
 
 /**
  * The named visual language for Meals: **Meals Liquid Glass**.
@@ -75,33 +75,36 @@ object MealsLiquidGlass {
     fun controlRim(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
             0f to Color.White.copy(alpha = 1f),
-            0.22f to Color.White.copy(alpha = 0.94f),
-            0.56f to Color(0xFFC9D9CB).copy(alpha = 0.90f),
-            1f to Color(0xFF718B77)
+            0.18f to Color.White.copy(alpha = 0.98f),
+            0.54f to Color.White.copy(alpha = 0.76f),
+            0.82f to Color.White.copy(alpha = 0.88f),
+            1f to Color.White.copy(alpha = 0.96f)
         )
     )
 
-    fun surfaceRim(lowerEdge: Color = Border): Brush = Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.99f),
-            Color.White.copy(alpha = 0.84f),
-            lowerEdge.copy(alpha = 0.66f)
+    fun surfaceRim(): Brush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = 1f),
+            0.16f to Color.White.copy(alpha = 0.96f),
+            0.52f to Color.White.copy(alpha = 0.78f),
+            0.84f to Color.White.copy(alpha = 0.90f),
+            1f to Color.White.copy(alpha = 0.98f)
         )
     )
 
     fun errorRim(): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.98f),
-            Color(0xFFE7B1AA).copy(alpha = 0.86f),
-            Color(0xFFB64A45).copy(alpha = 0.88f)
+            Color.White.copy(alpha = 1f),
+            Color.White.copy(alpha = 0.94f),
+            Color.White.copy(alpha = 0.82f)
         )
     )
 
     fun innerRim(): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.74f),
-            Color.White.copy(alpha = SurfaceOpacity),
-            Color(0xFFDDEBE1).copy(alpha = 0.30f)
+            Color.White.copy(alpha = 0.90f),
+            Color.White.copy(alpha = 0.30f),
+            Color.White.copy(alpha = 0.54f)
         )
     )
 
@@ -122,13 +125,20 @@ object MealsLiquidGlass {
         )
     )
 
-    fun contentRim(rimColor: Color = Color(0xFFE1D9CD)): Brush = Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.94f),
-            Color(0xFFECE6DC),
-            rimColor
+    /** Soft white-point reflection across the lens; it is not a tinted surface fill. */
+    fun lensReflection(): Brush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = 0.15f),
+            0.08f to Color.White.copy(alpha = 0.075f),
+            0.22f to Color.White.copy(alpha = 0.018f),
+            0.58f to Color.Transparent,
+            0.86f to Color.Transparent,
+            0.96f to Color.White.copy(alpha = 0.035f),
+            1f to Color.White.copy(alpha = 0.09f)
         )
     )
+
+    fun contentRim(): Brush = surfaceRim()
 
     fun cardFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
@@ -154,14 +164,7 @@ object MealsLiquidGlass {
         )
     )
 
-    fun modalRim(): Brush = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 1f),
-            0.22f to Color.White.copy(alpha = 0.94f),
-            0.56f to Color(0xFFE6F1E9).copy(alpha = 0.78f),
-            1f to Color.White.copy(alpha = 0.98f)
-        )
-    )
+    fun modalRim(): Brush = surfaceRim()
 
     fun illustrationFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
@@ -171,36 +174,34 @@ object MealsLiquidGlass {
         )
     )
 
-    val ControlBlurStyle = HazeBlurStyle {
-        blurRadius(8.dp)
-        noiseFactor(0.002f)
-        colorEffects(
-            listOf(HazeColorEffect.tint(Color.White.copy(alpha = ControlOpacity)))
+    /**
+     * Shared lens optics for every Meals glass surface.
+     * Keep the captured scene visible through shallow edge refraction, with a
+     * gentle folded lens and restrained secondary edge detail. Haze owns the
+     * platform renderer and fallback; the authored rim remains pure white.
+     */
+    fun lensStyle(shape: RoundedCornerShape): GlassStyle = GlassStyle.regular.then {
+        shape(shape)
+        tint(Color.White.copy(alpha = 0.075f))
+        edgeShadow(Color.Transparent)
+        specularIntensity(0.88f)
+        ambientResponse(0.28f)
+        edgeSoftness(0.7.dp)
+        lightPosition(Alignment.TopStart)
+        chromaticAberrationStrength(0f)
+        optics(
+            GlassOptics.regular.copy(
+                refractionStrength = 0.80f,
+                refractionDisplacement = 32.dp,
+                refractionFoldStrength = 0.12f,
+                refractionDetailIntensity = 0.10f
+            )
         )
-        fallbackColorEffect(
-            HazeColorEffect.tint(Color(0xFFFFFEFC).copy(alpha = ControlOpacity))
-        )
+        pressed {
+            lightingIntensity(1f)
+            refractionMultiplier(1.07f)
+            whitePointDelta(0.04f)
+        }
     }
 
-    val ModalBlurStyle = HazeBlurStyle {
-        blurRadius(12.dp)
-        noiseFactor(0.002f)
-        colorEffects(
-            listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity)))
-        )
-        fallbackColorEffect(
-            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity))
-        )
-    }
-
-    val SurfaceBlurStyle = HazeBlurStyle {
-        blurRadius(9.dp)
-        noiseFactor(0.002f)
-        colorEffects(
-            listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity)))
-        )
-        fallbackColorEffect(
-            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity))
-        )
-    }
 }
