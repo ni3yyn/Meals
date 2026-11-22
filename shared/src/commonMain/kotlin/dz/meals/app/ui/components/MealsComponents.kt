@@ -196,10 +196,8 @@ fun MealsCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val cardHazeState = LocalMealsCardHazeState.current
-    val usesLightContent = contentColor == Color.White
-    val surfaceAlpha = if (usesLightContent) 0.34f else 0.27f
-    val face = remember(containerColor, usesLightContent, surfaceAlpha) {
-        MealsLiquidGlass.cardFace(containerColor, usesLightContent, surfaceAlpha)
+    val face = remember(containerColor) {
+        MealsLiquidGlass.cardFace(containerColor)
     }
     val rim = remember(borderColor) {
         MealsLiquidGlass.surfaceRim(borderColor ?: Color(0xFFEADFD7))
@@ -242,15 +240,13 @@ val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
 fun MealsGlassSurface(
     modifier: Modifier = Modifier,
     tintColor: Color = Color(0xFFFFF6EC),
-    tintAlpha: Float = 0.34f,
     contentPadding: Dp = 18.dp,
     shape: RoundedCornerShape = MealsLiquidGlass.HeroShape,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current
-    val surfaceAlpha = (0.24f + tintAlpha.coerceIn(0f, 0.5f) * 0.16f).coerceIn(0.24f, 0.34f)
-    val face = remember(tintColor, surfaceAlpha) {
-        MealsLiquidGlass.heroFace(tintColor, surfaceAlpha)
+    val face = remember(tintColor) {
+        MealsLiquidGlass.heroFace(tintColor)
     }
 
     MealsLiquidGlassFrame(
@@ -888,7 +884,6 @@ fun MealsAlertDialog(
                 contentPadding = 22.dp,
                 shape = RoundedCornerShape(29.dp),
                 tintColor = Color(0xFFFFF6EC),
-                tintAlpha = 0.34f
             ) {
                 title?.invoke()
                 if (text != null) {
@@ -935,7 +930,6 @@ fun MealsDialog(
         MealsGlassSurface(
             modifier = modifier.fillMaxWidth().widthIn(max = 540.dp).padding(horizontal = 18.dp),
             tintColor = Color(0xFFFFF6EC),
-            tintAlpha = 0.38f,
             shape = RoundedCornerShape(30.dp),
             contentPadding = 22.dp
         ) {
@@ -1007,7 +1001,6 @@ fun MealsNavigationDrawer(
                     modifier = Modifier.fillMaxWidth(),
                     shape = drawerShape,
                     contentPadding = 20.dp,
-                    tintAlpha = 0.36f
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -1045,7 +1038,6 @@ fun MealsBottomSheet(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
             contentPadding = 22.dp,
-            tintAlpha = 0.38f
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),

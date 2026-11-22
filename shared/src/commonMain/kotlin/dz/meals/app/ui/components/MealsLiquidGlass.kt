@@ -15,6 +15,9 @@ import dz.meals.app.ui.theme.Border
  * icon actions, search fields, cards, dialogs and navigation share one finish.
  */
 object MealsLiquidGlass {
+    /** One shared transparency level for every glass face and blur tint. */
+    const val SurfaceOpacity = 0.20f
+
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
     val HeroShape = RoundedCornerShape(29.dp)
@@ -27,10 +30,10 @@ object MealsLiquidGlass {
 
     fun controlFace(): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.54f),
-            Color(0xFFF8FCF9).copy(alpha = 0.31f),
-            Color(0xFFE4F0E7).copy(alpha = 0.19f),
-            Color.White.copy(alpha = 0.38f)
+            Color.White.copy(alpha = SurfaceOpacity),
+            Color(0xFFF8FCF9).copy(alpha = SurfaceOpacity),
+            Color(0xFFE4F0E7).copy(alpha = SurfaceOpacity),
+            Color.White.copy(alpha = SurfaceOpacity)
         )
     )
 
@@ -62,7 +65,7 @@ object MealsLiquidGlass {
     fun innerRim(): Brush = Brush.verticalGradient(
         colors = listOf(
             Color.White.copy(alpha = 0.74f),
-            Color.White.copy(alpha = 0.18f),
+            Color.White.copy(alpha = SurfaceOpacity),
             Color(0xFFDDEBE1).copy(alpha = 0.30f)
         )
     )
@@ -84,39 +87,27 @@ object MealsLiquidGlass {
         )
     )
 
-    fun cardFace(
-        tint: Color,
-        lightContent: Boolean,
-        alpha: Float
-    ): Brush = Brush.verticalGradient(
-        colors = if (lightContent) {
-            listOf(
-                Color.White.copy(alpha = 0.18f),
-                tint.copy(alpha = alpha),
-                tint.copy(alpha = 0.40f)
-            )
-        } else {
-            listOf(
-                Color.White.copy(alpha = 0.24f),
-                tint.copy(alpha = alpha),
-                tint.copy(alpha = 0.34f)
-            )
-        }
+    fun cardFace(tint: Color): Brush = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity)
+        )
     )
 
-    fun heroFace(tint: Color, alpha: Float): Brush = Brush.verticalGradient(
+    fun heroFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.24f),
-            tint.copy(alpha = alpha),
-            tint.copy(alpha = (alpha + 0.07f).coerceAtMost(0.42f))
+            Color.White.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity)
         )
     )
 
     fun illustrationFace(tint: Color): Brush = Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.62f),
-            tint.copy(alpha = 0.58f),
-            tint.copy(alpha = 0.32f)
+            Color.White.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity)
         )
     )
 
@@ -124,10 +115,10 @@ object MealsLiquidGlass {
         blurRadius(15.dp)
         noiseFactor(0.025f)
         colorEffects(
-            listOf(HazeColorEffect.tint(Color.White.copy(alpha = 0.18f)))
+            listOf(HazeColorEffect.tint(Color.White.copy(alpha = SurfaceOpacity)))
         )
         fallbackColorEffect(
-            HazeColorEffect.tint(Color(0xFFFFFEFC).copy(alpha = 0.54f))
+            HazeColorEffect.tint(Color(0xFFFFFEFC).copy(alpha = SurfaceOpacity))
         )
     }
 
@@ -135,10 +126,10 @@ object MealsLiquidGlass {
         blurRadius(25.dp)
         noiseFactor(0.045f)
         colorEffects(
-            listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.46f)))
+            listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity)))
         )
         fallbackColorEffect(
-            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = 0.92f))
+            HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity))
         )
     }
 }
