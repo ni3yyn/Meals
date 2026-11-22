@@ -30,7 +30,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import dz.meals.app.ui.components.MealsAlertDialog
+import dz.meals.app.ui.components.MealsBottomSheet
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -426,7 +426,7 @@ fun PlanScreen(
     }
 
     mealAwaitingCookConfirmation?.let { mealId ->
-        MealsAlertDialog(
+        MealsBottomSheet(
             onDismissRequest = { mealAwaitingCookConfirmation = null },
             title = { Text("تأكيد تسجيل الطهي") },
             text = {
@@ -640,7 +640,7 @@ private fun SlotRow(
     }
 
     if (chooseRecipe) {
-        MealsAlertDialog(
+        MealsBottomSheet(
             onDismissRequest = { chooseRecipe = false },
             title = { Text("اختر وصفة لـ " + title) },
             text = {

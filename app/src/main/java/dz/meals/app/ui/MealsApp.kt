@@ -344,7 +344,7 @@ private fun MealsAppContent() {
                 preferences = preferences,
                 ingredients = snapshot.ingredients,
                 isFirstSetup = !preferences.hasCompletedSetup,
-                onDismiss = { showSettings = false },
+                onDismissRequest = { showSettings = false },
                 onQuickStart = { budget, servings ->
                     scope.launch {
                         preferencesStore.saveSettings(
@@ -379,10 +379,10 @@ private fun MealsAppContent() {
         }
 
         if (showUpdateDialog) {
-            MealsDialog(
-                title = "تحديث التطبيق",
+            MealsBottomSheet(
+                titleText = "تحديث التطبيق",
                 subtitle = "الإصدار الحالي ${BuildConfig.VERSION_NAME}",
-                onDismiss = { showUpdateDialog = false }
+                onDismissRequest = { showUpdateDialog = false }
             ) {
                 MealsCard(
                     containerColor = dz.meals.app.ui.theme.SoftGreen,
@@ -419,7 +419,7 @@ private fun MealsAppContent() {
         }
 
         generationMessage?.let { message ->
-            MealsAlertDialog(
+            MealsBottomSheet(
                 onDismissRequest = { generationMessage = null },
                 title = { Text("نتيجة إنشاء الخطة") },
                 text = { Text(message) },
@@ -469,10 +469,10 @@ private fun SettingsDialog(
         else -> true
     }
 
-    MealsDialog(
-        title = if (isFirstSetup) "لنجهّز أسبوعك معاً" else "إعدادات الأسرة",
+    MealsBottomSheet(
+        titleText = if (isFirstSetup) "لنجهّز أسبوعك معاً" else "إعدادات الأسرة",
         subtitle = listOf("الميزانية والأسرة", "الوجبات", "ما يناسب عائلتك", "تفضيلات الطبخ", "مكان التسوق")[step],
-        onDismiss = { if (!isFirstSetup) onDismiss() },
+        onDismissRequest = { if (!isFirstSetup) onDismiss() },
         confirmLabel = if (step == 4) "حفظ وابدأ" else "التالي",
         onConfirm = {
             if (step < 4) {
@@ -546,7 +546,7 @@ private fun SettingsDialog(
                     )
                     if (isFirstSetup) {
                         MealsCheckRow(
-                            title = "لا توجد حساسية غذائية معروفة",
+                            titleText = "لا توجد حساسية غذائية معروفة",
                             supportingText = "إن وُجدت حساسية أو كان هناك شك، أكملي الخطوات التالية أولاً.",
                             checked = noKnownAllergies,
                             onCheckedChange = { noKnownAllergies = it }
@@ -574,19 +574,19 @@ private fun SettingsDialog(
                     Text("ما الوجبات التي تحبين التخطيط لها؟", style = MaterialTheme.typography.titleMedium)
                     Text("اختاري ما تحتاجينه فقط، ويمكنك تغييره لاحقاً.", color = dz.meals.app.ui.theme.MutedInk, style = MaterialTheme.typography.bodySmall)
                     MealsCheckRow(
-                        title = "الفطور",
+                        titleText = "الفطور",
                         supportingText = "وجبة الصباح",
                         checked = "breakfast" in slots,
                         onCheckedChange = { slots = if (it) slots + "breakfast" else slots - "breakfast" }
                     )
                     MealsCheckRow(
-                        title = "الغداء",
+                        titleText = "الغداء",
                         supportingText = "الوجبة الرئيسية",
                         checked = "lunch" in slots,
                         onCheckedChange = { slots = if (it) slots + "lunch" else slots - "lunch" }
                     )
                     MealsCheckRow(
-                        title = "العشاء",
+                        titleText = "العشاء",
                         supportingText = "وجبة المساء",
                         checked = "dinner" in slots,
                         onCheckedChange = { slots = if (it) slots + "dinner" else slots - "dinner" }

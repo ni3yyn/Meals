@@ -21,10 +21,12 @@ object MealsLiquidGlass {
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
     val HeroShape = RoundedCornerShape(29.dp)
+    val ModalShape = RoundedCornerShape(30.dp)
     val NavigationShape = RoundedCornerShape(27.dp)
 
     val ControlElevation = 3.dp
     val SurfaceElevation = 2.dp
+    val ModalElevation = 12.dp
     val PressDurationMillis = 120
     const val PressedScale = 0.955f
 
@@ -100,6 +102,23 @@ object MealsLiquidGlass {
             Color.White.copy(alpha = SurfaceOpacity),
             tint.copy(alpha = SurfaceOpacity),
             tint.copy(alpha = SurfaceOpacity)
+        )
+    )
+
+    fun modalFace(tint: Color = Color(0xFFFFF8F1)): Brush = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity),
+            tint.copy(alpha = SurfaceOpacity)
+        )
+    )
+
+    fun modalRim(): Brush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = 1f),
+            0.22f to Color.White.copy(alpha = 0.94f),
+            0.56f to Color(0xFFE6F1E9).copy(alpha = 0.78f),
+            1f to Color.White.copy(alpha = 0.98f)
         )
     )
 

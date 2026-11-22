@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import dz.meals.app.ui.components.MealsAlertDialog
+import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -328,7 +328,7 @@ fun ShoppingScreen(
         }
     }
     if (addDialog) {
-        MealsAlertDialog(
+        MealsBottomSheet(
             onDismissRequest = { addDialog = false },
             title = { Text("إضافة عنصر يدوي") },
             text = {
@@ -379,7 +379,7 @@ fun ShoppingScreen(
     }
 
     if (editItemId != null) {
-        MealsAlertDialog(
+        MealsBottomSheet(
             onDismissRequest = { editItemId = null },
             title = { Text("تعديل العنصر") },
             text = {
@@ -485,7 +485,7 @@ private fun PriceReportDialog(
     }
     val selectedIngredient = ingredients.firstOrNull { it.id == selectedId }
 
-    MealsAlertDialog(
+    MealsBottomSheet(
         onDismissRequest = onDismiss,
         title = { Text("تسجيل ملاحظة سعر") },
         text = {

@@ -74,8 +74,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import dev.chrisbanes.haze.HazeInput
@@ -859,102 +857,174 @@ fun MealsIllustrationBadge(
 }
 
 
+/**
+ * Shared glass material for every overlay surface: sheets and the navigation
+ * drawer use the same translucent face, white gradient rim and specular edge.
+ */
 @Composable
-fun MealsAlertDialog(
-    onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
+private fun MealsModalSurface(
     modifier: Modifier = Modifier,
-    dismissButton: (@Composable () -> Unit)? = null,
-    title: (@Composable () -> Unit)? = null,
-    text: (@Composable () -> Unit)? = null,
+    tintColor: Color = Color(0xFFFFF8F1),
+    contentPadding: Dp = 22.dp,
+    shape: Shape = MealsLiquidGlass.ModalShape,
+    elevation: Dp = MealsLiquidGlass.ModalElevation,
+    content: @Composable ColumnScope.() -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val hazeState = LocalMealsCardHazeState.current
+    val face = remember(tintColor) {
+        MealsLiquidGlass.modalFace(tintColor)
+    }
+
+    MealsLiquidGlassFrame(
+        modifier = modifier,
+        shape = shape,
+        elevation = elevation,
+        face = face,
+        hazeState = hazeState,
+        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+        rim = MealsLiquidGlass.modalRim(),
+        sideGlintHeight = 30.dp
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize().padding(18.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            MealsGlassSurface(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .heightIn(max = 760.dp),
-                contentPadding = 22.dp,
-                shape = RoundedCornerShape(29.dp),
-                tintColor = Color(0xFFFFF6EC),
-            ) {
-                title?.invoke()
-                if (text != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = false)
-                            .heightIn(max = 620.dp)
-                    ) {
-                        text()
-                    }
-                }
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    confirmButton()
-                    dismissButton?.invoke()
-                }
-            }
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(contentPadding),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                content = content
+            )
         }
     }
 }
 
+/**
+ * The only modal presentation in Meals. All former alerts, dialogs and edit
+ * modals now use this sheet, which rises from the bottom and occupies 87% of
+ * the available screen height. Header and actions stay fixed while long
+ * content is constrained in the middle.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MealsDialog(
-    title: String,
-    onDismiss: () -> Unit,
+fun MealsBottomSheet(
+    onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    titleText: String? = null,
+    title: (@Composable () -> Unit)? = null,
     subtitle: String? = null,
+    text: (@Composable () -> Unit)? = null,
+    confirmButton: (@Composable () -> Unit)? = null,
+    dismissButton: (@Composable () -> Unit)? = null,
     confirmLabel: String? = null,
     onConfirm: (() -> Unit)? = null,
     confirmEnabled: Boolean = true,
     dismissLabel: String? = null,
     onDismissAction: (() -> Unit)? = null,
     showCloseButton: Boolean = true,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val topShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
+        shape = topShape,
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        scrimColor = Ink.copy(alpha = 0.30f),
+        tonalElevation = 0.dp,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 8.dp)
+                    .size(width = 42.dp, height = 5.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.96f),
+                                Color.White.copy(alpha = 0.60f)
+                            )
+                        )
+                    )
+            )
+        }
     ) {
-        MealsGlassSurface(
-            modifier = modifier.fillMaxWidth().widthIn(max = 540.dp).padding(horizontal = 18.dp),
-            tintColor = Color(0xFFFFF6EC),
-            shape = RoundedCornerShape(30.dp),
-            contentPadding = 22.dp
+        MealsModalSurface(
+            modifier = modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.87f),
+            contentPadding = 0.dp,
+            shape = topShape,
+            elevation = MealsLiquidGlass.ModalElevation
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 22.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Ink)
-                        subtitle?.let {
-                            Text(it, style = MaterialTheme.typography.bodySmall, color = MutedInk)
+                if (titleText != null || title != null || subtitle != null || showCloseButton) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            titleText?.let {
+                                Text(
+                                    it,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Ink
+                                )
+                            }
+                            title?.invoke()
+                            subtitle?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = MutedInk)
+                            }
                         }
-                    }
-                    if (showCloseButton) {
-                        MealsIconAction(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
-                            MealsIcon(
-                                MealsIconName.Close,
-                                contentDescription = "إغلاق",
-                                modifier = Modifier.size(30.dp),
-                            )
+                        if (showCloseButton) {
+                            MealsIconButton(
+                                onClick = onDismissRequest,
+                                modifier = Modifier.size(44.dp),
+                                size = 44.dp
+                            ) {
+                                MealsIcon(
+                                    MealsIconName.Close,
+                                    contentDescription = "إغلاق",
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
                         }
                     }
                 }
+
+                if (text != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .heightIn(max = 560.dp)
+                    ) {
+                        text()
+                    }
+                }
+
                 content()
+
+                if (confirmButton != null || dismissButton != null) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        confirmButton?.invoke()
+                        dismissButton?.invoke()
+                    }
+                }
+
                 if (confirmLabel != null || dismissLabel != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -972,7 +1042,7 @@ fun MealsDialog(
                         if (dismissLabel != null) {
                             MealsSecondaryButton(
                                 label = dismissLabel,
-                                onClick = onDismissAction ?: onDismiss,
+                                onClick = onDismissAction ?: onDismissRequest,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -983,6 +1053,7 @@ fun MealsDialog(
     }
 }
 
+/** A navigation drawer keeps its drawer interaction but shares the glass modal material. */
 @Composable
 fun MealsNavigationDrawer(
     drawerState: DrawerState,
@@ -997,10 +1068,10 @@ fun MealsNavigationDrawer(
                 drawerContainerColor = Color.Transparent,
                 drawerShape = drawerShape
             ) {
-                MealsGlassSurface(
+                MealsModalSurface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = drawerShape,
-                    contentPadding = 20.dp,
+                    contentPadding = 20.dp
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -1013,39 +1084,6 @@ fun MealsNavigationDrawer(
         scrimColor = Ink.copy(alpha = 0.28f),
         content = content
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MealsBottomSheet(
-    onDismiss: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-        containerColor = Color.Transparent,
-        dragHandle = {
-            Box(
-                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp).size(width = 42.dp, height = 5.dp)
-                    .clip(CircleShape).background(Border)
-            )
-        }
-    ) {
-        MealsGlassSurface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-            contentPadding = 22.dp,
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                content = content
-            )
-        }
-    }
 }
 
 /**

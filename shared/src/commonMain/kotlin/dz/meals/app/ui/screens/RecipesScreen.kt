@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import dz.meals.app.ui.components.MealsAlertDialog
+import dz.meals.app.ui.components.MealsBottomSheet
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -233,7 +233,7 @@ fun RecipesScreen(
 
     val detail = selectedRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
     if (detail != null) {
-        MealsAlertDialog(
+        MealsBottomSheet(
             onDismissRequest = { selectedRecipeId = null },
             title = { Text(detail.nameAr) },
             text = {
@@ -281,7 +281,7 @@ fun RecipesScreen(
     if (cookingRecipe != null) {
         val stepCount = cookingRecipe.stepsAr.size
         val safeStepIndex = cookingStepIndex.coerceIn(0, (stepCount - 1).coerceAtLeast(0))
-        MealsAlertDialog(
+        MealsBottomSheet(
             onDismissRequest = { cookingRecipeId = null },
             title = { Text(cookingRecipe.nameAr) },
             text = {

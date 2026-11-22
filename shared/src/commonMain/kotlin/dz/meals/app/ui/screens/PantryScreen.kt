@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import dz.meals.app.ui.components.MealsAlertDialog
+import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -242,7 +242,7 @@ private fun PantryAddDialog(
     }
     val expiryIsValid = expiryText.isBlank() || parsedExpiry != null
 
-    MealsAlertDialog(
+    MealsBottomSheet(
         onDismissRequest = onDismiss,
         title = { Text(if (existing == null) "إضافة " + ingredient.nameAr else "تعديل " + ingredient.nameAr) },
         text = {
