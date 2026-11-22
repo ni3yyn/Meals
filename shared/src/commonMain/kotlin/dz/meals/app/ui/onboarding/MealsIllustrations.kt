@@ -547,3 +547,112 @@ private fun DrawScope.drawClock(phase: Float) {
         rotate(k * 90f, bc) {
             drawLine(Ink.copy(alpha = 0.5f), Offset(bc.x, bc.y - 19f), Offset(bc.x, bc.y - 15f), 2f, StrokeCap.Round)
         }
+    }
+    rotate(phase * 360f, bc) { drawLine(TextAccent, bc, Offset(bc.x, bc.y - 17f), 3f, StrokeCap.Round) }
+    rotate(phase * 30f + 60f, bc) { drawLine(Ink, bc, Offset(bc.x, bc.y - 11f), 3.6f, StrokeCap.Round) }
+    drawCircle(Ink, 2.6f, bc)
+    sparkle(34f, 56f, 7f, phase, 0)
+}
+
+private fun DrawScope.drawBasket(phase: Float) {
+    groundShadow(100f, 184f, 62f)
+    // Handle.
+    drawArc(WoodDark, 180f, 180f, false, Offset(52f, 22f), Size(96f, 170f), style = Stroke(7f, cap = StrokeCap.Round))
+    // Baguette (khobz).
+    rotate(-16f, Offset(128f, 90f)) {
+        drawRoundRect(v(Color(0xFFEFC48A), Color(0xFFD59A58), 46f, 138f), Offset(118f, 46f), Size(20f, 92f), CornerRadius(10f))
+        for (i in 0 until 4) drawLine(Color(0xFFB9783A).copy(alpha = 0.6f), Offset(120f, 62f + i * 18f), Offset(136f, 70f + i * 18f), 2.4f, StrokeCap.Round)
+    }
+    // Greens.
+    leaf(58f, 86f, 34f, 15f, -62f)
+    leaf(70f, 74f, 34f, 15f, -88f, Leaf2)
+    leaf(82f, 84f, 34f, 15f, -118f)
+    leaf(70f, 92f, 30f, 13f, -90f, Leaf2)
+    // Carrot.
+    rotate(14f, Offset(112f, 108f)) {
+        val carrot = Path().apply { moveTo(103f, 84f); lineTo(121f, 84f); lineTo(112f, 132f); close() }
+        drawPath(carrot, v(Color(0xFFFFA654), Carrot, 84f, 132f))
+        for (i in 0 until 3) drawLine(Color(0xFFD9701F).copy(alpha = 0.6f), Offset(105f + i, 92f + i * 10f), Offset(112f, 94f + i * 10f), 1.6f, StrokeCap.Round)
+        leaf(108f, 80f, 14f, 6f, -70f, Leaf2)
+        leaf(116f, 80f, 14f, 6f, -110f)
+    }
+    tomato(94f, 110f, 14f)
+    tomato(134f, 114f, 12f)
+    // Basket body.
+    val body = Path().apply {
+        moveTo(38f, 112f); lineTo(162f, 112f)
+        cubicTo(160f, 140f, 152f, 168f, 142f, 174f)
+        lineTo(58f, 174f)
+        cubicTo(48f, 168f, 40f, 140f, 38f, 112f)
+        close()
+    }
+    drawPath(body, v(Wood, WoodDark, 112f, 174f))
+    clipPath(body) {
+        for (i in 0 until 5) drawLine(WoodDark.copy(alpha = 0.5f), Offset(30f, 124f + i * 11f), Offset(170f, 124f + i * 11f), 2.6f)
+        for (k in 0 until 11) drawLine(Color.White.copy(alpha = 0.16f), Offset(36f + k * 13f, 112f), Offset(32f + k * 14f, 174f), 2f)
+    }
+    drawRoundRect(v(Color(0xFFDDA877), Wood, 106f, 120f), Offset(32f, 106f), Size(136f, 14f), CornerRadius(7f))
+    gloss(60f, 146f, 4f, 16f, 0.25f, 6f)
+    sparkle(34f, 54f, 7f, phase, 0)
+    sparkle(172f, 66f, 6f, phase, 1)
+}
+
+private fun DrawScope.drawMarket(phase: Float) {
+    groundShadow(100f, 186f, 72f)
+    // Poles.
+    drawRoundRect(WoodDark, Offset(30f, 70f), Size(7f, 116f), CornerRadius(3f))
+    drawRoundRect(WoodDark, Offset(163f, 70f), Size(7f, 116f), CornerRadius(3f))
+    // Produce on the counter.
+    tomato(48f, 130f, 11f); tomato(68f, 132f, 11f); tomato(58f, 118f, 11f)
+    orange(98f, 132f, 11f); orange(118f, 134f, 11f); orange(108f, 120f, 11f)
+    leaf(142f, 124f, 26f, 11f, -50f); leaf(152f, 124f, 26f, 11f, -120f, Leaf2)
+    leaf(147f, 118f, 26f, 11f, -85f); leaf(147f, 130f, 24f, 10f, -90f, Leaf2)
+    // Counter.
+    drawRoundRect(v(Wood, WoodDark, 140f, 186f), Offset(22f, 140f), Size(156f, 46f), CornerRadius(10f))
+    for (i in 0 until 3) drawLine(WoodDark.copy(alpha = 0.45f), Offset(28f, 154f + i * 11f), Offset(172f, 154f + i * 11f), 2f)
+    // Striped awning.
+    val sw = 128f / 6f
+    val bw = 164f / 6f
+    for (k in 0 until 6) {
+        val xt = 36f + k * sw
+        val xb = 18f + k * bw
+        val col = if (k % 2 == 0) Tangerine else Paper
+        val p = Path().apply {
+            moveTo(xt, 32f); lineTo(xt + sw, 32f); lineTo(xb + bw, 76f); lineTo(xb, 76f); close()
+        }
+        drawPath(p, col)
+        drawArc(col, 0f, 180f, true, Offset(xb, 76f - bw / 2f), Size(bw, bw))
+    }
+    drawRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.25f), Color.Transparent), 32f, 76f), Offset(18f, 32f), Size(164f, 44f))
+    drawRoundRect(Color(0xFFE08A5C), Offset(34f, 26f), Size(132f, 10f), CornerRadius(5f))
+    sparkle(26f, 30f, 6f, phase, 0)
+    sparkle(176f, 34f, 6f, phase, 1)
+}
+
+private fun DrawScope.drawWeek(phase: Float) {
+    groundShadow(100f, 176f, 56f)
+    drawRoundRect(Color(0xFF8F8278).copy(alpha = 0.12f), Offset(46f, 46f), Size(112f, 116f), CornerRadius(18f))
+    drawRoundRect(v(Color.White, Color(0xFFFFF4E8), 40f, 152f), Offset(44f, 40f), Size(112f, 112f), CornerRadius(18f))
+    drawRoundRect(v(Color(0xFFF7B58F), Tangerine, 40f, 66f), Offset(44f, 40f), Size(112f, 28f), CornerRadius(18f))
+    drawRect(Tangerine, Offset(44f, 52f), Size(112f, 16f))
+    drawRoundRect(Color(0xFF7A5C48), Offset(70f, 30f), Size(7f, 20f), CornerRadius(3.5f))
+    drawRoundRect(Color(0xFF7A5C48), Offset(123f, 30f), Size(7f, 20f), CornerRadius(3.5f))
+    val rows = listOf(Color(0xFFCFE6CF), Color(0xFFFFD9B8), Color(0xFFDCD3EE))
+    val t = phase * 1.3f * 12f
+    for (row in 0 until 3) {
+        for (col in 0 until 4) {
+            val idx = row * 4 + col
+            val a = ((t - idx) / 1.5f).coerceIn(0f, 1f)
+            val x = 54f + col * 24f
+            val y = 78f + row * 22f
+            drawRoundRect(Color(0xFFEFE4D8).copy(alpha = 0.6f), Offset(x, y), Size(20f, 16f), CornerRadius(5f))
+            drawRoundRect(rows[row].copy(alpha = a), Offset(x, y), Size(20f, 16f), CornerRadius(5f))
+        }
+    }
+    drawCircle(Color(0xFF8F8278).copy(alpha = 0.18f), 24f, Offset(150f, 150f))
+    drawCircle(v(Color(0xFF63B085), ForestDark, 126f, 174f), 22f, Offset(148f, 146f))
+    checkMark(148f, 146f, 0.9f)
+    sparkle(30f, 58f, 8f, phase, 0)
+    sparkle(172f, 52f, 6f, phase, 1)
+    sparkle(26f, 130f, 5f, phase, 2)
+}
