@@ -292,6 +292,8 @@ fun MealsPressable(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     role: Role = Role.Button,
+    /** When non-null, exposes checked state through toggleable semantics. */
+    checked: Boolean? = null,
     shape: Shape = MealsLiquidGlass.ControlShape,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -371,13 +373,26 @@ fun MealsPressable(
                     }
                 }
             }
-            .clickable(
-                interactionSource = source,
-                indication = null,
-                enabled = enabled,
-                role = role,
-                onClick = onClick
-            ),
+            .let { touchModifier ->
+                if (checked == null) {
+                    touchModifier.clickable(
+                        interactionSource = source,
+                        indication = null,
+                        enabled = enabled,
+                        role = role,
+                        onClick = onClick
+                    )
+                } else {
+                    touchModifier.toggleable(
+                        value = checked,
+                        interactionSource = source,
+                        indication = null,
+                        enabled = enabled,
+                        role = role,
+                        onValueChange = { onClick() }
+                    )
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
         CompositionLocalProvider(LocalMealsGlassPressed provides pressed) {
@@ -861,19 +876,22 @@ fun MealsCheckRow(
     supportingText: String? = null,
     enabled: Boolean = true
 ) {
-    MealsCard(
-        modifier = modifier.fillMaxWidth().toggleable(
-            value = checked,
-            enabled = enabled,
-            role = Role.Checkbox,
-            onValueChange = onCheckedChange
-        ),
-        containerColor = if (checked) WarmSurface else Paper,
-        contentPadding = 0.dp,
-        borderColor = if (checked) TextAccent.copy(alpha = 0.32f) else Border.copy(alpha = 0.72f),
-        shape = RoundedCornerShape(18.dp),
-        shadowElevation = 0.dp
+    MealsPressable(
+        onClick = { onCheckedChange(!checked) },
+        modifier = modifier.fillMaxWidth(),
+        enabled = enabled,
+        role = Role.Checkbox,
+        checked = checked,
+        shape = RoundedCornerShape(18.dp)
     ) {
+        MealsCard(
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = if (checked) WarmSurface else Paper,
+            contentPadding = 0.dp,
+            borderColor = if (checked) TextAccent.copy(alpha = 0.32f) else Border.copy(alpha = 0.72f),
+            shape = RoundedCornerShape(18.dp),
+            shadowElevation = 0.dp
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 13.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
