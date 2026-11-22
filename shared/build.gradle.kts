@@ -43,6 +43,7 @@ kotlin {
             api(compose.material3)
             api(compose.components.resources)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.compose.icons.lucide)
             api(libs.haze.core)
             implementation(libs.haze.glass)
             implementation(libs.haze.blur)

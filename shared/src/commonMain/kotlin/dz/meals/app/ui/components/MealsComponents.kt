@@ -120,6 +120,24 @@ private val MealsCardBlurStyle = HazeBlurStyle {
 }
 
 /**
+ * A lighter blur treatment for small floating controls. The source is the
+ * atmospheric backdrop already captured by MealsBackdrop, so glass buttons
+ * do not sample themselves or neighbouring cards.
+ */
+private val MealsIconButtonBlurStyle = HazeBlurStyle {
+    blurRadius(15.dp)
+    noiseFactor(0.025f)
+    colorEffects(
+        listOf(
+            HazeColorEffect.tint(Color.White.copy(alpha = 0.18f))
+        )
+    )
+    fallbackColorEffect(
+        HazeColorEffect.tint(Color(0xFFFFFEFC).copy(alpha = 0.54f))
+    )
+}
+
+/**
  * The shared elevated surface used for budgets, summaries and grouped content.
  *
  * Each card uses Haze's source-backed Blur with a shared restrained style,
@@ -497,7 +515,148 @@ fun MealsTextButton(
     }
 }
 
-/** A 44dp raised icon action, visually identical to Settings and Update. */
+/**
+ * One glass material for all icon-only controls. Its face stays translucent,
+ * the outer rim is a multi-stop white highlight, and the inset hairline adds
+ * the second optical edge that makes the surface read as liquid glass.
+ */
+@Composable
+private fun MealsLiquidGlassIconControl(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    size: Dp = 44.dp,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.955f else 1f,
+        animationSpec = tween(durationMillis = 120),
+        label = "mealsLiquidGlassIconScale"
+    )
+    val shape = remember { RoundedCornerShape(15.dp) }
+    val hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current
+
+    val face = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.54f),
+            Color(0xFFF8FCF9).copy(alpha = 0.31f),
+            Color(0xFFE4F0E7).copy(alpha = 0.19f),
+            Color.White.copy(alpha = 0.38f)
+        )
+    )
+    val rim = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = 0.99f),
+            0.24f to Color.White.copy(alpha = 0.86f),
+            0.58f to Color(0xFFDDEBE1).copy(alpha = 0.62f),
+            1f to Color.White.copy(alpha = 0.94f)
+        )
+    )
+    val innerRim = Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.74f),
+            Color.White.copy(alpha = 0.18f),
+            Color(0xFFDDEBE1).copy(alpha = 0.30f)
+        )
+    )
+    val specular = Brush.horizontalGradient(
+        colors = listOf(
+            Color.Transparent,
+            Color.White.copy(alpha = 0.98f),
+            Color.White.copy(alpha = 0.88f),
+            Color.Transparent
+        )
+    )
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .shadow(
+                elevation = if (enabled) 3.dp else 0.dp,
+                shape = shape,
+                clip = false
+            )
+            .clip(shape)
+            .then(
+                if (hazeState != null) {
+                    Modifier.hazeBlur(
+                        input = HazeInput.Sources(hazeState),
+                        style = MealsIconButtonBlurStyle,
+                        performanceMode = HazePerformanceMode.Default
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .background(face, shape)
+            .border(BorderStroke(1.15.dp, rim), shape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        // Fine inset edge: it creates a second, softer reflection inside the rim.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(1.dp)
+                .border(
+                    BorderStroke(0.65.dp, innerRim),
+                    RoundedCornerShape(14.dp)
+                )
+        )
+
+        // Narrow upper specular reflection, not a full-width flat white stripe.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 1.dp)
+                .fillMaxWidth(0.62f)
+                .height(1.dp)
+                .background(specular, CircleShape)
+        )
+
+        // A short side glint gives the rim depth without a harsh outer stroke.
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 1.dp, vertical = 10.dp)
+                .width(1.dp)
+                .height(17.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.86f),
+                            Color.Transparent
+                        )
+                    ),
+                    CircleShape
+                )
+        )
+
+        Box(
+            modifier = Modifier.graphicsLayer {
+                alpha = if (enabled) 1f else 0.42f
+            },
+            contentAlignment = Alignment.Center
+        ) {
+            content()
+        }
+    }
+}
+
+/** A 44dp liquid-glass icon action with a consistent white optical rim. */
 @Composable
 fun MealsIconAction(
     onClick: () -> Unit,
@@ -514,7 +673,7 @@ fun MealsIconAction(
     )
 }
 
-/** The canonical raised ivory control used by all icon-only app actions. */
+/** Canonical glass surface for every icon-only app action. */
 @Composable
 fun MealsIconButton(
     onClick: () -> Unit,
@@ -523,21 +682,13 @@ fun MealsIconButton(
     size: Dp = 44.dp,
     content: @Composable () -> Unit
 ) {
-    MealsRaisedControl(
+    MealsLiquidGlassIconControl(
         onClick = onClick,
-        modifier = modifier.size(size),
+        modifier = modifier,
         enabled = enabled,
-        minHeight = size,
-        horizontalPadding = 0.dp,
-        verticalPadding = 0.dp
-    ) {
-        Box(
-            modifier = Modifier.size(size),
-            contentAlignment = Alignment.Center
-        ) {
-            content()
-        }
-    }
+        size = size,
+        content = content
+    )
 }
 
 @Composable

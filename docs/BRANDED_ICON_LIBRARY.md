@@ -1,19 +1,20 @@
-# Meals branded icon library
+# Meals icon system
 
-All interface icons live in `shared/src/commonMain/composeResources/drawable` as Android XML vector drawables. Compose Multiplatform loads these as vector painters on Android and iOS from the same shared source set.
+All app interface glyphs resolve through `MealsIconName` and `MealsIcon()` in
+`shared/src/commonMain/kotlin/dz/meals/app/ui/icons/MealsIcons.kt`.
 
 ## Visual language
 
-- Soft, rounded, generous geometry with no sharp ends.
-- Warm porcelain, sage, apricot, butter and lilac accents.
-- Several intentional colour layers per icon; do not apply a monochrome tint.
-- Use `MealsIconName` and `MealsIcon()` from `dz.meals.app.ui.icons` instead of Material's `Icons` object.
-- Add content descriptions to meaningful controls and `null` for decorative artwork.
+- **Outline-only, always.** The shared icon pack is Lucide for Compose Multiplatform.
+- Icons use one consistent stroke style; selected states change tint and motion, never switch to filled artwork.
+- Use `MealsIconName` rather than Material's `Icons` object or raw painter resources.
+- Keep icon hit targets at least 44dp and give meaningful controls Arabic content descriptions.
+- Decorative icons use a null content description.
 
 ## Adding an icon
 
-1. Add `meals_icon_<name>.xml` to the shared drawable resource directory.
-2. Add the matching enum value and `Res.drawable.meals_icon_<name>` entry in `MealsIcons.kt`.
-3. Use the typed enum in the UI. Avoid raw resource lookups in screen code.
+1. Add the semantic enum entry to `MealsIconName`.
+2. Map it to a Lucide `ImageVector` in `MealsIconName.imageVector()`.
+3. Use `MealsIcon()` or `MealsNavigationIcon()` in screen code.
 
-The library covers weekly planning, recipes, shopping, pantry, settings, app updates, navigation, locking, search, favorites, timing, information, editing and deletion.
+The icon-only action primitives (`MealsIconAction` and `MealsIconButton`) share the liquid-glass material: translucent Haze-backed face, white gradient rim, inset hairline and a narrow specular highlight.

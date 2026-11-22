@@ -161,7 +161,8 @@ fun RecipesScreen(
                                 MealsIcon(
                                     name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline,
                                     contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة",
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(22.dp),
+                                    tint = if (recipe.id in favoriteRecipeIds) Color(0xFFD3A24E) else MutedInk
                                 )
                             }
                         }
