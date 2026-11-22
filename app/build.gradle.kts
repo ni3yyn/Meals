@@ -35,6 +35,9 @@ val copyTajawalFonts = tasks.register<Copy>("copyTajawalFonts") {
 }
 
 android {
+    // Generate the release instrumentation-test variant for the minified APK smoke test.
+    testBuildType = "release"
+
     namespace = "dz.meals.app"
     compileSdk {
         version = release(37) {
