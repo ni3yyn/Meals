@@ -1309,8 +1309,12 @@ private class MealsNavigationRimShape(
         val topInset = with(density) { bumpHeight.toPx() }
             .coerceIn(0f, height * 0.22f)
         val center = with(density) { bumpCenter.toPx() }.coerceIn(radius, width - radius)
+        val minimumCrestWidth = with(density) { 24.dp.toPx() }
         val crestWidth = with(density) { bumpWidth.toPx() }
-            .coerceIn(24.dp.toPx(), (width - radius * 2f).coerceAtLeast(24.dp.toPx()))
+            .coerceIn(
+                minimumCrestWidth.coerceAtMost(width - radius * 2f),
+                (width - radius * 2f).coerceAtLeast(minimumCrestWidth)
+            )
         val left = (center - crestWidth / 2f).coerceAtLeast(radius)
         val right = (center + crestWidth / 2f).coerceAtMost(width - radius)
 
