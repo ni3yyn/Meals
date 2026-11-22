@@ -60,7 +60,9 @@ fun MealsIllustration(
     /** Number of people drawn by [MealsArt.Family]; ignored by other scenes. */
     count: Int = 3
 ) {
-    val motionClock = LocalMealsOnboardingMotionClock.current
+    // Keep the detailed vector scene static between user-driven changes.
+    // Floating glass layers supply the motion, so these paths are not rebuilt
+    // on every display frame.
     val shown by animateFloatAsState(
         targetValue = count.toFloat(),
         animationSpec = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessLow),
@@ -68,7 +70,7 @@ fun MealsIllustration(
     )
 
     Canvas(modifier.size(size)) {
-        val phase = motionClock.value
+        val phase = 0f
         val s = this.size.minDimension / 200f
         scale(s, Offset.Zero) {
             when (art) {
