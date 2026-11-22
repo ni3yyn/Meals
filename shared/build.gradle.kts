@@ -36,6 +36,9 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
+            // WindowCompat / WindowInsetsControllerCompat are used by the
+            // Android modal-window system-bar configuration.
+            implementation(libs.androidx.core.ktx)
             implementation("com.github.styropyr0:PrismalAGSL:v1.0.7")
         }
 
