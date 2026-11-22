@@ -1,15 +1,8 @@
 name: iOS shared framework
 
-# Keep commonMain UI, formatting, and state changes linkable on both Apple targets.
+# Temporarily paused on push while Android release work is prioritized.
+# Keep workflow_dispatch available for an intentional manual framework check.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "shared/**"
-      - "gradle/**"
-      - "*.gradle.kts"
-      - "gradle.properties"
-      - ".github/workflows/ios-framework.yml"
   workflow_dispatch:
 
 permissions:
@@ -38,6 +31,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "9.6.0"
+          cache-read-only: false
 
       - name: Verify Apple build environment
         run: |
@@ -47,8 +41,7 @@ jobs:
           test -d "$ANDROID_HOME/platforms/android-37.1"
 
       - name: Link iOS frameworks
-        run: |
-          gradle :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon --stacktrace
+        run: gradle :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon --build-cache --parallel
 
       - name: Upload iOS frameworks
         uses: actions/upload-artifact@v7
