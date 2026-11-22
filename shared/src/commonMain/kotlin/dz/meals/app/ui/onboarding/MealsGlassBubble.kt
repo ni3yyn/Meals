@@ -217,7 +217,7 @@ internal fun DrawScope.drawGlassBubble(
 @Composable
 fun MealsAmbientBubbles(
     modifier: Modifier = Modifier,
-    count: Int = 7
+    count: Int = 5
 ) {
     val motionClock = LocalMealsOnboardingMotionClock.current
     Canvas(modifier.fillMaxSize()) {
