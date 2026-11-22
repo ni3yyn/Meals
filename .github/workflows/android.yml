@@ -35,13 +35,15 @@ jobs:
           set -o pipefail
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.1" "build-tools;36.0.0" "platform-tools"
 
-      - name: Set up Gradle 9.6.0
+      - name: Set up Gradle and restore caches
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "9.6.0"
+          gradle-version: wrapper
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Run unit tests
-        run: gradle testReleaseUnitTest --no-daemon
+      - name: Run unit tests and assemble debug APK
+        run: ./gradlew testReleaseUnitTest assembleDebug --stacktrace
 
       - name: Launch minified release build on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -54,10 +56,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: gradle :app:connectedReleaseAndroidTest --no-daemon
-
-      - name: Assemble debug APK
-        run: gradle assembleDebug --no-daemon
+          script: ./gradlew :app:connectedReleaseAndroidTest --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
