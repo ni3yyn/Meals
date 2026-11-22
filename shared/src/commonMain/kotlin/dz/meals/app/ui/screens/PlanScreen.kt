@@ -596,11 +596,10 @@ private fun SlotRow(
                     contentDescription = null,
                     modifier = Modifier.size(26.dp)
                 )
-                Text(
-                    meal.servings.toString() + " حصص",
+                dz.meals.app.ui.components.MealsAnimatedCount(
+                    value = meal.servings.toString() + " حصص",
                     color = dz.meals.app.ui.theme.Ink,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodySmall
                 )
                 MealsIconButton(
                     onClick = { onAdjustServings(-1) },
