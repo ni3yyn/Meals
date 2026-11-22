@@ -43,7 +43,6 @@ import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.PantryItem
 import dz.meals.app.ui.theme.Border
-import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.shared.format.epochMillisToLocalDate
