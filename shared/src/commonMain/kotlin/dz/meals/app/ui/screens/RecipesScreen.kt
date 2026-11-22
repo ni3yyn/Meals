@@ -4,7 +4,6 @@ import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsTextButton
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import dz.meals.app.ui.components.MealsAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -55,6 +53,11 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 import kotlin.math.roundToLong
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import dz.meals.app.ui.components.MealsSearchBar
+import dz.meals.app.ui.theme.ForestDark
 
 private val recipeCategories = listOf("الكل", "المفضلة", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
@@ -95,25 +98,12 @@ fun RecipesScreen(
         ) {
             Text("وصفات من مطبخنا", style = MaterialTheme.typography.headlineMedium)
             Text("ابحث بالعربية أو الفرنسية أو بأسماء المكونات المحلية.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth().background(Paper, RoundedCornerShape(22.dp))
-                    .padding(horizontal = 14.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                MealsIcon(MealsIconName.Search, contentDescription = null, modifier = Modifier.size(23.dp))
-                BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink),
-                    decorationBox = { inner ->
-                        if (query.isEmpty()) Text("ابحث عن وصفة أو مكوّن...", color = MutedInk)
-                        inner()
-                    }
-                )
-            }
+            MealsSearchBar(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "ابحث عن وصفة أو مكوّن...",
+                modifier = Modifier.fillMaxWidth()
+            )
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -130,52 +120,106 @@ fun RecipesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(filtered, key = { it.id }) { recipe ->
-                MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 15.dp) {
-                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MealsCard(
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { selectedRecipeId = recipe.id }
+                    ),
+                    containerColor = Paper,
+                    borderColor = Border,
+                    contentPadding = 14.dp
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(11.dp)
+                        ) {
                             Box(
-                                modifier = Modifier.size(48.dp).background(SoftGreen, RoundedCornerShape(22.dp)),
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .background(SoftGreen, RoundedCornerShape(14.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                MealsIcon(MealsIconName.Meal, contentDescription = null, modifier = Modifier.size(31.dp))
+                                MealsIcon(
+                                    MealsIconName.Meal,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(27.dp)
+                                )
                             }
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text(recipe.nameAr, style = MaterialTheme.typography.titleLarge)
-                                Text(recipe.descriptionAr, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-                                Text(recipe.nameFr, color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                            }
-                            MealsIconAction(onClick = { onToggleFavorite(recipe.id) }) {
-                                MealsIcon(name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline, contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة", modifier = Modifier.size(27.dp))
-                            }
-                        }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            MealsIcon(MealsIconName.Clock, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(recipe.durationMinutes.toString() + " د", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                            Text(recipe.baseServings.toString() + " حصص", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                            Spacer(Modifier.weight(1f))
-                            Text(recipe.category, color = Forest, fontWeight = FontWeight.SemiBold)
-                        }
-                        Text(
-                            "المكونات: " + recipe.ingredients.take(5).joinToString("، ") {
-                                ingredientNames[it.ingredientId]?.nameAr ?: it.ingredientId
-                            } + if (recipe.ingredients.size > 5) "..." else "",
-                            color = MutedInk,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MealsPrimaryButton(
-                                label = "أضف إلى الأسبوع",
-                                onClick = { onAddRecipe(recipe.id) },
+                            Text(
+                                text = recipe.nameAr,
                                 modifier = Modifier.weight(1f),
-                                icon = MealsIconName.Add
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Ink
                             )
-                            MealsTextButton(onClick = { selectedRecipeId = recipe.id }) {
-                                MealsIcon(MealsIconName.Info, contentDescription = null, modifier = Modifier.size(23.dp))
-                                Text("التفاصيل")
+                            MealsIconAction(onClick = { onToggleFavorite(recipe.id) }) {
+                                MealsIcon(
+                                    name = if (recipe.id in favoriteRecipeIds) MealsIconName.Star else MealsIconName.StarOutline,
+                                    contentDescription = if (recipe.id in favoriteRecipeIds) "إزالة من المفضلة" else "إضافة إلى المفضلة",
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(13.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            MealsIcon(
+                                MealsIconName.Clock,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                                tint = MutedInk
+                            )
+                            Text(
+                                recipe.durationMinutes.toString() + " د",
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                recipe.baseServings.toString() + " حصص",
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                recipe.category,
+                                color = Forest,
+                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.End),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            MealsIconAction(onClick = { selectedRecipeId = recipe.id }) {
+                                MealsIcon(
+                                    MealsIconName.Info,
+                                    contentDescription = "تفاصيل الوصفة",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = ForestDark
+                                )
+                            }
+                            MealsIconAction(onClick = { onAddRecipe(recipe.id) }) {
+                                MealsIcon(
+                                    MealsIconName.Add,
+                                    contentDescription = "أضف إلى الأسبوع",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = ForestDark
+                                )
                             }
                         }
                     }
-                }
+                }                }
             }
             if (filtered.isEmpty()) {
                 item {

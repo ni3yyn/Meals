@@ -95,6 +95,8 @@ import dz.meals.app.ui.theme.SoftPink
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsNavigationIcon
 import dz.meals.app.ui.icons.MealsIconName
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.SolidColor
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = RoundedCornerShape(26.dp)
@@ -326,14 +328,26 @@ private fun MealsRaisedControl(
         label = "mealsRaisedControlScale"
     )
     val shape = remember { RoundedCornerShape(14.dp) }
+    val faceColor = if (enabled) Paper else Color(0xFFF0ECE6)
 
-    Surface(
+    Box(
         modifier = modifier
             .defaultMinSize(minHeight = minHeight)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
+            .shadow(
+                elevation = if (enabled) 2.dp else 0.dp,
+                shape = shape,
+                clip = false
+            )
+            .clip(shape)
+            .background(faceColor, shape)
+            .border(
+                BorderStroke(1.dp, Color.White.copy(alpha = 0.94f)),
+                shape
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -341,21 +355,18 @@ private fun MealsRaisedControl(
                 role = Role.Button,
                 onClick = onClick
             ),
-        shape = shape,
-        color = if (enabled) Paper.copy(alpha = 0.84f) else Paper.copy(alpha = 0.58f),
-        contentColor = if (enabled) contentColor else MutedInk,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.92f)),
-        shadowElevation = if (enabled) 2.dp else 0.dp
+        contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
+                .fillMaxWidth()
                 .defaultMinSize(minHeight = minHeight)
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.50f),
+                            Color.White.copy(alpha = 0.34f),
                             Color.Transparent,
-                            Border.copy(alpha = 0.12f)
+                            Border.copy(alpha = 0.08f)
                         )
                     ),
                     shape
@@ -363,7 +374,9 @@ private fun MealsRaisedControl(
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             contentAlignment = Alignment.Center
         ) {
-            CompositionLocalProvider(LocalContentColor provides if (enabled) contentColor else MutedInk) {
+            CompositionLocalProvider(
+                LocalContentColor provides if (enabled) contentColor else MutedInk
+            ) {
                 content()
             }
         }
@@ -524,6 +537,57 @@ fun MealsIconButton(
         ) {
             content()
         }
+    }
+}
+
+@Composable
+fun MealsSearchBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(15.dp)
+
+    Row(
+        modifier = modifier
+            .shadow(2.dp, shape, clip = false)
+            .clip(shape)
+            .background(Paper, shape)
+            .border(
+                BorderStroke(1.dp, Color.White.copy(alpha = 0.94f)),
+                shape
+            )
+            .padding(horizontal = 14.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        MealsIcon(
+            name = MealsIconName.Search,
+            contentDescription = null,
+            modifier = Modifier.size(21.dp),
+            tint = ForestDark
+        )
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            cursorBrush = SolidColor(Forest),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink),
+            decorationBox = { innerTextField ->
+                Box {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
     }
 }
 
