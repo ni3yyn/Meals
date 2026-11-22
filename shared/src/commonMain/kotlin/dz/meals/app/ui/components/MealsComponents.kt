@@ -109,11 +109,9 @@ private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = MealsLiquidGlass.CardShape
 
 /**
- * The shared elevated surface used for budgets, summaries and grouped content.
- *
- * Content cards use a quiet, near-opaque porcelain material with a restrained
- * warm edge and diffuse shadow. Liquid Glass optical highlights are reserved
- * for floating controls and navigation rather than repeated across content.
+ * The shared elevated Liquid Glass surface used for budgets, summaries and
+ * grouped content. It frosts the isolated atmospheric backdrop, then layers
+ * a translucent tint, bright double rim and restrained optical reflections.
  */
 @Composable
 private fun MealsLiquidGlassFrame(
@@ -200,16 +198,20 @@ fun MealsCard(
     val face = remember(containerColor) {
         MealsLiquidGlass.cardFace(containerColor)
     }
+    val rim = remember(borderColor) {
+        MealsLiquidGlass.surfaceRim(borderColor ?: Color(0xFFEADFD7))
+    }
+
     MealsLiquidGlassFrame(
         modifier = modifier,
         shape = shape,
         elevation = shadowElevation.coerceIn(0.dp, 4.dp),
         face = face,
-        hazeState = null,
-        blurStyle = null,
-        rim = MealsLiquidGlass.contentRim(rimColor = borderColor ?: Color(0xFFE1D9CD)),
+        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+        rim = rim,
         sideGlintHeight = 23.dp,
-        showOpticalHighlights = false
+        showOpticalHighlights = true
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Column(
@@ -231,8 +233,8 @@ val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
  * not use the separate refraction/elevation path that can read as a dark shadow.
  */
 /**
- * Large-format porcelain content surface. Floating controls retain the
- * brighter Liquid Glass optical treatment.
+ * Large-format Liquid Glass hero surface, using the same isolated backdrop
+ * blur, translucent material and optical rim as the shared content cards.
  */
 @Composable
 fun MealsGlassSurface(
@@ -251,11 +253,11 @@ fun MealsGlassSurface(
         shape = shape,
         elevation = MealsLiquidGlass.SurfaceElevation,
         face = face,
-        hazeState = null,
-        blurStyle = null,
-        rim = MealsLiquidGlass.contentRim(),
+        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
+        rim = MealsLiquidGlass.surfaceRim(),
         sideGlintHeight = 27.dp,
-        showOpticalHighlights = false
+        showOpticalHighlights = true
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
