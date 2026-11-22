@@ -312,6 +312,20 @@ private fun MealsLiquidGlassControl(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = minHeight)
     }
 
+    // CRITICAL SIZING CONTRACT — KEEP THIS BRANCH DYNAMIC.
+    // Text controls must wrap to their own content height. A bottom sheet places
+    // these controls inside a height-bounded Column; fillMaxSize()/fillMaxHeight()
+    // here makes each ordinary button consume the remaining sheet height, which
+    // forces even tiny sheets to expand to the maximum and makes their buttons huge.
+    // AI AGENTS / MAINTAINERS: DO NOT replace this conditional with fillMaxSize(),
+    // fillMaxHeight(), or a fixed height. Only fixedSize icon controls may fill
+    // their supplied bounds. Normal buttons must fill width and wrap vertically.
+    val frameModifier = if (fixedSize != null) {
+        Modifier.fillMaxSize()
+    } else {
+        Modifier.fillMaxWidth()
+    }
+
     MealsPressable(
         onClick = onClick,
         modifier = modifier.then(
@@ -321,7 +335,7 @@ private fun MealsLiquidGlassControl(
         enabled = enabled
     ) {
         MealsLiquidGlassFrame(
-            modifier = Modifier.fillMaxSize(),
+            modifier = frameModifier,
             shape = MealsLiquidGlass.ControlShape,
             elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
             face = MealsLiquidGlass.controlFace(),
@@ -988,6 +1002,10 @@ fun MealsBottomSheet(
         }
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            // IMPORTANT: this is a ceiling, never a target height. Keep the sheet
+            // content-driven so short dialogs stay compact and only long content
+            // reaches the 87% cap. AI AGENTS: do not replace heightIn(max = ...)
+            // below with fillMaxHeight/fillMaxSize or a fixed/minimum sheet height.
             val maxSheetHeight = maxHeight * 0.87f
             val maxBodyHeight = (maxSheetHeight - 164.dp).coerceAtLeast(120.dp)
 
