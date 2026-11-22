@@ -516,17 +516,31 @@ private fun SlotRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                MealsIcon(
-                    name = MealsIconName.Clock,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    recipe.durationMinutes.toString() + " دقيقة",
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
-                )
+                if (meal.isCooked) {
+                    MealsIcon(
+                        name = MealsIconName.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "تم الطهي",
+                        color = Forest,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                } else {
+                    MealsIcon(
+                        name = MealsIconName.Clock,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        recipe.durationMinutes.toString() + " دقيقة",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 3.dp)
