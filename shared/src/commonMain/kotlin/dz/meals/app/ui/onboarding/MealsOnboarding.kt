@@ -585,4 +585,211 @@ private fun StepLayout(
     subtitle: String,
     art: MealsArt,
     satellites: List<Satellite>,
-    artCount: Int = 3,
+    artCount: Int = 3,    panel: @Composable ColumnScope.() -> Unit
+) {
+    val away = abs(pageOffset).coerceIn(0f, 1f)
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val panelMax = maxHeight * 0.52f
+        Column(
+            Modifier.fillMaxSize().graphicsLayer {
+                alpha = 1f - away
+                translationY = away * 24.dp.toPx()
+            }
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                val heroSize = min(maxWidth.value, maxHeight.value).dp
+                Box(
+                    Modifier.size(heroSize).graphicsLayer {
+                        val s = lerp(1f, 0.86f, away)
+                        scaleX = s
+                        scaleY = s
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    MealsGlassBubble(size = heroSize * 0.9f, floatDistance = 6.dp) {
+                        MealsIllustration(art, size = heroSize * 0.62f, count = artCount)
+                    }
+                    satellites.forEach { s ->
+                        MealsGlassBubble(
+                            size = heroSize * s.size,
+                            modifier = Modifier.align(Alignment.Center).offset(x = heroSize * s.dx, y = heroSize * s.dy),
+                            floatDistance = 5.dp,
+                            phase = s.phase
+                        ) {
+                            val inner = heroSize * s.size * 0.62f
+                            when {
+                                s.art != null -> MealsIllustration(s.art, size = inner * 1.2f)
+                                s.icon != null -> MealsIcon(s.icon, contentDescription = null, modifier = Modifier.size(inner))
+                            }
+                        }
+                    }
+                }
+            }
+            Text(
+                title,
+                modifier = Modifier.fillMaxWidth(),
+                color = Ink,
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                subtitle,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                color = MutedInk,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(12.dp))
+            MealsGlassSurface(
+                modifier = Modifier.fillMaxWidth().heightIn(max = panelMax),
+                contentPadding = 16.dp
+            ) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = panel
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(icon: MealsIconName, title: String, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        MealsGlassBubble(size = 44.dp, floatDistance = 0.dp) {
+            MealsIcon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Ink, style = MaterialTheme.typography.titleSmall)
+            Text(text, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun StepperButton(symbol: String, onClick: () -> Unit) {
+    MealsIconButton(onClick = onClick, size = 52.dp) {
+        Text(symbol, color = Ink, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun glassSliderColors() = SliderDefaults.colors(
+    thumbColor = TextAccent,
+    activeTrackColor = TextAccent,
+    inactiveTrackColor = SoftOrange
+)
+
+/** A light glass pill used for every single- or multi-select choice. */
+@Composable
+private fun BubbleChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val face = if (selected) {
+        Brush.verticalGradient(listOf(Color(0xFFFFE3CC), Color(0xFFFFD2B0)))
+    } else {
+        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.66f), Color.White.copy(alpha = 0.36f)))
+    }
+    val rim = if (selected) {
+        Brush.verticalGradient(listOf(TextAccent.copy(alpha = 0.75f), TextAccent.copy(alpha = 0.42f)))
+    } else {
+        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.98f), Color.White.copy(alpha = 0.5f)))
+    }
+    MealsPressable(onClick = onClick, shape = CircleShape) {
+        Row(
+            modifier = Modifier
+                .background(face, CircleShape)
+                .border(1.2.dp, rim, CircleShape)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (selected) MealsIcon(MealsIconName.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(label, color = Ink, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun SlotTile(art: MealsArt, title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
+    MealsPressable(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = shape) {
+        MealsCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.5.dp, if (selected) TextAccent.copy(alpha = 0.55f) else Color.Transparent, shape),
+            containerColor = if (selected) SoftOrange else Paper,
+            contentPadding = 0.dp,
+            shape = shape,
+            shadowElevation = 0.dp
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MealsGlassBubble(size = 58.dp, floatDistance = 0.dp) {
+                    MealsIllustration(art, size = 40.dp)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(title, color = Ink, style = MaterialTheme.typography.titleMedium)
+                    Text(subtitle, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                }
+                MealsGlassBubble(size = 30.dp, floatDistance = 0.dp, tint = if (selected) Leaf else Color(0xFFFFF8F1)) {
+                    if (selected) MealsIcon(MealsIconName.Check, contentDescription = "محدد", modifier = Modifier.size(22.dp))
+                }
+            }
+        }
+    }
+}
+
+/** Short celebratory scene shown while the first plan is being prepared. */
+@Composable
+private fun Finale() {
+    Column(
+        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val heroSize = min(maxWidth.value, 340f).dp
+            Box(Modifier.size(heroSize), contentAlignment = Alignment.Center) {
+                MealsGlassBubble(size = heroSize * 0.86f, floatDistance = 6.dp) {
+                    MealsIllustration(MealsArt.Week, size = heroSize * 0.58f)
+                }
+                MealsGlassBubble(
+                    size = heroSize * 0.26f,
+                    modifier = Modifier.align(Alignment.Center).offset(x = heroSize * -0.40f, y = heroSize * -0.30f),
+                    phase = 0.2f, floatDistance = 5.dp
+                ) { MealsIllustration(MealsArt.Breakfast, size = heroSize * 0.2f) }
+                MealsGlassBubble(
+                    size = heroSize * 0.26f,
+                    modifier = Modifier.align(Alignment.Center).offset(x = heroSize * 0.42f, y = heroSize * 0.02f),
+                    phase = 0.55f, floatDistance = 5.dp
+                ) { MealsIllustration(MealsArt.Lunch, size = heroSize * 0.2f) }
+                MealsGlassBubble(
+                    size = heroSize * 0.22f,
+                    modifier = Modifier.align(Alignment.Center).offset(x = heroSize * -0.34f, y = heroSize * 0.36f),
+                    phase = 0.8f, floatDistance = 5.dp
+                ) { MealsIllustration(MealsArt.Dinner, size = heroSize * 0.17f) }
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        Text(
+            "نجهّز أسبوعك…",
+            color = Ink,
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "نختار وصفات تناسب ميزانيتك وتفضيلاتك.",
+            color = MutedInk,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center
+        )
+    }
+}
