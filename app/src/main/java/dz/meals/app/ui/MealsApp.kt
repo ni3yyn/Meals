@@ -546,7 +546,7 @@ private fun SettingsDialog(
                     )
                     if (isFirstSetup) {
                         MealsCheckRow(
-                            titleText = "لا توجد حساسية غذائية معروفة",
+                            title = "لا توجد حساسية غذائية معروفة",
                             supportingText = "إن وُجدت حساسية أو كان هناك شك، أكملي الخطوات التالية أولاً.",
                             checked = noKnownAllergies,
                             onCheckedChange = { noKnownAllergies = it }
@@ -574,19 +574,19 @@ private fun SettingsDialog(
                     Text("ما الوجبات التي تحبين التخطيط لها؟", style = MaterialTheme.typography.titleMedium)
                     Text("اختاري ما تحتاجينه فقط، ويمكنك تغييره لاحقاً.", color = dz.meals.app.ui.theme.MutedInk, style = MaterialTheme.typography.bodySmall)
                     MealsCheckRow(
-                        titleText = "الفطور",
+                        title = "الفطور",
                         supportingText = "وجبة الصباح",
                         checked = "breakfast" in slots,
                         onCheckedChange = { slots = if (it) slots + "breakfast" else slots - "breakfast" }
                     )
                     MealsCheckRow(
-                        titleText = "الغداء",
+                        title = "الغداء",
                         supportingText = "الوجبة الرئيسية",
                         checked = "lunch" in slots,
                         onCheckedChange = { slots = if (it) slots + "lunch" else slots - "lunch" }
                     )
                     MealsCheckRow(
-                        titleText = "العشاء",
+                        title = "العشاء",
                         supportingText = "وجبة المساء",
                         checked = "dinner" in slots,
                         onCheckedChange = { slots = if (it) slots + "dinner" else slots - "dinner" }
