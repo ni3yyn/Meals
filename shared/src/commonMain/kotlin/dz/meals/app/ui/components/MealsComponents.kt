@@ -79,6 +79,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -232,6 +233,53 @@ fun MealsCard(
         }
     }
 }
+
+/**
+ * Small, non-interactive progress bead using the exact control-glass material
+ * used by Meals buttons: translucent face, white optical rim and soft depth.
+ */
+@Composable
+fun MealsGlassDot(
+    selected: Boolean,
+    completed: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    val diameter by animateDpAsState(
+        targetValue = if (selected) 16.dp else 10.dp,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "mealsGlassDotSize"
+    )
+    val face = when {
+        selected -> Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.72f),
+                SoftOrange.copy(alpha = 0.76f),
+                SoftOrange.copy(alpha = 0.48f)
+            )
+        )
+        completed -> Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.62f),
+                SoftOrange.copy(alpha = 0.46f),
+                Color.White.copy(alpha = 0.36f)
+            )
+        )
+        else -> MealsLiquidGlass.controlFace()
+    }
+
+    MealsLiquidGlassFrame(
+        modifier = modifier.size(diameter),
+        shape = CircleShape,
+        elevation = if (selected) MealsLiquidGlass.ControlElevation else MealsLiquidGlass.SurfaceElevation,
+        face = face,
+        hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
+        blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        blurRadius = MealsLiquidGlass.ControlBlurRadius,
+        rim = MealsLiquidGlass.controlRim(),
+        sideGlintHeight = 9.dp
+    ) {}
+}
+
 
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
