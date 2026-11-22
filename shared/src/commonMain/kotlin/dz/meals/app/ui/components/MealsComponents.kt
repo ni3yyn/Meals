@@ -121,9 +121,6 @@ private fun MealsLiquidGlassFrame(
     blurStyle: HazeBlurStyle? = null,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
-    interactionSource: MutableInteractionSource? = null,
-    enabled: Boolean = true,
-    onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val surfaceModifier = modifier
@@ -148,19 +145,6 @@ private fun MealsLiquidGlassFrame(
         )
         .background(face, shape)
         .border(BorderStroke(1.15.dp, rim), shape)
-        .then(
-            if (onClick != null && interactionSource != null) {
-                Modifier.clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    role = Role.Button,
-                    onClick = onClick
-                )
-            } else {
-                Modifier
-            }
-        )
 
     Box(modifier = surfaceModifier, contentAlignment = Alignment.TopStart) {
         Box(
@@ -274,6 +258,51 @@ fun MealsGlassSurface(
 }
 
 
+/**
+ * Canonical Meals touch surface: one visible spring-compressed press,
+ * porcelain highlight and clean release for every reusable control.
+ */
+@Composable
+fun MealsPressable(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    role: Role = Role.Button,
+    shape: Shape = MealsLiquidGlass.ControlShape,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.925f else 1f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.58f, stiffness = 620f),
+        label = "mealsSharedPressScale"
+    )
+    val highlight by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.20f else 0f,
+        animationSpec = tween(90),
+        label = "mealsSharedPressHighlight"
+    )
+    Box(
+        modifier = modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(shape)
+            .clickable(
+                interactionSource = source,
+                indication = null,
+                enabled = enabled,
+                role = role,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+        if (highlight > 0.001f) {
+            Box(Modifier.matchParentSize().background(Color.White.copy(alpha = highlight), shape))
+        }
+    }
+}
+
 @Composable
 private fun MealsLiquidGlassControl(
     onClick: () -> Unit,
@@ -286,37 +315,30 @@ private fun MealsLiquidGlassControl(
     contentColor: Color = ForestDark,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) MealsLiquidGlass.PressedScale else 1f,
-        animationSpec = tween(durationMillis = MealsLiquidGlass.PressDurationMillis),
-        label = "mealsLiquidGlassControlScale"
-    )
     val contentModifier = if (fixedSize != null) {
         Modifier.fillMaxSize()
     } else {
         Modifier.fillMaxWidth().defaultMinSize(minHeight = minHeight)
     }
 
-    MealsLiquidGlassFrame(
-        modifier = modifier
-            .then(if (fixedSize != null) Modifier.size(fixedSize) else Modifier.defaultMinSize(minHeight = minHeight))
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            },
-        shape = MealsLiquidGlass.ControlShape,
-        elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
-        face = MealsLiquidGlass.controlFace(),
-        hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
-        blurStyle = MealsLiquidGlass.ControlBlurStyle,
-        rim = MealsLiquidGlass.controlRim(),
-        sideGlintHeight = 17.dp,
-        interactionSource = interactionSource,
-        enabled = enabled,
-        onClick = onClick
+    MealsPressable(
+        onClick = onClick,
+        modifier = modifier.then(
+            if (fixedSize != null) Modifier.size(fixedSize)
+            else Modifier.defaultMinSize(minHeight = minHeight)
+        ),
+        enabled = enabled
     ) {
+        MealsLiquidGlassFrame(
+            modifier = Modifier.fillMaxSize(),
+            shape = MealsLiquidGlass.ControlShape,
+            elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
+            face = MealsLiquidGlass.controlFace(),
+            hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
+            blurStyle = MealsLiquidGlass.ControlBlurStyle,
+            rim = MealsLiquidGlass.controlRim(),
+            sideGlintHeight = 17.dp
+        ) {
         Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
             CompositionLocalProvider(
                 LocalContentColor provides if (enabled) contentColor else MutedInk

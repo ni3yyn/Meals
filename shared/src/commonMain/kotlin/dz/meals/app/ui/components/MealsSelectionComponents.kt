@@ -143,23 +143,11 @@ fun MealsFilterChips(
                 label = "mealsFilterChipContent"
             )
             MealsSelectionGlass(selected = isSelected) {
-                Box(
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            role = Role.RadioButton
-                        ) { onSelect(item) }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = item,
-                        color = contentColor,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1
-                    )
+                MealsPressable(onClick = { onSelect(item) }, role = Role.RadioButton) {
+                    Box(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+                        Text(item, color = contentColor, style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
+                    }
                 }
             }
         }
@@ -199,46 +187,19 @@ fun MealsSubtabsIndicator(
                             modifier = Modifier.fillMaxWidth(),
                             selected = true
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        role = Role.Tab
-                                    ) { onSelect(item) }
-                                    .padding(horizontal = 10.dp, vertical = 10.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item,
-                                    color = textColor,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
-                                )
+                            MealsPressable(onClick = { onSelect(item) }, modifier = Modifier.fillMaxWidth(), role = Role.Tab) {
+                                Box(Modifier.padding(horizontal = 10.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                    Text(item, color = textColor, style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold, maxLines = 1)
+                                }
                             }
                         }
                     } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(SelectionShape)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    role = Role.Tab
-                                ) { onSelect(item) }
-                                .padding(horizontal = 10.dp, vertical = 11.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = item,
-                                color = textColor,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1
-                            )
+                        MealsPressable(onClick = { onSelect(item) }, modifier = Modifier.fillMaxWidth(), role = Role.Tab, shape = SelectionShape) {
+                            Box(Modifier.padding(horizontal = 10.dp, vertical = 11.dp), contentAlignment = Alignment.Center) {
+                                Text(item, color = textColor, style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Medium, maxLines = 1)
+                            }
                         }
                     }
                 }

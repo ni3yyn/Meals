@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +44,7 @@ import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsProgressBar
 import dz.meals.app.ui.components.MealsSecondaryButton
+import dz.meals.app.ui.components.MealsSubtabsIndicator
 import dz.meals.app.ui.components.MealsTextButton
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
@@ -319,29 +319,12 @@ fun ShoppingScreen(
 
         if (rows.isNotEmpty()) {
             item(key = "shopping-filter") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(15.dp))
-                        .background(SoftGreen.copy(alpha = 0.84f))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    ShoppingFilterOption(
-                        label = "المتبقي",
-                        count = remainingCount,
-                        selected = !showPurchased,
-                        modifier = Modifier.weight(1f),
-                        onClick = { showPurchased = false }
-                    )
-                    ShoppingFilterOption(
-                        label = "الكل",
-                        count = rows.size,
-                        selected = showPurchased,
-                        modifier = Modifier.weight(1f),
-                        onClick = { showPurchased = true }
-                    )
-                }
+                MealsSubtabsIndicator(
+                    items = listOf("المتبقي · $remainingCount", "الكل · ${rows.size}"),
+                    selected = if (showPurchased) "الكل · ${rows.size}" else "المتبقي · $remainingCount",
+                    onSelect = { showPurchased = it.startsWith("الكل") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
 
@@ -763,33 +746,6 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
                 style = MaterialTheme.typography.labelSmall
             )
         }
-    }
-}
-
-@Composable
-private fun ShoppingFilterOption(
-    label: String,
-    count: Int,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) ForestDark else Color.Transparent)
-            .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 11.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            "$label · $count",
-            color = if (selected) Color.White else ForestDark,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
 
