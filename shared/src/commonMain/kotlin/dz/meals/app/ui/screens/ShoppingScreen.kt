@@ -1,7 +1,18 @@
 package dz.meals.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +32,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,6 +46,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsCheckbox
@@ -56,6 +72,9 @@ import dz.meals.app.ui.theme.ForestDark
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
+import dz.meals.app.ui.theme.SoftPink
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import dz.meals.app.shared.format.epochMillisToLocalDate
 import dz.meals.app.shared.format.formatDateDmy
 import dz.meals.app.shared.format.formatDzd
@@ -97,6 +116,15 @@ fun ShoppingScreen(
     var editActualSpent by rememberSaveable { mutableStateOf("") }
     var editUnavailable by rememberSaveable { mutableStateOf(false) }
     var editUserAdded by rememberSaveable { mutableStateOf(false) }
+    var addedFeedback by rememberSaveable { mutableStateOf<String?>(null) }
+    val expandedCategories = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+
+    LaunchedEffect(addedFeedback) {
+        if (addedFeedback != null) {
+            delay(1500)
+            addedFeedback = null
+        }
+    }
 
     val rows = snapshot.shoppingItems
     val checkedCount = rows.count { it.checked }
@@ -326,6 +354,32 @@ fun ShoppingScreen(
             }
         }
 
+        item(key = "shopping-added-feedback") {
+            AnimatedVisibility(
+                visible = addedFeedback != null,
+                enter = fadeIn(animationSpec = androidx.compose.animation.core.tween(150)) +
+                    expandVertically(animationSpec = androidx.compose.animation.core.tween(190)),
+                exit = fadeOut(animationSpec = androidx.compose.animation.core.tween(120)) +
+                    shrinkVertically(animationSpec = androidx.compose.animation.core.tween(170))
+            ) {
+                MealsCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = SoftGreen.copy(alpha = 0.82f),
+                    borderColor = null,
+                    contentPadding = 12.dp,
+                    shadowElevation = 1.dp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        MealsIcon(MealsIconName.Check, contentDescription = null, modifier = Modifier.size(24.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("تمت الإضافة إلى القائمة", fontWeight = FontWeight.Bold)
+                            Text(addedFeedback.orEmpty(), color = MutedInk, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
+
         when {
             rows.isEmpty() -> {
                 item(key = "shopping-empty") {
@@ -390,7 +444,12 @@ fun ShoppingScreen(
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            expandedCategories[category] = !(expandedCategories[category] ?: true)
+                                        }
+                                        .padding(horizontal = 15.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
@@ -405,33 +464,48 @@ fun ShoppingScreen(
                                         color = MutedInk,
                                         style = MaterialTheme.typography.labelMedium
                                     )
-                                }
-                                categoryRows.forEachIndexed { index, item ->
-                                    if (index > 0) {
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 14.dp)
-                                                .height(1.dp)
-                                                .background(Border.copy(alpha = 0.78f))
-                                        )
-                                    }
-                                    ShoppingItemRow(
-                                        item = item,
-                                        onToggle = { onToggleItem(item.id, !item.checked) },
-                                        onEdit = {
-                                            editItemId = item.id
-                                            editName = item.name
-                                            editQuantity = item.purchaseQuantity.prettyQuantity()
-                                            editUnit = item.unit
-                                            editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
-                                            editStoreNote = item.storeNote
-                                            editActualSpent = item.actualSpentDzd?.toString().orEmpty()
-                                            editUnavailable = item.isUnavailable
-                                            editUserAdded = item.userAdded
-                                        },
-                                        onDelete = { onDeleteCustomItem(item.id) }
+                                    MealsIcon(
+                                        if (expandedCategories[category] == false) MealsIconName.ChevronDown else MealsIconName.ChevronUp,
+                                        contentDescription = if (expandedCategories[category] == false) "توسيع القسم" else "طي القسم",
+                                        modifier = Modifier.padding(start = 7.dp).size(21.dp)
                                     )
+                                }
+                                AnimatedVisibility(
+                                    visible = expandedCategories[category] != false,
+                                    enter = expandVertically(animationSpec = androidx.compose.animation.core.tween(230)) +
+                                        fadeIn(animationSpec = androidx.compose.animation.core.tween(160)),
+                                    exit = shrinkVertically(animationSpec = androidx.compose.animation.core.tween(210)) +
+                                        fadeOut(animationSpec = androidx.compose.animation.core.tween(120))
+                                ) {
+                                    Column(Modifier.animateContentSize(animationSpec = androidx.compose.animation.core.tween(220))) {
+                                        categoryRows.forEachIndexed { index, item ->
+                                            if (index > 0) {
+                                                Box(
+                                                    Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 14.dp)
+                                                        .height(1.dp)
+                                                        .background(Border.copy(alpha = 0.78f))
+                                                )
+                                            }
+                                            ShoppingItemRow(
+                                                item = item,
+                                                onToggle = { onToggleItem(item.id, !item.checked) },
+                                                onEdit = {
+                                                    editItemId = item.id
+                                                    editName = item.name
+                                                    editQuantity = item.purchaseQuantity.prettyQuantity()
+                                                    editUnit = item.unit
+                                                    editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
+                                                    editStoreNote = item.storeNote
+                                                    editActualSpent = item.actualSpentDzd?.toString().orEmpty()
+                                                    editUnavailable = item.isUnavailable
+                                                    editUserAdded = item.userAdded
+                                                },
+                                                onDelete = { onDeleteCustomItem(item.id) }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -476,6 +550,7 @@ fun ShoppingScreen(
                         if (quantity != null && quantity > 0 && itemName.isNotBlank() &&
                             (itemEstimatedPrice.isBlank() || (estimatedPrice != null && estimatedPrice >= 0.0))
                         ) {
+                            addedFeedback = itemName.trim()
                             onAddCustomItem(itemName, quantity, itemUnit, estimatedPrice)
                             itemName = ""
                             itemQuantity = "1"
@@ -754,99 +829,129 @@ private fun ShoppingItemRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp)
-    ) {
-        MealsCheckbox(
-            checked = item.checked,
-            onCheckedChange = { onToggle() }
-        )
-        Column(
-            modifier = Modifier.weight(1f).clickable(onClick = onEdit),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+    val actionWidth = 56.dp
+    val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
+    var dragOffset by remember(item.id) { mutableFloatStateOf(0f) }
+    var isDragging by remember(item.id) { mutableStateOf(false) }
+    var isActionRevealed by remember(item.id) { mutableStateOf(false) }
+    val settledOffset by animateFloatAsState(
+        targetValue = if (isActionRevealed) -actionWidthPx else 0f,
+        animationSpec = spring(dampingRatio = 0.86f, stiffness = 520f),
+        label = "shoppingSwipeSettle"
+    )
+    val dragState = rememberDraggableState { delta ->
+        dragOffset = (dragOffset + delta).coerceIn(-actionWidthPx, 0f)
+    }
+    val foregroundOffset = if (isDragging) dragOffset else settledOffset
+
+    Box(Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(vertical = 7.dp)
+                .size(width = actionWidth, height = 52.dp)
+                .background(SoftPink.copy(alpha = 0.78f), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                item.name,
-                color = if (item.checked) MutedInk else dz.meals.app.ui.theme.Ink,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                textDecoration = if (item.checked) TextDecoration.LineThrough else null,
-                overflow = TextOverflow.Ellipsis
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            MealsIconButton(
+                onClick = {
+                    if (item.userAdded) onDelete() else onEdit()
+                    isActionRevealed = false
+                },
+                size = 44.dp
             ) {
-                Text(
-                    item.purchaseQuantity.formatHouseholdQuantity(item.unit),
-                    color = if (item.checked) MutedInk else Forest,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1
-                )
-                Text("·", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                Text(
-                    item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر",
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            if (item.pantryQuantity > 0.0) {
-                Text(
-                    "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
-                        " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit),
-                    color = MutedInk,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            if (item.isApproximatePantry || item.isUnavailable || item.storeNote.isNotBlank()) {
-                Text(
-                    listOfNotNull(
-                        if (item.isApproximatePantry) "مخزون تقريبي" else null,
-                        if (item.isUnavailable) "غير متوفر" else null,
-                        item.storeNote.takeIf { it.isNotBlank() }
-                    ).joinToString(" · "),
-                    color = MutedInk,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            item.actualSpentDzd?.let {
-                Text(
-                    "المدفوع " + it.toInt().formatDzd(),
-                    color = Forest,
-                    style = MaterialTheme.typography.labelSmall
+                MealsIcon(
+                    if (item.userAdded) MealsIconName.Delete else MealsIconName.Edit,
+                    contentDescription = if (item.userAdded) "حذف العنصر" else "تعديل العنصر",
+                    modifier = Modifier.size(25.dp)
                 )
             }
         }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(foregroundOffset.roundToInt(), 0) }
+                .draggable(
+                    state = dragState,
+                    orientation = Orientation.Horizontal,
+                    onDragStarted = { isDragging = true },
+                    onDragStopped = {
+                        isDragging = false
+                        isActionRevealed = dragOffset < -actionWidthPx * 0.42f
+                        dragOffset = 0f
+                    }
+                )
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            MealsIconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(40.dp),
-                size = 40.dp
+            MealsCheckbox(
+                checked = item.checked,
+                onCheckedChange = { onToggle() }
+            )
+            Column(
+                modifier = Modifier.weight(1f).clickable(onClick = onEdit),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                MealsIcon(MealsIconName.Edit, contentDescription = "تعديل", modifier = Modifier.size(24.dp))
-            }
-            if (item.userAdded) {
-                MealsIconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(40.dp),
-                    size = 40.dp
+                Text(
+                    item.name,
+                    color = if (item.checked) MutedInk else dz.meals.app.ui.theme.Ink,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    textDecoration = if (item.checked) TextDecoration.LineThrough else null,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(24.dp))
+                    Text(
+                        item.purchaseQuantity.formatHouseholdQuantity(item.unit),
+                        color = if (item.checked) MutedInk else Forest,
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1
+                    )
+                    Text("·", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (item.pantryQuantity > 0.0) {
+                    Text(
+                        "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
+                            " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit),
+                        color = MutedInk,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (item.isApproximatePantry || item.isUnavailable || item.storeNote.isNotBlank()) {
+                    Text(
+                        listOfNotNull(
+                            if (item.isApproximatePantry) "مخزون تقريبي" else null,
+                            if (item.isUnavailable) "غير متوفر" else null,
+                            item.storeNote.takeIf { it.isNotBlank() }
+                        ).joinToString(" · "),
+                        color = MutedInk,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                item.actualSpentDzd?.let {
+                    Text(
+                        "المدفوع " + it.toInt().formatDzd(),
+                        color = Forest,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
         }
