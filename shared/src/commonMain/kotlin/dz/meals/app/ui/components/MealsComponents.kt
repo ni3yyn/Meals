@@ -58,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -1287,12 +1288,82 @@ data class MealsNavigationItem(
 )
 
 /**
+ * A navigation capsule whose top perimeter itself lifts into a moving glass
+ * crest. The crest is part of the actual clip/blur/rim outline, not a second
+ * shape drawn over the navbar.
+ */
+private class MealsNavigationRimShape(
+    private val bumpCenter: Dp,
+    private val bumpWidth: Dp,
+    private val bumpHeight: Dp = 7.dp
+) : Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline {
+        val width = size.width
+        val height = size.height
+        val radius = with(density) { 27.dp.toPx() }
+            .coerceAtMost(minOf(width / 2f, height / 2f))
+        val topInset = with(density) { bumpHeight.toPx() }
+            .coerceIn(0f, height * 0.22f)
+        val center = with(density) { bumpCenter.toPx() }.coerceIn(radius, width - radius)
+        val crestWidth = with(density) { bumpWidth.toPx() }
+            .coerceIn(24.dp.toPx(), (width - radius * 2f).coerceAtLeast(24.dp.toPx()))
+        val left = (center - crestWidth / 2f).coerceAtLeast(radius)
+        val right = (center + crestWidth / 2f).coerceAtMost(width - radius)
+
+        val path = Path().apply {
+            moveTo(radius, topInset)
+            lineTo(left, topInset)
+            cubicTo(
+                left + crestWidth * 0.24f, topInset,
+                center - crestWidth * 0.24f, 0f,
+                center, 0f
+            )
+            cubicTo(
+                center + crestWidth * 0.24f, 0f,
+                right - crestWidth * 0.24f, topInset,
+                right, topInset
+            )
+            lineTo(width - radius, topInset)
+            cubicTo(
+                width - radius * 0.448f, topInset,
+                width, topInset + radius * 0.448f,
+                width, topInset + radius
+            )
+            lineTo(width, height - radius)
+            cubicTo(
+                width, height - radius * 0.448f,
+                width - radius * 0.448f, height,
+                width - radius, height
+            )
+            lineTo(radius, height)
+            cubicTo(
+                radius * 0.448f, height,
+                0f, height - radius * 0.448f,
+                0f, height - radius
+            )
+            lineTo(0f, topInset + radius)
+            cubicTo(
+                0f, topInset + radius * 0.448f,
+                radius * 0.448f, topInset,
+                radius, topInset
+            )
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+/**
  * Floating frosted navigation capsule based on Haze's source-backed Blur API.
  *
- * One Haze node is used for the entire bar, not one per destination. The
- * scrolling screen is captured as a sibling Haze source, so its cards move
- * naturally beneath the capsule. A translucent tint preserves label contrast;
- * a fine white rim supplies the light-catching glass edge.
+ * The selected destination changes the actual capsule outline: the top optical
+ * rim and its blur-clipped glass face travel together as one continuous shape.
+ * The fixed 72 dp height is retained; content receives extra top inset so the
+ * animated destination icon can spring without touching the upper rim.
  */
 @Composable
 fun MealsFrostedBottomBar(
@@ -1306,8 +1377,6 @@ fun MealsFrostedBottomBar(
         modifier = modifier.fillMaxWidth().navigationBarsPadding()
             .padding(horizontal = 18.dp).padding(bottom = 8.dp)
     ) {
-        // Keep the capsule's footprint fixed. The moving ridge is drawn as an
-        // overlay, so neither its height nor the larger labels change bar sizing.
         val itemCount = items.size.coerceAtLeast(1)
         val tabGap = 2.dp
         val tabSlotWidth = (maxWidth - 14.dp - tabGap * (itemCount - 1)) / itemCount
@@ -1322,10 +1391,14 @@ fun MealsFrostedBottomBar(
             animationSpec = spring(dampingRatio = 0.78f, stiffness = 430f),
             label = "mealsNavGlassBumpPosition"
         )
+        val navigationShape = MealsNavigationRimShape(
+            bumpCenter = bumpOffsetX + bumpWidth / 2,
+            bumpWidth = bumpWidth
+        )
 
         MealsLiquidGlassFrame(
             modifier = Modifier.fillMaxWidth().height(72.dp),
-            shape = MealsLiquidGlass.NavigationShape,
+            shape = navigationShape,
             elevation = 10.dp,
             face = MealsLiquidGlass.controlFace(),
             hazeState = hazeState,
@@ -1337,7 +1410,8 @@ fun MealsFrostedBottomBar(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().height(72.dp)
-                    .padding(horizontal = 7.dp, vertical = 5.dp),
+                    .padding(horizontal = 7.dp)
+                    .padding(top = 8.dp, bottom = 5.dp),
                 horizontalArrangement = Arrangement.spacedBy(tabGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1383,95 +1457,6 @@ fun MealsFrostedBottomBar(
                         )
                     }
                 }
-            }
-        }
-
-        // A convex porcelain-glass ridge travels along the upper rim and settles
-        // above the selected icon. Its curved white contour and soft underside
-        // shadow make it read as part of the lens, not a detached pill indicator.
-        if (items.isNotEmpty()) {
-            Canvas(
-                modifier = Modifier
-                    .offset(x = bumpOffsetX, y = (-6).dp)
-                    .size(width = bumpWidth, height = 14.dp)
-            ) {
-                val width = size.width
-                val height = size.height
-                val arch = Path().apply {
-                    moveTo(0f, height * 0.91f)
-                    cubicTo(
-                        width * 0.18f, height * 0.91f,
-                        width * 0.17f, height * 0.08f,
-                        width * 0.5f, height * 0.08f
-                    )
-                    cubicTo(
-                        width * 0.83f, height * 0.08f,
-                        width * 0.82f, height * 0.91f,
-                        width, height * 0.91f
-                    )
-                }
-                val filledBump = Path().apply {
-                    moveTo(0f, height * 0.91f)
-                    cubicTo(
-                        width * 0.18f, height * 0.91f,
-                        width * 0.17f, height * 0.08f,
-                        width * 0.5f, height * 0.08f
-                    )
-                    cubicTo(
-                        width * 0.83f, height * 0.08f,
-                        width * 0.82f, height * 0.91f,
-                        width, height * 0.91f
-                    )
-                    lineTo(width, height)
-                    lineTo(0f, height)
-                    close()
-                }
-                val highlight = Path().apply {
-                    moveTo(width * 0.32f, height * 0.43f)
-                    cubicTo(
-                        width * 0.40f, height * 0.20f,
-                        width * 0.60f, height * 0.20f,
-                        width * 0.68f, height * 0.43f
-                    )
-                }
-
-                drawPath(
-                    path = arch,
-                    color = Color(0xFF9B8E83).copy(alpha = 0.16f),
-                    style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round)
-                )
-                drawPath(
-                    path = filledBump,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.88f),
-                            Color(0xFFFFFEFC).copy(alpha = 0.62f),
-                            Color(0xFFFFF8F1).copy(alpha = 0.30f)
-                        )
-                    )
-                )
-                drawPath(
-                    path = arch,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.98f),
-                            Color.White.copy(alpha = 0.76f),
-                            Color.White.copy(alpha = 0.42f)
-                        )
-                    ),
-                    style = Stroke(width = 0.9.dp.toPx(), cap = StrokeCap.Round)
-                )
-                drawPath(
-                    path = highlight,
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.92f),
-                            Color.Transparent
-                        )
-                    ),
-                    style = Stroke(width = 0.8.dp.toPx(), cap = StrokeCap.Round)
-                )
             }
         }
     }
