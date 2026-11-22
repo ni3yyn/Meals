@@ -508,8 +508,6 @@ private fun MealsAppContent() {
             )
         }
 
-        }
-
         if (showSettings) {
             SettingsDialog(
                 preferences = preferences,
