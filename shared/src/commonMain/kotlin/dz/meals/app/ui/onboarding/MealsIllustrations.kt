@@ -1,12 +1,7 @@
 package dz.meals.app.ui.onboarding
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -65,13 +60,7 @@ fun MealsIllustration(
     /** Number of people drawn by [MealsArt.Family]; ignored by other scenes. */
     count: Int = 3
 ) {
-    val transition = rememberInfiniteTransition(label = "mealsIllustration")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(4200, easing = LinearEasing), RepeatMode.Restart),
-        label = "mealsIllustrationPhase"
-    )
+    val motionClock = LocalMealsOnboardingMotionClock.current
     val shown by animateFloatAsState(
         targetValue = count.toFloat(),
         animationSpec = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessLow),
@@ -79,6 +68,7 @@ fun MealsIllustration(
     )
 
     Canvas(modifier.size(size)) {
+        val phase = motionClock.value
         val s = this.size.minDimension / 200f
         scale(s, Offset.Zero) {
             when (art) {
