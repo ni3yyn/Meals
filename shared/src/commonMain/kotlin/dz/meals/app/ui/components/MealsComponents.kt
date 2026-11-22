@@ -54,6 +54,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -66,6 +67,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -123,14 +126,20 @@ private fun MealsLiquidGlassFrame(
     sideGlintHeight: Dp = 17.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val surfaceModifier = modifier
-        .shadow(
-            elevation = elevation,
+    // One broad, low-opacity shadow gives the glass a soft floating edge.
+    // The existing outer/inner rims provide the sharper optical definition,
+    // so the shadow stays diffuse instead of turning into a dark outline.
+    val surfaceShadow = if (elevation > 0.dp) {
+        Modifier.dropShadow(
             shape = shape,
-            clip = false,
-            ambientColor = Color(0xFF78917F).copy(alpha = 0.12f),
-            spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
+            shadow = MealsLiquidGlass.softShadow(elevation)
         )
+    } else {
+        Modifier
+    }
+
+    val surfaceModifier = modifier
+        .then(surfaceShadow)
         .clip(shape)
         .then(
             if (hazeState != null && blurStyle != null) {
