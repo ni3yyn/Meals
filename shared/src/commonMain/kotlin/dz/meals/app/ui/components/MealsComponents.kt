@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -869,6 +870,7 @@ private fun MealsModalSurface(
     contentPadding: Dp = 22.dp,
     shape: Shape = MealsLiquidGlass.ModalShape,
     elevation: Dp = MealsLiquidGlass.ModalElevation,
+    fillHeight: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current
@@ -888,7 +890,8 @@ private fun MealsModalSurface(
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(contentPadding),
+                modifier = (if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
+                    .padding(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 content = content
             )
@@ -898,9 +901,9 @@ private fun MealsModalSurface(
 
 /**
  * The only modal presentation in Meals. All former alerts, dialogs and edit
- * modals now use this sheet, which rises from the bottom and occupies 87% of
- * the available screen height. Header and actions stay fixed while long
- * content is constrained in the middle.
+ * modals now use this sheet. It wraps short content naturally and grows only
+ * as needed, up to 87% of the available height. Long content stays scrollable
+ * within the remaining space.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -949,20 +952,25 @@ fun MealsBottomSheet(
             )
         }
     ) {
-        MealsModalSurface(
-            modifier = modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.87f),
-            contentPadding = 0.dp,
-            shape = topShape,
-            elevation = MealsLiquidGlass.ModalElevation
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 22.dp, vertical = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val maxSheetHeight = maxHeight * 0.87f
+            val maxBodyHeight = (maxSheetHeight - 164.dp).coerceAtLeast(120.dp)
+
+            MealsModalSurface(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxSheetHeight),
+                contentPadding = 0.dp,
+                shape = topShape,
+                elevation = MealsLiquidGlass.ModalElevation
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = maxSheetHeight)
+                        .padding(horizontal = 22.dp, vertical = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                 if (titleText != null || title != null || subtitle != null || showCloseButton) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1006,8 +1014,7 @@ fun MealsBottomSheet(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f, fill = false)
-                            .heightIn(max = 560.dp)
+                            .heightIn(max = maxBodyHeight)
                     ) {
                         text()
                     }
@@ -1053,6 +1060,7 @@ fun MealsBottomSheet(
                         }
                     }
                 }
+                }
             }
         }
     }
@@ -1076,7 +1084,8 @@ fun MealsNavigationDrawer(
                 MealsModalSurface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = drawerShape,
-                    contentPadding = 20.dp
+                    contentPadding = 20.dp,
+                    fillHeight = true
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
