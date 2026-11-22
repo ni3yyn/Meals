@@ -292,7 +292,6 @@ fun MealsPressable(
     Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(shape)
             .clickable(
                 interactionSource = source,
                 indication = null,
