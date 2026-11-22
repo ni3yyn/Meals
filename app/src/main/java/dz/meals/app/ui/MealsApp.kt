@@ -24,6 +24,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -99,6 +101,7 @@ private fun MealsAppContent() {
         initial = AppPreferences(hasCompletedSetup = true)
     )
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }
 
@@ -173,6 +176,12 @@ private fun MealsAppContent() {
         if (!preferences.hasCompletedSetup) showSettings = true
     }
 
+    LaunchedEffect(generationMessage) {
+        val message = generationMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        generationMessage = null
+    }
+
     MealsBackdrop {
         val hazeState = requireNotNull(LocalMealsHazeState.current) {
             "MealsApp must be hosted inside MealsBackdrop so the shared Haze source is available."
@@ -190,6 +199,25 @@ private fun MealsAppContent() {
         }
         Scaffold(
             containerColor = Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(snackbarHostState) { data ->
+                    MealsGlassSurface(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        tintColor = dz.meals.app.ui.theme.SoftGreen,
+                        contentPadding = 13.dp,
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(9.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            MealsIcon(MealsIconName.Check, contentDescription = null, modifier = Modifier.size(23.dp))
+                            Text(data.visuals.message, style = MaterialTheme.typography.bodyMedium, color = dz.meals.app.ui.theme.Ink)
+                        }
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     title = {
@@ -425,20 +453,6 @@ private fun MealsAppContent() {
             }
         }
 
-        generationMessage?.let { message ->
-            MealsBottomSheet(
-                onDismissRequest = { generationMessage = null },
-                title = { Text("نتيجة إنشاء الخطة") },
-                text = { Text(message) },
-                confirmButton = {
-                    MealsPrimaryButton(
-                        label = "حسناً",
-                        onClick = { generationMessage = null },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            )
-        }
         }
 
 
