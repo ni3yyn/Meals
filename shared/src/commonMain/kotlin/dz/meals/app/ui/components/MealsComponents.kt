@@ -109,9 +109,9 @@ private val MealsCardShape = MealsLiquidGlass.CardShape
 /**
  * The shared elevated surface used for budgets, summaries and grouped content.
  *
- * Each card uses Haze's source-backed Blur with a shared restrained style,
- * a translucent porcelain tint, fine white rim and no platform elevation
- * shadow. The dedicated card source contains only the cloudy backdrop.
+ * Content cards use a quiet, near-opaque porcelain material with a restrained
+ * warm edge and diffuse shadow. Liquid Glass optical highlights are reserved
+ * for floating controls and navigation rather than repeated across content.
  */
 @Composable
 private fun MealsLiquidGlassFrame(
@@ -190,7 +190,7 @@ fun MealsCard(
     containerColor: Color = Paper,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     contentPadding: Dp = 18.dp,
-    borderColor: Color? = Border.copy(alpha = 0.72f),
+    borderColor: Color? = Color(0xFFDAD3C7),
     shape: Shape = MealsCardShape,
     shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
@@ -198,10 +198,6 @@ fun MealsCard(
     val face = remember(containerColor) {
         MealsLiquidGlass.cardFace(containerColor)
     }
-    val rim = remember(borderColor) {
-        MealsLiquidGlass.surfaceRim(borderColor ?: Color(0xFFEADFD7))
-    }
-
     MealsLiquidGlassFrame(
         modifier = modifier,
         shape = shape,
@@ -233,8 +229,8 @@ val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
  * not use the separate refraction/elevation path that can read as a dark shadow.
  */
 /**
- * Large-format glass surface for hero areas, dialogs and sheets. It shares the
- * same double rim and specular treatment as the smaller Meals controls.
+ * Large-format porcelain content surface. Floating controls retain the
+ * brighter Liquid Glass optical treatment.
  */
 @Composable
 fun MealsGlassSurface(
