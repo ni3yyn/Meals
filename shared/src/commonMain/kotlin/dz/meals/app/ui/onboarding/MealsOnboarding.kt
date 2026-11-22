@@ -609,7 +609,7 @@ private fun MealsOnboardingPager(
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                "%02d / %02d".format(active, PageCount),
+                "${active.toString().padStart(2, '0')} / ${PageCount.toString().padStart(2, '0')}",
                 color = MutedInk,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold
