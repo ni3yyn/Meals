@@ -234,7 +234,9 @@ fun MealsOnboarding(
                         userScrollEnabled = false,
                         beyondViewportPageCount = 0
                     ) { page ->
-                        val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                        val pageOffset = {
+                            (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                        }
                         when (page) {
                             0 -> StepLayout(
                                 pageOffset = pageOffset,
@@ -658,7 +660,7 @@ private fun MealsOnboardingPager(
 /** Hero illustration in a glass bubble on top, title and a glass panel below. */
 @Composable
 private fun StepLayout(
-    pageOffset: Float,
+    pageOffset: () -> Float,
     title: String,
     subtitle: String,
     art: MealsArt,
@@ -666,11 +668,13 @@ private fun StepLayout(
     artCount: Int = 3,
     panel: @Composable ColumnScope.() -> Unit
 ) {
-    val away = abs(pageOffset).coerceIn(0f, 1f)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val panelMax = maxHeight * 0.52f
         Column(
             Modifier.fillMaxSize().graphicsLayer {
+                // Read pager motion here, not during composition: only the layer
+                // properties update while swiping, not the heavy page subtree.
+                val away = abs(pageOffset()).coerceIn(0f, 1f)
                 alpha = 1f - away
                 translationY = away * 24.dp.toPx()
             }
@@ -682,6 +686,7 @@ private fun StepLayout(
                 val heroSize = min(maxWidth.value, maxHeight.value).dp
                 Box(
                     Modifier.size(heroSize).graphicsLayer {
+                        val away = abs(pageOffset()).coerceIn(0f, 1f)
                         val s = lerp(1f, 0.86f, away)
                         scaleX = s
                         scaleY = s
