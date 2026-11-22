@@ -1386,9 +1386,19 @@ fun MealsFrostedBottomBar(
         val tabSlotWidth = (maxWidth - 14.dp - tabGap * (itemCount - 1)) / itemCount
         val bumpWidth = (tabSlotWidth * 0.66f).coerceIn(38.dp, 50.dp)
         val activeIndex = selectedIndex.coerceIn(0, itemCount - 1)
+        // Arabic is RTL: the first tab is visually on the right, so the
+        // moving rim crest must follow the same visual order as the Row.
+        val visualIndex = if (
+            androidx.compose.ui.platform.LocalLayoutDirection.current ==
+            androidx.compose.ui.unit.LayoutDirection.Rtl
+        ) {
+            itemCount - 1 - activeIndex
+        } else {
+            activeIndex
+        }
         val bumpTargetX = 7.dp +
-            tabSlotWidth * activeIndex +
-            tabGap * activeIndex +
+            tabSlotWidth * visualIndex +
+            tabGap * visualIndex +
             (tabSlotWidth - bumpWidth) / 2
         val bumpOffsetX by animateDpAsState(
             targetValue = bumpTargetX,
