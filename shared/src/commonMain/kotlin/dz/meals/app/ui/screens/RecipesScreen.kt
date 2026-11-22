@@ -314,7 +314,12 @@ fun RecipesScreen(
                                 onClick = { cookingServings = (cookingServings - 1).coerceAtLeast(1) },
                                 enabled = cookingServings > 1
                             ) { Text("−") }
-                            Text(cookingServings.toString(), fontWeight = FontWeight.Bold)
+                            dz.meals.app.ui.components.MealsAnimatedCount(
+                                value = cookingServings.toString(),
+                                color = dz.meals.app.ui.theme.Ink,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                             MealsTextButton(
                                 onClick = { cookingServings = (cookingServings + 1).coerceAtMost(12) },
                                 enabled = cookingServings < 12
