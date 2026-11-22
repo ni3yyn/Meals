@@ -77,25 +77,26 @@ import java.time.LocalDate
 private const val LATEST_APK_DOWNLOAD_URL = "https://github.com/ni3yyn/Meals/releases/latest/download/meals.apk"
 
 /**
- * Fade only the app bar's lower edge into the content beneath it.
+ * Let scrolling content softly emerge from beneath the fixed top app bar.
  *
- * This is an alpha mask, not a painted gradient or shadow: pixels at the
- * bottom of the bar progressively reveal what is behind it.
+ * This is a true alpha mask on the content viewport, not a gradient overlay:
+ * the first pixels at the header boundary are transparent and become fully
+ * opaque over fadeHeight. No shadow, tint, or extra edge is drawn.
  */
-private fun Modifier.fadeBottomEdgeMask(fadeHeight: androidx.compose.ui.unit.Dp): Modifier =
+private fun Modifier.fadeTopEdgeMask(fadeHeight: androidx.compose.ui.unit.Dp): Modifier =
     graphicsLayer {
         compositingStrategy = CompositingStrategy.Offscreen
     }.drawWithContent {
         drawContent()
         val fadePx = fadeHeight.toPx().coerceAtMost(size.height)
         if (fadePx > 0f && size.height > 0f) {
-            val fadeStart = (size.height - fadePx).coerceAtLeast(0f)
+            val fadeEnd = (fadePx / size.height).coerceIn(0f, 1f)
             drawRect(
                 brush = Brush.verticalGradient(
                     colorStops = arrayOf(
-                        0f to Color.Black,
-                        (fadeStart / size.height).coerceIn(0f, 1f) to Color.Black,
-                        1f to Color.Transparent
+                        0f to Color.Transparent,
+                        fadeEnd to Color.Black,
+                        1f to Color.Black
                     ),
                     startY = 0f,
                     endY = size.height
@@ -281,7 +282,6 @@ private fun MealsAppContent() {
                             )
                         }
                     },
-                    modifier = Modifier.fadeBottomEdgeMask(14.dp),
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             },
@@ -300,6 +300,7 @@ private fun MealsAppContent() {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = innerPadding.calculateTopPadding())
+                    .fadeTopEdgeMask(28.dp)
                     .mealsHazeSource(hazeState, zIndex = 1f)
                     .mealsGlassSource(screenGlassBackdrop)
             ) {
