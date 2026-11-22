@@ -82,7 +82,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazePerformanceMode
-import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.rememberHazeState
@@ -205,7 +204,8 @@ fun MealsCard(
     containerColor: Color = Paper,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     contentPadding: Dp = 18.dp,
-    @Suppress("UNUSED_PARAMETER") borderColor: Color? = Color(0xFFDAD3C7),
+    /** Retained for source compatibility; Meals optical rims are always white. */
+    @Suppress("UNUSED_PARAMETER") borderColor: Color? = Color.White,
     shape: Shape = MealsCardShape,
     shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
