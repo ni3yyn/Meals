@@ -990,7 +990,7 @@ private fun buildShoppingShareText(
     rows: List<ShoppingListItem>,
     snapshot: MealsSnapshot
 ): String = buildString {
-    appendLine("قائمة مشتريات mida")
+    appendLine("قائمة مشتريات Midati")
     appendLine("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd())
     if (snapshot.basket.actualSpendDzd > 0.0) {
         appendLine("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd())

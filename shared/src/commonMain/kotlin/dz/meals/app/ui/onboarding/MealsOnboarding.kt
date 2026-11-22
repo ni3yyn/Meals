@@ -286,7 +286,7 @@ fun MealsOnboarding(
                         when (page) {
                             0 -> StepLayout(
                                 pageOffset = pageOffset,
-                                title = "أهلاً بك في mida",
+                                title = "أهلاً بك في Midati",
                                 subtitle = "نرتّب لكِ وجبات الأسبوع وقائمة التسوق حسب ميزانية أسرتك.",
                                 art = MealsArt.Bowl,
                                 satellites = listOf(
@@ -650,7 +650,7 @@ private fun MealsOnboardingPager(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "mida",
+                "Midati",
                 color = TextAccent,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold

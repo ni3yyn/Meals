@@ -1,4 +1,4 @@
-# mida
+# Midati
 
 Kotlin Multiplatform meal planner for Algeria, built with Jetpack Compose and Compose Multiplatform. Android remains the current application host; reusable UI, theme tokens, domain models and the recipe catalogue are being shared through the `:shared` module. Android and iOS targets are configured, while iOS persistence and the complete iOS app host remain in the migration roadmap.
 
@@ -11,7 +11,7 @@ Kitchen-equipment awareness and recipe filtering based on equipment are intentio
 - Arabic-first Compose interface with right-to-left layout.
 - Full-screen first-run onboarding (`shared/.../ui/onboarding`) with Compose-drawn vector illustrations and refraction-free Liquid Glass bubbles.
 - KMP `:shared` module targeting Android, iOS devices and iOS simulators.
-- Shared Compose component library, Mida theme and color tokens in `shared/src/commonMain`.
+- Shared Compose component library, Midati theme and color tokens in `shared/src/commonMain`.
 - Shared Kotlin data models and bundled Algerian ingredient/recipe catalogue in `commonMain`.
 - Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
 - Seven-day planner with breakfast, lunch and dinner slots and deterministic local plan generation.
@@ -54,7 +54,7 @@ Pushing a `v*` version tag or manually dispatching the signed release workflow p
 
 The release workflow requires these repository Actions secrets:
 
-- `ANDROID_KEYSTORE_BASE64`: the Base64-encoded, persistent mida release keystore.
+- `ANDROID_KEYSTORE_BASE64`: the Base64-encoded, persistent Midati release keystore.
 - `ANDROID_KEYSTORE_PASSWORD`: that keystore's password.
 - `ANDROID_KEY_ALIAS`: the key alias.
 - `ANDROID_KEY_PASSWORD`: the key password.

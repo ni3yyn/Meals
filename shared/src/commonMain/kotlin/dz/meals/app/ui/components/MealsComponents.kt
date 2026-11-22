@@ -71,6 +71,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -1618,11 +1620,85 @@ data class MealsNavigationItem(
 )
 
 /**
- * Floating frosted navigation capsule with a fixed glass perimeter.
- *
- * The selected tab is indicated by a separate translucent lens that slides
- * inside the capsule. The blur, face and optical rim therefore keep one stable
- * rounded outline while only the lightweight indicator position animates.
+ * A navigation capsule whose actual upper contour rises into a moving glass
+ * crest. The crest is part of the rim/clip shape, not a detached decoration.
+ */
+private class MealsNavigationRimShape(
+    private val bumpCenter: Dp,
+    private val bumpWidth: Dp,
+    private val rise: Dp = 6.5.dp,
+    private val topEdgeInset: Dp = 8.dp
+) : Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline {
+        val width = size.width
+        val height = size.height
+        val radius = with(density) { 26.dp.toPx() }
+            .coerceAtMost(minOf(width / 2f, height / 2f))
+        val minimumInsetPx = with(density) { 1.dp.toPx() }
+        val edgeY = with(density) { topEdgeInset.toPx() }
+            .coerceIn(minimumInsetPx, height * 0.2f)
+        val crestY = (edgeY - with(density) { rise.toPx() })
+            .coerceAtLeast(minimumInsetPx)
+        val center = with(density) { bumpCenter.toPx() }
+            .coerceIn(radius, width - radius)
+        val crestWidth = with(density) { bumpWidth.toPx() }
+            .coerceAtMost((width - radius * 2f).coerceAtLeast(0f))
+        val left = (center - crestWidth / 2f).coerceIn(radius, width - radius)
+        val right = (center + crestWidth / 2f).coerceIn(radius, width - radius)
+        val cornerControl = radius * 0.55228475f
+        val shoulderControl = crestWidth * 0.18f
+
+        val path = Path().apply {
+            moveTo(radius, edgeY)
+            lineTo(left, edgeY)
+            cubicTo(
+                left + shoulderControl, edgeY,
+                center - shoulderControl, crestY,
+                center, crestY
+            )
+            cubicTo(
+                center + shoulderControl, crestY,
+                right - shoulderControl, edgeY,
+                right, edgeY
+            )
+            lineTo(width - radius, edgeY)
+            cubicTo(
+                width - radius + cornerControl, edgeY,
+                width, edgeY + radius - cornerControl,
+                width, edgeY + radius
+            )
+            lineTo(width, height - radius)
+            cubicTo(
+                width, height - radius + cornerControl,
+                width - radius + cornerControl, height,
+                width - radius, height
+            )
+            lineTo(radius, height)
+            cubicTo(
+                radius - cornerControl, height,
+                0f, height - radius + cornerControl,
+                0f, height - radius
+            )
+            lineTo(0f, edgeY + radius)
+            cubicTo(
+                0f, edgeY + radius - cornerControl,
+                radius - cornerControl, edgeY,
+                radius, edgeY
+            )
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+/**
+ * Floating glass navigation capsule. The lens tracks logical tab order from
+ * the layout's start edge, while the moving upper crest is positioned in
+ * physical left-to-right coordinates so RTL and LTR share the same geometry.
  */
 @Composable
 fun MealsFrostedBottomBar(
@@ -1640,28 +1716,41 @@ fun MealsFrostedBottomBar(
         val tabGap = 2.dp
         val tabSlotWidth = (maxWidth - 14.dp - tabGap * (itemCount - 1)) / itemCount
         val activeIndex = selectedIndex.coerceIn(0, itemCount - 1)
-        // Row follows layout direction. Convert its logical item index to a
-        // physical left-to-right slot so the overlay tracks correctly in RTL.
-        val visualIndex = if (
-            androidx.compose.ui.platform.LocalLayoutDirection.current ==
+        val isRtl = androidx.compose.ui.platform.LocalLayoutDirection.current ==
             androidx.compose.ui.unit.LayoutDirection.Rtl
-        ) {
-            itemCount - 1 - activeIndex
-        } else {
-            activeIndex
-        }
+
+        // TopStart is on the right in RTL. Offset from that anchor must be
+        // negative as the selected logical index advances to tabs on the left.
         val indicatorIndex by animateFloatAsState(
-            targetValue = visualIndex.toFloat(),
-            animationSpec = tween(
-                durationMillis = 280,
-                easing = FastOutSlowInEasing
-            ),
+            targetValue = activeIndex.toFloat(),
+            animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
             label = "mealsNavIndicatorPosition"
         )
+        val indicatorDirection = if (isRtl) -1f else 1f
+
+        // The rim shape is expressed in physical X coordinates, unlike TopStart.
+        // In RTL the first logical tab is the rightmost physical slot.
+        val visualIndex = if (isRtl) itemCount - 1 - activeIndex else activeIndex
+        val bumpWidth = (tabSlotWidth * 0.66f).coerceIn(38.dp, 50.dp)
+        val bumpTargetX = 7.dp +
+            tabSlotWidth * visualIndex +
+            tabGap * visualIndex +
+            (tabSlotWidth - bumpWidth) / 2
+        val bumpOffsetX by animateDpAsState(
+            targetValue = bumpTargetX,
+            animationSpec = spring(dampingRatio = 0.78f, stiffness = 430f),
+            label = "mealsNavGlassBumpPosition"
+        )
+        val navigationShape = remember(bumpOffsetX, bumpWidth) {
+            MealsNavigationRimShape(
+                bumpCenter = bumpOffsetX + bumpWidth / 2,
+                bumpWidth = bumpWidth
+            )
+        }
 
         MealsLiquidGlassFrame(
             modifier = Modifier.fillMaxWidth().height(72.dp),
-            shape = MealsLiquidGlass.NavigationShape,
+            shape = navigationShape,
             elevation = 10.dp,
             face = MealsLiquidGlass.controlFace(),
             hazeState = hazeState,
@@ -1680,9 +1769,10 @@ fun MealsFrostedBottomBar(
                         .width(tabSlotWidth)
                         .height(55.dp)
                         .graphicsLayer {
-                            // Read the animated value in the layer block so the
-                            // indicator moves without rebuilding the navbar tree.
-                            translationX = ((tabSlotWidth + tabGap) * indicatorIndex).toPx()
+                            // Layer-only read avoids rebuilding navbar content per frame.
+                            translationX = (
+                                (tabSlotWidth + tabGap) * indicatorIndex * indicatorDirection
+                            ).toPx()
                         }
                         .clip(indicatorShape)
                         .background(
@@ -1710,7 +1800,7 @@ fun MealsFrostedBottomBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEachIndexed { index, item ->
-                    val selected = index == selectedIndex
+                    val selected = index == activeIndex
                     val foreground by animateColorAsState(
                         targetValue = if (selected) Ink else MutedInk,
                         label = "mealsNavForeground$index"

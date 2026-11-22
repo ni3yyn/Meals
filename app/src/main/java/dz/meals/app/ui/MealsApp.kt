@@ -138,7 +138,7 @@ private enum class AppTab(val title: String) {
 }
 
 @Composable
-fun MidaBrandLogo(
+fun MidatiBrandLogo(
     modifier: Modifier = Modifier,
     iconSize: androidx.compose.ui.unit.Dp = 52.dp,
     showWordmark: Boolean = true
@@ -150,12 +150,12 @@ fun MidaBrandLogo(
     ) {
         Image(
             painter = painterResource(id = dz.meals.app.R.drawable.ic_mida_mark),
-            contentDescription = "mida",
+            contentDescription = "Midati",
             modifier = Modifier.size(iconSize)
         )
         if (showWordmark) {
             Text(
-                text = "mida",
+                text = "Midati",
                 color = dz.meals.app.ui.theme.Ink,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
@@ -252,7 +252,7 @@ private fun MealsAppContent(
             context.startActivity(
                 Intent.createChooser(
                     Intent(Intent.ACTION_VIEW, Uri.parse(url)),
-                    "تنزيل mida"
+                    "تنزيل Midati"
                 )
             )
         } catch (_: Exception) {
@@ -345,7 +345,7 @@ private fun MealsAppContent(
                     title = {
                         Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)) {
                             Text("صباح الخير", style = MaterialTheme.typography.titleLarge)
-                            Text("mida · " + selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Midati · " + selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
                     actions = {
@@ -459,7 +459,7 @@ private fun MealsAppContent(
                         onShareList = { body ->
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات mida")
+                                putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات Midati")
                                 putExtra(Intent.EXTRA_TEXT, body)
                             }
                             runCatching {
@@ -649,7 +649,7 @@ private fun MealsAppContent(
 
         if (showExitConfirmation) {
             MealsBottomSheet(
-                titleText = "الخروج من mida؟",
+                titleText = "الخروج من Midati؟",
                 subtitle = "هل تريد إغلاق التطبيق الآن؟",
                 onDismissRequest = { showExitConfirmation = false },
                 text = {
@@ -658,7 +658,7 @@ private fun MealsAppContent(
                         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(9.dp)
                     ) {
-                        MidaBrandLogo(
+                        MidatiBrandLogo(
                             modifier = Modifier.padding(vertical = 2.dp),
                             iconSize = 58.dp
                         )
