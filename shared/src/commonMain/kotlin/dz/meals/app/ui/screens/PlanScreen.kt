@@ -107,31 +107,49 @@ fun PlanScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 4.dp, height = 28.dp)
+                            .clip(CircleShape)
+                            .background(Forest)
+                    )
+                    Text(
+                        "خطة الأسبوع",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = dz.meals.app.ui.theme.Ink
+                    )
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(44.dp)) {
+                    MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(48.dp)) {
                         MealsIcon(
                             MealsIconName.ArrowForward,
                             contentDescription = "الأسبوع السابق",
-                            modifier = Modifier.size(29.dp),
+                            modifier = Modifier.size(28.dp),
                         )
                     }
                     Text(
                         text = formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
                         modifier = Modifier.weight(1f),
                         color = MutedInk,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
                     )
                     MealsIconAction(onClick = onNextWeek, modifier = Modifier.size(44.dp)) {
                         MealsIcon(
                             MealsIconName.ArrowBack,
                             contentDescription = "الأسبوع التالي",
-                            modifier = Modifier.size(29.dp),
+                            modifier = Modifier.size(28.dp),
                         )
                     }
                 }
@@ -183,19 +201,34 @@ fun PlanScreen(
                     }
                 }
                 if (snapshot.basket.unknownPriceCount > 0 || snapshot.basket.hasDemoPrices) {
-                    Text(
-                        text = when {
-                            snapshot.basket.hasDemoPrices && snapshot.basket.unknownPriceCount > 0 ->
-                                "الأسعار تقديرية، وهناك " + snapshot.basket.unknownPriceCount + " عناصر دون سعر."
-                            snapshot.basket.hasDemoPrices ->
-                                "الأسعار تقديرية وليست أسعار سوق مباشرة."
-                            else ->
-                                snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر."
-                        },
-                        color = dz.meals.app.ui.theme.ForestDark,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(15.dp))
+                            .background(dz.meals.app.ui.theme.SoftGreen.copy(alpha = 0.68f))
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MealsIcon(
+                            name = MealsIconName.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = when {
+                                snapshot.basket.hasDemoPrices && snapshot.basket.unknownPriceCount > 0 ->
+                                    "الأسعار تقديرية، وهناك " + snapshot.basket.unknownPriceCount + " عناصر دون سعر."
+                                snapshot.basket.hasDemoPrices ->
+                                    "الأسعار تقديرية وليست أسعار سوق مباشرة."
+                                else ->
+                                    snapshot.basket.unknownPriceCount.toString() + " عناصر دون سعر."
+                            },
+                            color = dz.meals.app.ui.theme.ForestDark,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
@@ -254,7 +287,22 @@ fun PlanScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("الوجبات اليومية", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 4.dp, height = 25.dp)
+                            .clip(CircleShape)
+                            .background(Forest)
+                    )
+                    Text(
+                        "الوجبات اليومية",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 Spacer(Modifier.weight(1f))
                 Text("7 أيام", color = MutedInk, style = MaterialTheme.typography.labelMedium)
             }
@@ -295,7 +343,7 @@ fun PlanScreen(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { expandedDay = if (isExpanded) -1 else day }
-                        .padding(horizontal = 15.dp, vertical = 15.dp),
+                        .padding(horizontal = 17.dp, vertical = 17.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -319,13 +367,21 @@ fun PlanScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    MealsIcon(
-                        name = MealsIconName.ChevronRight,
-                        contentDescription = if (isExpanded) "طي اليوم" else "عرض وجبات اليوم",
-                        modifier = Modifier.size(28.dp).graphicsLayer {
-                            rotationZ = if (isExpanded) 90f else 0f
-                        }
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(dz.meals.app.ui.theme.SoftGreen.copy(alpha = 0.76f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        MealsIcon(
+                            name = MealsIconName.ChevronRight,
+                            contentDescription = if (isExpanded) "طي اليوم" else "عرض وجبات اليوم",
+                            modifier = Modifier.size(25.dp).graphicsLayer {
+                                rotationZ = if (isExpanded) 90f else 0f
+                            }
+                        )
+                    }
                 }
 
                 AnimatedVisibility(
