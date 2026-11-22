@@ -372,9 +372,9 @@ fun MealsPrimaryButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        minHeight = 48.dp,
-        horizontalPadding = 16.dp,
-        verticalPadding = 10.dp
+        minHeight = 42.dp,
+        horizontalPadding = 14.dp,
+        verticalPadding = 6.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -423,9 +423,9 @@ fun MealsSecondaryButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        minHeight = 48.dp,
-        horizontalPadding = 16.dp,
-        verticalPadding = 10.dp,
+        minHeight = 42.dp,
+        horizontalPadding = 14.dp,
+        verticalPadding = 6.dp,
         contentColor = contentColor
     ) {
         Row(
@@ -466,9 +466,9 @@ fun MealsTextButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        minHeight = if (compact) 38.dp else 44.dp,
-        horizontalPadding = if (compact) 8.dp else 10.dp,
-        verticalPadding = if (compact) 4.dp else 6.dp,
+        minHeight = if (compact) 34.dp else 40.dp,
+        horizontalPadding = if (compact) 7.dp else 9.dp,
+        verticalPadding = if (compact) 2.dp else 4.dp,
         contentColor = color
     ) {
         Row(
