@@ -94,7 +94,11 @@ private fun MealsAppContent() {
     val preferencesStore = remember(context) { PreferencesStore(context) }
     val repository = remember(context) { MealsRepository(context) }
     val updateChecker = remember { AppUpdateChecker() }
-    val preferences by preferencesStore.preferences.collectAsState(initial = AppPreferences())
+    // DataStore emits asynchronously. Start with setup marked complete so the temporary
+    // default value cannot open first-run onboarding for returning users.
+    val preferences by preferencesStore.preferences.collectAsState(
+        initial = AppPreferences(hasCompletedSetup = true)
+    )
     val scope = rememberCoroutineScope()
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }

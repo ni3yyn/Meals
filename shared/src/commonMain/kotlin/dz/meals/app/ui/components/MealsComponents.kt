@@ -97,7 +97,6 @@ import dz.meals.app.ui.icons.MealsIconName
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = RoundedCornerShape(26.dp)
-private val ButtonShape = RoundedCornerShape(16.dp)
 
 /**
  * One immutable blur recipe shared by every card. LazyColumn only composes
@@ -308,57 +307,40 @@ fun MealsGlassSurface(
 }
 
 @Composable
-fun MealsPrimaryButton(
-    label: String,
+private fun MealsRaisedControl(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: MealsIconName? = null,
-    showArrow: Boolean = false
+    minHeight: Dp = 44.dp,
+    horizontalPadding: Dp = 12.dp,
+    verticalPadding: Dp = 8.dp,
+    contentColor: Color = ForestDark,
+    content: @Composable () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.985f else 1f,
-        animationSpec = tween(durationMillis = 150),
-        label = "mealsPrimaryButtonScale"
+        targetValue = if (pressed && enabled) 0.965f else 1f,
+        animationSpec = tween(durationMillis = 120),
+        label = "mealsRaisedControlScale"
     )
-    val buttonShape = remember { RoundedCornerShape(17.dp) }
-    val buttonBrush = remember {
-        Brush.linearGradient(
-            colors = listOf(
-                Color(0xFF55A978),
-                Forest,
-                ForestDark
-            )
-        )
-    }
-    val buttonEdge = remember {
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.42f),
-                Color.White.copy(alpha = 0.10f),
-                ForestDark.copy(alpha = 0.16f)
-            )
-        )
-    }
+    val shape = remember { RoundedCornerShape(14.dp) }
 
     Surface(
         modifier = modifier
-            .defaultMinSize(minHeight = 52.dp)
+            .defaultMinSize(minHeight = minHeight)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             },
-        shape = buttonShape,
-        color = Color.Transparent,
-        contentColor = Color.White,
-        border = BorderStroke(1.dp, buttonEdge),
-        shadowElevation = if (enabled) 4.dp else 0.dp
+        shape = shape,
+        color = if (enabled) Paper.copy(alpha = 0.84f) else Paper.copy(alpha = 0.58f),
+        contentColor = if (enabled) contentColor else MutedInk,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.92f)),
+        shadowElevation = if (enabled) 2.dp else 0.dp
     ) {
         Box(
             modifier = Modifier
-                .clip(buttonShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -367,42 +349,70 @@ fun MealsPrimaryButton(
                     onClick = onClick
                 )
                 .background(
-                    brush = if (enabled) buttonBrush else Brush.linearGradient(
-                        listOf(Color(0xFF91B7A0), Color(0xFF769B83))
-                    ),
-                    shape = buttonShape
-                )
-                .background(
                     Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = if (enabled) 0.12f else 0.05f),
+                        listOf(
+                            Color.White.copy(alpha = 0.50f),
                             Color.Transparent,
-                            Color.Black.copy(alpha = if (pressed) 0.035f else 0f)
+                            Border.copy(alpha = 0.12f)
                         )
                     ),
-                    shape = buttonShape
+                    shape
                 )
-                .padding(horizontal = 18.dp, vertical = 12.dp),
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = if (showArrow) 22.dp else 0.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (icon != null) {
-                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                }
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
+            CompositionLocalProvider(LocalContentColor provides if (enabled) contentColor else MutedInk) {
+                content()
             }
+        }
+    }
+}
 
+@Composable
+fun MealsPrimaryButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: MealsIconName? = null,
+    showArrow: Boolean = false
+) {
+    MealsRaisedControl(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        minHeight = 48.dp,
+        horizontalPadding = 16.dp,
+        verticalPadding = 10.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (icon != null) {
+                MealsIcon(
+                    name = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = ForestDark
+                )
+                Spacer(Modifier.size(8.dp))
+            }
+            Text(
+                text = label,
+                color = ForestDark,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
             if (showArrow) {
-                MealsIcon(name = MealsIconName.ChevronRight, contentDescription = null, modifier = Modifier.align(Alignment.CenterStart).size(20.dp).graphicsLayer { alpha = if (enabled) 0.96f else 0.55f })
+                Spacer(Modifier.size(8.dp))
+                MealsIcon(
+                    MealsIconName.ChevronRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = ForestDark
+                )
             }
         }
     }
@@ -416,85 +426,33 @@ fun MealsSecondaryButton(
     enabled: Boolean = true,
     icon: MealsIconName? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.988f else 1f,
-        animationSpec = tween(durationMillis = 150),
-        label = "mealsSecondaryButtonScale"
-    )
-    val buttonShape = remember { ButtonShape }
-    val surfaceBrush = remember {
-        Brush.linearGradient(
-            colors = listOf(
-                Color(0xFFFFFEFC),
-                Color(0xFFFFF8F1),
-                Color(0xFFF9EEE7)
-            )
-        )
-    }
-    val edgeBrush = remember {
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.98f),
-                Color(0xFFD9E8DA).copy(alpha = 0.92f),
-                Color(0xFFE7D8CD).copy(alpha = 0.88f)
-            )
-        )
-    }
-
-    Surface(
-        modifier = modifier
-            .defaultMinSize(minHeight = 48.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            },
-        shape = buttonShape,
-        color = Color.Transparent,
-        contentColor = if (enabled) ForestDark else MutedInk,
-        border = BorderStroke(1.dp, edgeBrush),
-        shadowElevation = if (enabled) 2.dp else 0.dp
+    MealsRaisedControl(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        minHeight = 48.dp,
+        horizontalPadding = 16.dp,
+        verticalPadding = 10.dp
     ) {
-        Box(
-            modifier = Modifier
-                .clip(buttonShape)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    role = Role.Button,
-                    onClick = onClick
-                )
-                .background(
-                    brush = if (enabled) surfaceBrush else Brush.linearGradient(
-                        listOf(Color(0xFFF3EEE9), Color(0xFFEFE8E2))
-                    ),
-                    shape = buttonShape
-                )
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = if (enabled) 0.52f else 0.18f),
-                            Color.Transparent,
-                            Color(0xFFEAD9CD).copy(alpha = if (pressed) 0.16f else 0.06f)
-                        )
-                    ),
-                    shape = buttonShape
-                )
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (icon != null) {
-                    MealsIcon(name = icon, contentDescription = null, modifier = Modifier.size(17.dp))
-                    Spacer(Modifier.size(7.dp))
-                }
-                Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            if (icon != null) {
+                MealsIcon(
+                    name = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(17.dp),
+                    tint = ForestDark
+                )
+                Spacer(Modifier.size(7.dp))
             }
+            Text(
+                text = label,
+                color = ForestDark,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -507,26 +465,16 @@ fun MealsTextButton(
     color: Color = ForestDark,
     content: @Composable RowScope.() -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.985f else 1f,
-        animationSpec = tween(durationMillis = 120),
-        label = "mealsTextButtonScale"
-    )
-    CompositionLocalProvider(LocalContentColor provides if (enabled) color else MutedInk) {
+    MealsRaisedControl(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        minHeight = 44.dp,
+        horizontalPadding = 10.dp,
+        verticalPadding = 6.dp,
+        contentColor = color
+    ) {
         Row(
-            modifier = modifier
-                .defaultMinSize(minHeight = 44.dp)
-                .graphicsLayer { scaleX = scale; scaleY = scale }
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    role = Role.Button,
-                    onClick = onClick
-                )
-                .padding(horizontal = 10.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
             content = content
@@ -534,7 +482,7 @@ fun MealsTextButton(
     }
 }
 
-/** Icon-only action with a generous hit target and no decorative backplate or ripple. */
+/** A 44dp raised icon action, visually identical to Settings and Update. */
 @Composable
 fun MealsIconAction(
     onClick: () -> Unit,
@@ -542,29 +490,16 @@ fun MealsIconAction(
     enabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.92f else 1f,
-        animationSpec = tween(durationMillis = 110),
-        label = "mealsIconActionScale"
+    MealsIconButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        size = 44.dp,
+        content = content
     )
-    Box(
-        modifier = modifier
-            .defaultMinSize(minWidth = 44.dp, minHeight = 44.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.Button,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
-    ) { content() }
 }
 
-/** Raised icon control for persistent app-level actions such as Settings and Update. */
+/** The canonical raised ivory control used by all icon-only app actions. */
 @Composable
 fun MealsIconButton(
     onClick: () -> Unit,
@@ -573,40 +508,20 @@ fun MealsIconButton(
     size: Dp = 44.dp,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.965f else 1f,
-        animationSpec = tween(durationMillis = 120),
-        label = "mealsIconButtonScale"
-    )
-    val shape = RoundedCornerShape(14.dp)
-    Surface(
-        modifier = modifier.size(size).graphicsLayer { scaleX = scale; scaleY = scale },
-        shape = shape,
-        color = if (enabled) Paper.copy(alpha = 0.84f) else Paper.copy(alpha = 0.58f),
-        contentColor = ForestDark,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.92f)),
-        shadowElevation = if (enabled) 2.dp else 0.dp
+    MealsRaisedControl(
+        onClick = onClick,
+        modifier = modifier.size(size),
+        enabled = enabled,
+        minHeight = size,
+        horizontalPadding = 0.dp,
+        verticalPadding = 0.dp
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    role = Role.Button,
-                    onClick = onClick
-                )
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.White.copy(alpha = 0.50f), Color.Transparent, Border.copy(alpha = 0.12f))
-                    ),
-                    shape
-                ),
+            modifier = Modifier.size(size),
             contentAlignment = Alignment.Center
-        ) { content() }
+        ) {
+            content()
+        }
     }
 }
 

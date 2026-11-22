@@ -1,5 +1,7 @@
 package dz.meals.app.ui.screens
 
+import androidx.compose.ui.text.style.TextAlign
+
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsTextButton
 import dz.meals.app.ui.theme.ForestDark
@@ -105,28 +107,49 @@ fun PlanScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.weight(1f))
+                    MealsIconAction(onClick = onOpenShoppingList, modifier = Modifier.size(44.dp)) {
+                        MealsIcon(
+                            MealsIconName.Basket,
+                            contentDescription = "المشتريات",
+                            modifier = Modifier.size(22.dp),
+                            tint = Forest
+                        )
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("خطة الأسبوع", style = MaterialTheme.typography.headlineMedium)
-                        Text(
-                            formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
-                            color = MutedInk,
-                            style = MaterialTheme.typography.bodySmall
+                    MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(44.dp)) {
+                        MealsIcon(
+                            MealsIconName.ArrowForward,
+                            contentDescription = "الأسبوع السابق",
+                            modifier = Modifier.size(21.dp),
+                            tint = ForestDark
                         )
                     }
-                    MealsIconAction(onClick = onOpenShoppingList, modifier = Modifier.size(44.dp)) {
-                        MealsIcon(MealsIconName.Basket, contentDescription = "المشتريات", modifier = Modifier.size(22.dp), tint = Forest)
-                    }
-                    MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(44.dp)) {
-                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الأسبوع السابق", modifier = Modifier.size(21.dp), tint = ForestDark)
-                    }
+                    Text(
+                        text = formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
+                        modifier = Modifier.weight(1f),
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
                     MealsIconAction(onClick = onNextWeek, modifier = Modifier.size(44.dp)) {
-                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الأسبوع التالي", modifier = Modifier.size(21.dp), tint = ForestDark)
+                        MealsIcon(
+                            MealsIconName.ArrowBack,
+                            contentDescription = "الأسبوع التالي",
+                            modifier = Modifier.size(21.dp),
+                            tint = ForestDark
+                        )
                     }
                 }
             }
