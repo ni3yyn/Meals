@@ -31,9 +31,6 @@ object MealsLiquidGlass {
     val ControlElevation = 3.dp
     val SurfaceElevation = 2.dp
     val ModalElevation = 1.dp
-    val PressDurationMillis = 120
-    const val PressedScale = 0.955f
-
     fun controlFace(): Brush = Brush.verticalGradient(
         colors = listOf(
             Color.White.copy(alpha = ControlOpacity),
