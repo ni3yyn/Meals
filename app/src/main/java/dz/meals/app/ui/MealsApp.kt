@@ -402,19 +402,24 @@ private fun MealsAppContent() {
                         )
                     }
                 }
-                MealsPrimaryButton(
-                    label = if (isCheckingForUpdates) "جارٍ التحقق..." else "التحقق من وجود تحديثات",
-                    onClick = { checkForAppUpdates() },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isCheckingForUpdates,
-                    icon = MealsIconName.Refresh
-                )
-                MealsSecondaryButton(
-                    label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
-                    onClick = { openLatestApk() },
-                    modifier = Modifier.fillMaxWidth(),
-                    icon = MealsIconName.Download
-                )
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)
+                ) {
+                    MealsPrimaryButton(
+                        label = if (isCheckingForUpdates) "جارٍ التحقق..." else "فحص التحديثات",
+                        onClick = { checkForAppUpdates() },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isCheckingForUpdates,
+                        icon = MealsIconName.Refresh
+                    )
+                    MealsSecondaryButton(
+                        label = availableUpdate?.let { "تنزيل الإصدار ${it.version}" } ?: "تنزيل أحدث نسخة مباشرة",
+                        onClick = { openLatestApk() },
+                        modifier = Modifier.weight(1f),
+                        icon = MealsIconName.Download
+                    )
+                }
             }
         }
 

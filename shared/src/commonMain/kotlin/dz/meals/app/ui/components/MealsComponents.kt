@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -383,7 +382,8 @@ fun MealsSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: MealsIconName? = null
+    icon: MealsIconName? = null,
+    contentColor: Color = ForestDark
 ) {
     MealsLiquidGlassControl(
         onClick = onClick,
@@ -391,7 +391,8 @@ fun MealsSecondaryButton(
         enabled = enabled,
         minHeight = 48.dp,
         horizontalPadding = 16.dp,
-        verticalPadding = 10.dp
+        verticalPadding = 10.dp,
+        contentColor = contentColor
     ) {
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -407,7 +408,7 @@ fun MealsSecondaryButton(
             }
             Text(
                 text = label,
-                color = ForestDark,
+                color = contentColor,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold
             )
@@ -1015,13 +1016,17 @@ fun MealsBottomSheet(
                 content()
 
                 if (confirmButton != null || dismissButton != null) {
-                    FlowRow(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        confirmButton?.invoke()
-                        dismissButton?.invoke()
+                        confirmButton?.let { button ->
+                            Box(modifier = Modifier.weight(1f)) { button() }
+                        }
+                        dismissButton?.let { button ->
+                            Box(modifier = Modifier.weight(1f)) { button() }
+                        }
                     }
                 }
 

@@ -26,7 +26,7 @@ object MealsLiquidGlass {
 
     val ControlElevation = 3.dp
     val SurfaceElevation = 2.dp
-    val ModalElevation = 12.dp
+    val ModalElevation = 2.dp
     val PressDurationMillis = 120
     const val PressedScale = 0.955f
 
@@ -131,8 +131,8 @@ object MealsLiquidGlass {
     )
 
     val ControlBlurStyle = HazeBlurStyle {
-        blurRadius(15.dp)
-        noiseFactor(0.025f)
+        blurRadius(5.dp)
+        noiseFactor(0.018f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color.White.copy(alpha = SurfaceOpacity)))
         )
@@ -142,8 +142,8 @@ object MealsLiquidGlass {
     }
 
     val SurfaceBlurStyle = HazeBlurStyle {
-        blurRadius(25.dp)
-        noiseFactor(0.045f)
+        blurRadius(8.dp)
+        noiseFactor(0.02f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = SurfaceOpacity)))
         )

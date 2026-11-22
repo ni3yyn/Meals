@@ -255,24 +255,23 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MealsPrimaryButton(
-                        label = "أضف إلى الأسبوع",
-                        onClick = { onAddRecipe(detail.id); selectedRecipeId = null }
-                    )
-                    MealsSecondaryButton(
-                        label = "ابدأ الطبخ",
-                        onClick = {
-                            cookingRecipeId = detail.id
-                            cookingStepIndex = 0
-                            cookingServings = detail.baseServings
-                            selectedRecipeId = null
-                        }
-                    )
-                }
+                MealsPrimaryButton(
+                    label = "أضف إلى الأسبوع",
+                    onClick = { onAddRecipe(detail.id); selectedRecipeId = null },
+                    modifier = Modifier.fillMaxWidth()
+                )
             },
             dismissButton = {
-                MealsSecondaryButton(label = "إغلاق", onClick = { selectedRecipeId = null })
+                MealsSecondaryButton(
+                    label = "ابدأ الطبخ",
+                    onClick = {
+                        cookingRecipeId = detail.id
+                        cookingStepIndex = 0
+                        cookingServings = detail.baseServings
+                        selectedRecipeId = null
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         )
     }
@@ -356,18 +355,17 @@ fun RecipesScreen(
                         } else {
                             cookingRecipeId = null
                         }
-                    }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             },
             dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MealsSecondaryButton(
-                        label = "السابق",
-                        onClick = { cookingStepIndex = (safeStepIndex - 1).coerceAtLeast(0) },
-                        enabled = safeStepIndex > 0
-                    )
-                    MealsTextButton(onClick = { cookingRecipeId = null }) { Text("إغلاق") }
-                }
+                MealsSecondaryButton(
+                    label = "السابق",
+                    onClick = { cookingStepIndex = (safeStepIndex - 1).coerceAtLeast(0) },
+                    enabled = safeStepIndex > 0,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         )
     }

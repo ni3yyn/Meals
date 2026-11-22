@@ -2,6 +2,7 @@ package dz.meals.app.ui.screens
 
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsSecondaryButton
+import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsTextButton
 
 import androidx.compose.foundation.BorderStroke
@@ -281,15 +282,23 @@ private fun PantryAddDialog(
             }
         },
         confirmButton = {
-            MealsTextButton(
+            MealsPrimaryButton(
+                label = "حفظ",
                 onClick = {
                     val exactQuantity = if (approximate) null else quantity.replace(',', '.').toDoubleOrNull()
                     onSave(exactQuantity, approximate, note.trim(), parsedExpiry)
                 },
+                modifier = Modifier.fillMaxWidth(),
                 enabled = expiryIsValid && (approximate || ((quantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0))
-            ) { Text("حفظ") }
+            )
         },
-        dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = onDismiss) }
+        dismissButton = {
+            MealsSecondaryButton(
+                label = "إلغاء",
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     )
 }
 

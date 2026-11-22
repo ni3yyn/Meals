@@ -2,6 +2,7 @@ package dz.meals.app.ui.screens
 
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsSecondaryButton
+import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsTextButton
 
 import androidx.compose.foundation.layout.Arrangement
@@ -353,7 +354,8 @@ fun ShoppingScreen(
                 }
             },
             confirmButton = {
-                MealsTextButton(
+                MealsPrimaryButton(
+                    label = "إضافة",
                     onClick = {
                         val quantity = itemQuantity.replace(',', '.').toDoubleOrNull()
                         val estimatedPrice = itemEstimatedPrice.takeIf { it.isNotBlank() }
@@ -369,12 +371,19 @@ fun ShoppingScreen(
                             addDialog = false
                         }
                     },
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = itemName.isNotBlank() &&
                         (itemQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0 &&
                         (itemEstimatedPrice.isBlank() || (itemEstimatedPrice.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
-                ) { Text("إضافة") }
+                )
             },
-            dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = { addDialog = false }) }
+            dismissButton = {
+                MealsSecondaryButton(
+                    label = "إلغاء",
+                    onClick = { addDialog = false },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         )
     }
 
@@ -423,7 +432,8 @@ fun ShoppingScreen(
                 }
             },
             confirmButton = {
-                MealsTextButton(
+                MealsPrimaryButton(
+                    label = "حفظ التعديل",
                     onClick = {
                         val id = editItemId
                         val quantity = editQuantity.replace(',', '.').toDoubleOrNull()
@@ -442,12 +452,19 @@ fun ShoppingScreen(
                             editItemId = null
                         }
                     },
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = (!editUserAdded || (editName.isNotBlank() && (editQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0)) &&
                         (editPurchaseQuantity.isBlank() || (editPurchaseQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
                         (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
-                ) { Text("حفظ التعديل") }
+                )
             },
-            dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = { editItemId = null }) }
+            dismissButton = {
+                MealsSecondaryButton(
+                    label = "إلغاء",
+                    onClick = { editItemId = null },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         )
     }
 
@@ -550,7 +567,8 @@ private fun PriceReportDialog(
         confirmButton = {
             val packQuantity = packQuantityText.replace(',', '.').toDoubleOrNull()
             val amount = priceText.replace(',', '.').toDoubleOrNull()
-            MealsTextButton(
+            MealsPrimaryButton(
+                label = "حفظ البلاغ",
                 onClick = {
                     if (selectedIngredient != null && packQuantity != null && amount != null) {
                         val baseUnitMultiplier = when (selectedIngredient.baseUnit) {
@@ -560,10 +578,17 @@ private fun PriceReportDialog(
                         onSubmit(selectedIngredient.id, packQuantity * baseUnitMultiplier, amount, shopContext)
                     }
                 },
+                modifier = Modifier.fillMaxWidth(),
                 enabled = selectedIngredient != null && (packQuantity ?: 0.0) > 0.0 && (amount ?: 0.0) > 0.0
-            ) { Text("حفظ البلاغ") }
+            )
         },
-        dismissButton = { MealsSecondaryButton(label = "إلغاء", onClick = onDismiss) }
+        dismissButton = {
+            MealsSecondaryButton(
+                label = "إلغاء",
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     )
 }
 

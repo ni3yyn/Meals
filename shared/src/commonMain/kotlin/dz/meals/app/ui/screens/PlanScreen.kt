@@ -434,15 +434,20 @@ fun PlanScreen(
             },
             confirmButton = {
                 MealsPrimaryButton(
-                    label = "تأكيد وخصم المخزون الدقيق",
+                    label = "تأكيد الطهي",
                     onClick = {
                         onToggleCooked(mealId)
                         mealAwaitingCookConfirmation = null
-                    }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             },
             dismissButton = {
-                MealsSecondaryButton(label = "إلغاء", onClick = { mealAwaitingCookConfirmation = null })
+                MealsSecondaryButton(
+                    label = "إلغاء",
+                    onClick = { mealAwaitingCookConfirmation = null },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         )
     }
@@ -581,38 +586,27 @@ private fun SlotRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MealsTextButton(
-                    onClick = onToggleCooked,
-                    compact = true
-                ) {
-                    MealsIcon(
-                        name = MealsIconName.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(25.dp)
+                if (meal.isCooked) {
+                    MealsSecondaryButton(
+                        label = "تراجع عن الطهي",
+                        onClick = onToggleCooked,
+                        modifier = Modifier.weight(1f),
+                        icon = MealsIconName.Check
                     )
-                    Text(
-                        if (meal.isCooked) "تراجع عن الطهي" else "تم الطهي",
-                        color = ForestDark,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
+                } else {
+                    MealsPrimaryButton(
+                        label = "تم الطهي",
+                        onClick = onToggleCooked,
+                        modifier = Modifier.weight(1f),
+                        icon = MealsIconName.Check
                     )
                 }
-                MealsTextButton(
+                MealsSecondaryButton(
+                    label = "تغيير",
                     onClick = { chooseRecipe = true },
-                    compact = true
-                ) {
-                    MealsIcon(
-                        name = MealsIconName.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(25.dp)
-                    )
-                    Text(
-                        "تغيير",
-                        color = ForestDark,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                    modifier = Modifier.weight(1f),
+                    icon = MealsIconName.Refresh
+                )
             }
         } else {
             Row(
@@ -677,15 +671,19 @@ private fun SlotRow(
                 }
             },
             confirmButton = {
-                MealsTextButton(
+                MealsSecondaryButton(
+                    label = "إفراغ الوجبة",
                     onClick = { onSelect(null); chooseRecipe = false },
-                    color = androidx.compose.ui.graphics.Color(0xFFB65E53)
-                ) {
-                    Text("إفراغ الوجبة")
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    contentColor = androidx.compose.ui.graphics.Color(0xFFB65E53)
+                )
             },
             dismissButton = {
-                MealsSecondaryButton(label = "إلغاء", onClick = { chooseRecipe = false })
+                MealsSecondaryButton(
+                    label = "إلغاء",
+                    onClick = { chooseRecipe = false },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         )
     }
