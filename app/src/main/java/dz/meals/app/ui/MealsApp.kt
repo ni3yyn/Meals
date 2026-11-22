@@ -344,7 +344,7 @@ private fun MealsAppContent() {
                 preferences = preferences,
                 ingredients = snapshot.ingredients,
                 isFirstSetup = !preferences.hasCompletedSetup,
-                onDismissRequest = { showSettings = false },
+                onDismiss = { showSettings = false },
                 onQuickStart = { budget, servings ->
                     scope.launch {
                         preferencesStore.saveSettings(
