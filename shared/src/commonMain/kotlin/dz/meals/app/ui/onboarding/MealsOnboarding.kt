@@ -1,8 +1,12 @@
 package dz.meals.app.ui.onboarding
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,6 +41,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -152,6 +157,20 @@ fun MealsOnboarding(
     var dislikes by remember { mutableStateOf(initial.dislikedIngredientIds) }
     var pendingFinish by remember { mutableStateOf<(() -> Unit)?>(null) }
 
+    // One frame clock drives every floating bubble and vector illustration.
+    // Children read its State in graphics/draw layers, avoiding a recomposition
+    // cascade on every frame and dozens of independent animation clocks.
+    val motionTransition = rememberInfiniteTransition(label = "mealsOnboardingMotion")
+    val motionClock = motionTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(durationMillis = 12_000, easing = LinearEasing),
+            RepeatMode.Restart
+        ),
+        label = "mealsOnboardingMotionClock"
+    )
+
     val pagerState = rememberPagerState(pageCount = { PageCount })
     val scope = rememberCoroutineScope()
     val current = pagerState.currentPage
@@ -175,7 +194,8 @@ fun MealsOnboarding(
         action()
     }
 
-    Box(modifier.fillMaxSize()) {
+    CompositionLocalProvider(LocalMealsOnboardingMotionClock provides motionClock) {
+        Box(modifier.fillMaxSize()) {
         // Same artwork the glass samples, so the app underneath is fully covered.
         Image(
             painter = painterResource(Res.drawable.meals_kitchen_background),
@@ -534,6 +554,7 @@ fun MealsOnboarding(
                     )
                 }
             }
+        }
         }
     }
 }
