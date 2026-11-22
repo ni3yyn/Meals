@@ -1307,10 +1307,11 @@ private class MealsNavigationRimShape(
         val height = size.height
         val radius = with(density) { 26.dp.toPx() }
             .coerceAtMost(minOf(width / 2f, height / 2f))
+        val minimumInsetPx = with(density) { 1.dp.toPx() }
         val edgeY = with(density) { topEdgeInset.toPx() }
-            .coerceIn(1.dp.toPx(), height * 0.2f)
+            .coerceIn(minimumInsetPx, height * 0.2f)
         val crestY = (edgeY - with(density) { rise.toPx() })
-            .coerceAtLeast(1.dp.toPx())
+            .coerceAtLeast(minimumInsetPx)
         val center = with(density) { bumpCenter.toPx() }
             .coerceIn(radius, width - radius)
         val crestWidth = with(density) { bumpWidth.toPx() }
