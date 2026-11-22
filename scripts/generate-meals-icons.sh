@@ -58,6 +58,9 @@ for target in "${!ASSET_MAP[@]}"; do
   cp "$exported" "$DRAWABLE_DIR/$target.png"
 done
 
+# Replace violet artwork accents with restrained natural Meals colours.
+python3 "$ROOT_DIR/scripts/recolor_meals_icons.py"
+
 # Active navigation icons play once when selected. The cookbook swaps from
 # closed to open; the other destinations use the icon's own tuned soft-3D move.
 "$CLI" export book --style soft3d --format lottie --motion swap \
@@ -83,7 +86,7 @@ for target in "${!MOTION_MAP[@]}"; do
   cp "$exported" "$FILES_DIR/$target"
 done
 
-# Keep the upstream MIT notice alongside the redistributed icon artwork.
+# Keep the upstream MIT notice alongside the redistributed artwork.
 cp "$GENERATOR_DIR/node_modules/@withicons/mcp/LICENSE" \
   "$FILES_DIR/WITH_ICONS_MIT_LICENSE.txt"
 
