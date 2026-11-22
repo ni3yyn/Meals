@@ -1115,6 +1115,7 @@ private fun MealsModalSurface(
     glassBackdropOverride: MealsGlassBackdrop? = null,
     forceHazeBlur: Boolean = false,
     fillHeight: Boolean = false,
+    padNavigationBars: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = hazeStateOverride ?: LocalMealsCardHazeState.current
@@ -1138,7 +1139,7 @@ private fun MealsModalSurface(
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
                 modifier = (if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
-                    .navigationBarsPadding()
+                    .then(if (padNavigationBars) Modifier.navigationBarsPadding() else Modifier)
                     .padding(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 content = content
@@ -1253,7 +1254,8 @@ fun MealsBottomSheet(
                 elevation = MealsLiquidGlass.ModalElevation,
                 hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
                 glassBackdropOverride = null,
-                forceHazeBlur = true
+                forceHazeBlur = true,
+                padNavigationBars = true
             ) {
                 Column(
                     modifier = Modifier
