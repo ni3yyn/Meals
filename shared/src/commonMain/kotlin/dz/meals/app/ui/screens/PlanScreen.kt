@@ -204,7 +204,7 @@ fun PlanScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(15.dp))
-                            .background(dz.meals.app.ui.theme.SoftGreen.copy(alpha = 0.68f))
+                            .background(dz.meals.app.ui.theme.WarmSurface.copy(alpha = 0.68f))
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -354,7 +354,7 @@ fun PlanScreen(
                 ) {
                     MealsIllustrationBadge(
                         icon = MealsIconName.Meal,
-                        background = dz.meals.app.ui.theme.SoftGreen.copy(alpha = 0.82f),
+                        background = dz.meals.app.ui.theme.WarmSurface.copy(alpha = 0.82f),
                         size = 42.dp
                     )
                     Column(
@@ -381,7 +381,7 @@ fun PlanScreen(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(dz.meals.app.ui.theme.SoftGreen.copy(alpha = 0.76f)),
+                            .background(dz.meals.app.ui.theme.WarmSurface.copy(alpha = 0.76f)),
                         contentAlignment = Alignment.Center
                     ) {
                         MealsIcon(
