@@ -1,9 +1,9 @@
 name: Signed Android release
 
+# Publish a signed production APK after every update merged or pushed to main.
+# The tag is created by this workflow, so tag pushes are deliberately not
+# release triggers; this prevents the release from triggering itself again.
 on:
-  # Publish a signed production APK after every update merged or pushed to main.
-  # The tag is created by this workflow, so tag pushes are deliberately not
-  # release triggers; this prevents the release from triggering itself again.
   push:
     branches: [main]
   workflow_dispatch:
@@ -39,6 +39,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "9.6.0"
+          cache-read-only: false
 
       - name: Install Android SDK platform
         shell: bash
@@ -125,7 +126,7 @@ jobs:
           APP_VERSION_CODE: ${{ steps.release.outputs.version_code }}
         run: |
           set -euo pipefail
-          gradle :app:testReleaseUnitTest :app:assembleRelease :app:lintRelease --no-daemon --stacktrace \
+          gradle :app:testReleaseUnitTest :app:assembleRelease :app:lintRelease --no-daemon --stacktrace --build-cache --parallel \
             -PappVersionCode="$APP_VERSION_CODE" \
             -PappVersionName="$APP_VERSION" \
             -PreleaseKeystorePath="$RUNNER_TEMP/meals-release.jks" \
@@ -155,7 +156,12 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Publish signed APK release
+      # GitHub's release API currently returns 403 for the repository's
+      # workflow token. The signed APK artifact above is the reliable output;
+      # keep release publishing as a best-effort convenience, never a build gate.
+      - name: Publish signed APK release (best effort)
+        id: publish_release
+        continue-on-error: true
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release.outputs.tag }}
@@ -168,6 +174,16 @@ jobs:
           files: |
             dist/meals.apk
             dist/SHA256SUMS.txt
+
+      - name: Report artifact fallback when release publishing is blocked
+        if: steps.publish_release.outcome == 'failure'
+        run: |
+          {
+            echo "### Signed APK built successfully"
+            echo
+            echo "GitHub rejected release publishing (403). The signed APK and checksum were already uploaded as workflow artifacts."
+            echo "Download the artifact named meals-signed-apk-v${{ steps.release.outputs.version }} from this workflow run."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove temporary signing key
         if: always()
