@@ -69,8 +69,6 @@ import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PriceObservationSummary
 import dz.meals.app.data.ShoppingListItem
 import dz.meals.app.ui.theme.Border
-import dz.meals.app.ui.theme.Forest
-import dz.meals.app.ui.theme.ForestDark
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
@@ -803,7 +801,7 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(price.ingredientNameAr, fontWeight = FontWeight.Medium)
-            Text(price.packPriceDzd.toInt().formatDzd(), fontWeight = FontWeight.Bold, color = Forest)
+            Text(price.packPriceDzd.toInt().formatDzd(), fontWeight = FontWeight.Bold, color = Ink)
         }
         Text(
             price.packQuantityBase.formatHouseholdQuantity(price.unit) + " · " +
@@ -914,7 +912,7 @@ private fun ShoppingItemRow(
                 ) {
                     Text(
                         item.purchaseQuantity.formatHouseholdQuantity(item.unit),
-                        color = if (item.checked) MutedInk else Forest,
+                        color = if (item.checked) MutedInk else BodyInk,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1
@@ -954,7 +952,7 @@ private fun ShoppingItemRow(
                 item.actualSpentDzd?.let {
                     Text(
                         "المدفوع " + it.toInt().formatDzd(),
-                        color = Forest,
+                        color = BodyInk,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
