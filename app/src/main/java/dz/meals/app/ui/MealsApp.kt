@@ -425,13 +425,13 @@ private fun MealsAppContent() {
                 ) {
                     Text(
                         updateStatus,
-                        color = dz.meals.app.ui.theme.ForestDark,
+                        color = dz.meals.app.ui.theme.Ink,
                         style = MaterialTheme.typography.bodyMedium
                     )
                     availableUpdate?.let { update ->
                         Text(
                             "الإصدار الجديد: ${update.version}",
-                            color = dz.meals.app.ui.theme.ForestDark,
+                            color = dz.meals.app.ui.theme.Ink,
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -736,7 +736,7 @@ private fun SettingsDialog(
                     ) {
                         Text(
                             "هذه المعلومات تساعدنا على تنظيم قائمة التسوق. لا نستخدم موقعك تلقائياً.",
-                            color = dz.meals.app.ui.theme.ForestDark,
+                            color = dz.meals.app.ui.theme.Ink,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
