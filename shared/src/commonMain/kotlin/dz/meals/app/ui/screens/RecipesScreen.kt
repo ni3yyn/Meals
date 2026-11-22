@@ -43,11 +43,10 @@ import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.ui.theme.Border
-import dz.meals.app.ui.theme.Forest
 import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
-import dz.meals.app.ui.theme.SoftGreen
+import dz.meals.app.ui.theme.WarmSurface
 import kotlin.math.roundToLong
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -141,7 +140,7 @@ fun RecipesScreen(
                             Box(
                                 modifier = Modifier
                                     .size(42.dp)
-                                    .background(SoftGreen, RoundedCornerShape(14.dp)),
+                                    .background(WarmSurface, RoundedCornerShape(14.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 MealsIcon(
