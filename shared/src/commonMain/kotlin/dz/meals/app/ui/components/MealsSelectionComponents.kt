@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,10 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -29,16 +28,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazePerformanceMode
-import dev.chrisbanes.haze.blur.hazeBlur
+import dev.chrisbanes.haze.glass.hazeGlass
 import dz.meals.app.ui.theme.ForestDark
 import dz.meals.app.ui.theme.MutedInk
 
 private val SelectionShape = RoundedCornerShape(15.dp)
 
 /**
- * The same source-backed liquid-glass material used by Meals controls:
- * 12dp Haze blur, translucent porcelain face, bright gradient rim,
- * inner highlight and a restrained green-tinted lift.
+ * Selection control using the same refraction-driven Haze lens as every
+ * shared Meals surface, with a translucent face and pure-white optical rims.
  */
 @Composable
 private fun MealsSelectionGlass(
@@ -59,50 +57,44 @@ private fun MealsSelectionGlass(
     } else {
         MealsLiquidGlass.controlFace()
     }
-    val rim = if (selected) {
-        Brush.verticalGradient(
-            listOf(
-                Color.White.copy(alpha = 1f),
-                Color.White.copy(alpha = 0.90f),
-                Color(0xFFC9DDCE).copy(alpha = 0.78f),
-                Color.White.copy(alpha = 0.94f)
-            )
-        )
-    } else {
-        MealsLiquidGlass.controlRim()
+    val glassStyle = remember {
+        MealsLiquidGlass.lensStyle(SelectionShape)
     }
+    val rim = MealsLiquidGlass.controlRim()
 
     Box(
         modifier = modifier
-            .shadow(
-                elevation = if (selected) 3.dp else 2.dp,
-                shape = SelectionShape,
-                clip = false,
-                ambientColor = Color(0xFF78917F).copy(alpha = 0.12f),
-                spotColor = Color(0xFF536D5B).copy(alpha = 0.08f)
-            )
-            .clip(SelectionShape)
             .then(
                 if (hazeState != null) {
-                    Modifier.hazeBlur(
+                    Modifier.hazeGlass(
                         input = HazeInput.Sources(hazeState),
-                        style = MealsLiquidGlass.ControlBlurStyle,
+                        style = glassStyle,
                         performanceMode = HazePerformanceMode.Default
                     )
                 } else Modifier
             )
+            .clip(SelectionShape)
             .background(face, SelectionShape)
-            .border(BorderStroke(1.15.dp, rim), SelectionShape)
-            .padding(1.dp)
-            .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), SelectionShape),
+            .border(BorderStroke(1.3.dp, rim), SelectionShape),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
+                .matchParentSize()
+                .background(MealsLiquidGlass.lensReflection(), SelectionShape)
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(1.dp)
+                .border(BorderStroke(0.75.dp, MealsLiquidGlass.innerRim()), SelectionShape)
+        )
+        Box(
+            modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 1.dp)
-                .fillMaxWidth(0.64f)
-                .height(1.dp)
+                .fillMaxWidth(0.66f)
+                .height(1.4.dp)
                 .background(MealsLiquidGlass.specular(), SelectionShape)
         )
         content()
