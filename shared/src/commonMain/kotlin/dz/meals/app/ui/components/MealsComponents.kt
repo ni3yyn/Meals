@@ -72,6 +72,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -79,7 +80,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -1299,10 +1302,27 @@ fun MealsFrostedBottomBar(
     hazeState: HazeState,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    BoxWithConstraints(
         modifier = modifier.fillMaxWidth().navigationBarsPadding()
             .padding(horizontal = 18.dp).padding(bottom = 8.dp)
     ) {
+        // Keep the capsule's footprint fixed. The moving ridge is drawn as an
+        // overlay, so neither its height nor the larger labels change bar sizing.
+        val itemCount = items.size.coerceAtLeast(1)
+        val tabGap = 2.dp
+        val tabSlotWidth = (maxWidth - 14.dp - tabGap * (itemCount - 1)) / itemCount
+        val bumpWidth = (tabSlotWidth * 0.66f).coerceIn(38.dp, 50.dp)
+        val activeIndex = selectedIndex.coerceIn(0, itemCount - 1)
+        val bumpTargetX = 7.dp +
+            tabSlotWidth * activeIndex +
+            tabGap * activeIndex +
+            (tabSlotWidth - bumpWidth) / 2
+        val bumpOffsetX by animateDpAsState(
+            targetValue = bumpTargetX,
+            animationSpec = spring(dampingRatio = 0.78f, stiffness = 430f),
+            label = "mealsNavGlassBumpPosition"
+        )
+
         MealsLiquidGlassFrame(
             modifier = Modifier.fillMaxWidth().height(72.dp),
             shape = MealsLiquidGlass.NavigationShape,
@@ -1318,7 +1338,7 @@ fun MealsFrostedBottomBar(
             Row(
                 modifier = Modifier.fillMaxWidth().height(72.dp)
                     .padding(horizontal = 7.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(tabGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEachIndexed { index, item ->
@@ -1326,6 +1346,11 @@ fun MealsFrostedBottomBar(
                     val foreground by animateColorAsState(
                         targetValue = if (selected) Ink else MutedInk,
                         label = "mealsNavForeground$index"
+                    )
+                    val labelFontSize by animateFloatAsState(
+                        targetValue = if (selected) 14f else 13f,
+                        animationSpec = tween(durationMillis = 210),
+                        label = "mealsNavLabelSize$index"
                     )
                     val interactionSource = remember { MutableInteractionSource() }
                     Column(
@@ -1340,28 +1365,113 @@ fun MealsFrostedBottomBar(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Box(
-                            modifier = Modifier.size(width = 18.dp, height = 3.dp)
-                                .clip(CircleShape)
-                                .background(if (selected) TextAccent else Color.Transparent)
-                        )
-                        Spacer(Modifier.height(4.dp))
                         MealsNavigationIcon(
                             name = item.icon,
                             selected = selected,
                             contentDescription = item.label,
-                            modifier = Modifier.size(31.dp)
+                            modifier = Modifier.size(35.dp)
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = item.label,
                             color = foreground,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = labelFontSize.sp
+                            ),
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1
                         )
                     }
                 }
+            }
+        }
+
+        // A convex porcelain-glass ridge travels along the upper rim and settles
+        // above the selected icon. Its curved white contour and soft underside
+        // shadow make it read as part of the lens, not a detached pill indicator.
+        if (items.isNotEmpty()) {
+            Canvas(
+                modifier = Modifier
+                    .offset(x = bumpOffsetX, y = (-6).dp)
+                    .size(width = bumpWidth, height = 14.dp)
+            ) {
+                val width = size.width
+                val height = size.height
+                val arch = Path().apply {
+                    moveTo(0f, height * 0.91f)
+                    cubicTo(
+                        width * 0.18f, height * 0.91f,
+                        width * 0.17f, height * 0.08f,
+                        width * 0.5f, height * 0.08f
+                    )
+                    cubicTo(
+                        width * 0.83f, height * 0.08f,
+                        width * 0.82f, height * 0.91f,
+                        width, height * 0.91f
+                    )
+                }
+                val filledBump = Path().apply {
+                    moveTo(0f, height * 0.91f)
+                    cubicTo(
+                        width * 0.18f, height * 0.91f,
+                        width * 0.17f, height * 0.08f,
+                        width * 0.5f, height * 0.08f
+                    )
+                    cubicTo(
+                        width * 0.83f, height * 0.08f,
+                        width * 0.82f, height * 0.91f,
+                        width, height * 0.91f
+                    )
+                    lineTo(width, height)
+                    lineTo(0f, height)
+                    close()
+                }
+                val highlight = Path().apply {
+                    moveTo(width * 0.32f, height * 0.43f)
+                    cubicTo(
+                        width * 0.40f, height * 0.20f,
+                        width * 0.60f, height * 0.20f,
+                        width * 0.68f, height * 0.43f
+                    )
+                }
+
+                drawPath(
+                    path = arch,
+                    color = Color(0xFF9B8E83).copy(alpha = 0.16f),
+                    style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round)
+                )
+                drawPath(
+                    path = filledBump,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.88f),
+                            Color(0xFFFFFEFC).copy(alpha = 0.62f),
+                            Color(0xFFFFF8F1).copy(alpha = 0.30f)
+                        )
+                    )
+                )
+                drawPath(
+                    path = arch,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.98f),
+                            Color.White.copy(alpha = 0.76f),
+                            Color.White.copy(alpha = 0.42f)
+                        )
+                    ),
+                    style = Stroke(width = 0.9.dp.toPx(), cap = StrokeCap.Round)
+                )
+                drawPath(
+                    path = highlight,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.92f),
+                            Color.Transparent
+                        )
+                    ),
+                    style = Stroke(width = 0.8.dp.toPx(), cap = StrokeCap.Round)
+                )
             }
         }
     }
