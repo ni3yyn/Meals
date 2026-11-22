@@ -93,6 +93,7 @@ import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.ui.theme.SoftPink
 import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsNavigationIcon
 import dz.meals.app.ui.icons.MealsIconName
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
@@ -332,7 +333,14 @@ private fun MealsRaisedControl(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            },
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            ),
         shape = shape,
         color = if (enabled) Paper.copy(alpha = 0.84f) else Paper.copy(alpha = 0.58f),
         contentColor = if (enabled) contentColor else MutedInk,
@@ -341,13 +349,7 @@ private fun MealsRaisedControl(
     ) {
         Box(
             modifier = Modifier
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    role = Role.Button,
-                    onClick = onClick
-                )
+                .defaultMinSize(minHeight = minHeight)
                 .background(
                     Brush.verticalGradient(
                         listOf(
