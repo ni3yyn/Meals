@@ -82,6 +82,15 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.awaitPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import dev.chrisbanes.haze.HazeState
@@ -145,9 +154,14 @@ private fun MealsLiquidGlassFrame(
     }
     val isPressed = LocalMealsGlassPressed.current
     val opticalDepth by animateFloatAsState(
-        targetValue = if (isPressed) 0.62f else 1f,
-        animationSpec = tween(durationMillis = 105),
+        targetValue = if (isPressed) 0.78f else 1f,
+        animationSpec = tween(durationMillis = 85),
         label = "mealsGlassOpticalDepth"
+    )
+    val pressGlow by animateFloatAsState(
+        targetValue = if (isPressed) 0.12f else 0f,
+        animationSpec = tween(durationMillis = 65),
+        label = "mealsGlassPressGlow"
     )
     val surfaceModifier = modifier
         .shadow(
@@ -166,10 +180,13 @@ private fun MealsLiquidGlassFrame(
             blurRadius = blurRadius
         )
         .background(face, shape)
+        // The lift in brightness sits on the glass face, behind its content,
+        // so labels and icons stay crisp while the white optical rim catches light.
+        .background(Color.White.copy(alpha = pressGlow), shape)
         .mealsOpticalEdges(
             shape = shape,
             baseRim = rim,
-            depth = opticalDepth,
+            depth = 1f,
             sideGlintHeight = sideGlintHeight
         )
 
@@ -280,21 +297,81 @@ fun MealsPressable(
     content: @Composable BoxScope.() -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
+    val interactionPressed by source.collectIsPressedAsState()
+    val (pointerPressed, setPointerPressed) = remember { mutableStateOf(false) }
+    val pressed = enabled && (interactionPressed || pointerPressed)
+
+    // Observe the raw DOWN/UP stream alongside clickable. clickable remains
+    // responsible for semantics, accessibility and invoking onClick; this
+    // observer only drives the visual state, before scroll/click recognition
+    // can postpone the feedback. A tiny release tail keeps quick taps visible.
     val scale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.925f else 1f,
-        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.58f, stiffness = 620f),
+        targetValue = if (pressed) 0.958f else 1f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = 0.72f,
+            stiffness = 900f
+        ),
         label = "mealsSharedPressScale"
     )
-    val highlight by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.16f else 0f,
-        animationSpec = tween(90),
-        label = "mealsSharedPressHighlight"
-    )
+
     Box(
         modifier = modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                translationY = if (pressed) 0.55.dp.toPx() else 0f
+            }
             .clip(shape)
+            .pointerInput(enabled) {
+                if (!enabled) {
+                    setPointerPressed(false)
+                    return@pointerInput
+                }
+
+                coroutineScope {
+                    var releaseJob: Job? = null
+                    awaitEachGesture {
+                        val down = awaitFirstDown(
+                            requireUnconsumed = false,
+                            pass = PointerEventPass.Initial
+                        )
+                        releaseJob?.cancel()
+                        setPointerPressed(true)
+
+                        var completedTap = false
+                        try {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                                if (!change.pressed) {
+                                    completedTap = true
+                                    break
+                                }
+
+                                // Let vertical/horizontal scrolling take over cleanly.
+                                val delta = change.position - down.position
+                                val touchSlop = viewConfiguration.touchSlop
+                                if (
+                                    delta.x * delta.x + delta.y * delta.y >
+                                    touchSlop * touchSlop
+                                ) {
+                                    break
+                                }
+                            }
+                        } finally {
+                            if (completedTap) {
+                                releaseJob = launch {
+                                    delay(72)
+                                    setPointerPressed(false)
+                                }
+                            } else {
+                                setPointerPressed(false)
+                            }
+                        }
+                    }
+                }
+            }
             .clickable(
                 interactionSource = source,
                 indication = null,
@@ -304,15 +381,11 @@ fun MealsPressable(
             ),
         contentAlignment = Alignment.Center
     ) {
-        CompositionLocalProvider(LocalMealsGlassPressed provides (pressed && enabled)) {
+        CompositionLocalProvider(LocalMealsGlassPressed provides pressed) {
             content()
-        }
-        if (highlight > 0.001f) {
-            Box(Modifier.matchParentSize().background(Color.White.copy(alpha = highlight), shape))
         }
     }
 }
-
 @Composable
 private fun MealsLiquidGlassControl(
     onClick: () -> Unit,
@@ -831,17 +904,19 @@ fun MealsChoiceTile(
     description: String? = null,
     icon: MealsIconName? = null
 ) {
-    MealsCard(
-        modifier = modifier.fillMaxWidth().clickable(
-            onClick = onClick,
-            role = Role.Button
-        ),
-        containerColor = if (selected) SoftOrange else Paper,
-        contentPadding = 0.dp,
-        borderColor = if (selected) TextAccent.copy(alpha = 0.48f) else Border.copy(alpha = 0.72f),
-        shape = LargeTileShape,
-        shadowElevation = 0.dp
+    MealsPressable(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = LargeTileShape
     ) {
+        MealsCard(
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = if (selected) SoftOrange else Paper,
+            contentPadding = 0.dp,
+            borderColor = if (selected) TextAccent.copy(alpha = 0.48f) else Border.copy(alpha = 0.72f),
+            shape = LargeTileShape,
+            shadowElevation = 0.dp
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 15.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -873,6 +948,7 @@ fun MealsChoiceTile(
                         .border(1.dp, Border.copy(alpha = 0.85f), CircleShape)
                 )
             }
+        }
         }
     }
 }
