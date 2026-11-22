@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dz.meals.app.ui.theme.ForestDark
+import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 
 private val SelectionShape = RoundedCornerShape(15.dp)
@@ -119,7 +119,7 @@ fun MealsFilterChips(
         items.forEach { item ->
             val isSelected = item == selected
             val contentColor by animateColorAsState(
-                targetValue = if (isSelected) ForestDark else MutedInk,
+                targetValue = if (isSelected) Ink else MutedInk,
                 animationSpec = tween(160),
                 label = "mealsFilterChipContent"
             )
@@ -158,7 +158,7 @@ fun MealsSubtabsIndicator(
             items.forEach { item ->
                 val isSelected = item == selected
                 val textColor by animateColorAsState(
-                    targetValue = if (isSelected) ForestDark else MutedInk,
+                    targetValue = if (isSelected) Ink else MutedInk,
                     animationSpec = tween(170),
                     label = "mealsSubtabText"
                 )
