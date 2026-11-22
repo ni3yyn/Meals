@@ -41,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -465,9 +466,12 @@ fun ShoppingScreen(
                                         style = MaterialTheme.typography.labelMedium
                                     )
                                     MealsIcon(
-                                        if (expandedCategories[category] == false) MealsIconName.ChevronDown else MealsIconName.ChevronUp,
+                                        MealsIconName.ChevronRight,
                                         contentDescription = if (expandedCategories[category] == false) "توسيع القسم" else "طي القسم",
-                                        modifier = Modifier.padding(start = 7.dp).size(21.dp)
+                                        modifier = Modifier
+                                            .padding(start = 7.dp)
+                                            .size(21.dp)
+                                            .graphicsLayer { rotationZ = if (expandedCategories[category] == false) 0f else 90f }
                                     )
                                 }
                                 AnimatedVisibility(
