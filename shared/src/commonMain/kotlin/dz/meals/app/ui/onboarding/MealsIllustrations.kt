@@ -367,3 +367,183 @@ private fun heartPath(cx: Float, cy: Float, s: Float) = Path().apply {
     cubicTo(cx + s * 0.7f, cy - s * 1.3f, cx + s * 1.6f, cy - s * 0.1f, cx, cy + s * 0.9f)
     close()
 }
+
+private fun DrawScope.drawFamily(shown: Float, phase: Float) {
+    // Rug.
+    drawOval(Color(0xFFF6D9BF), Offset(12f, 140f), Size(176f, 34f))
+    drawOval(Color(0xFFF1C9A6).copy(alpha = 0.75f), Offset(26f, 147f), Size(148f, 20f))
+
+    val n = shown.coerceIn(1f, 6f)
+    val spacing = min(34f, 150f / n)
+    val drawn = ceil(shown).toInt().coerceIn(1, 6)
+    for (i in 0 until drawn) {
+        val x = 100f + (i - (n - 1f) / 2f) * spacing
+        val kid = i >= 2
+        person(x, 158f, if (kid) 0.82f else 1f, PersonColors[i % PersonColors.size], i % 3, (shown - i).coerceIn(0f, 1f))
+    }
+    val hy = 36f + sin(phase * TAU) * 3f
+    drawPath(heartPath(100f, hy, 11f), Brush.verticalGradient(listOf(Color(0xFFF59A9A), Color(0xFFE56A6A)), hy - 12f, hy + 12f))
+    gloss(94f, hy - 5f, 3.5f, 2.2f, 0.7f, -30f)
+    sparkle(52f, 52f, 7f, phase, 0)
+    sparkle(150f, 44f, 6f, phase, 1)
+}
+
+private fun DrawScope.drawBreakfast(phase: Float) {
+    val c = Offset(100f, 106f)
+    drawCircle(Brush.radialGradient(listOf(Gold.copy(alpha = 0.40f), Color.Transparent), c, 92f), 92f, c)
+    rotate(phase * 36f, c) {
+        for (k in 0 until 10) {
+            rotate(k * 36f, c) {
+                drawLine(Gold, Offset(100f, 52f), Offset(100f, 64f), 6f, StrokeCap.Round)
+            }
+        }
+    }
+    drawCircle(Brush.radialGradient(listOf(Color(0xFFFFE9A0), Color(0xFFF8A94B)), Offset(92f, 96f), 50f), 34f, c)
+    gloss(88f, 92f, 9f, 5f, 0.5f, -35f)
+    // Hill.
+    val hill = Path().apply {
+        moveTo(8f, 188f)
+        cubicTo(8f, 150f, 52f, 128f, 100f, 128f)
+        cubicTo(148f, 128f, 192f, 150f, 192f, 188f)
+        close()
+    }
+    drawPath(hill, v(Leaf, Color(0xFF8FC08C), 128f, 188f))
+    leaf(34f, 150f, 22f, 9f, -30f, Leaf2)
+    leaf(166f, 152f, 22f, 9f, 30f, Leaf2)
+    // Glass of tea on the hill.
+    groundShadow(100f, 172f, 28f)
+    drawRoundRect(v(Color.White, Color(0xFFF1E4D6), 140f, 170f), Offset(78f, 140f), Size(44f, 31f), CornerRadius(11f))
+    drawArc(Color(0xFFF1E4D6), -90f, 180f, false, Offset(112f, 146f), Size(22f, 17f), style = Stroke(4.5f))
+    drawOval(Color(0xFFB4693A), Offset(80f, 141f), Size(40f, 8f))
+    steam(92f, 138f, 24f, phase, 0)
+    steam(108f, 138f, 28f, phase, 1)
+    sparkle(40f, 60f, 7f, phase, 0)
+    sparkle(164f, 70f, 6f, phase, 1)
+}
+
+private fun DrawScope.drawLunch(phase: Float) {
+    groundShadow(100f, 178f, 66f)
+    val c = Offset(100f, 106f)
+    drawCircle(v(Color.White, Color(0xFFEFE1D2), 38f, 174f), 68f, c)
+    drawCircle(Color(0xFFE6D5C4).copy(alpha = 0.75f), 68f, c, style = Stroke(1.6f))
+    drawCircle(v(Color(0xFFFFFBF6), Color(0xFFF7EBDD), 56f, 156f), 50f, c)
+    drawCircle(Color(0xFFE9DACA).copy(alpha = 0.7f), 50f, c, style = Stroke(1.4f))
+    // Stew.
+    rotate(25f, Offset(90f, 100f)) {
+        drawOval(v(Color(0xFFC77A46), Color(0xFF8E4A28), 84f, 116f), Offset(64f, 86f), Size(54f, 30f))
+        gloss(80f, 94f, 10f, 3.5f, 0.45f, 0f)
+    }
+    for ((i, p) in listOf(Offset(124f, 84f), Offset(132f, 102f), Offset(118f, 112f)).withIndex()) {
+        drawCircle(v(Color(0xFFFFA654), Carrot, p.y - 9f, p.y + 9f), 9f, p)
+        drawCircle(Color(0xFFFFC07A), 3.4f, p)
+        if (i == 0) gloss(p.x - 3f, p.y - 4f, 2.5f, 1.6f, 0.6f, -30f)
+    }
+    for (i in 0 until 7) {
+        val a = i * 0.9f
+        drawCircle(Color(0xFF7DBA6B), 4.2f, Offset(80f + cos(a) * 11f, 122f + sin(a) * 6f))
+    }
+    leaf(106f, 76f, 20f, 8f, -25f, Leaf2)
+    leaf(98f, 72f, 18f, 7f, 20f)
+    // Cutlery.
+    drawLine(Silver, Offset(20f, 104f), Offset(20f, 162f), 7f, StrokeCap.Round)
+    drawRoundRect(Silver, Offset(11f, 84f), Size(18f, 24f), CornerRadius(8f))
+    for (dx in listOf(13f, 20f, 27f)) drawLine(Silver, Offset(dx, 62f), Offset(dx, 88f), 4f, StrokeCap.Round)
+    drawLine(Silver, Offset(180f, 92f), Offset(180f, 162f), 6f, StrokeCap.Round)
+    drawOval(v(Color(0xFFE2E6EC), Silver, 64f, 96f), Offset(170f, 64f), Size(20f, 32f))
+    sparkle(34f, 40f, 7f, phase, 0)
+    sparkle(168f, 40f, 6f, phase, 1)
+}
+
+private fun DrawScope.drawDinner(phase: Float) {
+    drawCircle(Brush.radialGradient(listOf(Lavender.copy(alpha = 0.45f), Color.Transparent), Offset(126f, 60f), 84f), 84f, Offset(126f, 60f))
+    val r = 32f
+    val a = Path().apply { addOval(Rect(Offset(128f - r, 58f - r), Size(r * 2f, r * 2f))) }
+    val b = Path().apply { addOval(Rect(Offset(128f - r + r * 0.62f, 58f - r - r * 0.12f), Size(r * 2f, r * 2f))) }
+    val moon = Path.combine(PathOperation.Difference, a, b)
+    drawPath(moon, v(Color(0xFFFFEBB0), Color(0xFFF2C968), 26f, 90f))
+    sparkle(66f, 40f, 8f, phase, 0, Color(0xFFFFF3C4))
+    sparkle(172f, 112f, 6f, phase, 1, Color(0xFFFFF3C4))
+    sparkle(96f, 78f, 4f, phase, 2, Color(0xFFFFF3C4))
+    sparkle(30f, 92f, 5f, phase, 3, Color(0xFFFFF3C4))
+    translate(left = 36f, top = 56f) {
+        scale(0.66f, Offset.Zero) { drawBowl(phase, soup = true) }
+    }
+}
+
+private fun DrawScope.drawAllergy(phase: Float) {
+    groundShadow(100f, 178f, 70f)
+    // Milk carton.
+    val gable = Path().apply {
+        moveTo(36f, 96f); lineTo(46f, 74f); lineTo(70f, 74f); lineTo(80f, 96f); close()
+    }
+    drawRoundRect(v(Color.White, Milk, 96f, 168f), Offset(36f, 94f), Size(44f, 74f), CornerRadius(6f))
+    drawPath(gable, Color(0xFFD3E6F3))
+    drawRoundRect(Sky, Offset(48f, 66f), Size(20f, 9f), CornerRadius(3f))
+    drawCircle(Sky, 11f, Offset(58f, 130f))
+    drawCircle(Color.White.copy(alpha = 0.6f), 3.2f, Offset(54f, 126f))
+    drawRect(Color(0xFFCFE2F0).copy(alpha = 0.6f), Offset(70f, 96f), Size(10f, 72f))
+    // Egg.
+    val egg = Path().apply {
+        moveTo(112f, 90f)
+        cubicTo(130f, 90f, 142f, 124f, 142f, 140f)
+        cubicTo(142f, 154f, 128f, 164f, 112f, 164f)
+        cubicTo(96f, 164f, 82f, 154f, 82f, 140f)
+        cubicTo(82f, 124f, 94f, 90f, 112f, 90f)
+        close()
+    }
+    drawPath(egg, Brush.radialGradient(listOf(Color(0xFFFFF7EA), Color(0xFFF2D9B8)), Offset(102f, 122f), 52f))
+    gloss(100f, 118f, 5f, 13f, 0.7f, 12f)
+    // Wheat.
+    val stem = Path().apply { moveTo(160f, 170f); cubicTo(162f, 140f, 154f, 110f, 156f, 74f) }
+    drawPath(stem, Color(0xFFB98A3E), style = Stroke(3f, cap = StrokeCap.Round))
+    for (k in 0 until 6) {
+        val y = 80f + k * 14f
+        val x = 156f + (k * 0.5f)
+        rotate(-32f, Offset(x - 6f, y)) { drawOval(v(Color(0xFFF3CE6F), Color(0xFFD9A43F), y - 7f, y + 7f), Offset(x - 16f, y - 4.5f), Size(16f, 9f)) }
+        rotate(32f, Offset(x + 6f, y)) { drawOval(v(Color(0xFFF3CE6F), Color(0xFFD9A43F), y - 7f, y + 7f), Offset(x, y - 4.5f), Size(16f, 9f)) }
+    }
+    drawOval(v(Color(0xFFF3CE6F), Color(0xFFD9A43F), 56f, 80f), Offset(151f, 56f), Size(10f, 22f))
+    // "Safe" shield.
+    val by = sin(phase * TAU) * 3f
+    translate(top = by) {
+        val shield = Path().apply {
+            moveTo(100f, 14f)
+            cubicTo(108f, 22f, 116f, 24f, 124f, 24f)
+            cubicTo(124f, 46f, 116f, 58f, 100f, 64f)
+            cubicTo(84f, 58f, 76f, 46f, 76f, 24f)
+            cubicTo(84f, 24f, 92f, 22f, 100f, 14f)
+            close()
+        }
+        drawPath(shield, v(Color(0xFF63B085), ForestDark, 14f, 64f))
+        drawPath(shield, Color.White.copy(alpha = 0.5f), style = Stroke(2f, join = StrokeJoin.Round))
+        checkMark(100f, 40f, 1f)
+    }
+    sparkle(30f, 50f, 6f, phase, 0)
+    sparkle(174f, 52f, 6f, phase, 1)
+}
+
+private fun DrawScope.drawClock(phase: Float) {
+    groundShadow(100f, 182f, 58f)
+    // Handles and pot body.
+    drawRoundRect(Color(0xFFC76A3C), Offset(26f, 118f), Size(26f, 13f), CornerRadius(6.5f))
+    drawRoundRect(Color(0xFFC76A3C), Offset(148f, 118f), Size(26f, 13f), CornerRadius(6.5f))
+    drawRoundRect(v(Color(0xFFF2A67C), Color(0xFFD97848), 100f, 168f), Offset(46f, 100f), Size(108f, 68f), CornerRadius(20f))
+    gloss(64f, 128f, 5f, 18f, 0.4f, 8f)
+    // Lid with a gentle rattle.
+    val lift = sin(phase * TAU * 2f) * 1.6f
+    translate(top = lift) {
+        drawArc(v(Color(0xFFF7B58F), Color(0xFFE88B5A), 70f, 98f), 180f, 180f, true, Offset(44f, 70f), Size(112f, 56f))
+        drawRoundRect(Color(0xFFE88B5A), Offset(42f, 96f), Size(116f, 9f), CornerRadius(4.5f))
+        drawCircle(v(Color(0xFFFFE08A), Gold, 60f, 76f), 7f, Offset(100f, 68f))
+    }
+    steam(74f, 96f, 22f, phase, 0)
+    steam(126f, 96f, 22f, phase, 1)
+    // Timer badge.
+    val bc = Offset(152f, 54f)
+    drawCircle(Color(0xFF8F8278).copy(alpha = 0.2f), 27f, bc + Offset(0f, 3f))
+    drawCircle(v(Color.White, Color(0xFFF4E8DB), 28f, 80f), 25f, bc)
+    drawCircle(Tangerine, 25f, bc, style = Stroke(4.5f))
+    for (k in 0 until 4) {
+        rotate(k * 90f, bc) {
+            drawLine(Ink.copy(alpha = 0.5f), Offset(bc.x, bc.y - 19f), Offset(bc.x, bc.y - 15f), 2f, StrokeCap.Round)
+        }
