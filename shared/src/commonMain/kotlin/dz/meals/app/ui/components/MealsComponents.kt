@@ -90,12 +90,13 @@ import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.rememberHazeState
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
-import dz.meals.app.ui.theme.Forest
-import dz.meals.app.ui.theme.ForestDark
 import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
+import dz.meals.app.ui.theme.SoftOrange
+import dz.meals.app.ui.theme.TextAccent
+import dz.meals.app.ui.theme.WarmSurface
 import dz.meals.app.ui.theme.SoftPink
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsNavigationIcon
@@ -322,7 +323,7 @@ private fun MealsLiquidGlassControl(
     fixedSize: Dp? = null,
     horizontalPadding: Dp = 12.dp,
     verticalPadding: Dp = 8.dp,
-    contentColor: Color = ForestDark,
+    contentColor: Color = Ink,
     content: @Composable () -> Unit
 ) {
     val contentModifier = if (fixedSize != null) {
@@ -417,7 +418,7 @@ fun MealsPrimaryButton(
             }
             Text(
                 text = label,
-                color = ForestDark,
+                color = Ink,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -443,7 +444,7 @@ fun MealsSecondaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: MealsIconName? = null,
-    contentColor: Color = ForestDark
+    contentColor: Color = Ink
 ) {
     MealsLiquidGlassControl(
         onClick = onClick,
@@ -484,7 +485,7 @@ fun MealsTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    color: Color = ForestDark,
+    color: Color = Ink,
     compact: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
@@ -612,7 +613,7 @@ fun MealsLiquidGlassTextField(
                     enabled = enabled,
                     singleLine = singleLine,
                     keyboardOptions = keyboardOptions,
-                    cursorBrush = SolidColor(Forest),
+                    cursorBrush = SolidColor(TextAccent),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = if (enabled) Ink else MutedInk
                     )
@@ -656,7 +657,7 @@ fun MealsSearchBar(
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                cursorBrush = SolidColor(Forest),
+                cursorBrush = SolidColor(TextAccent),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink),
                 decorationBox = { innerTextField ->
                     Box {
@@ -684,12 +685,12 @@ fun MealsCheckbox(
     enabled: Boolean = true
 ) {
     val fillColor by animateColorAsState(
-        targetValue = if (checked) ForestDark else Color.White.copy(alpha = 0.34f),
+        targetValue = if (checked) TextAccent else Color.White.copy(alpha = 0.34f),
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxFill"
     )
     val edgeColor by animateColorAsState(
-        targetValue = if (checked) ForestDark else Color.White.copy(alpha = 0.96f),
+        targetValue = if (checked) TextAccent else Color.White.copy(alpha = 0.96f),
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxEdge"
     )
@@ -796,9 +797,9 @@ fun MealsCheckRow(
             role = Role.Checkbox,
             onValueChange = onCheckedChange
         ),
-        containerColor = if (checked) SoftGreen.copy(alpha = 0.78f) else Paper,
+        containerColor = if (checked) WarmSurface else Paper,
         contentPadding = 0.dp,
-        borderColor = if (checked) Forest.copy(alpha = 0.28f) else Border.copy(alpha = 0.72f),
+        borderColor = if (checked) TextAccent.copy(alpha = 0.32f) else Border.copy(alpha = 0.72f),
         shape = RoundedCornerShape(18.dp),
         shadowElevation = 0.dp
     ) {
@@ -836,9 +837,9 @@ fun MealsChoiceTile(
             onClick = onClick,
             role = Role.Button
         ),
-        containerColor = if (selected) SoftGreen else Paper,
+        containerColor = if (selected) SoftOrange else Paper,
         contentPadding = 0.dp,
-        borderColor = if (selected) Forest.copy(alpha = 0.42f) else Border.copy(alpha = 0.72f),
+        borderColor = if (selected) TextAccent.copy(alpha = 0.48f) else Border.copy(alpha = 0.72f),
         shape = LargeTileShape,
         shadowElevation = 0.dp
     ) {
@@ -862,7 +863,7 @@ fun MealsChoiceTile(
             }
             if (selected) {
                 Box(
-                    modifier = Modifier.size(27.dp).clip(CircleShape).background(Forest),
+                    modifier = Modifier.size(27.dp).clip(CircleShape).background(TextAccent),
                     contentAlignment = Alignment.Center
                 ) {
                     MealsIcon(name = MealsIconName.Check, contentDescription = "محدد", modifier = Modifier.size(23.dp))
@@ -890,8 +891,8 @@ fun MealsProgressBar(
         LinearProgressIndicator(
             progress = { progress.coerceIn(0f, 1f) },
             modifier = Modifier.fillMaxWidth().height(9.dp).clip(CircleShape),
-            color = Forest,
-            trackColor = SoftGreen
+            color = TextAccent,
+            trackColor = SoftOrange
         )
     }
 }
@@ -1249,7 +1250,7 @@ fun MealsFrostedBottomBar(
                 items.forEachIndexed { index, item ->
                     val selected = index == selectedIndex
                     val foreground by animateColorAsState(
-                        targetValue = if (selected) ForestDark else MutedInk,
+                        targetValue = if (selected) Ink else MutedInk,
                         label = "mealsNavForeground$index"
                     )
                     val interactionSource = remember { MutableInteractionSource() }
@@ -1268,7 +1269,7 @@ fun MealsFrostedBottomBar(
                         Box(
                             modifier = Modifier.size(width = 18.dp, height = 3.dp)
                                 .clip(CircleShape)
-                                .background(if (selected) ForestDark else Color.Transparent)
+                                .background(if (selected) TextAccent else Color.Transparent)
                         )
                         Spacer(Modifier.height(4.dp))
                         MealsNavigationIcon(
