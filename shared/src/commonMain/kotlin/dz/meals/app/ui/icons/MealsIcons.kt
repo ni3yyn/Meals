@@ -3,9 +3,15 @@ package dz.meals.app.ui.icons
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_icon_plan
 import dz.meals.app.shared.generated.resources.meals_icon_cookbook
@@ -32,6 +38,14 @@ import dz.meals.app.shared.generated.resources.meals_icon_clock
 import dz.meals.app.shared.generated.resources.meals_icon_info
 import dz.meals.app.shared.generated.resources.meals_icon_edit
 import dz.meals.app.shared.generated.resources.meals_icon_delete
+import dz.meals.app.shared.generated.resources.meals_nav_plan
+import dz.meals.app.shared.generated.resources.meals_nav_plan_active
+import dz.meals.app.shared.generated.resources.meals_nav_cookbook
+import dz.meals.app.shared.generated.resources.meals_nav_cookbook_active
+import dz.meals.app.shared.generated.resources.meals_nav_basket
+import dz.meals.app.shared.generated.resources.meals_nav_basket_active
+import dz.meals.app.shared.generated.resources.meals_nav_pantry
+import dz.meals.app.shared.generated.resources.meals_nav_pantry_active
 import org.jetbrains.compose.resources.painterResource
 
 /**
@@ -82,6 +96,55 @@ fun MealsIcon(
             scaleY = 1.18f
         }
     )
+}
+
+@Composable
+fun MealsNavigationIcon(
+    name: MealsIconName,
+    selected: Boolean,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.13f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "mealsNavigationIconScale"
+    )
+
+    Crossfade(
+        targetState = selected,
+        animationSpec = tween(durationMillis = 150),
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        label = "mealsNavigationIconArtwork"
+    ) { active ->
+        val painter = when (name) {
+            MealsIconName.Plan -> painterResource(
+                if (active) Res.drawable.meals_nav_plan_active else Res.drawable.meals_nav_plan
+            )
+            MealsIconName.Cookbook -> painterResource(
+                if (active) Res.drawable.meals_nav_cookbook_active else Res.drawable.meals_nav_cookbook
+            )
+            MealsIconName.Basket -> painterResource(
+                if (active) Res.drawable.meals_nav_basket_active else Res.drawable.meals_nav_basket
+            )
+            MealsIconName.Pantry -> painterResource(
+                if (active) Res.drawable.meals_nav_pantry_active else Res.drawable.meals_nav_pantry
+            )
+            else -> painterResource(name.drawable())
+        }
+        Image(
+            painter = painter,
+            contentDescription = contentDescription,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }
 
 private fun MealsIconName.drawable() = when (this) {

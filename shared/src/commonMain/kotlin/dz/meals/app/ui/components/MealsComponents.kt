@@ -1145,7 +1145,12 @@ fun MealsFrostedBottomBar(
                             .background(if (selected) ForestDark else Color.Transparent)
                     )
                     Spacer(Modifier.height(4.dp))
-                    MealsIcon(name = item.icon, contentDescription = item.label, modifier = Modifier.size(23.dp), tint = foreground)
+                    MealsNavigationIcon(
+                        name = item.icon,
+                        selected = selected,
+                        contentDescription = item.label,
+                        modifier = Modifier.size(26.dp)
+                    )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = item.label,
