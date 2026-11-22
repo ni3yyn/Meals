@@ -261,7 +261,7 @@ fun PlanScreen(
                             indication = null,
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         ) { fillEmptyOnly = !fillEmptyOnly }
-                        .padding(start = 5.dp, end = 10.dp, vertical = 5.dp),
+                        .padding(start = 5.dp, top = 5.dp, end = 10.dp, bottom = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
