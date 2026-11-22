@@ -123,6 +123,7 @@ private fun MealsLiquidGlassFrame(
     blurStyle: HazeBlurStyle? = null,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
+    showOpticalHighlights: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
     // One broad, low-opacity shadow gives the glass a soft floating edge.
@@ -155,28 +156,30 @@ private fun MealsLiquidGlassFrame(
         .border(BorderStroke(1.15.dp, rim), shape)
 
     Box(modifier = surfaceModifier, contentAlignment = Alignment.TopStart) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(1.dp)
-                .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), shape)
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 1.dp)
-                .fillMaxWidth(0.62f)
-                .height(1.dp)
-                .background(MealsLiquidGlass.specular(), CircleShape)
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
-                .width(1.dp)
-                .height(sideGlintHeight)
-                .background(MealsLiquidGlass.sideGlint(), CircleShape)
-        )
+        if (showOpticalHighlights) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(1.dp)
+                    .border(BorderStroke(0.65.dp, MealsLiquidGlass.innerRim()), shape)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 1.dp)
+                    .fillMaxWidth(0.62f)
+                    .height(1.dp)
+                    .background(MealsLiquidGlass.specular(), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 1.dp, top = 10.dp, bottom = 10.dp)
+                    .width(1.dp)
+                    .height(sideGlintHeight)
+                    .background(MealsLiquidGlass.sideGlint(), CircleShape)
+            )
+        }
         content()
     }
 }
@@ -192,7 +195,6 @@ fun MealsCard(
     shadowElevation: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val cardHazeState = LocalMealsCardHazeState.current
     val face = remember(containerColor) {
         MealsLiquidGlass.cardFace(containerColor)
     }
@@ -205,10 +207,11 @@ fun MealsCard(
         shape = shape,
         elevation = shadowElevation.coerceIn(0.dp, 4.dp),
         face = face,
-        hazeState = cardHazeState,
-        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
-        rim = rim,
-        sideGlintHeight = 23.dp
+        hazeState = null,
+        blurStyle = null,
+        rim = MealsLiquidGlass.contentRim(rimColor = borderColor ?: Color(0xFFE1D9CD)),
+        sideGlintHeight = 23.dp,
+        showOpticalHighlights = false
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Column(
@@ -241,7 +244,6 @@ fun MealsGlassSurface(
     shape: RoundedCornerShape = MealsLiquidGlass.HeroShape,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val hazeState = LocalMealsCardHazeState.current
     val face = remember(tintColor) {
         MealsLiquidGlass.heroFace(tintColor)
     }
@@ -251,9 +253,11 @@ fun MealsGlassSurface(
         shape = shape,
         elevation = MealsLiquidGlass.SurfaceElevation,
         face = face,
-        hazeState = hazeState,
-        blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
-        sideGlintHeight = 27.dp
+        hazeState = null,
+        blurStyle = null,
+        rim = MealsLiquidGlass.contentRim(),
+        sideGlintHeight = 27.dp,
+        showOpticalHighlights = false
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(
@@ -321,6 +325,8 @@ private fun MealsLiquidGlassControl(
     horizontalPadding: Dp = 12.dp,
     verticalPadding: Dp = 8.dp,
     contentColor: Color = ForestDark,
+    face: Brush = MealsLiquidGlass.controlFace(),
+    rim: Brush = MealsLiquidGlass.controlRim(),
     content: @Composable () -> Unit
 ) {
     val contentModifier = if (fixedSize != null) {
@@ -338,13 +344,13 @@ private fun MealsLiquidGlassControl(
         enabled = enabled
     ) {
         MealsLiquidGlassFrame(
-            modifier = Modifier.fillMaxSize(),
+            modifier = if (fixedSize != null) Modifier.fillMaxSize() else Modifier.fillMaxWidth(),
             shape = MealsLiquidGlass.ControlShape,
             elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
-            face = MealsLiquidGlass.controlFace(),
+            face = face,
             hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
             blurStyle = MealsLiquidGlass.ControlBlurStyle,
-            rim = MealsLiquidGlass.controlRim(),
+            rim = rim,
             sideGlintHeight = 17.dp
         ) {
         Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
@@ -382,7 +388,9 @@ fun MealsPrimaryButton(
         enabled = enabled,
         minHeight = 42.dp,
         horizontalPadding = 14.dp,
-        verticalPadding = 6.dp
+        verticalPadding = 6.dp,
+        contentColor = if (enabled) Color.White else MutedInk,
+        face = if (enabled) MealsLiquidGlass.primaryActionFace() else MealsLiquidGlass.controlFace()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -399,7 +407,7 @@ fun MealsPrimaryButton(
             }
             Text(
                 text = label,
-                color = ForestDark,
+                color = if (enabled) Color.White else MutedInk,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -978,7 +986,7 @@ fun MealsBottomSheet(
         shape = topShape,
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        scrimColor = Ink.copy(alpha = 0.30f),
+        scrimColor = Ink.copy(alpha = 0.35f),
         tonalElevation = 0.dp,
         dragHandle = {
             Box(
