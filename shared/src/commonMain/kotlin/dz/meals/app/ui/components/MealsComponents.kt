@@ -68,9 +68,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -1320,5 +1327,39 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
             }
             content()
         }
+    }
+}
+
+
+/**
+ * Compact rolling value transition for quantities and counters. The number
+ * moves vertically with a short fade so updates feel immediate but readable.
+ */
+@Composable
+fun MealsAnimatedCount(
+    value: String,
+    color: Color,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+    fontWeight: FontWeight = FontWeight.SemiBold
+) {
+    AnimatedContent(
+        targetState = value,
+        modifier = modifier,
+        transitionSpec = {
+            (fadeIn(animationSpec = tween(130)) +
+                slideInVertically(animationSpec = tween(170)) { it / 3 }) togetherWith
+                (fadeOut(animationSpec = tween(90)) +
+                    slideOutVertically(animationSpec = tween(120)) { -it / 3 })
+        },
+        label = "mealsAnimatedCount"
+    ) { displayedValue ->
+        Text(
+            text = displayedValue,
+            color = color,
+            style = style,
+            fontWeight = fontWeight,
+            maxLines = 1
+        )
     }
 }
