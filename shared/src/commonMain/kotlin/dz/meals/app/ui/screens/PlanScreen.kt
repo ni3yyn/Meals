@@ -5,7 +5,6 @@ import androidx.compose.ui.text.style.TextAlign
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsIconButton
 import dz.meals.app.ui.components.MealsTextButton
-import dz.meals.app.ui.theme.ForestDark
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -61,7 +60,7 @@ import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.ui.theme.Border
-import dz.meals.app.ui.theme.Forest
+import dz.meals.app.ui.theme.TextAccent
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.shared.format.formatArabicDate
@@ -116,7 +115,7 @@ fun PlanScreen(
                         modifier = Modifier
                             .size(width = 4.dp, height = 28.dp)
                             .clip(CircleShape)
-                            .background(Forest)
+                            .background(TextAccent)
                     )
                     Text(
                         "خطة الأسبوع",
@@ -301,7 +300,7 @@ fun PlanScreen(
                         modifier = Modifier
                             .size(width = 4.dp, height = 25.dp)
                             .clip(CircleShape)
-                            .background(Forest)
+                            .background(TextAccent)
                     )
                     Text(
                         "الوجبات اليومية",
@@ -339,7 +338,7 @@ fun PlanScreen(
                     .fillMaxWidth()
                     .bringIntoViewRequester(bringIntoViewRequester),
                 containerColor = Paper,
-                borderColor = if (isExpanded) Forest else Border,
+                borderColor = if (isExpanded) TextAccent else Border,
                 contentPadding = 0.dp
             ) {
                 Row(
@@ -526,7 +525,7 @@ private fun SlotRow(
             ) {
                 Text(
                     title,
-                    color = Forest,
+                    color = TextAccent,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -568,7 +567,7 @@ private fun SlotRow(
                     )
                     Text(
                         "تم الطهي",
-                        color = Forest,
+                        color = TextAccent,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -607,7 +606,7 @@ private fun SlotRow(
                     modifier = Modifier.size(44.dp),
                     size = 44.dp
                 ) {
-                    Text("−", color = Forest, style = MaterialTheme.typography.headlineSmall)
+                    Text("−", color = TextAccent, style = MaterialTheme.typography.headlineSmall)
                 }
                 MealsIconButton(
                     onClick = { onAdjustServings(1) },
@@ -615,7 +614,7 @@ private fun SlotRow(
                     modifier = Modifier.size(44.dp),
                     size = 44.dp
                 ) {
-                    Text("+", color = Forest, style = MaterialTheme.typography.headlineSmall)
+                    Text("+", color = TextAccent, style = MaterialTheme.typography.headlineSmall)
                 }
             }
 
