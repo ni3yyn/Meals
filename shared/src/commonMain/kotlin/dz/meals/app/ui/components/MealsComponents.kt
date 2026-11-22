@@ -362,7 +362,6 @@ fun MealsPrimaryButton(
                     name = icon,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = ForestDark
                 )
                 Spacer(Modifier.size(8.dp))
             }
@@ -378,7 +377,6 @@ fun MealsPrimaryButton(
                     MealsIconName.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = ForestDark
                 )
             }
         }
@@ -410,7 +408,6 @@ fun MealsSecondaryButton(
                     name = icon,
                     contentDescription = null,
                     modifier = Modifier.size(17.dp),
-                    tint = ForestDark
                 )
                 Spacer(Modifier.size(7.dp))
             }
@@ -597,7 +594,6 @@ fun MealsSearchBar(
                 name = MealsIconName.Search,
                 contentDescription = null,
                 modifier = Modifier.size(21.dp),
-                tint = ForestDark
             )
             BasicTextField(
                 value = value,
@@ -964,7 +960,6 @@ fun MealsDialog(
                                 MealsIconName.Close,
                                 contentDescription = "إغلاق",
                                 modifier = Modifier.size(20.dp),
-                                tint = MutedInk
                             )
                         }
                     }
