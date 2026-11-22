@@ -1295,7 +1295,8 @@ data class MealsNavigationItem(
 private class MealsNavigationRimShape(
     private val bumpCenter: Dp,
     private val bumpWidth: Dp,
-    private val bumpHeight: Dp = 7.dp
+    private val rise: Dp = 6.5.dp,
+    private val topEdgeInset: Dp = 8.dp
 ) : Shape {
     override fun createOutline(
         size: androidx.compose.ui.geometry.Size,
@@ -1304,56 +1305,64 @@ private class MealsNavigationRimShape(
     ): Outline {
         val width = size.width
         val height = size.height
-        val radius = with(density) { 27.dp.toPx() }
+        val radius = with(density) { 26.dp.toPx() }
             .coerceAtMost(minOf(width / 2f, height / 2f))
-        val topInset = with(density) { bumpHeight.toPx() }
-            .coerceIn(0f, height * 0.22f)
-        val center = with(density) { bumpCenter.toPx() }.coerceIn(radius, width - radius)
-        val minimumCrestWidth = with(density) { 24.dp.toPx() }
+        val edgeY = with(density) { topEdgeInset.toPx() }
+            .coerceIn(1.dp.toPx(), height * 0.2f)
+        val crestY = (edgeY - with(density) { rise.toPx() })
+            .coerceAtLeast(1.dp.toPx())
+        val center = with(density) { bumpCenter.toPx() }
+            .coerceIn(radius, width - radius)
         val crestWidth = with(density) { bumpWidth.toPx() }
-            .coerceIn(
-                minimumCrestWidth.coerceAtMost(width - radius * 2f),
-                (width - radius * 2f).coerceAtLeast(minimumCrestWidth)
-            )
-        val left = (center - crestWidth / 2f).coerceAtLeast(radius)
-        val right = (center + crestWidth / 2f).coerceAtMost(width - radius)
+            .coerceAtMost((width - radius * 2f).coerceAtLeast(0f))
+        val left = (center - crestWidth / 2f).coerceIn(radius, width - radius)
+        val right = (center + crestWidth / 2f).coerceIn(radius, width - radius)
+        val cornerControl = radius * 0.55228475f
 
+        // A broad, symmetrical cubic crest with horizontal tangents at both
+        // shoulders and at its crown. This keeps the contour smooth while it
+        // travels, without the tight S-curves that caused the previous shape
+        // to pinch and distort near the active tab.
+        val shoulderControl = crestWidth * 0.18f
         val path = Path().apply {
-            moveTo(radius, topInset)
-            lineTo(left, topInset)
+            moveTo(radius, edgeY)
+            lineTo(left, edgeY)
             cubicTo(
-                left + crestWidth * 0.24f, topInset,
-                center - crestWidth * 0.24f, 0f,
-                center, 0f
+                left + shoulderControl, edgeY,
+                center - shoulderControl, crestY,
+                center, crestY
             )
             cubicTo(
-                center + crestWidth * 0.24f, 0f,
-                right - crestWidth * 0.24f, topInset,
-                right, topInset
+                center + shoulderControl, crestY,
+                right - shoulderControl, edgeY,
+                right, edgeY
             )
-            lineTo(width - radius, topInset)
+            lineTo(width - radius, edgeY)
+
+            // Four quarter-round corners use the standard cubic circle
+            // approximation so the perimeter remains continuous and smooth.
             cubicTo(
-                width - radius * 0.448f, topInset,
-                width, topInset + radius * 0.448f,
-                width, topInset + radius
+                width - radius + cornerControl, edgeY,
+                width, edgeY + radius - cornerControl,
+                width, edgeY + radius
             )
             lineTo(width, height - radius)
             cubicTo(
-                width, height - radius * 0.448f,
-                width - radius * 0.448f, height,
+                width, height - radius + cornerControl,
+                width - radius + cornerControl, height,
                 width - radius, height
             )
             lineTo(radius, height)
             cubicTo(
-                radius * 0.448f, height,
-                0f, height - radius * 0.448f,
+                radius - cornerControl, height,
+                0f, height - radius + cornerControl,
                 0f, height - radius
             )
-            lineTo(0f, topInset + radius)
+            lineTo(0f, edgeY + radius)
             cubicTo(
-                0f, topInset + radius * 0.448f,
-                radius * 0.448f, topInset,
-                radius, topInset
+                0f, edgeY + radius - cornerControl,
+                radius - cornerControl, edgeY,
+                radius, edgeY
             )
             close()
         }
@@ -1405,10 +1414,12 @@ fun MealsFrostedBottomBar(
             animationSpec = spring(dampingRatio = 0.78f, stiffness = 430f),
             label = "mealsNavGlassBumpPosition"
         )
-        val navigationShape = MealsNavigationRimShape(
-            bumpCenter = bumpOffsetX + bumpWidth / 2,
-            bumpWidth = bumpWidth
-        )
+        val navigationShape = remember(bumpOffsetX, bumpWidth) {
+            MealsNavigationRimShape(
+                bumpCenter = bumpOffsetX + bumpWidth / 2,
+                bumpWidth = bumpWidth
+            )
+        }
 
         MealsLiquidGlassFrame(
             modifier = Modifier.fillMaxWidth().height(72.dp),
@@ -1425,7 +1436,7 @@ fun MealsFrostedBottomBar(
             Row(
                 modifier = Modifier.fillMaxWidth().height(72.dp)
                     .padding(horizontal = 7.dp)
-                    .padding(top = 8.dp, bottom = 5.dp),
+                    .padding(top = 12.dp, bottom = 5.dp),
                 horizontalArrangement = Arrangement.spacedBy(tabGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
