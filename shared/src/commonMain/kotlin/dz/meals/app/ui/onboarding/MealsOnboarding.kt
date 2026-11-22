@@ -387,7 +387,8 @@ fun MealsOnboarding(
                                         fontWeight = FontWeight.ExtraBold
                                     )
                                     Text("دقيقة", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-                                }                                Slider(
+                                }
+                                Slider(
                                     value = maxMinutes.toFloat(),
                                     onValueChange = { maxMinutes = ((it / 5f).roundToInt() * 5).coerceIn(10, 240) },
                                     valueRange = 10f..240f,
@@ -586,7 +587,8 @@ private fun StepLayout(
     subtitle: String,
     art: MealsArt,
     satellites: List<Satellite>,
-    artCount: Int = 3,    panel: @Composable ColumnScope.() -> Unit
+    artCount: Int = 3,
+    panel: @Composable ColumnScope.() -> Unit
 ) {
     val away = abs(pageOffset).coerceIn(0f, 1f)
     BoxWithConstraints(Modifier.fillMaxSize()) {
