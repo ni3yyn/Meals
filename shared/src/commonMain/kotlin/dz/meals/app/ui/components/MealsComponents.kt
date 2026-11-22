@@ -686,9 +686,9 @@ fun MealsCheckbox(
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxEdge"
     )
-    val checkScale by animateFloatAsState(
-        targetValue = if (checked) 1f else 0.72f,
-        animationSpec = tween(durationMillis = 180),
+    val checkProgress by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = tween(durationMillis = 210),
         label = "mealsCheckboxCheck"
     )
 
@@ -730,28 +730,43 @@ fun MealsCheckbox(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            if (checked) {
+            if (checked || checkProgress > 0.001f) {
                 Canvas(
-                    modifier = Modifier.size(14.dp).graphicsLayer {
-                        scaleX = checkScale
-                        scaleY = checkScale
-                        alpha = checkScale
-                    }
+                    modifier = Modifier.size(14.dp).graphicsLayer { alpha = checkProgress }
                 ) {
-                    val mark = Path().apply {
-                        moveTo(size.width * 0.16f, size.height * 0.52f)
-                        lineTo(size.width * 0.40f, size.height * 0.76f)
-                        lineTo(size.width * 0.86f, size.height * 0.24f)
-                    }
-                    drawPath(
-                        path = mark,
-                        color = Color.White,
-                        style = Stroke(
-                            width = size.minDimension * 0.15f,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
+                    // Draw the check in two strokes so completion feels like
+                    // a quick hand-drawn confirmation, not a pop-in glyph.
+                    val start = androidx.compose.ui.geometry.Offset(size.width * 0.16f, size.height * 0.52f)
+                    val corner = androidx.compose.ui.geometry.Offset(size.width * 0.40f, size.height * 0.76f)
+                    val end = androidx.compose.ui.geometry.Offset(size.width * 0.86f, size.height * 0.24f)
+                    val firstLength = 0.38f
+                    val strokeWidth = size.minDimension * 0.15f
+                    if (checkProgress > 0f) {
+                        val firstProgress = (checkProgress / firstLength).coerceIn(0f, 1f)
+                        drawLine(
+                            Color.White,
+                            start,
+                            androidx.compose.ui.geometry.Offset(
+                                start.x + (corner.x - start.x) * firstProgress,
+                                start.y + (corner.y - start.y) * firstProgress
+                            ),
+                            strokeWidth,
+                            cap = StrokeCap.Round
                         )
-                    )
+                    }
+                    if (checkProgress > firstLength) {
+                        val secondProgress = ((checkProgress - firstLength) / (1f - firstLength)).coerceIn(0f, 1f)
+                        drawLine(
+                            Color.White,
+                            corner,
+                            androidx.compose.ui.geometry.Offset(
+                                corner.x + (end.x - corner.x) * secondProgress,
+                                corner.y + (end.y - corner.y) * secondProgress
+                            ),
+                            strokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
             }
         }
