@@ -93,7 +93,6 @@ import dz.meals.app.ui.theme.Cream
 import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
-import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.ui.theme.SoftOrange
 import dz.meals.app.ui.theme.TextAccent
 import dz.meals.app.ui.theme.WarmSurface
@@ -917,7 +916,7 @@ fun MealsSectionHeader(
 fun MealsIllustrationBadge(
     icon: MealsIconName,
     modifier: Modifier = Modifier,
-    background: Color = SoftGreen,
+    background: Color = WarmSurface,
     size: Dp = 54.dp
 ) {
     MealsLiquidGlassFrame(
