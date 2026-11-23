@@ -224,7 +224,6 @@ internal object MealsEnglishTranslations {
     "أقصى وقت للطبخ" to "Maximum cooking time",
     "دقيقة" to "minutes",
     "هامش أمان الميزانية" to "Budget safety margin",
-    "نحتفظ بنسبة $buffer% كاحتياط حتى لا تتجاوزي ميزانيتك." to "We keep a $buffer% buffer so you don't go over budget.",
     "مكونات تفضلين تقليلها؟" to "Ingredients you'd like to limit?",
     "اختياري، وهي تفضيلات مرنة وليست قيود حساسية." to "Optional. These are flexible preferences, not allergy restrictions.",
     "تساعدنا على تنظيم قائمة التسوق. لا نستخدم موقعك تلقائياً." to "This helps us organize your shopping list. We don't access your location automatically.",
