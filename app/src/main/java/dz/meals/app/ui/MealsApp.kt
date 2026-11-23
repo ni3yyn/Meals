@@ -94,6 +94,8 @@ import dz.meals.app.ui.screens.PlanScreen
 import dz.meals.app.ui.screens.RecipesScreen
 import dz.meals.app.ui.screens.ShoppingScreen
 import dz.meals.app.ui.theme.Cream
+import dz.meals.app.ui.theme.LocalMealsLocaleTag
+import dz.meals.app.ui.theme.mealsText
 import dz.meals.app.ui.theme.DEFAULT_MEALS_LOCALE_TAG
 import dz.meals.app.ui.theme.mealsLayoutDirection
 import kotlinx.coroutines.flow.map
@@ -569,6 +571,10 @@ private fun MealsAppContent(
 
         if (showSettings) {
             SettingsDialog(
+                appLanguage = appLanguage,
+                onLanguageSelected = { languageTag ->
+                    scope.launch { preferencesStore.setAppLanguage(languageTag) }
+                },
                 onDismiss = { showSettings = false },
                 onOpenHouseholdSettings = {
                     showSettings = false
@@ -709,6 +715,8 @@ private fun MealsAppContent(
 
 @Composable
 private fun SettingsDialog(
+    appLanguage: String,
+    onLanguageSelected: (String) -> Unit,
     onDismiss: () -> Unit,
     onOpenHouseholdSettings: () -> Unit,
     onRestartOnboarding: () -> Unit
@@ -727,12 +735,24 @@ private fun SettingsDialog(
         ) {
             SettingsSectionHeading("التفضيلات")
 
-            SettingsPreferenceRow(
-                title = "لغة التطبيق",
-                description = "لغة الواجهة المعتمدة حاليًا",
-                value = "العربية",
-                glyph = "ع",
-                showSelector = true
+            Text(
+                text = mealsText("لغة التطبيق"),
+                color = dz.meals.app.ui.theme.Ink,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Text(
+                text = mealsText("لغة الواجهة المعتمدة حاليًا"),
+                color = dz.meals.app.ui.theme.MutedInk,
+                style = MaterialTheme.typography.bodySmall
+            )
+            MealsSubtabsIndicator(
+                items = listOf("العربية", "English"),
+                selected = if (appLanguage.startsWith("en", ignoreCase = true)) "English" else "العربية",
+                onSelect = { selected ->
+                    onLanguageSelected(if (selected == "English") "en" else "ar-DZ")
+                },
+                modifier = Modifier.fillMaxWidth()
             )
             SettingsHairline()
             SettingsPreferenceRow(
