@@ -729,7 +729,8 @@ private fun SettingsDialog(
                 title = "لغة التطبيق",
                 description = "لغة الواجهة المعتمدة حاليًا",
                 value = "العربية",
-                glyph = "ع"
+                glyph = "ع",
+                showSelector = true
             )
             SettingsHairline()
             SettingsPreferenceRow(
@@ -797,7 +798,8 @@ private fun SettingsPreferenceRow(
     value: String,
     glyph: String? = null,
     icon: MealsIconName? = null,
-    showSwitch: Boolean = false
+    showSwitch: Boolean = false,
+    showSelector: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -846,8 +848,8 @@ private fun SettingsPreferenceRow(
             horizontalAlignment = androidx.compose.ui.Alignment.End,
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
         ) {
-            if (showSwitch) {
-                Row(
+            when {
+                showSwitch -> Row(
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
                 ) {
@@ -858,8 +860,26 @@ private fun SettingsPreferenceRow(
                     )
                     SettingsDisabledSwitch()
                 }
-            } else {
-                Text(
+                showSelector -> Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(dz.meals.app.ui.theme.WarmSurface)
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        value,
+                        color = dz.meals.app.ui.theme.BodyInk,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    MealsIcon(
+                        MealsIconName.ChevronRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = 90f }
+                    )
+                }
+                else -> Text(
                     value,
                     color = dz.meals.app.ui.theme.BodyInk,
                     style = MaterialTheme.typography.labelMedium
