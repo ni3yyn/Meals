@@ -933,7 +933,7 @@ private fun ShoppingItemRow(
                     },
                     onDragStopped = {
                         isDragging = false
-                        isActionRevealed = dragOffset * revealSign > actionWidthPx * 0.42f
+                        isActionRevealed = dragOffset * revealSign > actionWidthPx * 0.30f
                         dragOffset = 0f
                     }
                 )
