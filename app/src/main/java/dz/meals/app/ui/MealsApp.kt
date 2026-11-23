@@ -609,7 +609,11 @@ private fun MealsAppContent(
             SettingsDialog(
                 appLanguage = appLanguage,
                 onLanguageSelected = { languageTag ->
-                    requestLanguageChange(languageTag)
+                    val target = normalizeMealsLocaleTag(languageTag)
+                    preferencesStore.setAppLanguage(target)
+                    preferencesStore.preferences.first {
+                        normalizeMealsLocaleTag(it.appLanguage) == target
+                    }
                 },
                 onDismiss = { showSettings = false },
                 onOpenHouseholdSettings = {
@@ -786,12 +790,12 @@ private fun LanguageTransitionOverlay(
         )
 
         try {
-            // Persist only after the old-language UI is completely hidden.
+            // Persist only after the old-language UI is fully covered.
             onCommitLanguage(targetLanguage)
             snapshotFlow { activeLanguageState.value }
                 .first { normalizeMealsLocaleTag(it) == normalizeMealsLocaleTag(targetLanguage) }
 
-            // Allow direction, text shaping and screen measurements to settle behind the cover.
+            // Let direction, text shaping and screen measurements settle behind the glass.
             withFrameNanos { }
             withFrameNanos { }
             delay(260)
@@ -816,11 +820,15 @@ private fun LanguageTransitionOverlay(
         isTargetLanguageActive -> "تم تغيير اللغة"
         else -> "جارٍ تغيير اللغة..."
     }
+    val supportingMessage = when {
+        commitFailed -> "حاولي مجددًا من إعدادات التطبيق."
+        isTargetLanguageActive -> "أصبحت Midati جاهزة بلغتك المفضلة."
+        else -> "نعيد ترتيب الواجهة واتجاهها لتناسب لغتك."
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // Consume taps and keep the app inert while the branded surface enters and exits.
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -843,54 +851,67 @@ private fun LanguageTransitionOverlay(
             ),
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
-        Column(
-            modifier = Modifier.graphicsLayer {
-                alpha = coverage.value.coerceIn(0f, 1f)
-                val breathe = 0.965f + (0.035f * coverage.value)
-                scaleX = breathe
-                scaleY = breathe
-            },
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(22.dp)
-        ) {
-            MidatiBrandLogo(iconSize = 82.dp, showWordmark = true)
-
-            CircularProgressIndicator(
-                modifier = Modifier.size(27.dp),
-                color = dz.meals.app.ui.theme.ForestDark,
-                trackColor = dz.meals.app.ui.theme.Leaf.copy(alpha = 0.32f),
-                strokeWidth = 2.4.dp
-            )
-
-            Crossfade(
-                targetState = statusMessage,
-                animationSpec = tween(220, easing = FastOutSlowInEasing),
-                label = "midatiLanguageTransitionStatus"
-            ) { message ->
-                Text(
-                    text = message,
-                    color = dz.meals.app.ui.theme.BodyInk,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                )
-            }
-        }
+        MealsLiquidGlassLoadingExperience(
+            title = statusMessage,
+            message = supportingMessage,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    alpha = coverage.value.coerceIn(0f, 1f)
+                    val breathe = 0.985f + (0.015f * coverage.value)
+                    scaleX = breathe
+                    scaleY = breathe
+                }
+        )
     }
 }
 
 @Composable
 private fun SettingsDialog(
     appLanguage: String,
-    onLanguageSelected: (String) -> Unit,
+    onLanguageSelected: suspend (String) -> Unit,
     onDismiss: () -> Unit,
     onOpenHouseholdSettings: () -> Unit,
     onRestartOnboarding: () -> Unit
 ) {
     val dismissSheet = mealsSheetDismissAction()
+    var languageChangeTarget by remember { mutableStateOf<String?>(null) }
+    var languageChangeError by remember { mutableStateOf<String?>(null) }
+    val isLanguageChanging = languageChangeTarget != null
+
+    LaunchedEffect(languageChangeTarget) {
+        val target = languageChangeTarget ?: return@LaunchedEffect
+        try {
+            withFrameNanos { }
+            delay(220)
+            onLanguageSelected(target)
+
+            // Wait for the new locale to be composed, then let the full glass surface breathe.
+            withFrameNanos { }
+            withFrameNanos { }
+            delay(420)
+            dismissSheet { onDismiss() }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            languageChangeError = "تعذر تغيير اللغة. حاولي مرة أخرى."
+            languageChangeTarget = null
+        }
+    }
+
     MealsBottomSheet(
         titleText = "الإعدادات",
         subtitle = "إعدادات تجربتك على Midati",
-        onDismissRequest = onDismiss
+        onDismissRequest = { if (!isLanguageChanging) onDismiss() },
+        isLoading = isLanguageChanging,
+        expandToFullScreenWhileLoading = true,
+        loadingContent = {
+            MealsLiquidGlassLoadingExperience(
+                title = "جارٍ تغيير اللغة",
+                message = "نجهّز Midati بلغتك الجديدة.",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     ) {
         Column(
             modifier = Modifier
@@ -899,6 +920,15 @@ private fun SettingsDialog(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(7.dp)
         ) {
+            languageChangeError?.let { error ->
+                Text(
+                    text = mealsText(error),
+                    color = dz.meals.app.ui.theme.TextAccent,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 3.dp)
+                )
+            }
+
             SettingsSectionHeading("التفضيلات")
 
             Text(
@@ -917,11 +947,12 @@ private fun SettingsDialog(
                 selected = if (appLanguage.startsWith("en", ignoreCase = true)) "English" else "العربية",
                 onSelect = { selected ->
                     val targetLanguage = if (selected == "English") "en" else "ar-DZ"
-                    if (normalizeMealsLocaleTag(targetLanguage) != normalizeMealsLocaleTag(appLanguage)) {
-                        dismissSheet {
-                            onDismiss()
-                            onLanguageSelected(targetLanguage)
-                        }
+                    if (
+                        languageChangeTarget == null &&
+                        normalizeMealsLocaleTag(targetLanguage) != normalizeMealsLocaleTag(appLanguage)
+                    ) {
+                        languageChangeError = null
+                        languageChangeTarget = normalizeMealsLocaleTag(targetLanguage)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
