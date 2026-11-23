@@ -1938,8 +1938,6 @@ fun MealsBottomSheet(
                         fixedSheetHeight != null -> Modifier.height(fixedSheetHeight)
                         else -> Modifier.wrapContentHeight()
                     }
-                    val maxBodyHeight = ((fixedSheetHeight ?: maxSheetHeight) - 164.dp)
-                        .coerceAtLeast(120.dp)
 
                     MealsModalSurface(
                         modifier = modifier
@@ -2052,7 +2050,6 @@ fun MealsBottomSheet(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .weight(1f, fill = true)
-                                                .heightIn(max = maxBodyHeight)
                                                 .verticalScroll(rememberScrollState()),
                                             verticalArrangement = Arrangement.spacedBy(14.dp)
                                         ) {
