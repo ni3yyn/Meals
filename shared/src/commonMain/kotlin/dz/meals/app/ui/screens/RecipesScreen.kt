@@ -936,7 +936,6 @@ fun RecipesScreen(
                             if (detail.durationMinutes > 0) {
                                 add("الإجمالي" to formatRecipeTime(detail.durationMinutes))
                             }
-                            add("الحصص" to detail.baseServings.toString())
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
