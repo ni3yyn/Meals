@@ -55,6 +55,10 @@ kotlin {
             api(libs.haze.core)
             implementation(libs.haze.glass)
             implementation(libs.haze.blur)
+            // Remote recipe photography is loaded on demand and cached by Coil.
+            implementation("io.coil-kt.coil3:coil-compose:3.6.3")
+            implementation("io.coil-kt.coil3:coil-network-ktor3:3.6.3")
+            implementation("io.ktor:ktor-client-engine-defaults:3.6.1")
         }
     }
 }

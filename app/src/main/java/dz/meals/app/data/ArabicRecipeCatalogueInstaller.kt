@@ -31,6 +31,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
     suspend fun isInstalled(): Boolean = withContext(Dispatchers.IO) {
         preferences.getString(INSTALLED_REVISION_KEY, null) == ArabicRecipeCatalogueDownloader.REVISION &&
+            preferences.getInt(METADATA_MAPPING_VERSION_KEY, 0) == METADATA_MAPPING_VERSION &&
             dao.countArabicCatalogueRecipes() == ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
     }
 
@@ -114,6 +115,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
         preferences.edit()
             .putString(INSTALLED_REVISION_KEY, ArabicRecipeCatalogueDownloader.REVISION)
+            .putInt(METADATA_MAPPING_VERSION_KEY, METADATA_MAPPING_VERSION)
             .apply()
         withContext(Dispatchers.Main.immediate) {
             onProgress(importedCount, expectedCount)
@@ -376,7 +378,9 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             proteinGramsPerServing = proteinGramsPerServing,
             carbsGramsPerServing = carbsGramsPerServing,
             fatGramsPerServing = fatGramsPerServing,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            prepMinutes = prepMinutes,
+            cookMinutes = cookMinutes
         )
         val recipeSteps = steps.mapIndexed { index, step ->
             RecipeStepEntity(recipeId, index + 1, step, step)
@@ -522,6 +526,8 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         const val RECIPE_ID_PREFIX = "orc-"
         const val FOCUS_RECIPE_ID_PREFIX = "focus-"
         const val INGREDIENT_ID_PREFIX = "orc-ing-"
+        const val METADATA_MAPPING_VERSION = 2
+        const val METADATA_MAPPING_VERSION_KEY = "metadata_mapping_version"
         private const val DEFAULT_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
         private const val BATCH_SIZE = 80
         private const val PREFERENCES_NAME = "arabic_recipe_catalogue"

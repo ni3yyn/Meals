@@ -34,7 +34,16 @@ data class MealRecipe(
     val stepsAr: List<String>,
     val stepsFr: List<String>,
     val attribution: RecipeAttribution? = null,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val dietary: List<String> = emptyList(),
+    val prepMinutes: Int? = null,
+    val cookMinutes: Int? = null,
+    val caloriesPerServing: Double? = null,
+    val proteinGramsPerServing: Double? = null,
+    val carbsGramsPerServing: Double? = null,
+    val fatGramsPerServing: Double? = null,
+    val imageUrl: String = ""
 )
 
 data class RecipeAttribution(

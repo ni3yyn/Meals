@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.LayoutDirection
@@ -57,6 +60,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
+import coil3.compose.AsyncImage
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsFilterChips
@@ -461,7 +465,137 @@ fun RecipesScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
+                        item {
+                            AsyncImage(
+                                model = detail.imageUrl,
+                                contentDescription = detail.nameAr,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(188.dp)
+                                    .clip(RoundedCornerShape(17.dp))
+                            )
+                        }
+                    }
                     item { Text(detail.descriptionAr, color = MutedInk) }
+                    item {
+                        val facts = buildList {
+                            detail.prepMinutes?.let { add("التحضير" to formatRecipeTime(it)) }
+                            detail.cookMinutes?.let { add("الطهي" to formatRecipeTime(it)) }
+                            if (detail.durationMinutes > 0) {
+                                add("الإجمالي" to formatRecipeTime(detail.durationMinutes))
+                            }
+                            add("الحصص" to detail.baseServings.toString())
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            facts.forEachIndexed { index, fact ->
+                                if (index > 0) {
+                                    Spacer(
+                                        Modifier
+                                            .width(1.dp)
+                                            .height(30.dp)
+                                            .background(Border.copy(alpha = 0.55f))
+                                    )
+                                }
+                                RecipeDetailFact(
+                                    label = fact.first,
+                                    value = fact.second,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                    if (detail.region.isNotBlank()) {
+                        item {
+                            Text(
+                                "المطبخ: " + detail.region,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.categories.isNotEmpty()) {
+                        item {
+                            Text(
+                                "الفئات: " + detail.categories.distinct().joinToString("، "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.dietary.isNotEmpty()) {
+                        item {
+                            Text(
+                                "النمط الغذائي: " + detail.dietary.distinct().joinToString("، "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.category.isNotBlank()) {
+                        item {
+                            Text(
+                                "التصنيف الرئيسي: " + detail.category,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.difficulty.isNotBlank() && detail.difficulty != "غير محدد") {
+                        item {
+                            Text(
+                                "مستوى الصعوبة: " + detail.difficulty,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (
+                        detail.caloriesPerServing != null ||
+                        detail.proteinGramsPerServing != null ||
+                        detail.carbsGramsPerServing != null ||
+                        detail.fatGramsPerServing != null
+                    ) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                                Text(
+                                    "القيمة الغذائية لكل حصة",
+                                    color = Ink,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                val nutritionFacts = listOf(
+                                    "السعرات" to formatNutritionValue(detail.caloriesPerServing, "ك.س"),
+                                    "بروتين" to formatNutritionValue(detail.proteinGramsPerServing, "غ"),
+                                    "كربوهيدرات" to formatNutritionValue(detail.carbsGramsPerServing, "غ"),
+                                    "دهون" to formatNutritionValue(detail.fatGramsPerServing, "غ")
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    nutritionFacts.forEachIndexed { index, fact ->
+                                        if (index > 0) {
+                                            Spacer(
+                                                Modifier
+                                                    .width(1.dp)
+                                                    .height(32.dp)
+                                                    .background(Border.copy(alpha = 0.45f))
+                                            )
+                                        }
+                                        RecipeDetailFact(
+                                            label = fact.first,
+                                            value = fact.second,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                     item { Text("المكونات", fontWeight = FontWeight.Bold) }
                     items(detail.ingredients) { ingredient ->
                         val master = ingredientNames[ingredient.ingredientId]
@@ -488,7 +622,7 @@ fun RecipesScreen(
                     if (detail.tags.isNotEmpty()) {
                         item {
                             Text(
-                                "التصنيفات: " + detail.tags.joinToString("، "),
+                                "وسوم الوصفة: " + detail.tags.distinct().joinToString("، "),
                                 color = MutedInk,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -557,14 +691,43 @@ fun RecipesScreen(
                                         }
                                     )
                                 }
+                                if (attribution.sourceLicense.isNotBlank()) {
+                                    Text(
+                                        "ترخيص المصدر: " + attribution.sourceLicense,
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
                                 Text(
                                     attribution.license,
                                     color = MutedInk,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.clickable {
-                                        runCatching { uriHandler.openUri(attribution.licenseUrl) }
+                                        if (attribution.licenseUrl.isNotBlank()) {
+                                            runCatching { uriHandler.openUri(attribution.licenseUrl) }
+                                        }
                                     }
                                 )
+                                if (attribution.revisionUrl.isNotBlank()) {
+                                    Text(
+                                        "مراجعة الوصفة الأصلية",
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.clickable {
+                                            runCatching { uriHandler.openUri(attribution.revisionUrl) }
+                                        }
+                                    )
+                                }
+                                if (attribution.historyUrl.isNotBlank()) {
+                                    Text(
+                                        "سجل تعديلات المصدر",
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.clickable {
+                                            runCatching { uriHandler.openUri(attribution.historyUrl) }
+                                        }
+                                    )
+                                }
                                 if (attribution.changes.isNotBlank()) {
                                     Text(
                                         attribution.changes,
@@ -1016,6 +1179,45 @@ fun RecipesScreen(
         )
     }
 }
+
+@Composable
+private fun RecipeDetailFact(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 3.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            label,
+            color = MutedInk,
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Text(
+            value,
+            color = Ink,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 1
+        )
+    }
+}
+
+private fun formatRecipeTime(minutes: Int): String {
+    val safeMinutes = minutes.coerceAtLeast(0)
+    if (safeMinutes < 60) return "$safeMinutes د"
+    val hours = safeMinutes / 60
+    val remainder = safeMinutes % 60
+    return if (remainder == 0) "$hours س" else "$hours س و $remainder د"
+}
+
+private fun formatNutritionValue(value: Double?, unit: String): String =
+    value?.let { it.prettyQuantity() + " " + unit } ?: "—"
 
 private fun Double.prettyQuantity(): String {
     if (this % 1.0 == 0.0) return toLong().toString()

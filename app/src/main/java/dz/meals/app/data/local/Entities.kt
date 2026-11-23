@@ -36,7 +36,9 @@ data class RecipeEntity(
     val proteinGramsPerServing: Double? = null,
     val carbsGramsPerServing: Double? = null,
     val fatGramsPerServing: Double? = null,
-    @ColumnInfo(defaultValue = "''") val imageUrl: String = ""
+    @ColumnInfo(defaultValue = "''") val imageUrl: String = "",
+    val prepMinutes: Int? = null,
+    val cookMinutes: Int? = null
 )
 
 @Entity(

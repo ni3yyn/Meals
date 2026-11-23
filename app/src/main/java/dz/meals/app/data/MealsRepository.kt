@@ -627,9 +627,14 @@ class MealsRepository(context: Context) {
     }
 
     private suspend fun hasInstalledArabicRecipeCatalogue(): Boolean =
-        appContext.getSharedPreferences("arabic_recipe_catalogue", Context.MODE_PRIVATE)
-            .getString("installed_revision", null) == ArabicRecipeCatalogueDownloader.REVISION &&
-            dao.countArabicCatalogueRecipes() == ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
+        appContext.getSharedPreferences("arabic_recipe_catalogue", Context.MODE_PRIVATE).let { preferences ->
+            preferences.getString("installed_revision", null) == ArabicRecipeCatalogueDownloader.REVISION &&
+                preferences.getInt(
+                    ArabicRecipeCatalogueInstaller.METADATA_MAPPING_VERSION_KEY,
+                    0
+                ) == ArabicRecipeCatalogueInstaller.METADATA_MAPPING_VERSION &&
+                dao.countArabicCatalogueRecipes() == ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
+        }
 
     private suspend fun loadRecipesFromDatabase(): List<MealRecipe> {
         val ingredients = dao.getRecipeIngredients().groupBy { it.recipeId }
@@ -674,7 +679,16 @@ class MealsRepository(context: Context) {
                             changes = it.changes
                         )
                     },
-                    tags = recipe.tagsCsv.split("|").filter { it.isNotBlank() }
+                    tags = recipe.tagsCsv.split("|").filter { it.isNotBlank() },
+                    categories = recipe.categoriesCsv.split("|").filter { it.isNotBlank() },
+                    dietary = recipe.dietaryCsv.split("|").filter { it.isNotBlank() },
+                    prepMinutes = recipe.prepMinutes,
+                    cookMinutes = recipe.cookMinutes,
+                    caloriesPerServing = recipe.caloriesPerServing,
+                    proteinGramsPerServing = recipe.proteinGramsPerServing,
+                    carbsGramsPerServing = recipe.carbsGramsPerServing,
+                    fatGramsPerServing = recipe.fatGramsPerServing,
+                    imageUrl = recipe.imageUrl
                 )
             }
     }
