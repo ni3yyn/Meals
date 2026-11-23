@@ -292,6 +292,9 @@ private fun MealsAppContent(
         catalogueError = null
         catalogueJob = scope.launch {
             try {
+                // Complete the existing seed setup before importing extra rows.
+                // This also protects restored launches that reopen directly on Recipes.
+                repository.ensureInitialized()
                 if (arabicCatalogueInstaller.isInstalled()) {
                     cataloguePhase = RecipeCataloguePhase.READY
                     return@launch
