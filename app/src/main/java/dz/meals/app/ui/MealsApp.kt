@@ -217,7 +217,7 @@ private fun MealsAppContent(
 
     BackHandler(
         enabled = preferencesLoaded && preferences.hasCompletedSetup &&
-            !showSettings && !showUpdateDialog && !showExitConfirmation,
+            !showSettings && !showHouseholdSettings && !showUpdateDialog && !showExitConfirmation,
         onBack = { showExitConfirmation = true }
     )
 
