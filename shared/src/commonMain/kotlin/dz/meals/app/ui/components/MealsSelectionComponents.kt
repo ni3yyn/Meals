@@ -13,7 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,8 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,12 +50,21 @@ private val SelectionShape = RoundedCornerShape(15.dp)
 private fun MealsSelectionGlass(
     modifier: Modifier = Modifier,
     selected: Boolean,
+    prominent: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current
     val glassBackdrop = LocalMealsCardGlassBackdrop.current ?: LocalMealsScreenGlassBackdrop.current
-    val face = if (selected) {
-        Brush.verticalGradient(
+    val face = when {
+        prominent -> Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = 0.86f),
+                0.18f to Color(0xFFFFFEFC).copy(alpha = 0.78f),
+                0.62f to Color(0xFFFFFCF7).copy(alpha = 0.68f),
+                1f to Color(0xFFF1EBE3).copy(alpha = 0.62f)
+            )
+        )
+        selected -> Brush.verticalGradient(
             listOf(
                 Color.White.copy(alpha = 0.48f),
                 Color(0xFFFFFEFC).copy(alpha = 0.40f),
@@ -65,11 +72,18 @@ private fun MealsSelectionGlass(
                 Color.White.copy(alpha = 0.40f)
             )
         )
-    } else {
-        MealsLiquidGlass.controlFace()
+        else -> MealsLiquidGlass.controlFace()
     }
-    val rim = if (selected) {
-        Brush.verticalGradient(
+    val rim = when {
+        prominent -> Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = 1f),
+                0.20f to Color.White.copy(alpha = 0.94f),
+                0.56f to Color.White.copy(alpha = 0.66f),
+                1f to Color.White.copy(alpha = 0.98f)
+            )
+        )
+        selected -> Brush.verticalGradient(
             listOf(
                 Color.White.copy(alpha = 0.98f),
                 Color.White.copy(alpha = 0.76f),
@@ -77,18 +91,21 @@ private fun MealsSelectionGlass(
                 Color.White.copy(alpha = 0.88f)
             )
         )
-    } else {
-        MealsLiquidGlass.controlRim()
+        else -> MealsLiquidGlass.controlRim()
     }
 
     Box(
         modifier = modifier
             .shadow(
-                elevation = if (selected) 3.dp else 2.dp,
+                elevation = when {
+                    prominent -> 5.dp
+                    selected -> 3.dp
+                    else -> 2.dp
+                },
                 shape = SelectionShape,
                 clip = false,
-                ambientColor = Color(0xFFB7AA9F).copy(alpha = 0.13f),
-                spotColor = Color(0xFF8F8278).copy(alpha = 0.075f)
+                ambientColor = Color(0xFFB7AA9F).copy(alpha = if (prominent) 0.20f else 0.13f),
+                spotColor = Color(0xFF8F8278).copy(alpha = if (prominent) 0.12f else 0.075f)
             )
             .clip(SelectionShape)
             .mealsGlassBlur(
@@ -171,8 +188,9 @@ fun MealsSubtabsIndicator(
 ) {
     if (items.isEmpty()) return
 
-    val selectedIndex = items.indexOf(selected).coerceAtLeast(0)
-    val layoutDirection = LocalLayoutDirection.current
+    // Keep the selected value in the logical item order. The offset modifier
+    // below mirrors its direction automatically for RTL layouts.
+    val selectedIndex = items.indexOf(selected).takeIf { it >= 0 } ?: 0
     val gap = 5.dp
 
     MealsSelectionGlass(
@@ -186,11 +204,10 @@ fun MealsSubtabsIndicator(
                 .height(48.dp)
         ) {
             val itemWidth = ((maxWidth - gap * (items.size - 1)) / items.size).coerceAtLeast(0.dp)
-            val targetOffset = if (layoutDirection == LayoutDirection.Ltr) {
-                (itemWidth + gap) * selectedIndex
-            } else {
-                maxWidth - itemWidth - (itemWidth + gap) * selectedIndex
-            }
+            // Row places index 0 at logical start in both directions. A
+            // relative offset therefore tracks the same slot without a second
+            // manual RTL inversion.
+            val targetOffset = (itemWidth + gap) * selectedIndex
             val indicatorOffset by animateDpAsState(
                 targetValue = targetOffset,
                 animationSpec = spring(
@@ -204,10 +221,11 @@ fun MealsSubtabsIndicator(
             // at each destination, so its position and optical surface animate together.
             MealsSelectionGlass(
                 modifier = Modifier
-                    .absoluteOffset(x = indicatorOffset)
+                    .offset(x = indicatorOffset)
                     .width(itemWidth)
                     .fillMaxHeight(),
-                selected = true
+                selected = true,
+                prominent = true
             ) {}
 
             Row(
