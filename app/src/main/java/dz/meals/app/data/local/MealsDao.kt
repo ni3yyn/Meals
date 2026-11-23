@@ -52,7 +52,7 @@ interface MealsDao {
     @Query("DELETE FROM recipe_steps WHERE recipeId IN (:recipeIds)")
     suspend fun deleteRecipeStepsForRecipes(recipeIds: List<String>)
 
-    @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'orc-%'")
+    @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'orc-%' OR id LIKE 'focus-%'")
     suspend fun countArabicCatalogueRecipes(): Int
 
     @Query("SELECT * FROM recipe_attributions")

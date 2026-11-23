@@ -29,7 +29,14 @@ data class RecipeEntity(
     val baseServings: Int,
     val difficulty: String,
     val allergensCsv: String,
-    @ColumnInfo(defaultValue = "''") val tagsCsv: String = ""
+    @ColumnInfo(defaultValue = "''") val tagsCsv: String = "",
+    @ColumnInfo(defaultValue = "''") val categoriesCsv: String = "",
+    @ColumnInfo(defaultValue = "''") val dietaryCsv: String = "",
+    val caloriesPerServing: Double? = null,
+    val proteinGramsPerServing: Double? = null,
+    val carbsGramsPerServing: Double? = null,
+    val fatGramsPerServing: Double? = null,
+    @ColumnInfo(defaultValue = "''") val imageUrl: String = ""
 )
 
 @Entity(

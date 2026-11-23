@@ -106,8 +106,8 @@ function generateMidatiTranslationToken() {
 
 /** Run once in the editor to authorize LanguageApp and verify Polish -> Arabic. */
 function testMidatiTranslationService() {
-  const result = LanguageApp.translate("Sól, pieprz i oliwa", "pl", "ar");
-  Logger.log("Polish-to-Arabic test: " + result);
+  const result = LanguageApp.translate("Tomate, pimiento y aceite de oliva", "es", "ar");
+  Logger.log("Spanish-to-Arabic test: " + result);
   return result;
 }
 
@@ -120,6 +120,8 @@ function translateRecipe_(recipe) {
     category: String(recipe.category || ""),
     cuisine: String(recipe.cuisine || ""),
     tags: Array.isArray(recipe.tags) ? recipe.tags.slice() : [],
+    categories: Array.isArray(recipe.categories) ? recipe.categories.slice() : [],
+    dietary: Array.isArray(recipe.dietary) ? recipe.dietary.slice() : [],
     allergens: Array.isArray(recipe.allergens) ? recipe.allergens.slice() : [],
     ingredients: Array.isArray(recipe.ingredients)
       ? recipe.ingredients.map(function (item) {
@@ -148,6 +150,12 @@ function translateRecipe_(recipe) {
   });
   output.tags.forEach(function (tag, index) {
     addTextField_(fields, "tags." + index, String(tag));
+  });
+  output.categories.forEach(function (category, index) {
+    addTextField_(fields, "categories." + index, String(category));
+  });
+  output.dietary.forEach(function (tag, index) {
+    addTextField_(fields, "dietary." + index, String(tag));
   });
   output.allergens.forEach(function (allergen, index) {
     addTextField_(fields, "allergens." + index, String(allergen));

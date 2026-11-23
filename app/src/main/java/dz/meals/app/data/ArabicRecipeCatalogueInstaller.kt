@@ -132,6 +132,13 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         var cookMinutes: Int? = null
         var allergens = emptyList<String>()
         var tags = emptyList<String>()
+        var categories = emptyList<String>()
+        var dietary = emptyList<String>()
+        var caloriesPerServing: Double? = null
+        var proteinGramsPerServing: Double? = null
+        var carbsGramsPerServing: Double? = null
+        var fatGramsPerServing: Double? = null
+        var imageUrl = ""
         var ingredients = emptyList<SourceIngredient>()
         var steps = emptyList<String>()
         var provenance = SourceProvenance()
@@ -149,6 +156,24 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 "cookMinutes" -> cookMinutes = readNullableInt(reader)
                 "allergens" -> allergens = readStringArray(reader)
                 "tags" -> tags = readStringArray(reader)
+                "categories" -> reader.skipValue()
+                "categoriesAr" -> categories = readStringArray(reader)
+                "dietary" -> reader.skipValue()
+                "dietaryAr" -> dietary = readStringArray(reader)
+                "nutrition" -> {
+                    reader.beginObject()
+                    while (reader.hasNext()) {
+                        when (reader.nextName()) {
+                            "kcal" -> caloriesPerServing = readNullableDouble(reader)
+                            "protein_g" -> proteinGramsPerServing = readNullableDouble(reader)
+                            "carbs_g" -> carbsGramsPerServing = readNullableDouble(reader)
+                            "fat_g" -> fatGramsPerServing = readNullableDouble(reader)
+                            else -> reader.skipValue()
+                        }
+                    }
+                    reader.endObject()
+                }
+                "image" -> imageUrl = readString(reader)
                 "ingredients" -> ingredients = readIngredients(reader)
                 "steps" -> steps = readStringArray(reader)
                 "provenance" -> provenance = readProvenance(reader)
@@ -180,6 +205,13 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             cookMinutes = cookMinutes,
             allergens = allergens,
             tags = tags,
+            categories = categories,
+            dietary = dietary,
+            caloriesPerServing = caloriesPerServing,
+            proteinGramsPerServing = proteinGramsPerServing,
+            carbsGramsPerServing = carbsGramsPerServing,
+            fatGramsPerServing = fatGramsPerServing,
+            imageUrl = imageUrl,
             ingredients = ingredients,
             steps = steps,
             provenance = provenance
@@ -281,8 +313,15 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
     private fun readNullableInt(reader: JsonReader): Int? =
         readString(reader).toIntOrNull()?.takeIf { it > 0 }
 
+    private fun readNullableDouble(reader: JsonReader): Double? =
+        readString(reader).replace(",", ".").toDoubleOrNull()?.takeIf { it >= 0.0 }
+
     private fun SourceRecipe.toBundle(): RecipeBundle {
-        val recipeId = RECIPE_ID_PREFIX + id
+        val recipeId = if (id.startsWith("focus:")) {
+            FOCUS_RECIPE_ID_PREFIX + id.substringAfter(":")
+        } else {
+            RECIPE_ID_PREFIX + id
+        }
         val ingredientEntities = ArrayList<IngredientEntity>()
         val recipeIngredients = ArrayList<RecipeIngredientEntity>()
 
@@ -330,7 +369,14 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             baseServings = (servings ?: 2).coerceIn(1, 30),
             difficulty = "غير محدد",
             allergensCsv = normalizeAllergens(allergens).distinct().joinToString(","),
-            tagsCsv = tags.distinct().joinToString("|")
+            tagsCsv = tags.distinct().joinToString("|"),
+            categoriesCsv = categories.distinct().joinToString("|"),
+            dietaryCsv = dietary.distinct().joinToString("|"),
+            caloriesPerServing = caloriesPerServing,
+            proteinGramsPerServing = proteinGramsPerServing,
+            carbsGramsPerServing = carbsGramsPerServing,
+            fatGramsPerServing = fatGramsPerServing,
+            imageUrl = imageUrl
         )
         val recipeSteps = steps.mapIndexed { index, step ->
             RecipeStepEntity(recipeId, index + 1, step, step)
@@ -354,17 +400,23 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val amount = parseQuantity(quantity)
         return when (sourceUnit.trim().lowercase()) {
             "kg" -> NormalizedMeasure(amount?.times(1000.0), "g")
+            "mg" -> NormalizedMeasure(amount?.div(1000.0), "g")
+            "oz" -> NormalizedMeasure(amount?.times(28.3495), "g")
+            "lb", "lbs" -> NormalizedMeasure(amount?.times(453.592), "g")
             "l" -> NormalizedMeasure(amount?.times(1000.0), "ml")
             "pcs", "pc" -> NormalizedMeasure(amount, "piece")
             "g" -> NormalizedMeasure(amount, "g")
             "ml" -> NormalizedMeasure(amount, "ml")
             "tbsp" -> NormalizedMeasure(amount, "ملعقة كبيرة")
             "tsp" -> NormalizedMeasure(amount, "ملعقة صغيرة")
+            "cup" -> NormalizedMeasure(amount, "كوب")
             "to_taste" -> NormalizedMeasure(null, "حسب الحاجة")
             "pinch" -> NormalizedMeasure(amount, "رشة")
             "clove" -> NormalizedMeasure(amount, "فص")
             "bunch" -> NormalizedMeasure(amount, "ربطة")
             "slice" -> NormalizedMeasure(amount, "شريحة")
+            "bunch" -> NormalizedMeasure(amount, "ربطة")
+            "handful" -> NormalizedMeasure(amount, "حفنة")
             "" -> NormalizedMeasure(
                 amount,
                 if (quantity.isBlank()) "حسب الحاجة" else "piece"
@@ -436,6 +488,13 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val cookMinutes: Int?,
         val allergens: List<String>,
         val tags: List<String>,
+        val categories: List<String>,
+        val dietary: List<String>,
+        val caloriesPerServing: Double?,
+        val proteinGramsPerServing: Double?,
+        val carbsGramsPerServing: Double?,
+        val fatGramsPerServing: Double?,
+        val imageUrl: String,
         val ingredients: List<SourceIngredient>,
         val steps: List<String>,
         val provenance: SourceProvenance
@@ -462,6 +521,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
     companion object {
         const val RECIPE_ID_PREFIX = "orc-"
+        const val FOCUS_RECIPE_ID_PREFIX = "focus-"
         const val INGREDIENT_ID_PREFIX = "orc-ing-"
         private const val DEFAULT_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
         private const val BATCH_SIZE = 80

@@ -301,7 +301,11 @@ def main() -> int:
         if isinstance(item, dict) and item.get("id") is not None
     }
     if args.force:
-        existing.clear()
+        # Keep recipes from other licensed corpora when re-translating Polish records.
+        existing = {recipe_id: recipe for recipe_id, recipe in existing.items() if recipe_id not in source_by_id}
+
+    extra_recipe_count = sum(1 for recipe_id in existing if recipe_id not in source_by_id)
+    expected_total_count = len(source_records) + extra_recipe_count
 
     pending = [
         record for record in source_records
@@ -318,9 +322,9 @@ def main() -> int:
     if not pending:
         if (
             not output.get("complete")
-            or output.get("expectedCount") != len(source_records)
+            or output.get("expectedCount") != expected_total_count
         ):
-            write_output(args.output, output, len(source_records))
+            write_output(args.output, output, expected_total_count)
         print(f"Nothing to translate. Output is complete: {len(existing) >= len(source_records)}.")
         return 0
 
@@ -367,7 +371,7 @@ def main() -> int:
 
         output["recipes"] = list(existing.values())
         output["failedRecipes"] = list(failures.values())
-        write_output(args.output, output, len(source_records))
+        write_output(args.output, output, expected_total_count)
 
         print(
             f"Checkpoint: {len(existing)}/{len(source_records)} translated; "
@@ -389,7 +393,7 @@ def main() -> int:
 
     output["recipes"] = list(existing.values())
     output["failedRecipes"] = list(failures.values())
-    write_output(args.output, output, len(source_records))
+    write_output(args.output, output, expected_total_count)
 
     print(
         f"Finished this run: +{translated_count}; total "
