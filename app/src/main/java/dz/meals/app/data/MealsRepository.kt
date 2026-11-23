@@ -591,7 +591,9 @@ class MealsRepository(context: Context) {
                 val author = artist.ifBlank { credit }
                 if (author.isBlank()) continue
 
-                val imageUrl = info.optString("thumburl").ifBlank { info.optString("url") }
+                // Never fall back to imageinfo.url: that is the full-resolution original.
+                // A Commons result without a generated thumbnail is not safe to display.
+                val imageUrl = info.optString("thumburl").trim()
                 val sourcePageUrl = info.optString("descriptionurl")
                 if (!imageUrl.startsWith("https://upload.wikimedia.org/")) continue
                 if (!sourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:")) continue
