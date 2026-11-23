@@ -1767,6 +1767,7 @@ fun MealsBottomSheet(
     val dismissStarted = remember { mutableStateOf(false) }
     val activeLoading = isLoading && loadingContent != null
     var visualPhase by remember { mutableStateOf(MealsSheetVisualPhase.Content) }
+    val interactionLocked = activeLoading || visualPhase != MealsSheetVisualPhase.Content
     val expansion = remember { Animatable(0f) }
     val onLoadingStartedState = rememberUpdatedState(onLoadingStarted)
     val onLoadingExitFinishedState = rememberUpdatedState(onLoadingExitFinished)
@@ -1892,7 +1893,6 @@ fun MealsBottomSheet(
                         ?: measuredNaturalHeight
                         ?: maxSheetHeight
                     val isInLoadingTransition = visualPhase != MealsSheetVisualPhase.Content
-                    val interactionLocked = activeLoading || isInLoadingTransition
                     val sheetHeightModifier = when {
                         expandToFullScreenWhileLoading && isInLoadingTransition ->
                             Modifier.mealsAnimatedHeight(
