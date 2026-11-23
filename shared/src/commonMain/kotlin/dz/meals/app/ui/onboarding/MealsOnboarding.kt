@@ -15,7 +15,9 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,13 +62,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
@@ -80,6 +85,7 @@ import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsGlassDot
+import dz.meals.app.ui.components.MealsLiquidGlassProgressBar
 import dz.meals.app.ui.components.MealsIconButton
 import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import dz.meals.app.ui.components.MealsPressable
@@ -186,7 +192,15 @@ fun MealsOnboarding(
     val scope = rememberCoroutineScope()
     val current = pagerState.currentPage
     fun goTo(page: Int) {
-        scope.launch { pagerState.animateScrollToPage(page.coerceIn(0, LastPage)) }
+        scope.launch {
+            pagerState.animateScrollToPage(
+                page = page.coerceIn(0, LastPage),
+                animationSpec = spring(
+                    dampingRatio = 0.84f,
+                    stiffness = 390f
+                )
+            )
+        }
     }
 
     val valid = when (current) {
@@ -272,11 +286,50 @@ fun MealsOnboarding(
                         .imePadding()
                         .padding(horizontal = 18.dp)
                 ) {
-                    Header(current = current, onBack = { goTo(current - 1) })
+                    Header(
+                        current = current,
+                        progress = (
+                            pagerState.currentPage.toFloat() +
+                                pagerState.currentPageOffsetFraction + 1f
+                            ).div(PageCount).coerceIn(1f / PageCount, 1f),
+                        onBack = { goTo(current - 1) }
+                    )
 
+                    val layoutDirection = LocalLayoutDirection.current
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            // Keep pager state controlled so an invalid form page
+                            // cannot be skipped, but still accept natural horizontal
+                            // swipes. Child controls (sliders/text fields) retain
+                            // their own drag gestures when they consume the pointer.
+                            .pointerInput(current, valid, layoutDirection) {
+                                var dragDistance = 0f
+                                val swipeThreshold = 72.dp.toPx()
+                                detectHorizontalDragGestures(
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        dragDistance += dragAmount
+                                        change.consume()
+                                    },
+                                    onDragEnd = {
+                                        if (abs(dragDistance) >= swipeThreshold) {
+                                            val movingForward = if (
+                                                layoutDirection == LayoutDirection.Rtl
+                                            ) dragDistance > 0f else dragDistance < 0f
+                                            when {
+                                                movingForward && valid && current < LastPage ->
+                                                    goTo(current + 1)
+                                                !movingForward && current > 0 ->
+                                                    goTo(current - 1)
+                                            }
+                                        }
+                                        dragDistance = 0f
+                                    },
+                                    onDragCancel = { dragDistance = 0f }
+                                )
+                            },
                         userScrollEnabled = false,
                         beyondViewportPageCount = 0
                     ) { page ->
@@ -612,7 +665,7 @@ fun MealsOnboarding(
 // ─────────────────────────────── building blocks ───────────────────────────────
 
 @Composable
-private fun Header(current: Int, onBack: () -> Unit) {
+private fun Header(current: Int, progress: Float, onBack: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().height(56.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -625,8 +678,9 @@ private fun Header(current: Int, onBack: () -> Unit) {
                 }
             }
         }
-        MealsOnboardingPager(
+        MealsOnboardingProgress(
             current = current,
+            progress = progress,
             modifier = Modifier.weight(1f)
         )
         Spacer(Modifier.size(44.dp))
@@ -634,15 +688,16 @@ private fun Header(current: Int, onBack: () -> Unit) {
 }
 
 @Composable
-private fun MealsOnboardingPager(
+private fun MealsOnboardingProgress(
     current: Int,
+    progress: Float,
     modifier: Modifier = Modifier
 ) {
     val active = (current + 1).coerceIn(1, PageCount)
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -663,18 +718,12 @@ private fun MealsOnboardingPager(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        Row(
-            modifier = Modifier.height(24.dp).padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(PageCount) { index ->
-                MealsGlassDot(
-                    selected = index == current,
-                    completed = index < current
-                )
-            }
-        }
+        MealsLiquidGlassProgressBar(
+            progress = progress,
+            modifier = Modifier.fillMaxWidth(),
+            height = 18.dp,
+            contentDescription = "التقدم في الإعداد"
+        )
     }
 }
 
@@ -693,11 +742,17 @@ private fun StepLayout(
         val panelMax = maxHeight * 0.52f
         Column(
             Modifier.fillMaxSize().graphicsLayer {
-                // Read pager motion here, not during composition: only the layer
-                // properties update while swiping, not the heavy page subtree.
-                val away = abs(pageOffset()).coerceIn(0f, 1f)
-                alpha = 1f - away
-                translationY = away * 24.dp.toPx()
+                // Follow pager motion only at the layer level. A little directional
+                // parallax, soft fade and restrained scale make each page feel
+                // buoyant without dimming it out or shifting the form excessively.
+                val offset = pageOffset().coerceIn(-1f, 1f)
+                val away = abs(offset)
+                alpha = 1f - away * 0.16f
+                translationX = -offset * 12.dp.toPx()
+                translationY = away * 10.dp.toPx()
+                val pageScale = lerp(1f, 0.975f, away)
+                scaleX = pageScale
+                scaleY = pageScale
             }
         ) {
             BoxWithConstraints(
@@ -708,7 +763,7 @@ private fun StepLayout(
                 Box(
                     Modifier.size(heroSize).graphicsLayer {
                         val away = abs(pageOffset()).coerceIn(0f, 1f)
-                        val s = lerp(1f, 0.86f, away)
+                        val s = lerp(1f, 0.94f, away)
                         scaleX = s
                         scaleY = s
                     },
