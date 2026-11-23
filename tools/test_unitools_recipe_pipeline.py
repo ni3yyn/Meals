@@ -7,11 +7,11 @@ from tools.translate_unitools_recipe_corpus import (
 )
 
 
-def recipe(name="Test dish", ingredients=None, steps=None):
+def recipe(name="Test dish", ingredients=None, steps=None, summary="A simple dish"):
     return {
         "slug": "test-dish",
         "name": {"en": name, "ru": name},
-        "summary": {"en": "A simple dish", "ru": "Блюдо"},
+        "summary": summary if isinstance(summary, dict) else {"en": summary, "ru": "Блюдо"},
         "ingredients": ingredients or [],
         "steps": steps or [{"text": {"en": "Cook until tender", "ru": "Готовьте"}, "minutes": 10}],
     }

@@ -30,7 +30,7 @@ jobs:
     env:
       GOOGLE_APPS_SCRIPT_URL: ${{ secrets.GOOGLE_APPS_SCRIPT_URL }}
       GOOGLE_APPS_SCRIPT_TOKEN: ${{ secrets.GOOGLE_APPS_SCRIPT_TOKEN }}
-      MAX_RECIPES: ${{ inputs.max_recipes }}
+      MAX_RECIPES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_recipes || '501' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
