@@ -318,7 +318,8 @@ fun MealsOnboarding(
                             // their own drag gestures when they consume the pointer.
                             .pointerInput(current, valid, layoutDirection) {
                                 var dragDistance = 0f
-                                val swipeThreshold = 72.dp.toPx()
+                                // HorizontalPager already applies platform touch slop; keep the extra travel modest.
+                                val swipeThreshold = 32.dp.toPx()
                                 detectHorizontalDragGestures(
                                     onHorizontalDrag = { change, dragAmount ->
                                         dragDistance += dragAmount
