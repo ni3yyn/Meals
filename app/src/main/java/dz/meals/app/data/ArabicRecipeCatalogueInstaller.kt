@@ -381,10 +381,10 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 "سمكة", "السمك", "سمك" -> "fish"
                 "الخردل", "خردل" -> "mustard"
                 "القشريات", "قشريات" -> "crustaceans"
-                "فول الصويا", "الصويا", "فول الصويا" -> "soy"
+                "فول الصويا", "الصويا" -> "soy"
                 "سمسم", "السمسم" -> "sesame"
                 "الرخويات", "رخويات" -> "molluscs"
-                "الفول السوداني", "فول سوداني", "الفول السوداني" -> "peanuts"
+                "الفول السوداني", "فول سوداني" -> "peanuts"
                 else -> value.trim()
             }
         }.filter { it.isNotBlank() }
