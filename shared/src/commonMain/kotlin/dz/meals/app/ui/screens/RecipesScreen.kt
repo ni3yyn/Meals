@@ -477,9 +477,19 @@ fun RecipesScreen(
                     item {
                         val allergenLabels = detail.allergens.map { allergen ->
                             when (allergen) {
-                                "gluten" -> mealsText("الغلوتين", appLocaleTag)
-                                "egg" -> mealsText("البيض", appLocaleTag)
-                                "milk" -> mealsText("الحليب", appLocaleTag)
+                                "gluten" -> "الغلوتين"
+                                "egg" -> "البيض"
+                                "milk" -> "الحليب"
+                                "tree_nuts" -> "المكسرات"
+                                "celery" -> "الكرفس"
+                                "sulphites" -> "الكبريتيت"
+                                "fish" -> "السمك"
+                                "mustard" -> "الخردل"
+                                "crustaceans" -> "القشريات"
+                                "soy" -> "فول الصويا"
+                                "sesame" -> "السمسم"
+                                "molluscs" -> "الرخويات"
+                                "peanuts" -> "الفول السوداني"
                                 else -> allergen
                             }
                         }
