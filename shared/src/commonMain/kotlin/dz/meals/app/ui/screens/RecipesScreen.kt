@@ -100,6 +100,35 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
+
+/**
+ * Route public recipe photos through a resizing/compression cache. This prevents
+ * the client from requesting original-resolution recipe images directly.
+ */
+private fun optimizedRecipeImageUrl(sourceUrl: String, width: Int): String {
+    if (!sourceUrl.startsWith("https://", ignoreCase = true)) return ""
+    if (sourceUrl.startsWith("https://images.weserv.nl/", ignoreCase = true)) return sourceUrl
+
+    val encodedUrl = buildString {
+        val hex = "0123456789ABCDEF"
+        sourceUrl.encodeToByteArray().forEach { byte ->
+            val value = byte.toInt() and 0xff
+            val isUnreserved = value in 0x41..0x5A ||
+                value in 0x61..0x7A ||
+                value in 0x30..0x39 ||
+                value == 0x2D || value == 0x2E || value == 0x5F || value == 0x7E
+            if (isUnreserved) {
+                append(value.toChar())
+            } else {
+                append('%')
+                append(hex[value ushr 4])
+                append(hex[value and 0x0F])
+            }
+        }
+    }
+    return "https://images.weserv.nl/?url=$encodedUrl&w=${width.coerceIn(240, 960)}&q=60&output=webp"
+}
+
 private val unitoolsIngredientFallbackNames = mapOf(
     "ackee" to ("فاكهة الأكي" to "Ackee"),
     "oil" to ("زيت" to "Oil"),
@@ -167,7 +196,7 @@ fun RecipesScreen(
     var automaticImageRetryNonce by remember { mutableStateOf(0) }
     val attemptedAutomaticImageRecipeIds = remember { mutableSetOf<String>() }
     val imageSearchScope = rememberCoroutineScope()
-    var cookingRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
+    var isCookingMode by rememberSaveable { mutableStateOf(false) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
     var cookingServings by rememberSaveable { mutableStateOf(2) }
     var cookingCompleted by rememberSaveable { mutableStateOf(false) }
@@ -201,6 +230,9 @@ fun RecipesScreen(
 
     LaunchedEffect(selectedRecipeId) {
         imageSearchOpen = false
+        isCookingMode = false
+        cookingCompleted = false
+        cookingStepIndex = 0
         imageSearchQuery = ""
         imageSearchResults = emptyList()
         imageSearchError = null
@@ -580,12 +612,39 @@ fun RecipesScreen(
         MealsBottomSheet(
             onDismissRequest = { selectedRecipeId = null },
             title = { Text(if (imageSearchOpen) "اختيار صورة للوصفة" else detail.nameAr) },
+            subtitle = when {
+                imageSearchOpen -> "صور مرخّصة ومناسبة للوصفة"
+                isCookingMode && cookingCompleted -> "اكتمل التحضير"
+                isCookingMode -> "اسحبي للتنقل بين الخطوات"
+                else -> null
+            },
             // Keep the recipe actions anchored above the system navigation area.
             // Long recipe content scrolls independently instead of pushing the footer off-screen.
             fixedHeightFraction = 0.88f,
             fillBody = true,
             text = {
-                if (imageSearchOpen) {
+                AnimatedContent(
+                    targetState = when {
+                        imageSearchOpen -> 1
+                        isCookingMode -> 2
+                        else -> 0
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        val directionSign = logicalAnimationDirectionSign(layoutDirection) *
+                            if (targetState > initialState) 1 else -1
+                        (slideInHorizontally(
+                            animationSpec = tween(250),
+                            initialOffsetX = { width -> directionSign * width / 5 }
+                        ) + fadeIn(tween(160, delayMillis = 12))) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(190),
+                                targetOffsetX = { width -> -directionSign * width / 10 }
+                            ) + fadeOut(tween(135)))
+                    },
+                    label = "recipeSheetPage"
+                ) { page ->
+                if (page == 1) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -653,7 +712,7 @@ fun RecipesScreen(
                                     verticalAlignment = Alignment.Top
                                 ) {
                                     AsyncImage(
-                                        model = candidate.imageUrl,
+                                        model = optimizedRecipeImageUrl(candidate.imageUrl, width = 320),
                                         contentDescription = candidate.title,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
@@ -703,6 +762,21 @@ fun RecipesScreen(
                             }
                         }
                     }
+                } else if (page == 2) {
+                    RecipeCookingFlow(
+                        recipe = detail,
+                        ingredientNames = ingredientNames,
+                        localeTag = appLocaleTag,
+                        servings = cookingServings,
+                        onServingsChange = { cookingServings = it },
+                        stepIndex = cookingStepIndex,
+                        onStepIndexChange = { cookingStepIndex = it },
+                        stepDirection = cookingStepDirection,
+                        onStepDirectionChange = { cookingStepDirection = it },
+                        completed = cookingCompleted,
+                        onCompletedChange = { cookingCompleted = it },
+                        layoutDirection = layoutDirection
+                    )
                 } else {
 
                 LazyColumn(
@@ -712,7 +786,7 @@ fun RecipesScreen(
                     if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
                         item {
                             AsyncImage(
-                                model = detail.imageUrl,
+                                model = optimizedRecipeImageUrl(detail.imageUrl, width = 720),
                                 contentDescription = detail.nameAr,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -1164,37 +1238,69 @@ fun RecipesScreen(
                     }
                 }
                 }
+                }
             },
             confirmButton = {
-                if (imageSearchOpen) {
-                    MealsSecondaryButton(
+                when {
+                    imageSearchOpen -> MealsSecondaryButton(
                         label = "رجوع إلى الوصفة",
                         onClick = { imageSearchOpen = false },
                         modifier = Modifier.fillMaxWidth()
                     )
-                } else {
-                    val dismissSheet = mealsSheetDismissAction()
-                    MealsPrimaryButton(
-                        label = "أضف للخطة",
-                        onClick = { dismissSheet { onAddRecipe(detail.id); selectedRecipeId = null } },
+                    isCookingMode -> MealsPrimaryButton(
+                        label = when {
+                            cookingCompleted -> "العودة للوصفة"
+                            detail.stepsAr.isEmpty() -> "العودة للوصفة"
+                            cookingStepIndex >= detail.stepsAr.lastIndex -> "إنهاء التحضير"
+                            else -> "التالي"
+                        },
+                        onClick = {
+                            when {
+                                cookingCompleted || detail.stepsAr.isEmpty() -> {
+                                    isCookingMode = false
+                                    cookingCompleted = false
+                                }
+                                cookingStepIndex < detail.stepsAr.lastIndex -> {
+                                    cookingStepDirection = 1
+                                    cookingStepIndex += 1
+                                }
+                                else -> cookingCompleted = true
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    else -> {
+                        val dismissSheet = mealsSheetDismissAction()
+                        MealsPrimaryButton(
+                            label = "أضف للخطة",
+                            onClick = { dismissSheet { onAddRecipe(detail.id); selectedRecipeId = null } },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             },
             dismissButton = {
-                if (!imageSearchOpen) {
-                    val dismissSheet = mealsSheetDismissAction()
-                    MealsSecondaryButton(
+                when {
+                    imageSearchOpen -> Unit
+                    isCookingMode -> MealsSecondaryButton(
+                        label = if (cookingCompleted) "مراجعة الخطوات" else "تفاصيل الوصفة",
+                        onClick = {
+                            if (cookingCompleted) {
+                                cookingCompleted = false
+                            } else {
+                                isCookingMode = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    else -> MealsSecondaryButton(
                         label = "ابدأ الطبخ",
                         onClick = {
-                            dismissSheet {
-                                cookingRecipeId = detail.id
-                                cookingStepIndex = 0
-                                cookingStepDirection = 1
-                                cookingServings = detail.baseServings
-                                cookingCompleted = false
-                                selectedRecipeId = null
-                            }
+                            cookingStepIndex = 0
+                            cookingStepDirection = 1
+                            cookingServings = detail.baseServings
+                            cookingCompleted = false
+                            isCookingMode = true
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -1203,437 +1309,350 @@ fun RecipesScreen(
         )
     }
 
-    val cookingRecipe = cookingRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
-    if (cookingRecipe != null) {
-        val stepCount = cookingRecipe.stepsAr.size
-        val safeStepIndex = cookingStepIndex.coerceIn(0, (stepCount - 1).coerceAtLeast(0))
+}
 
-        MealsBottomSheet(
-            onDismissRequest = {
-                cookingRecipeId = null
-                cookingCompleted = false
+
+@Composable
+private fun RecipeCookingFlow(
+    recipe: MealRecipe,
+    ingredientNames: Map<String, IngredientMaster>,
+    localeTag: String,
+    servings: Int,
+    onServingsChange: (Int) -> Unit,
+    stepIndex: Int,
+    onStepIndexChange: (Int) -> Unit,
+    stepDirection: Int,
+    onStepDirectionChange: (Int) -> Unit,
+    completed: Boolean,
+    onCompletedChange: (Boolean) -> Unit,
+    layoutDirection: LayoutDirection
+) {
+    val stepCount = recipe.stepsAr.size
+    val safeStepIndex = stepIndex.coerceIn(0, (stepCount - 1).coerceAtLeast(0))
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                when {
+                    completed -> "اكتمل التحضير"
+                    stepCount == 0 -> "طريقة التحضير"
+                    else -> "الخطوة الحالية"
+                },
+                color = MutedInk,
+                style = MaterialTheme.typography.labelLarge
+            )
+            Text(
+                when {
+                    completed -> "$stepCount / $stepCount"
+                    stepCount == 0 -> "لا توجد خطوات"
+                    else -> "${safeStepIndex + 1} / $stepCount"
+                },
+                color = dz.meals.app.ui.theme.TextAccent,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
+        MealsLiquidGlassProgressBar(
+            progress = when {
+                completed -> 1f
+                stepCount == 0 -> 0f
+                else -> (safeStepIndex + 1).toFloat() / stepCount.toFloat()
             },
-            title = { Text(cookingRecipe.nameAr) },
-            subtitle = if (cookingCompleted) {
-                "اكتمل التحضير"
-            } else if (stepCount > 0) {
-                "اسحبي للتنقل بين الخطوات"
-            } else {
-                "وضع الطبخ"
-            },
-            fixedHeightFraction = 0.88f,
-            fillBody = true,
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    // Kept outside swipe transitions and the step list: this header
-                    // stays anchored while the cooking content moves or scrolls.
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                if (cookingCompleted) "اكتمل التحضير" else "التقدم في الوصفة",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MutedInk
-                            )
-                            Text(
+            modifier = Modifier.fillMaxWidth(),
+            height = 8.dp,
+            contentDescription = "التقدم في خطوات الوصفة"
+        )
+
+        AnimatedContent(
+            targetState = completed,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .pointerInput(completed, safeStepIndex, stepCount, layoutDirection) {
+                    var dragDistance = 0f
+                    val swipeThreshold = 72.dp.toPx()
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { change, dragAmount ->
+                            dragDistance += dragAmount
+                            change.consume()
+                        },
+                        onDragEnd = {
+                            if (!completed && stepCount > 0 &&
+                                abs(dragDistance) >= swipeThreshold
+                            ) {
+                                val movingForward = isLogicalForwardSwipe(dragDistance, layoutDirection)
                                 when {
-                                    cookingCompleted -> "$stepCount / $stepCount"
-                                    stepCount == 0 -> "لا توجد خطوات"
-                                    else -> "${safeStepIndex + 1} / $stepCount"
-                                },
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = dz.meals.app.ui.theme.TextAccent
+                                    movingForward && safeStepIndex < stepCount - 1 -> {
+                                        onStepDirectionChange(1)
+                                        onStepIndexChange(safeStepIndex + 1)
+                                    }
+                                    movingForward && safeStepIndex == stepCount - 1 -> {
+                                        onCompletedChange(true)
+                                    }
+                                    !movingForward && safeStepIndex > 0 -> {
+                                        onStepDirectionChange(-1)
+                                        onStepIndexChange(safeStepIndex - 1)
+                                    }
+                                }
+                            }
+                            dragDistance = 0f
+                        },
+                        onDragCancel = { dragDistance = 0f }
+                    )
+                },
+            transitionSpec = {
+                (slideInVertically(
+                    animationSpec = tween(250),
+                    initialOffsetY = { height -> if (targetState) height / 12 else -height / 12 }
+                ) + fadeIn(tween(165))) togetherWith
+                    (slideOutVertically(
+                        animationSpec = tween(180),
+                        targetOffsetY = { height -> if (targetState) -height / 14 else height / 14 }
+                    ) + fadeOut(tween(130)))
+            },
+            label = "cookingCompletion"
+        ) { isComplete ->
+            when {
+                isComplete -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(82.dp)
+                                .background(SoftGreen, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            MealsIcon(
+                                MealsIconName.Check,
+                                contentDescription = "اكتمل الطبخ",
+                                modifier = Modifier.size(52.dp)
                             )
                         }
-                        MealsLiquidGlassProgressBar(
-                            progress = when {
-                                cookingCompleted -> 1f
-                                stepCount == 0 -> 0f
-                                else -> (safeStepIndex + 1).toFloat() / stepCount.toFloat()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            height = 24.dp,
-                            contentDescription = "التقدم في خطوات الوصفة"
+                        Spacer(Modifier.height(18.dp))
+                        Text(
+                            "أحسنتِ!",
+                            color = Ink,
+                            fontWeight = FontWeight.ExtraBold,
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text(
+                            "أصبحت وجبتك جاهزة",
+                            color = dz.meals.app.ui.theme.TextAccent,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            recipe.nameAr,
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
+                }
 
-                    AnimatedContent(
-                    targetState = cookingCompleted,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .pointerInput(cookingCompleted, cookingStepIndex, stepCount, layoutDirection) {
-                            var dragDistance = 0f
-                            val swipeThreshold = 72.dp.toPx()
-                            detectHorizontalDragGestures(
-                                onHorizontalDrag = { change, dragAmount ->
-                                    dragDistance += dragAmount
-                                    change.consume()
-                                },
-                                onDragEnd = {
-                                    if (!cookingCompleted && stepCount > 0 &&
-                                        abs(dragDistance) >= swipeThreshold
-                                    ) {
-                                        val movingForward = isLogicalForwardSwipe(dragDistance, layoutDirection)
-                                        when {
-                                            movingForward && safeStepIndex < stepCount - 1 -> {
-                                                cookingStepDirection = 1
-                                                cookingStepIndex = safeStepIndex + 1
-                                            }
-                                            movingForward && safeStepIndex == stepCount - 1 -> {
-                                                cookingCompleted = true
-                                            }
-                                            !movingForward && safeStepIndex > 0 -> {
-                                                cookingStepDirection = -1
-                                                cookingStepIndex = safeStepIndex - 1
-                                            }
-                                        }
-                                    }
-                                    dragDistance = 0f
-                                },
-                                onDragCancel = { dragDistance = 0f }
-                            )
-                        },
-                    transitionSpec = {
-                        val enteringSpring = spring<IntOffset>(
-                            dampingRatio = 0.84f,
-                            stiffness = 360f
+                stepCount == 0 -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "لا توجد خطوات تحضير مسجلة لهذه الوصفة بعد.",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyLarge
                         )
-                        (slideInVertically(
-                            animationSpec = enteringSpring,
-                            initialOffsetY = { height ->
-                                if (targetState) height / 10 else -height / 12
-                            }
-                        ) + fadeIn(tween(185, delayMillis = 12)) +
-                            scaleIn(
-                                initialScale = 0.975f,
-                                animationSpec = spring(dampingRatio = 0.82f, stiffness = 390f)
-                            )) togetherWith
-                            (slideOutVertically(
-                                animationSpec = spring(dampingRatio = 0.94f, stiffness = 520f),
-                                targetOffsetY = { height ->
-                                    if (targetState) -height / 14 else height / 10
-                                }
-                            ) + fadeOut(tween(135)) +
-                                scaleOut(
-                                    targetScale = 0.99f,
-                                    animationSpec = tween(160, easing = FastOutSlowInEasing)
-                                ))
-                    },
-                    label = "cookingCompletionTransition"
-                ) { completed ->
-                    if (completed) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(116.dp)
-                                    .background(SoftGreen, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                MealsIcon(
-                                    MealsIconName.Check,
-                                    contentDescription = "اكتملت خطوات الطبخ",
-                                    modifier = Modifier.size(78.dp)
-                                )
-                            }
-                            Spacer(Modifier.height(22.dp))
-                            Text(
-                                "أحسنتِ!",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Ink
-                            )
-                            Text(
-                                "أصبحت وجبتك جاهزة",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = dz.meals.app.ui.theme.TextAccent
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                cookingRecipe.nameAr,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Ink
-                            )
-                            Text(
-                                "أكملتِ جميع خطوات التحضير بنجاح. حان وقت الاستمتاع بوجبتك!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MutedInk
-                            )
-                            Spacer(Modifier.height(20.dp))
-                            Text(
-                                "اكتملت جميع الخطوات · $stepCount من $stepCount",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MutedInk
-                            )
-                        }
-                    } else {
-                        AnimatedContent(
-                            targetState = safeStepIndex,
-                            modifier = Modifier.fillMaxSize(),
-                            transitionSpec = {
-                                val movingForward = cookingStepDirection > 0
-                                val directionSign = if (layoutDirection == LayoutDirection.Rtl) -1 else 1
-                                val incomingSpring = spring<IntOffset>(
-                                    dampingRatio = 0.80f,
-                                    stiffness = 410f
-                                )
-                                (slideInHorizontally(
-                                    animationSpec = incomingSpring,
-                                    initialOffsetX = { width ->
-                                        if (movingForward) width / 5 else -width / 5
-                                    }
-                                ) + fadeIn(tween(150, delayMillis = 22)) +
-                                    scaleIn(
-                                        initialScale = 0.972f,
-                                        animationSpec = spring(
-                                            dampingRatio = 0.78f,
-                                            stiffness = 440f
-                                        )
-                                    )) togetherWith
-                                    (slideOutHorizontally(
-                                        animationSpec = spring(
-                                            dampingRatio = 0.92f,
-                                            stiffness = 540f
-                                        ),
-                                        targetOffsetX = { width ->
-                                            if (movingForward) -width / 12 else width / 12
-                                        }
-                                    ) + fadeOut(tween(125)) +
-                                        scaleOut(
-                                            targetScale = 0.988f,
-                                            animationSpec = tween(
-                                                145,
-                                                easing = FastOutSlowInEasing
-                                            )
-                                        ))
-                            },
-                            label = "cookingStepSlide"
-                        ) { visibleStepIndex ->
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(15.dp)
-                            ) {
-                                item {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(
-                                            if (stepCount == 0) "لا توجد خطوات مسجلة بعد"
-                                            else "الخطوة ${visibleStepIndex + 1}",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = dz.meals.app.ui.theme.TextAccent
-                                        )
-                                        Text(
-                                            cookingRecipe.stepsAr.getOrNull(visibleStepIndex)
-                                                ?: "يمكنك مراجعة المكونات أو إغلاق وضع الطبخ.",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Ink
-                                        )
-                                    }
-                                }
+                    }
+                }
 
-                                item {
+                else -> {
+                    AnimatedContent(
+                        targetState = safeStepIndex,
+                        modifier = Modifier.fillMaxSize(),
+                        transitionSpec = {
+                            val sign = logicalAnimationDirectionSign(layoutDirection)
+                            val enteringDirection = sign * if (stepDirection > 0) 1 else -1
+                            (slideInHorizontally(
+                                animationSpec = spring(
+                                    dampingRatio = 0.86f,
+                                    stiffness = 390f
+                                ),
+                                initialOffsetX = { width -> enteringDirection * width / 4 }
+                            ) + fadeIn(tween(155, delayMillis = 12)) + scaleIn(
+                                initialScale = 0.985f,
+                                animationSpec = tween(210)
+                            )) togetherWith
+                                (slideOutHorizontally(
+                                    animationSpec = tween(170),
+                                    targetOffsetX = { width -> -enteringDirection * width / 9 }
+                                ) + fadeOut(tween(125)))
+                        },
+                        label = "cookingStep"
+                    ) { visibleStepIndex ->
+                        LazyColumn(
+                            state = rememberLazyListState(),
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(15.dp)
+                        ) {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "الخطوة",
+                                            color = dz.meals.app.ui.theme.TextAccent,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                        Text(
+                                            " ${visibleStepIndex + 1}",
+                                            color = Ink,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            style = MaterialTheme.typography.displaySmall
+                                        )
+                                        Spacer(Modifier.weight(1f))
+                                        recipe.stepMinutes.getOrNull(visibleStepIndex)?.let { minutes ->
+                                            Text(
+                                                formatRecipeTime(minutes),
+                                                color = MutedInk,
+                                                style = MaterialTheme.typography.labelLarge
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        mealsText(
+                                            recipe.stepsAr.getOrNull(visibleStepIndex).orEmpty(),
+                                            localeTag
+                                        ),
+                                        color = Ink,
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.headlineSmall
+                                    )
+                                }
+                            }
+
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "المكونات",
+                                        color = Ink,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.titleSmall
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        MealsTextButton(
+                                            onClick = { onServingsChange((servings - 1).coerceAtLeast(1)) },
+                                            enabled = servings > 1
+                                        ) { Text("−") }
+                                        Text(
+                                            servings.toString(),
+                                            color = Ink,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        MealsTextButton(
+                                            onClick = { onServingsChange((servings + 1).coerceAtMost(12)) },
+                                            enabled = servings < 12
+                                        ) { Text("+") }
+                                        Text(
+                                            " حصص",
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            }
+
+                            items(recipe.ingredients) { ingredient ->
+                                val master = ingredientNames[ingredient.ingredientId]
+                                val factor = servings.toDouble() /
+                                    recipe.baseServings.coerceAtLeast(1).toDouble()
+                                val amount = scaleRecipeIngredientQuantity(
+                                    ingredient.quantityBase,
+                                    factor,
+                                    ingredient.scalingRule
+                                )
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            "عدد الحصص",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Ink
+                                            bidiIsolate(
+                                                mealsText(
+                                                    recipeIngredientDisplayName(
+                                                        master,
+                                                        ingredient.ingredientId,
+                                                        localeTag
+                                                    ),
+                                                    localeTag
+                                                )
+                                            ),
+                                            modifier = Modifier.weight(1f),
+                                            color = Ink,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            translate = false
                                         )
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            MealsTextButton(
-                                                onClick = {
-                                                    cookingServings = (cookingServings - 1).coerceAtLeast(1)
-                                                },
-                                                enabled = cookingServings > 1
-                                            ) { Text("−") }
-                                            dz.meals.app.ui.components.MealsAnimatedCount(
-                                                value = cookingServings.toString(),
-                                                color = Ink,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            MealsTextButton(
-                                                onClick = {
-                                                    cookingServings = (cookingServings + 1).coerceAtMost(12)
-                                                },
-                                                enabled = cookingServings < 12
-                                            ) { Text("+") }
-                                        }
+                                        Text(
+                                            bidiIsolate(
+                                                mealsRecipeIngredientQuantity(
+                                                    amount,
+                                                    ingredient.unit,
+                                                    localeTag
+                                                )
+                                            ),
+                                            color = dz.meals.app.ui.theme.TextAccent,
+                                            fontWeight = FontWeight.SemiBold,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            translate = false
+                                        )
+                                    }
+                                    if (ingredient.prepNote.isNotBlank()) {
+                                        Text(
+                                            mealsText(ingredient.prepNote, localeTag),
+                                            modifier = Modifier.padding(start = 12.dp),
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
                                     }
                                 }
+                            }
 
-                                item {
-                                    Text(
-                                        "المكونات لهذه الحصص",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Ink
-                                    )
-                                }
-                                items(cookingRecipe.ingredients) { ingredient ->
-                                    val master = ingredientNames[ingredient.ingredientId]
-                                    val servingsFactor = cookingServings.toDouble() /
-                                        cookingRecipe.baseServings.coerceAtLeast(1).toDouble()
-                                    val amount = scaleRecipeIngredientQuantity(
-                                        ingredient.quantityBase,
-                                        servingsFactor,
-                                        ingredient.scalingRule
-                                    )
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                bidiIsolate(
-                                                    mealsText(
-                                                        recipeIngredientDisplayName(master, ingredient.ingredientId, appLocaleTag),
-                                                        appLocaleTag
-                                                    )
-                                                ),
-                                                modifier = Modifier.weight(1f),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = Ink,
-                                                translate = false
-                                            )
-                                            Text(
-                                                bidiIsolate(
-                                                    mealsRecipeIngredientQuantity(amount, ingredient.unit, appLocaleTag)
-                                                ),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MutedInk,
-                                                translate = false
-                                            )
-                                        }
-                                        if (ingredient.prepNote.isNotBlank()) {
-                                            Text(
-                                                mealsText(ingredient.prepNote, appLocaleTag),
-                                                modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
-                                                color = MutedInk,
-                                                style = MaterialTheme.typography.bodySmall
-                                            )
-                                        }
-                                    }
-                                }
-
-                                if (cookingRecipe.stepsFr.getOrNull(visibleStepIndex).orEmpty().isNotBlank()) {
-                                    item {
-                                        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                            Text(
-                                                "بالفرنسية",
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MutedInk
-                                            )
-                                            Text(
-                                                cookingRecipe.stepsFr[visibleStepIndex],
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MutedInk
-                                            )
-                                        }
-                                    }
-                                }
-                                item { Spacer(Modifier.height(8.dp)) }
+                            item {
+                                Text(
+                                    "اسحبي أفقياً للانتقال إلى الخطوة التالية",
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
                             }
                         }
                     }
-                    }
                 }
-            },
-            confirmButton = {
-                if (cookingCompleted) {
-                    val dismissSheet = mealsSheetDismissAction()
-                    MealsPrimaryButton(
-                        label = "إنهاء",
-                        onClick = {
-                            dismissSheet {
-                                cookingRecipeId = null
-                                cookingCompleted = false
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    val dismissSheet = mealsSheetDismissAction()
-                    MealsPrimaryButton(
-                        label = when {
-                            stepCount == 0 -> "إغلاق"
-                            safeStepIndex < stepCount - 1 -> "التالي"
-                            else -> "إنهاء الطبخ"
-                        },
-                        onClick = {
-                            when {
-                                stepCount == 0 -> dismissSheet {
-                                    cookingRecipeId = null
-                                    cookingCompleted = false
-                                }
-                                safeStepIndex < stepCount - 1 -> {
-                                    cookingStepDirection = 1
-                                    cookingStepIndex = safeStepIndex + 1
-                                }
-                                else -> cookingCompleted = true
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            dismissButton = if (cookingCompleted) {
-                {
-                    MealsSecondaryButton(
-                        label = "مراجعة الخطوات",
-                        onClick = {
-                            cookingCompleted = false
-                            cookingStepDirection = -1
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            } else if (stepCount > 0) {
-                {
-                    MealsSecondaryButton(
-                        label = "السابق",
-                        onClick = {
-                            cookingStepDirection = -1
-                            cookingStepIndex = (safeStepIndex - 1).coerceAtLeast(0)
-                        },
-                        enabled = safeStepIndex > 0,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            } else {
-                null
             }
-        )
+        }
     }
 }
 
