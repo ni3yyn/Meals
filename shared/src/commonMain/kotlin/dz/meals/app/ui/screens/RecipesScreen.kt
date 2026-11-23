@@ -362,7 +362,9 @@ fun RecipesScreen(
                 .fillMaxSize()
                 .pointerInput(showFavorites, category, layoutDirection) {
                     var dragDistance = 0f
-                    val swipeThreshold = 72.dp.toPx()
+                    // detectHorizontalDragGestures already waits for platform touch slop;
+                    // keep the additional travel short so intentional swipes feel responsive.
+                    val swipeThreshold = 32.dp.toPx()
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
                             dragDistance += dragAmount
@@ -1435,7 +1437,9 @@ private fun RecipeCookingFlow(
                 .fillMaxWidth()
                 .pointerInput(completed, safeStepIndex, stepCount, layoutDirection) {
                     var dragDistance = 0f
-                    val swipeThreshold = 72.dp.toPx()
+                    // detectHorizontalDragGestures already waits for platform touch slop;
+                    // keep the additional travel short so intentional swipes feel responsive.
+                    val swipeThreshold = 32.dp.toPx()
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
                             dragDistance += dragAmount
