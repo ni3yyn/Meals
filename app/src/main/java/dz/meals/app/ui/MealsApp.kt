@@ -568,6 +568,10 @@ private fun MealsAppContent(
                         onSearchRecipeImages = { recipe, query ->
                             repository.searchCommonsRecipeImages(recipe, query)
                         },
+                        onAutoLoadRecipeImage = { recipe ->
+                            repository.automaticallyFindAndSaveRecipeImage(recipe)
+                            refresh()
+                        },
                         onSaveRecipeImage = { recipeId, image ->
                             scope.launch {
                                 try {

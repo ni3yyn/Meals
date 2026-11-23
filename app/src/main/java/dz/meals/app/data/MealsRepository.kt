@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
+import java.text.Normalizer
 import java.time.LocalDate
 import java.util.UUID
 import okhttp3.OkHttpClient
@@ -612,6 +613,29 @@ class MealsRepository(context: Context) {
         }.take(18)
     }
 
+    /**
+     * Finds and saves a high-confidence Commons match without opening the manual picker.
+     * If the filename does not meaningfully match one of the recipe's known names, no
+     * override is written and the caller can offer manual search instead.
+     */
+    suspend fun automaticallyFindAndSaveRecipeImage(recipe: MealRecipe): RecipeImageCandidate {
+        val query = sequenceOf(recipe.nativeName, recipe.nameFr, recipe.nameAr)
+            .map { it.trim() }
+            .firstOrNull { it.isNotBlank() }
+            ?: throw IOException("لا يتوفر اسم مناسب للبحث عن صورة هذه الوصفة.")
+
+        val candidates = searchCommonsRecipeImages(recipe, query)
+        val bestMatch = candidates
+            .map { candidate -> candidate to commonsRecipeImageMatchScore(recipe, candidate) }
+            .filter { (_, score) -> score >= 0.5 }
+            .maxByOrNull { (_, score) -> score }
+            ?.first
+            ?: throw IOException("لم نعثر على صورة مرخّصة يمكن مطابقتها بثقة. يمكنك البحث يدوياً.")
+
+        saveRecipeImage(recipe.id, bestMatch)
+        return bestMatch
+    }
+
     suspend fun saveRecipeImage(recipeId: String, image: RecipeImageCandidate) {
         require(image.imageUrl.startsWith("https://upload.wikimedia.org/")) {
             "رابط الصورة غير موثوق."
@@ -881,6 +905,43 @@ class MealsRepository(context: Context) {
             )
         }
     }
+}
+
+private val commonsImageStopWords = setOf(
+    "recipe", "recipes", "dish", "food", "image", "photo", "picture", "cuisine",
+    "traditional", "algerian", "recette", "recettes", "plat", "plats",
+    "the", "and", "with", "from", "for", "of", "in", "on", "to",
+    "les", "des", "une", "un", "aux", "avec", "pour", "dans", "sur", "du", "de", "la", "le", "et"
+)
+
+private fun commonsRecipeImageMatchScore(
+    recipe: MealRecipe,
+    candidate: RecipeImageCandidate
+): Double {
+    val candidateTokens = commonsImageTokens(candidate.title)
+    if (candidateTokens.isEmpty()) return 0.0
+
+    val nameVariants = listOf(recipe.nativeName, recipe.nameFr, recipe.nameAr)
+        .map(::commonsImageTokens)
+        .filter { it.isNotEmpty() }
+
+    return nameVariants.maxOfOrNull { tokens ->
+        tokens.count { it in candidateTokens }.toDouble() / tokens.size
+    } ?: 0.0
+}
+
+private fun commonsImageTokens(value: String): Set<String> {
+    val normalized = Normalizer.normalize(value.lowercase(), Normalizer.Form.NFD)
+        .replace(Regex("\\p{M}+"), "")
+        .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
+    return normalized
+        .replace('أ', 'ا')
+        .replace('إ', 'ا')
+        .replace('آ', 'ا')
+        .replace('ى', 'ي')
+        .split(Regex("[^\\p{L}\\p{N}]+"))
+        .filter { it.length >= 2 && it !in commonsImageStopWords }
+        .toSet()
 }
 
 private fun isReusableCommonsImageLicense(name: String, url: String): Boolean {

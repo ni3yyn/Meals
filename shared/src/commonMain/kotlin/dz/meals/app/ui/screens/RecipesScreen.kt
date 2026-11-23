@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -94,6 +95,7 @@ import dz.meals.app.ui.theme.LocalMealsLocaleTag
 import dz.meals.app.ui.theme.mealsText
 import kotlin.math.abs
 import kotlin.math.roundToLong
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
@@ -107,6 +109,7 @@ fun RecipesScreen(
     onAddRecipe: (String) -> Unit,
     onSearchRecipeImages: (suspend (MealRecipe, String) -> List<RecipeImageCandidate>)? = null,
     onSaveRecipeImage: ((String, RecipeImageCandidate) -> Unit)? = null,
+    onAutoLoadRecipeImage: (suspend (MealRecipe) -> Unit)? = null,
     onOpenRecipeCorpusTester: (() -> Unit)? = null,
     catalogueProgress: Float? = null,
     catalogueStatusMessage: String? = null,
@@ -122,6 +125,11 @@ fun RecipesScreen(
     var imageSearchResults by remember { mutableStateOf<List<RecipeImageCandidate>>(emptyList()) }
     var imageSearchLoading by remember { mutableStateOf(false) }
     var imageSearchError by remember { mutableStateOf<String?>(null) }
+    var automaticImageLoadingRecipeId by remember { mutableStateOf<String?>(null) }
+    var automaticImageError by remember { mutableStateOf<String?>(null) }
+    var automaticImageErrorRecipeId by remember { mutableStateOf<String?>(null) }
+    var automaticImageRetryNonce by remember { mutableStateOf(0) }
+    val attemptedAutomaticImageRecipeIds = remember { mutableSetOf<String>() }
     val imageSearchScope = rememberCoroutineScope()
     var cookingRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
@@ -161,6 +169,18 @@ fun RecipesScreen(
         imageSearchResults = emptyList()
         imageSearchError = null
         imageSearchLoading = false
+        automaticImageLoadingRecipeId = null
+        automaticImageError = null
+        automaticImageErrorRecipeId = null
+    }
+
+    fun openManualImageSearch(recipe: MealRecipe) {
+        imageSearchQuery = recipe.nameFr.takeIf {
+            it.isNotBlank() && it != recipe.nameAr
+        } ?: recipe.nativeName.ifBlank { recipe.nameAr }
+        imageSearchResults = emptyList()
+        imageSearchError = null
+        imageSearchOpen = true
     }
 
     fun searchRecipeImages(recipe: MealRecipe) {
@@ -494,6 +514,31 @@ fun RecipesScreen(
     }
 
     val detail = selectedRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
+
+    LaunchedEffect(detail?.id, detail?.imageUrl, automaticImageRetryNonce) {
+        val recipe = detail ?: return@LaunchedEffect
+        val autoLoad = onAutoLoadRecipeImage ?: return@LaunchedEffect
+        if (recipe.imageUrl.startsWith("https://", ignoreCase = true)) return@LaunchedEffect
+        if (!attemptedAutomaticImageRecipeIds.add(recipe.id)) return@LaunchedEffect
+
+        automaticImageLoadingRecipeId = recipe.id
+        automaticImageError = null
+        automaticImageErrorRecipeId = null
+        try {
+            autoLoad(recipe)
+        } catch (cancelled: CancellationException) {
+            attemptedAutomaticImageRecipeIds.remove(recipe.id)
+            throw cancelled
+        } catch (error: Exception) {
+            automaticImageError = error.message ?: "تعذر العثور على صورة مناسبة حالياً."
+            automaticImageErrorRecipeId = recipe.id
+        } finally {
+            if (automaticImageLoadingRecipeId == recipe.id) {
+                automaticImageLoadingRecipeId = null
+            }
+        }
+    }
+
     if (detail != null) {
         MealsBottomSheet(
             onDismissRequest = { selectedRecipeId = null },
@@ -641,31 +686,91 @@ fun RecipesScreen(
                         }
                     } else {
                         item {
-                            Text(
-                                "لا توجد صورة لهذه الوصفة بعد",
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            val autoFailed = automaticImageErrorRecipeId == detail.id
+                            val autoSearchExpected = onAutoLoadRecipeImage != null && !autoFailed
+                            val isAutoLoading = automaticImageLoadingRecipeId == detail.id ||
+                                (autoSearchExpected && detail.id !in attemptedAutomaticImageRecipeIds)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(188.dp)
+                                    .clip(RoundedCornerShape(17.dp))
+                                    .background(WarmSurface),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(9.dp),
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    if (isAutoLoading) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(27.dp),
+                                            color = dz.meals.app.ui.theme.TextAccent,
+                                            strokeWidth = 2.5.dp
+                                        )
+                                        Text(
+                                            "نبحث عن صورة مناسبة ونضيفها تلقائياً…",
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    } else if (autoFailed) {
+                                        Text(
+                                            "تعذر العثور على صورة مناسبة تلقائياً",
+                                            color = Ink,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            automaticImageError.orEmpty(),
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    } else {
+                                        Text(
+                                            "لا توجد صورة لهذه الوصفة بعد",
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                     if (onSearchRecipeImages != null && onSaveRecipeImage != null) {
-                        item {
-                            MealsSecondaryButton(
-                                label = if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
-                                    "ابحث عن صورة أخرى"
+                        val hasImage = detail.imageUrl.startsWith("https://", ignoreCase = true)
+                        val autoFailed = automaticImageErrorRecipeId == detail.id
+                        if (hasImage || onAutoLoadRecipeImage == null || autoFailed) {
+                            item {
+                                if (autoFailed && onAutoLoadRecipeImage != null && !hasImage) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        MealsSecondaryButton(
+                                            label = "إعادة المحاولة",
+                                            onClick = {
+                                                attemptedAutomaticImageRecipeIds.remove(detail.id)
+                                                automaticImageError = null
+                                                automaticImageErrorRecipeId = null
+                                                automaticImageRetryNonce += 1
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        MealsSecondaryButton(
+                                            label = "بحث يدوي",
+                                            onClick = { openManualImageSearch(detail) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
                                 } else {
-                                    "ابحث وأضف صورة"
-                                },
-                                onClick = {
-                                    imageSearchQuery = detail.nameFr.takeIf {
-                                        it.isNotBlank() && it != detail.nameAr
-                                    } ?: detail.nativeName.ifBlank { detail.nameAr }
-                                    imageSearchResults = emptyList()
-                                    imageSearchError = null
-                                    imageSearchOpen = true
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                                    MealsSecondaryButton(
+                                        label = if (hasImage) "ابحث عن صورة أخرى" else "ابحث وأضف صورة",
+                                        onClick = { openManualImageSearch(detail) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
                         }
                     }
                     if (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank()) {
