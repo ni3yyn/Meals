@@ -316,8 +316,12 @@ def main() -> int:
     )
 
     if not pending:
-        write_output(args.output, output, len(source_records))
-        print(f"Nothing to translate. Output is complete: {output['complete']}.")
+        if (
+            not output.get("complete")
+            or output.get("expectedCount") != len(source_records)
+        ):
+            write_output(args.output, output, len(source_records))
+        print(f"Nothing to translate. Output is complete: {len(existing) >= len(source_records)}.")
         return 0
 
     translated_count = 0
