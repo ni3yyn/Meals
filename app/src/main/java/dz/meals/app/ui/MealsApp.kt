@@ -876,26 +876,33 @@ private fun SettingsDialog(
 ) {
     val dismissSheet = mealsSheetDismissAction()
     var languageChangeTarget by remember { mutableStateOf<String?>(null) }
+    var operationTarget by remember { mutableStateOf<String?>(null) }
     var languageChangeError by remember { mutableStateOf<String?>(null) }
+    var closeAfterLoadingExit by remember { mutableStateOf(false) }
+    val currentAppLanguage by rememberUpdatedState(appLanguage)
     val isLanguageChanging = languageChangeTarget != null
 
-    LaunchedEffect(languageChangeTarget) {
-        val target = languageChangeTarget ?: return@LaunchedEffect
+    // The sheet calls this effect only after its content has faded away, the
+    // same glass surface has expanded, and the loading experience has entered.
+    LaunchedEffect(operationTarget) {
+        val target = operationTarget ?: return@LaunchedEffect
         try {
-            withFrameNanos { }
-            delay(220)
             onLanguageSelected(target)
+            snapshotFlow { normalizeMealsLocaleTag(currentAppLanguage) }
+                .first { it == normalizeMealsLocaleTag(target) }
 
-            // Wait for the new locale to be composed, then let the full glass surface breathe.
+            // Wait for locale direction, typography and layout to commit before reversing.
             withFrameNanos { }
             withFrameNanos { }
-            delay(420)
-            dismissSheet { onDismiss() }
+            closeAfterLoadingExit = true
+            languageChangeTarget = null
+            operationTarget = null
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
             languageChangeError = "تعذر تغيير اللغة. حاولي مرة أخرى."
             languageChangeTarget = null
+            operationTarget = null
         }
     }
 
@@ -905,6 +912,17 @@ private fun SettingsDialog(
         onDismissRequest = { if (!isLanguageChanging) onDismiss() },
         isLoading = isLanguageChanging,
         expandToFullScreenWhileLoading = true,
+        onLoadingStarted = {
+            if (operationTarget == null) {
+                operationTarget = languageChangeTarget
+            }
+        },
+        onLoadingExitFinished = {
+            if (closeAfterLoadingExit) {
+                closeAfterLoadingExit = false
+                dismissSheet { onDismiss() }
+            }
+        },
         loadingContent = {
             MealsLiquidGlassLoadingExperience(
                 title = "جارٍ تغيير اللغة",
@@ -952,6 +970,7 @@ private fun SettingsDialog(
                         normalizeMealsLocaleTag(targetLanguage) != normalizeMealsLocaleTag(appLanguage)
                     ) {
                         languageChangeError = null
+                        closeAfterLoadingExit = false
                         languageChangeTarget = normalizeMealsLocaleTag(targetLanguage)
                     }
                 },

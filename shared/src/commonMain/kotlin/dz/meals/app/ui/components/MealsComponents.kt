@@ -62,6 +62,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -99,12 +100,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -454,151 +453,133 @@ fun MealsLiquidGlassLoadingExperience(
     message: String? = null,
     modifier: Modifier = Modifier
 ) {
+    // One animated value invalidates only the Canvas draw pass. The dialog's
+    // existing modal glass provides the blur; nested Haze frames here would
+    // duplicate blur work several times during an already animated transition.
     val motion = rememberInfiniteTransition(label = "mealsLiquidGlassLoading")
-    val orbit by motion.animateFloat(
+    val orbit = motion.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2800, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            animation = tween(durationMillis = 2600, easing = LinearEasing)
         ),
         label = "mealsLiquidGlassLoadingOrbit"
     )
-    val breathe by motion.animateFloat(
-        initialValue = 0.96f,
-        targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "mealsLiquidGlassLoadingBreathe"
-    )
-    val drift by motion.animateFloat(
-        initialValue = -3.5f,
-        targetValue = 3.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "mealsLiquidGlassLoadingDrift"
-    )
 
-    val pearlFace = Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.94f),
-            Color(0xFFFFF8EF).copy(alpha = 0.88f),
-            Color(0xFFE5D4C2).copy(alpha = 0.68f)
+    val haloBrush = remember {
+        Brush.radialGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.70f),
+                Color(0xFFE8D8C8).copy(alpha = 0.24f),
+                Color.Transparent
+            )
         )
-    )
-    val glassHaze = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current
+    }
+    val coreBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.96f),
+                Color(0xFFFFF8EF).copy(alpha = 0.88f),
+                Color(0xFFE3D1BE).copy(alpha = 0.76f)
+            )
+        )
+    }
+    val beadBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.98f),
+                Color(0xFFF8EBDD).copy(alpha = 0.92f),
+                Color(0xFFD9C3AC).copy(alpha = 0.84f)
+            )
+        )
+    }
+    val sweepBrush = remember {
+        Brush.sweepGradient(
+            colors = listOf(
+                Color.Transparent,
+                Color.White.copy(alpha = 0.98f),
+                Color(0xFFD7C1A9).copy(alpha = 0.72f),
+                Color.Transparent
+            )
+        )
+    }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Box(
-            modifier = Modifier.size(156.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(
-                modifier = Modifier
-                    .size(144.dp)
-                    .graphicsLayer {
-                        scaleX = breathe
-                        scaleY = breathe
-                    }
-            ) {
+        Canvas(Modifier.size(154.dp)) {
+            val center = Offset(size.width * 0.5f, size.height * 0.5f)
+            val minDimension = size.minDimension
+            val coreRadius = minDimension * 0.235f
+            val orbitRadius = minDimension * 0.405f
+            val rotation = orbit.value
+
+            // A single pass draws the warm diffused halo, glass core, optical
+            // rim, moving specular arc, and three small pearl satellites.
+            drawCircle(
+                brush = haloBrush,
+                center = center,
+                radius = minDimension * 0.49f
+            )
+            drawCircle(
+                brush = coreBrush,
+                center = center,
+                radius = coreRadius
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.94f),
+                center = center,
+                radius = coreRadius,
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+            drawArc(
+                brush = sweepBrush,
+                startAngle = rotation - 238f,
+                sweepAngle = 218f,
+                useCenter = false,
+                topLeft = Offset(
+                    center.x - coreRadius * 0.78f,
+                    center.y - coreRadius * 0.78f
+                ),
+                size = Size(coreRadius * 1.56f, coreRadius * 1.56f),
+                style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            repeat(3) { index ->
+                val angle = (rotation + index * 120f) * 0.0174532925f
+                val satelliteCenter = Offset(
+                    x = center.x + kotlin.math.cos(angle.toDouble()).toFloat() * orbitRadius,
+                    y = center.y + kotlin.math.sin(angle.toDouble()).toFloat() * orbitRadius
+                )
+                val satelliteRadius = when (index) {
+                    0 -> 6.dp.toPx()
+                    1 -> 5.dp.toPx()
+                    else -> 4.dp.toPx()
+                }
                 drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.68f),
-                            Color(0xFFE8D8C8).copy(alpha = 0.24f),
-                            Color.Transparent
-                        ),
-                        radius = size.minDimension * 0.5f
-                    )
+                    brush = beadBrush,
+                    center = satelliteCenter,
+                    radius = satelliteRadius
+                )
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.90f),
+                    center = satelliteCenter,
+                    radius = satelliteRadius,
+                    style = Stroke(width = 0.8.dp.toPx())
                 )
             }
 
-            MealsLiquidGlassFrame(
-                modifier = Modifier
-                    .size(88.dp)
-                    .graphicsLayer { rotationZ = orbit * 0.07f },
-                shape = CircleShape,
-                elevation = 3.dp,
-                face = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.76f),
-                        Color(0xFFFFF8EF).copy(alpha = 0.68f),
-                        Color(0xFFE7D7C6).copy(alpha = 0.54f)
-                    )
-                ),
-                hazeState = glassHaze,
-                blurStyle = MealsLiquidGlass.ControlBlurStyle,
-                blurRadius = MealsLiquidGlass.ControlBlurRadius,
-                rim = MealsLiquidGlass.controlRim(),
-                sideGlintHeight = 34.dp
-            ) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp)
-                ) {
-                    drawArc(
-                        brush = Brush.sweepGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.White.copy(alpha = 0.96f),
-                                Color(0xFFD8C4AE).copy(alpha = 0.72f),
-                                Color.Transparent
-                            )
-                        ),
-                        startAngle = orbit - 28f,
-                        sweepAngle = 214f,
-                        useCenter = false,
-                        style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.88f),
-                        radius = 5.dp.toPx()
-                    )
-                }
-            }
-
-            repeat(3) { index ->
-                val pearlSize = when (index) {
-                    0 -> 20.dp
-                    1 -> 16.dp
-                    else -> 13.dp
-                }
-                MealsLiquidGlassFrame(
-                    modifier = Modifier
-                        .size(pearlSize)
-                        .graphicsLayer {
-                            val angle = (orbit + index * 120f) * 0.0174532925f
-                            translationX = kotlin.math.cos(angle.toDouble()).toFloat() * 52.dp.toPx()
-                            translationY = kotlin.math.sin(angle.toDouble()).toFloat() * 52.dp.toPx() +
-                                drift.dp.toPx() * if (index == 1) -1f else 1f
-                            val scale = 0.92f + (breathe - 0.96f) * (if (index == 1) 1.5f else 0.9f)
-                            scaleX = scale
-                            scaleY = scale
-                        },
-                    shape = CircleShape,
-                    elevation = 2.dp,
-                    face = pearlFace,
-                    hazeState = glassHaze,
-                    blurStyle = MealsLiquidGlass.ControlBlurStyle,
-                    blurRadius = MealsLiquidGlass.ControlBlurRadius,
-                    rim = MealsLiquidGlass.controlRim(),
-                    sideGlintHeight = pearlSize * 0.66f
-                ) {}
-            }
+            // A stationary upper glint makes the pearl read as a curved lens.
+            drawCircle(
+                color = Color.White.copy(alpha = 0.92f),
+                center = Offset(center.x - coreRadius * 0.30f, center.y - coreRadius * 0.48f),
+                radius = 3.dp.toPx()
+            )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         Text(
             text = "Midati",
             color = TextAccent,
@@ -614,7 +595,7 @@ fun MealsLiquidGlassLoadingExperience(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         message?.takeIf { it.isNotBlank() }?.let { supporting ->
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 text = mealsText(supporting),
                 color = MutedInk,
@@ -1698,6 +1679,25 @@ private fun MealsModalSurface(
  * grows only as needed, up to 87% of the available height. Immersive flows may
  * explicitly request a fixed viewport and a body that fills the remaining space.
  */
+private enum class MealsSheetVisualPhase {
+    Content,
+    ContentExit,
+    Loading,
+    LoadingExit
+}
+
+/**
+ * The only modal presentation in Meals. It remains content-driven by default.
+ *
+ * Loading-aware sheets use a staged sequence:
+ * 1. Fade the current content away.
+ * 2. Expand the existing glass surface.
+ * 3. Reveal loading content and notify the operation owner.
+ * 4. On completion, fade loading away, contract, restore content and notify
+ *    the owner so it can close or reuse the sheet.
+ *
+ * Do not replace the default dynamic sizing with fillMaxHeight.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealsBottomSheet(
@@ -1717,29 +1717,74 @@ fun MealsBottomSheet(
     onDismissAction: (() -> Unit)? = null,
     dismissActionClosesSheet: Boolean = false,
     showCloseButton: Boolean = true,
-    /**
-     * Opt-in fixed height for immersive flows such as guided cooking.
-     * Null preserves the regular content-driven, dynamic sheet sizing.
-     */
+    /** Opt-in fixed height for immersive flows such as guided cooking. */
     fixedHeightFraction: Float? = null,
     /** Makes the text slot occupy the space between the header and footer. */
     fillBody: Boolean = false,
-    /**
-     * Switches this sheet into its loading presentation without dismissing it.
-     * The supplied content crossfades in place while the same glass surface
-     * smoothly grows from its measured resting height to the available viewport.
-     */
+    /** Enables the reusable, staged loading presentation inside this sheet. */
     isLoading: Boolean = false,
-    /** Opt in to the full-viewport loading expansion. Off by default. */
+    /** Expands the same glass surface to the available viewport while loading. */
     expandToFullScreenWhileLoading: Boolean = false,
-    /** Custom loading UI, rendered inside the existing sheet surface. */
+    /** Called after expansion and loading-content entrance, when work should begin. */
+    onLoadingStarted: (() -> Unit)? = null,
+    /** Called after the exit sequence restores the content and resting height. */
+    onLoadingExitFinished: (() -> Unit)? = null,
+    /** Custom loading UI rendered inside the existing glass surface. */
     loadingContent: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val sheetScope = rememberCoroutineScope()
     val dismissStarted = remember { mutableStateOf(false) }
-    val isShowingLoading = isLoading && loadingContent != null
+    val activeLoading = isLoading && loadingContent != null
+    var visualPhase by remember { mutableStateOf(MealsSheetVisualPhase.Content) }
+    val expansion = remember { Animatable(0f) }
+    val onLoadingStartedState = rememberUpdatedState(onLoadingStarted)
+    val onLoadingExitFinishedState = rememberUpdatedState(onLoadingExitFinished)
+
+    LaunchedEffect(activeLoading, expandToFullScreenWhileLoading) {
+        if (activeLoading && visualPhase == MealsSheetVisualPhase.Content) {
+            // Clear the old UI first. Expanding and crossfading at the same time
+            // made the modal relayout and render two full compositions per frame.
+            visualPhase = MealsSheetVisualPhase.ContentExit
+            delay(130)
+
+            if (expandToFullScreenWhileLoading) {
+                expansion.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = 380,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            }
+
+            visualPhase = MealsSheetVisualPhase.Loading
+            // Let the loading surface finish its short fade before starting work.
+            delay(145)
+            onLoadingStartedState.value?.invoke()
+        } else if (!activeLoading && visualPhase != MealsSheetVisualPhase.Content) {
+            // Reverse the same sequence: clear the loader, restore natural height,
+            // then reveal the original content before the caller dismisses the sheet.
+            visualPhase = MealsSheetVisualPhase.LoadingExit
+            delay(125)
+
+            if (expandToFullScreenWhileLoading) {
+                expansion.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = 330,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            }
+
+            visualPhase = MealsSheetVisualPhase.Content
+            delay(170)
+            onLoadingExitFinishedState.value?.invoke()
+        }
+    }
+
     val dismissSheet: (afterDismiss: () -> Unit) -> Unit = remember(
         sheetState,
         sheetScope,
@@ -1765,12 +1810,12 @@ fun MealsBottomSheet(
         CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    if (!isShowingLoading) onDismissRequest()
+                    if (!activeLoading) onDismissRequest()
                 },
-                sheetGesturesEnabled = !isShowingLoading,
+                sheetGesturesEnabled = !activeLoading,
                 properties = ModalBottomSheetProperties(
-                    shouldDismissOnBackPress = !isShowingLoading,
-                    shouldDismissOnClickOutside = !isShowingLoading
+                    shouldDismissOnBackPress = !activeLoading,
+                    shouldDismissOnClickOutside = !activeLoading
                 ),
                 contentWindowInsets = {
                     BottomSheetDefaults.windowInsets
@@ -1803,10 +1848,8 @@ fun MealsBottomSheet(
                 MealsModalWindowBlur()
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    // Normal sheets stay content-driven and capped at 87%. Only an
-                    // explicitly loading-aware sheet captures its natural resting
-                    // height so it can animate that same surface to full viewport.
-                    // AI AGENTS: preserve this default dynamic sizing contract.
+                    // Regular sheets remain natural-height and are capped at 87%.
+                    // AI AGENTS: preserve this default content-driven sizing contract.
                     val maxSheetHeight = maxHeight * 0.87f
                     val fixedSheetHeight = fixedHeightFraction
                         ?.coerceIn(0.72f, 0.94f)
@@ -1819,34 +1862,20 @@ fun MealsBottomSheet(
                     val restingSheetHeight = fixedSheetHeight
                         ?: measuredNaturalHeight
                         ?: maxSheetHeight
-                    val expansionProgress by animateFloatAsState(
-                        targetValue = if (isShowingLoading && expandToFullScreenWhileLoading) 1f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = 0.88f,
-                            stiffness = 245f
-                        ),
-                        label = "mealsBottomSheetLoadingExpansion"
-                    )
                     val animatedSheetHeight = restingSheetHeight +
-                        (maxHeight - restingSheetHeight) * expansionProgress
-                    val isExpandingOrSettling = expandToFullScreenWhileLoading &&
-                        (isShowingLoading || expansionProgress > 0.001f)
+                        (maxHeight - restingSheetHeight) * expansion.value
+                    val isInLoadingTransition = visualPhase != MealsSheetVisualPhase.Content
                     val sheetHeightModifier = when {
-                        fixedSheetHeight != null && expandToFullScreenWhileLoading ->
+                        expandToFullScreenWhileLoading && isInLoadingTransition ->
                             Modifier.height(animatedSheetHeight)
                         fixedSheetHeight != null ->
                             Modifier.height(fixedSheetHeight)
-                        isExpandingOrSettling ->
-                            Modifier.height(animatedSheetHeight)
                         else ->
                             Modifier.heightIn(max = maxSheetHeight)
                     }
-                    val columnHeightModifier = if (
-                        fixedSheetHeight != null || isExpandingOrSettling
-                    ) {
-                        Modifier.fillMaxHeight()
-                    } else {
-                        Modifier.heightIn(max = maxSheetHeight)
+                    val contentHeightModifier = when {
+                        fixedSheetHeight != null -> Modifier.height(fixedSheetHeight)
+                        else -> Modifier.wrapContentHeight()
                     }
                     val maxBodyHeight = ((fixedSheetHeight ?: maxSheetHeight) - 164.dp)
                         .coerceAtLeast(120.dp)
@@ -1857,10 +1886,11 @@ fun MealsBottomSheet(
                             .then(sheetHeightModifier)
                             .onSizeChanged { size ->
                                 if (
-                                    expandToFullScreenWhileLoading &&
-                                    !isShowingLoading &&
-                                    expansionProgress <= 0.001f &&
-                                    fixedSheetHeight == null
+                                    !activeLoading &&
+                                    visualPhase == MealsSheetVisualPhase.Content &&
+                                    expansion.value <= 0.001f &&
+                                    fixedSheetHeight == null &&
+                                    naturalSheetHeightPx.value != size.height
                                 ) {
                                     naturalSheetHeightPx.value = size.height
                                 }
@@ -1874,162 +1904,161 @@ fun MealsBottomSheet(
                         padNavigationBars = true
                     ) {
                         AnimatedContent(
-                            targetState = isShowingLoading,
+                            targetState = visualPhase,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .then(
-                                    if (isExpandingOrSettling) Modifier.fillMaxHeight()
-                                    else Modifier.wrapContentHeight()
+                                    if (visualPhase == MealsSheetVisualPhase.Content) contentHeightModifier
+                                    else Modifier.height(animatedSheetHeight)
                                 ),
                             transitionSpec = {
-                                (
-                                    fadeIn(
-                                        animationSpec = tween(
-                                            durationMillis = 260,
-                                            easing = FastOutSlowInEasing
-                                        )
-                                    ) + scaleIn(
-                                        initialScale = 0.965f,
-                                        animationSpec = spring(
-                                            dampingRatio = 0.82f,
-                                            stiffness = 390f
-                                        )
+                                fadeIn(
+                                    animationSpec = tween(
+                                        durationMillis = 155,
+                                        easing = FastOutSlowInEasing
                                     )
-                                ) togetherWith (
-                                    fadeOut(
-                                        animationSpec = tween(
-                                            durationMillis = 145,
-                                            easing = FastOutSlowInEasing
-                                        )
-                                    ) + scaleOut(
-                                        targetScale = 0.985f,
-                                        animationSpec = tween(durationMillis = 180)
+                                ) togetherWith fadeOut(
+                                    animationSpec = tween(
+                                        durationMillis = 120,
+                                        easing = FastOutSlowInEasing
                                     )
                                 )
                             },
                             contentAlignment = Alignment.Center,
-                            label = "mealsBottomSheetLoadingCrossfade"
-                        ) { showingLoading ->
-                            if (showingLoading) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    loadingContent?.invoke(this)
-                                }
-                            } else {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .then(columnHeightModifier)
-                                        .padding(horizontal = 22.dp, vertical = 18.dp),
-                                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                                ) {
-                                    if (titleText != null || title != null || subtitle != null || showCloseButton) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.Top,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.weight(1f),
-                                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            label = "mealsBottomSheetLoadingSequence"
+                        ) { phase ->
+                            when (phase) {
+                                MealsSheetVisualPhase.Content -> {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .then(
+                                                if (fixedSheetHeight != null) Modifier.fillMaxHeight()
+                                                else Modifier.heightIn(max = maxSheetHeight)
+                                            )
+                                            .padding(horizontal = 22.dp, vertical = 18.dp),
+                                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                                    ) {
+                                        if (titleText != null || title != null || subtitle != null || showCloseButton) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.Top,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                                             ) {
-                                                titleText?.let {
-                                                    Text(
-                                                        it,
-                                                        style = MaterialTheme.typography.titleLarge,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Ink
-                                                    )
-                                                }
-                                                title?.invoke()
-                                                subtitle?.let {
-                                                    Text(it, style = MaterialTheme.typography.bodySmall, color = MutedInk)
-                                                }
-                                            }
-                                            if (showCloseButton) {
-                                                MealsIconButton(
-                                                    onClick = { dismissSheet { onDismissRequest() } },
-                                                    modifier = Modifier.size(44.dp),
-                                                    size = 44.dp
-                                                ) {
-                                                    MealsIcon(
-                                                        MealsIconName.Close,
-                                                        contentDescription = "إغلاق",
-                                                        modifier = Modifier.size(30.dp)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (text != null) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .then(
-                                                    if (fillBody) Modifier.weight(1f)
-                                                    else Modifier.heightIn(max = maxBodyHeight)
-                                                )
-                                        ) {
-                                            text()
-                                        }
-                                    }
-
-                                    content()
-
-                                    if (confirmButton != null || dismissButton != null) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            confirmButton?.let { button ->
-                                                Box(modifier = Modifier.weight(1f)) { button() }
-                                            }
-                                            dismissButton?.let { button ->
-                                                Box(modifier = Modifier.weight(1f)) { button() }
-                                            }
-                                        }
-                                    }
-
-                                    if (confirmLabel != null || dismissLabel != null) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            if (confirmLabel != null && onConfirm != null) {
-                                                MealsPrimaryButton(
-                                                    label = confirmLabel,
-                                                    onClick = {
-                                                        if (confirmActionClosesSheet) {
-                                                            dismissSheet { onConfirm() }
-                                                        } else {
-                                                            onConfirm()
-                                                        }
-                                                    },
+                                                Column(
                                                     modifier = Modifier.weight(1f),
-                                                    enabled = confirmEnabled
-                                                )
-                                            }
-                                            if (dismissLabel != null) {
-                                                MealsSecondaryButton(
-                                                    label = dismissLabel,
-                                                    onClick = {
-                                                        when {
-                                                            onDismissAction == null ->
-                                                                dismissSheet { onDismissRequest() }
-                                                            dismissActionClosesSheet ->
-                                                                dismissSheet { onDismissAction() }
-                                                            else -> onDismissAction()
-                                                        }
-                                                    },
-                                                    modifier = Modifier.weight(1f)
-                                                )
+                                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                                ) {
+                                                    titleText?.let {
+                                                        Text(
+                                                            it,
+                                                            style = MaterialTheme.typography.titleLarge,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Ink
+                                                        )
+                                                    }
+                                                    title?.invoke()
+                                                    subtitle?.let {
+                                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MutedInk)
+                                                    }
+                                                }
+                                                if (showCloseButton) {
+                                                    MealsIconButton(
+                                                        onClick = { dismissSheet { onDismissRequest() } },
+                                                        modifier = Modifier.size(44.dp),
+                                                        size = 44.dp
+                                                    ) {
+                                                        MealsIcon(
+                                                            MealsIconName.Close,
+                                                            contentDescription = "إغلاق",
+                                                            modifier = Modifier.size(30.dp)
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
+
+                                        if (text != null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .then(
+                                                        if (fillBody) Modifier.weight(1f)
+                                                        else Modifier.heightIn(max = maxBodyHeight)
+                                                    )
+                                            ) {
+                                                text()
+                                            }
+                                        }
+
+                                        content()
+
+                                        if (confirmButton != null || dismissButton != null) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                confirmButton?.let { button ->
+                                                    Box(modifier = Modifier.weight(1f)) { button() }
+                                                }
+                                                dismissButton?.let { button ->
+                                                    Box(modifier = Modifier.weight(1f)) { button() }
+                                                }
+                                            }
+                                        }
+
+                                        if (confirmLabel != null || dismissLabel != null) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                if (confirmLabel != null && onConfirm != null) {
+                                                    MealsPrimaryButton(
+                                                        label = confirmLabel,
+                                                        onClick = {
+                                                            if (confirmActionClosesSheet) {
+                                                                dismissSheet { onConfirm() }
+                                                            } else {
+                                                                onConfirm()
+                                                            }
+                                                        },
+                                                        modifier = Modifier.weight(1f),
+                                                        enabled = confirmEnabled
+                                                    )
+                                                }
+                                                if (dismissLabel != null) {
+                                                    MealsSecondaryButton(
+                                                        label = dismissLabel,
+                                                        onClick = {
+                                                            when {
+                                                                onDismissAction == null ->
+                                                                    dismissSheet { onDismissRequest() }
+                                                                dismissActionClosesSheet ->
+                                                                    dismissSheet { onDismissAction() }
+                                                                else -> onDismissAction()
+                                                            }
+                                                        },
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                MealsSheetVisualPhase.ContentExit,
+                                MealsSheetVisualPhase.LoadingExit -> {
+                                    Box(Modifier.fillMaxSize())
+                                }
+
+                                MealsSheetVisualPhase.Loading -> {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        loadingContent?.invoke(this)
                                     }
                                 }
                             }
