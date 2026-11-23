@@ -21,9 +21,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PlanRunEntity::class,
         CookedMealDeductionEntity::class,
         PlanPriceSnapshotEntity::class,
-        RecipeAttributionEntity::class
+        RecipeAttributionEntity::class,
+        RecipeImageOverrideEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -161,6 +162,22 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS recipe_image_overrides (" +
+                        "recipeId TEXT NOT NULL PRIMARY KEY, " +
+                        "imageUrl TEXT NOT NULL, " +
+                        "sourcePageUrl TEXT NOT NULL, " +
+                        "author TEXT NOT NULL, " +
+                        "credit TEXT NOT NULL, " +
+                        "license TEXT NOT NULL, " +
+                        "licenseUrl TEXT NOT NULL, " +
+                        "selectedAtEpochMillis INTEGER NOT NULL)"
+                )
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -169,7 +186,7 @@ abstract class MealsDatabase : RoomDatabase() {
                     context.applicationContext,
                     MealsDatabase::class.java,
                     "meals_local.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13).build().also { INSTANCE = it }
             }
     }
 }

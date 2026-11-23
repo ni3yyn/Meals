@@ -51,7 +51,10 @@ data class MealRecipe(
     val countryCode: String = "",
     val imageAuthor: String = "",
     val imageLicense: String = "",
-    val stepMinutes: List<Int?> = emptyList()
+    val stepMinutes: List<Int?> = emptyList(),
+    val imageSourcePageUrl: String = "",
+    val imageLicenseUrl: String = "",
+    val imageCredit: String = ""
 )
 
 data class RecipeAttribution(
@@ -187,3 +190,16 @@ fun scaleRecipeIngredientQuantity(quantity: Double, servingsFactor: Double, scal
     }
     return quantity * appliedFactor
 }
+
+
+data class RecipeImageCandidate(
+    val title: String,
+    val imageUrl: String,
+    val sourcePageUrl: String,
+    val author: String,
+    val credit: String,
+    val license: String,
+    val licenseUrl: String,
+    val width: Int,
+    val height: Int
+)

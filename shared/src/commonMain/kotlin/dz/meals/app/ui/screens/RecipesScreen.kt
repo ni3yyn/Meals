@@ -41,6 +41,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.RecipeImageCandidate
 import dz.meals.app.data.scaleRecipeIngredientQuantity
 import coil3.compose.AsyncImage
 import dz.meals.app.ui.components.MealsBottomSheet
@@ -101,6 +104,8 @@ fun RecipesScreen(
     favoriteRecipeIds: Set<String>,
     onToggleFavorite: (String) -> Unit,
     onAddRecipe: (String) -> Unit,
+    onSearchRecipeImages: (suspend (MealRecipe, String) -> List<RecipeImageCandidate>)? = null,
+    onSaveRecipeImage: ((String, RecipeImageCandidate) -> Unit)? = null,
     onOpenRecipeCorpusTester: (() -> Unit)? = null,
     catalogueProgress: Float? = null,
     catalogueStatusMessage: String? = null,
@@ -111,6 +116,12 @@ fun RecipesScreen(
     var category by rememberSaveable { mutableStateOf("الكل") }
     var showFavorites by rememberSaveable { mutableStateOf(false) }
     var selectedRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
+    var imageSearchOpen by rememberSaveable { mutableStateOf(false) }
+    var imageSearchQuery by rememberSaveable { mutableStateOf("") }
+    var imageSearchResults by remember { mutableStateOf<List<RecipeImageCandidate>>(emptyList()) }
+    var imageSearchLoading by remember { mutableStateOf(false) }
+    var imageSearchError by remember { mutableStateOf<String?>(null) }
+    val imageSearchScope = rememberCoroutineScope()
     var cookingRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
     var cookingServings by rememberSaveable { mutableStateOf(2) }
@@ -140,6 +151,35 @@ fun RecipesScreen(
         if (nextFavorites != showFavorites) {
             browseDirection = if (nextFavorites) 1 else -1
             showFavorites = nextFavorites
+        }
+    }
+
+    LaunchedEffect(selectedRecipeId) {
+        imageSearchOpen = false
+        imageSearchQuery = ""
+        imageSearchResults = emptyList()
+        imageSearchError = null
+        imageSearchLoading = false
+    }
+
+    fun searchRecipeImages(recipe: MealRecipe) {
+        val search = onSearchRecipeImages ?: return
+        val term = imageSearchQuery.trim()
+        if (term.isBlank() || imageSearchLoading) return
+        imageSearchLoading = true
+        imageSearchError = null
+        imageSearchResults = emptyList()
+        imageSearchScope.launch {
+            try {
+                imageSearchResults = search(recipe, term)
+                if (imageSearchResults.isEmpty()) {
+                    imageSearchError = "لم نعثر على صور مرخّصة تطابق هذا البحث. جرّب اسماً آخر."
+                }
+            } catch (error: Exception) {
+                imageSearchError = error.message ?: "تعذر البحث عن الصور حالياً."
+            } finally {
+                imageSearchLoading = false
+            }
         }
     }
 
@@ -456,323 +496,132 @@ fun RecipesScreen(
     if (detail != null) {
         MealsBottomSheet(
             onDismissRequest = { selectedRecipeId = null },
-            title = { Text(detail.nameAr) },
+            title = { Text(if (imageSearchOpen) "اختيار صورة للوصفة" else detail.nameAr) },
             // Keep the recipe actions anchored above the system navigation area.
             // Long recipe content scrolls independently instead of pushing the footer off-screen.
             fixedHeightFraction = 0.88f,
             fillBody = true,
             text = {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
-                        item {
-                            AsyncImage(
-                                model = detail.imageUrl,
-                                contentDescription = detail.nameAr,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(188.dp)
-                                    .clip(RoundedCornerShape(17.dp))
-                            )
-                        }
-                    }
-                    if (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank()) {
+                if (imageSearchOpen) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         item {
                             Text(
-                                "الصورة: " + listOf(detail.imageAuthor, detail.imageLicense)
-                                    .filter { it.isNotBlank() }
-                                    .joinToString(" · "),
-                                color = MutedInk,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                    item { Text(detail.descriptionAr, color = MutedInk) }
-                    if (detail.nativeName.isNotBlank()) {
-                        item {
-                            Text(
-                                "الاسم الأصلي: " + detail.nativeName,
+                                "ابحث في Wikimedia Commons عن صورة لهذا الطبق. نعرض الصور ذات تراخيص إعادة الاستخدام الواضحة فقط.",
                                 color = MutedInk,
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
-                    }
-                    item {
-                        val facts = buildList {
-                            detail.prepMinutes?.let { add("التحضير" to formatRecipeTime(it)) }
-                            detail.cookMinutes?.let { add("الطهي" to formatRecipeTime(it)) }
-                            if (detail.durationMinutes > 0) {
-                                add("الإجمالي" to formatRecipeTime(detail.durationMinutes))
-                            }
-                            add("الحصص" to detail.baseServings.toString())
+                        item {
+                            MealsSearchBar(
+                                value = imageSearchQuery,
+                                onValueChange = { imageSearchQuery = it },
+                                placeholder = "اسم الطبق أو وصف الصورة...",
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            facts.forEachIndexed { index, fact ->
-                                if (index > 0) {
-                                    Spacer(
-                                        Modifier
-                                            .width(1.dp)
-                                            .height(30.dp)
-                                            .background(Border.copy(alpha = 0.55f))
-                                    )
-                                }
-                                RecipeDetailFact(
-                                    label = fact.first,
-                                    value = fact.second,
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                MealsPrimaryButton(
+                                    label = if (imageSearchLoading) "جارٍ البحث…" else "ابحث عن صور",
+                                    onClick = { searchRecipeImages(detail) },
+                                    enabled = !imageSearchLoading && imageSearchQuery.isNotBlank(),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                MealsSecondaryButton(
+                                    label = "رجوع",
+                                    onClick = { imageSearchOpen = false },
                                     modifier = Modifier.weight(1f)
                                 )
                             }
                         }
-                    }
-                    if (detail.region.isNotBlank()) {
-                        item {
-                            Text(
-                                "المطبخ: " + detail.region,
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    if (detail.categories.isNotEmpty()) {
-                        item {
-                            Text(
-                                "الفئات: " + detail.categories.distinct().joinToString("، "),
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    if (detail.dietary.isNotEmpty()) {
-                        item {
-                            Text(
-                                "النمط الغذائي: " + detail.dietary.distinct().joinToString("، "),
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    if (detail.category.isNotBlank()) {
-                        item {
-                            Text(
-                                "التصنيف الرئيسي: " + detail.category,
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    if (detail.difficulty.isNotBlank() && detail.difficulty != "غير محدد") {
-                        item {
-                            Text(
-                                "مستوى الصعوبة: " + detail.difficulty,
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    if (
-                        detail.caloriesPerServing != null ||
-                        detail.proteinGramsPerServing != null ||
-                        detail.carbsGramsPerServing != null ||
-                        detail.fatGramsPerServing != null
-                    ) {
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        if (imageSearchLoading) {
+                            item {
                                 Text(
-                                    "القيمة الغذائية لكل حصة",
-                                    color = Ink,
-                                    fontWeight = FontWeight.SemiBold
+                                    "نبحث في صور Wikimedia Commons ونراجع تراخيصها…",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
                                 )
-                                val nutritionFacts = listOf(
-                                    "السعرات" to formatNutritionValue(detail.caloriesPerServing, "ك.س"),
-                                    "بروتين" to formatNutritionValue(detail.proteinGramsPerServing, "غ"),
-                                    "كربوهيدرات" to formatNutritionValue(detail.carbsGramsPerServing, "غ"),
-                                    "دهون" to formatNutritionValue(detail.fatGramsPerServing, "غ")
+                            }
+                        }
+                        imageSearchError?.let { message ->
+                            item {
+                                Text(
+                                    message,
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
                                 )
+                            }
+                        }
+                        items(imageSearchResults, key = { it.sourcePageUrl }) { candidate ->
+                            MealsCard(
+                                containerColor = WarmSurface,
+                                borderColor = null,
+                                contentPadding = 10.dp
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.Top
                                 ) {
-                                    nutritionFacts.forEachIndexed { index, fact ->
-                                        if (index > 0) {
-                                            Spacer(
-                                                Modifier
-                                                    .width(1.dp)
-                                                    .height(32.dp)
-                                                    .background(Border.copy(alpha = 0.45f))
-                                            )
-                                        }
-                                        RecipeDetailFact(
-                                            label = fact.first,
-                                            value = fact.second,
-                                            modifier = Modifier.weight(1f)
+                                    AsyncImage(
+                                        model = candidate.imageUrl,
+                                        contentDescription = candidate.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .width(112.dp)
+                                            .height(112.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                    )
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                                    ) {
+                                        Text(
+                                            candidate.title,
+                                            color = Ink,
+                                            fontWeight = FontWeight.SemiBold,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Text(
+                                            "المؤلف: " + candidate.author,
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                        Text(
+                                            "الترخيص: " + candidate.license,
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                        Text(
+                                            "صفحة المصدر",
+                                            color = dz.meals.app.ui.theme.TextAccent,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.clickable {
+                                                runCatching { uriHandler.openUri(candidate.sourcePageUrl) }
+                                            }
+                                        )
+                                        MealsPrimaryButton(
+                                            label = "استخدام هذه الصورة",
+                                            onClick = {
+                                                onSaveRecipeImage?.invoke(detail.id, candidate)
+                                                imageSearchOpen = false
+                                            },
+                                            enabled = onSaveRecipeImage != null,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
                                 }
                             }
                         }
                     }
-                    item { Text("المكونات", fontWeight = FontWeight.Bold) }
-                    items(detail.ingredients) { ingredient ->
-                        val master = ingredientNames[ingredient.ingredientId]
-                        val ingredientName = mealsText(
-                            master?.nameAr ?: ingredient.ingredientId,
-                            appLocaleTag
-                        )
-                        val quantityLabel = mealsText(
-                            ingredient.quantityBase.formatHouseholdQuantity(ingredient.unit),
-                            appLocaleTag
-                        )
-                        val quantityOrNote = when {
-                            ingredient.quantityBase > 0.0 && ingredient.prepNote.isNotBlank() ->
-                                quantityLabel + " · " + ingredient.prepNote
-                            ingredient.quantityBase > 0.0 -> quantityLabel
-                            ingredient.prepNote.isNotBlank() -> ingredient.prepNote
-                            else -> mealsText("حسب الحاجة", appLocaleTag)
-                        }
-                        Text(
-                            "• " + bidiIsolate(ingredientName) + " — " + quantityOrNote,
-                            translate = false
-                        )
-                    }
-                    if (detail.tags.isNotEmpty()) {
-                        item {
-                            Text(
-                                "وسوم الوصفة: " + detail.tags.distinct().joinToString("، "),
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
-                    itemsIndexed(detail.stepsAr) { index, step ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                bidiIsolate((index + 1).toString()) + ". " + mealsText(step, appLocaleTag),
-                                modifier = Modifier.weight(1f),
-                                translate = false
-                            )
-                            detail.stepMinutes.getOrNull(index)?.let { minutes ->
-                                Text(
-                                    formatRecipeTime(minutes),
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        val allergenLabels = detail.allergens.map { allergen ->
-                            when (allergen) {
-                                "gluten" -> "الغلوتين"
-                                "egg" -> "البيض"
-                                "milk" -> "الحليب"
-                                "tree_nuts" -> "المكسرات"
-                                "celery" -> "الكرفس"
-                                "sulphites" -> "الكبريتيت"
-                                "fish" -> "السمك"
-                                "mustard" -> "الخردل"
-                                "crustaceans" -> "القشريات"
-                                "soy" -> "فول الصويا"
-                                "sesame" -> "السمسم"
-                                "molluscs" -> "الرخويات"
-                                "peanuts" -> "الفول السوداني"
-                                else -> allergen
-                            }
-                        }
-                        val allergenText = if (allergenLabels.isEmpty()) {
-                            mealsText("لا توجد مسببات مسجلة", appLocaleTag)
-                        } else {
-                            allergenLabels.joinToString(if (isMealsEnglish(appLocaleTag)) ", " else "، ")
-                        }
-                        Text(
-                            mealsText("الحساسية: ", appLocaleTag) + allergenText,
-                            translate = false
-                        )
-                    }
-                    detail.attribution?.let { attribution ->
-                        item {
-                            MealsCard(
-                                containerColor = WarmSurface,
-                                borderColor = null,
-                                contentPadding = 13.dp
-                            ) {
-                                Text(
-                                    "المصدر والترخيص",
-                                    color = Ink,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    attribution.credit + " · " + attribution.sourceTitle,
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                if (attribution.sourceUrl.isNotBlank()) {
-                                    Text(
-                                        "فتح المصدر الأصلي",
-                                        color = dz.meals.app.ui.theme.TextAccent,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.clickable {
-                                            runCatching { uriHandler.openUri(attribution.sourceUrl) }
-                                        }
-                                    )
-                                }
-                                if (attribution.sourceLicense.isNotBlank()) {
-                                    Text(
-                                        "ترخيص المصدر: " + attribution.sourceLicense,
-                                        color = MutedInk,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-                                Text(
-                                    attribution.license,
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.clickable {
-                                        if (attribution.licenseUrl.isNotBlank()) {
-                                            runCatching { uriHandler.openUri(attribution.licenseUrl) }
-                                        }
-                                    }
-                                )
-                                if (attribution.revisionUrl.isNotBlank()) {
-                                    Text(
-                                        "مراجعة الوصفة الأصلية",
-                                        color = dz.meals.app.ui.theme.TextAccent,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.clickable {
-                                            runCatching { uriHandler.openUri(attribution.revisionUrl) }
-                                        }
-                                    )
-                                }
-                                if (attribution.historyUrl.isNotBlank()) {
-                                    Text(
-                                        "سجل تعديلات المصدر",
-                                        color = dz.meals.app.ui.theme.TextAccent,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.clickable {
-                                            runCatching { uriHandler.openUri(attribution.historyUrl) }
-                                        }
-                                    )
-                                }
-                                if (attribution.changes.isNotBlank()) {
-                                    Text(
-                                        attribution.changes,
-                                        color = MutedInk,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-                            }
-                        }
-                    }
+                } else {
+                    ${detailBody}
                 }
             },
             confirmButton = {

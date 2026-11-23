@@ -15,6 +15,7 @@ import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.data.local.RecipeEntity
 import dz.meals.app.data.local.RecipeIngredientEntity
 import dz.meals.app.data.local.RecipeStepEntity
+import dz.meals.app.data.local.RecipeImageOverrideEntity
 import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.calculateBasket
 import dz.meals.app.domain.exactPantryDeduction
@@ -24,15 +25,26 @@ import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.pricesForSavedPlan
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.util.UUID
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import org.json.JSONObject
 
 class MealsRepository(context: Context) {
     private val appContext = context.applicationContext
     private val database = MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
+    private val commonsClient = OkHttpClient.Builder()
+        .callTimeout(java.time.Duration.ofSeconds(35))
+        .connectTimeout(java.time.Duration.ofSeconds(12))
+        .readTimeout(java.time.Duration.ofSeconds(25))
+        .build()
     private val initializationMutex = Mutex()
     private val catalogueCacheMutex = Mutex()
     private var cachedCatalogueRecipes: List<MealRecipe>? = null
@@ -509,6 +521,128 @@ class MealsRepository(context: Context) {
         )
     }
 
+    suspend fun searchCommonsRecipeImages(
+        recipe: MealRecipe,
+        query: String
+    ): List<RecipeImageCandidate> = withContext(Dispatchers.IO) {
+        val searchTerm = query.trim().take(120)
+        require(searchTerm.isNotBlank()) { "أدخلي اسم الطبق للبحث عن صورة." }
+
+        val requestUrl = "https://commons.wikimedia.org/w/api.php".toHttpUrl().newBuilder()
+            .addQueryParameter("action", "query")
+            .addQueryParameter("format", "json")
+            .addQueryParameter("formatversion", "2")
+            .addQueryParameter("generator", "search")
+            .addQueryParameter("gsrsearch", "$searchTerm filetype:bitmap")
+            .addQueryParameter("gsrnamespace", "6")
+            .addQueryParameter("gsrlimit", "18")
+            .addQueryParameter("prop", "imageinfo")
+            .addQueryParameter("iiprop", "url|extmetadata|size|mime")
+            .addQueryParameter("iiurlwidth", "640")
+            .addQueryParameter(
+                "iiextmetadatafilter",
+                "Artist|Credit|LicenseShortName|LicenseUrl|Copyrighted"
+            )
+            .build()
+        val request = Request.Builder()
+            .url(requestUrl)
+            .header("Accept", "application/json")
+            .header("User-Agent", "Midati-Android/1.0 (https://github.com/ni3yyn/Meals)")
+            .build()
+
+        val body = commonsClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("تعذر البحث في Wikimedia Commons (HTTP ${response.code}).")
+            }
+            response.body?.string() ?: throw IOException("لم تصل نتائج البحث عن الصور.")
+        }
+        val pages = JSONObject(body).optJSONObject("query")?.optJSONArray("pages")
+            ?: return@withContext emptyList()
+
+        buildList {
+            for (index in 0 until pages.length()) {
+                val page = pages.optJSONObject(index) ?: continue
+                val title = page.optString("title").trim()
+                if (!title.startsWith("File:", ignoreCase = true)) continue
+                val info = page.optJSONArray("imageinfo")?.optJSONObject(0) ?: continue
+                val mime = info.optString("mime")
+                if (!mime.startsWith("image/")) continue
+                val width = info.optInt("width")
+                val height = info.optInt("height")
+                if (width < 320 || height < 220) continue
+
+                val metadata = info.optJSONObject("extmetadata") ?: continue
+                fun metadataValue(key: String): String =
+                    metadata.optJSONObject(key)?.optString("value").orEmpty().stripCommonsMarkup()
+
+                val license = metadataValue("LicenseShortName")
+                val licenseUrl = metadataValue("LicenseUrl")
+                if (!isReusableCommonsImageLicense(license, licenseUrl)) continue
+
+                val artist = metadataValue("Artist")
+                val credit = metadataValue("Credit")
+                val author = artist.ifBlank { credit }
+                if (author.isBlank()) continue
+
+                val imageUrl = info.optString("thumburl").ifBlank { info.optString("url") }
+                val sourcePageUrl = info.optString("descriptionurl")
+                if (!imageUrl.startsWith("https://upload.wikimedia.org/")) continue
+                if (!sourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:")) continue
+
+                add(
+                    RecipeImageCandidate(
+                        title = title.removePrefix("File:"),
+                        imageUrl = imageUrl,
+                        sourcePageUrl = sourcePageUrl,
+                        author = author,
+                        credit = credit.ifBlank { author },
+                        license = license,
+                        licenseUrl = licenseUrl,
+                        width = width,
+                        height = height
+                    )
+                )
+            }
+        }.take(18)
+    }
+
+    suspend fun saveRecipeImage(recipeId: String, image: RecipeImageCandidate) {
+        require(image.imageUrl.startsWith("https://upload.wikimedia.org/")) {
+            "رابط الصورة غير موثوق."
+        }
+        require(image.sourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:")) {
+            "رابط مصدر الصورة غير صالح."
+        }
+        require(isReusableCommonsImageLicense(image.license, image.licenseUrl)) {
+            "ترخيص هذه الصورة لا يسمح بإعادة استخدامها داخل التطبيق."
+        }
+        require(image.author.isNotBlank() && image.credit.isNotBlank()) {
+            "تفتقد الصورة إلى بيانات النسب المطلوبة."
+        }
+        require(dao.getRecipes().any { it.id == recipeId }) { "الوصفة غير موجودة." }
+
+        database.withTransaction {
+            dao.upsertRecipeImageOverride(
+                RecipeImageOverrideEntity(
+                    recipeId = recipeId,
+                    imageUrl = image.imageUrl,
+                    sourcePageUrl = image.sourcePageUrl,
+                    author = image.author,
+                    credit = image.credit,
+                    license = image.license,
+                    licenseUrl = image.licenseUrl,
+                    selectedAtEpochMillis = System.currentTimeMillis()
+                )
+            )
+        }
+        invalidateCatalogueCache()
+    }
+
+    suspend fun removeRecipeImageOverride(recipeId: String) {
+        dao.removeRecipeImageOverride(recipeId)
+        invalidateCatalogueCache()
+    }
+
     suspend fun toggleFavorite(recipeId: String) {
         if (dao.getFavoriteRecipeIds().contains(recipeId)) {
             dao.removeFavoriteRecipe(recipeId)
@@ -640,6 +774,7 @@ class MealsRepository(context: Context) {
         val ingredients = dao.getRecipeIngredients().groupBy { it.recipeId }
         val steps = dao.getRecipeSteps().groupBy { it.recipeId }
         val attributions = dao.getRecipeAttributions().associateBy { it.recipeId }
+        val imageOverrides = dao.getRecipeImageOverrides().associateBy { it.recipeId }
         // Hide partially imported community rows until the entire pinned
         // catalogue revision has passed validation and has been committed.
         val catalogueInstalled = hasInstalledArabicRecipeCatalogue()
@@ -651,6 +786,7 @@ class MealsRepository(context: Context) {
             }
             .map { recipe ->
                 val recipeSteps = steps[recipe.id].orEmpty().sortedBy { it.stepNumber }
+                val imageOverride = imageOverrides[recipe.id]
                 MealRecipe(
                     id = recipe.id,
                     nameAr = recipe.nameAr,
@@ -690,12 +826,15 @@ class MealsRepository(context: Context) {
                     proteinGramsPerServing = recipe.proteinGramsPerServing,
                     carbsGramsPerServing = recipe.carbsGramsPerServing,
                     fatGramsPerServing = recipe.fatGramsPerServing,
-                    imageUrl = recipe.imageUrl,
+                    imageUrl = imageOverride?.imageUrl ?: recipe.imageUrl,
                     nativeName = recipe.nativeName,
                     countryCode = recipe.countryCode,
-                    imageAuthor = recipe.imageAuthor,
-                    imageLicense = recipe.imageLicense,
-                    stepMinutes = recipeSteps.map { it.durationMinutes }
+                    imageAuthor = imageOverride?.author ?: recipe.imageAuthor,
+                    imageLicense = imageOverride?.license ?: recipe.imageLicense,
+                    stepMinutes = recipeSteps.map { it.durationMinutes },
+                    imageSourcePageUrl = imageOverride?.sourcePageUrl.orEmpty(),
+                    imageLicenseUrl = imageOverride?.licenseUrl.orEmpty(),
+                    imageCredit = imageOverride?.credit ?: recipe.imageAuthor
                 )
             }
     }
@@ -737,6 +876,31 @@ class MealsRepository(context: Context) {
         }
     }
 }
+
+private fun isReusableCommonsImageLicense(name: String, url: String): Boolean {
+    val normalized = name.trim().lowercase()
+    val excludesCommercialOrDerivatives = Regex("\\b(?:nc|nd)\\b").containsMatchIn(normalized)
+    if (excludesCommercialOrDerivatives) return false
+    val permittedName = normalized.startsWith("cc by") ||
+        normalized.startsWith("cc0") ||
+        normalized.contains("public domain")
+    if (!permittedName) return false
+    return normalized.contains("public domain") ||
+        url.startsWith("https://creativecommons.org/licenses/") ||
+        url.startsWith("https://creativecommons.org/publicdomain/")
+}
+
+private fun String.stripCommonsMarkup(): String =
+    replace(Regex("<[^>]*>"), " ")
+        .replace("&nbsp;", " ", ignoreCase = true)
+        .replace("&#160;", " ", ignoreCase = true)
+        .replace("&amp;", "&", ignoreCase = true)
+        .replace("&quot;", "\"", ignoreCase = true)
+        .replace("&#39;", "'", ignoreCase = true)
+        .replace("&lt;", "<", ignoreCase = true)
+        .replace("&gt;", ">", ignoreCase = true)
+        .replace(Regex("\\s+"), " ")
+        .trim()
 
 data class GenerationResult(
     val success: Boolean,

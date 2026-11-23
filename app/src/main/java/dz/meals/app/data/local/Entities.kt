@@ -208,3 +208,16 @@ data class RecipeAttributionEntity(
     val licenseUrl: String,
     val changes: String
 )
+
+
+@Entity(tableName = "recipe_image_overrides")
+data class RecipeImageOverrideEntity(
+    @PrimaryKey val recipeId: String,
+    val imageUrl: String,
+    val sourcePageUrl: String,
+    val author: String,
+    val credit: String,
+    val license: String,
+    val licenseUrl: String,
+    val selectedAtEpochMillis: Long
+)

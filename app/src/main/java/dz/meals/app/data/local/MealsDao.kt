@@ -84,6 +84,15 @@ interface MealsDao {
     @Query("SELECT * FROM recipe_attributions")
     suspend fun getRecipeAttributions(): List<RecipeAttributionEntity>
 
+    @Query("SELECT * FROM recipe_image_overrides")
+    suspend fun getRecipeImageOverrides(): List<RecipeImageOverrideEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertRecipeImageOverride(item: RecipeImageOverrideEntity)
+
+    @Query("DELETE FROM recipe_image_overrides WHERE recipeId = :recipeId")
+    suspend fun removeRecipeImageOverride(recipeId: String)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPrices(items: List<PriceObservationEntity>)
 

@@ -565,6 +565,12 @@ private fun MealsAppContent(
                         ingredients = snapshot.ingredients,
                         allergyIds = preferences.allergyIds,
                         favoriteRecipeIds = snapshot.favoriteRecipeIds,
+                        onSearchRecipeImages = { recipe, query ->
+                            repository.searchCommonsRecipeImages(recipe, query)
+                        },
+                        onSaveRecipeImage = { recipeId, image ->
+                            perform { repository.saveRecipeImage(recipeId, image) }
+                        },
                         onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                         onAddRecipe = { id ->
                             generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
