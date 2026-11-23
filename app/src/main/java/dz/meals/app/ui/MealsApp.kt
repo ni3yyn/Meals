@@ -92,6 +92,8 @@ import dz.meals.app.BuildConfig
 import dz.meals.app.data.LocalCorpusRecipe
 import dz.meals.app.data.LocalCorpusTranslation
 import dz.meals.app.data.LocalRecipeCorpusRepository
+import dz.meals.app.data.ArabicRecipeCatalogueDownloader
+import dz.meals.app.data.ArabicRecipeCatalogueInstaller
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.AppUpdateChecker
 import dz.meals.app.data.AppUpdateCheckResult
@@ -119,6 +121,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import java.time.LocalDate
 
 private const val LATEST_APK_DOWNLOAD_URL = "https://github.com/ni3yyn/Meals/releases/latest/download/meals.apk"
@@ -158,6 +161,14 @@ private enum class AppTab(val title: String) {
     Recipes("الوصفات"),
     Shopping("المشتريات"),
     Pantry("المخزون")
+}
+
+private enum class RecipeCataloguePhase {
+    IDLE,
+    DOWNLOADING,
+    INSTALLING,
+    READY,
+    FAILED
 }
 
 @Composable
@@ -231,6 +242,15 @@ private fun MealsAppContent(
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }
 
     var snapshot by remember { mutableStateOf(MealsSnapshot()) }
+    val arabicCatalogueDownloader = remember(context) { ArabicRecipeCatalogueDownloader(context) }
+    val arabicCatalogueInstaller = remember(context) { ArabicRecipeCatalogueInstaller(context) }
+    var cataloguePhase by remember { mutableStateOf(RecipeCataloguePhase.IDLE) }
+    var catalogueDownloadedBytes by remember { mutableStateOf(0L) }
+    var catalogueTotalBytes by remember { mutableStateOf(ArabicRecipeCatalogueDownloader.EXPECTED_BYTES) }
+    var catalogueImportedRecipes by remember { mutableStateOf(0) }
+    var catalogueExpectedRecipes by remember { mutableStateOf(ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT) }
+    var catalogueError by remember { mutableStateOf<String?>(null) }
+    var catalogueJob by remember { mutableStateOf<Job?>(null) }
     val recipeCorpusRepository = remember(context) { LocalRecipeCorpusRepository(context) }
     var showRecipeCorpusTester by rememberSaveable { mutableStateOf(false) }
     var recipeCorpusLoading by remember { mutableStateOf(false) }
@@ -265,6 +285,47 @@ private fun MealsAppContent(
 
     suspend fun refresh() {
         snapshot = repository.snapshot(weekStartIso, preferences.wilaya, preferences.mealSlots)
+    }
+
+    fun ensureArabicRecipeCatalogue() {
+        if (cataloguePhase == RecipeCataloguePhase.READY || catalogueJob?.isActive == true) return
+        catalogueError = null
+        catalogueJob = scope.launch {
+            try {
+                if (arabicCatalogueInstaller.isInstalled()) {
+                    cataloguePhase = RecipeCataloguePhase.READY
+                    return@launch
+                }
+
+                cataloguePhase = RecipeCataloguePhase.DOWNLOADING
+                catalogueDownloadedBytes = 0L
+                catalogueTotalBytes = ArabicRecipeCatalogueDownloader.EXPECTED_BYTES
+                val file = arabicCatalogueDownloader.download { progress ->
+                    catalogueDownloadedBytes = progress.downloadedBytes
+                    catalogueTotalBytes = progress.totalBytes
+                }
+
+                cataloguePhase = RecipeCataloguePhase.INSTALLING
+                catalogueImportedRecipes = 0
+                catalogueExpectedRecipes = ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
+                arabicCatalogueInstaller.install(file) { completed, total ->
+                    catalogueImportedRecipes = completed
+                    catalogueExpectedRecipes = total
+                }
+
+                refresh()
+                cataloguePhase = RecipeCataloguePhase.READY
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                catalogueError = error.message ?: "تعذر تحميل مكتبة الوصفات. تحققي من الاتصال ثم أعيدي المحاولة."
+                cataloguePhase = RecipeCataloguePhase.FAILED
+            }
+        }
+    }
+
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == AppTab.Recipes) ensureArabicRecipeCatalogue()
     }
 
     fun checkForAppUpdates() {
@@ -502,6 +563,20 @@ private fun MealsAppContent(
                             perform { repository.addRecipeToNextSlot(weekStartIso, id, preferences.householdServings) }
                             selectedTab = AppTab.Plan
                         },
+                        catalogueProgress = when (cataloguePhase) {
+                            RecipeCataloguePhase.DOWNLOADING ->
+                                0.90f * (catalogueDownloadedBytes.toFloat() / catalogueTotalBytes.coerceAtLeast(1L)).coerceIn(0f, 1f)
+                            RecipeCataloguePhase.INSTALLING ->
+                                0.90f + 0.10f * (catalogueImportedRecipes.toFloat() / catalogueExpectedRecipes.coerceAtLeast(1)).coerceIn(0f, 1f)
+                            else -> null
+                        },
+                        catalogueStatusMessage = when (cataloguePhase) {
+                            RecipeCataloguePhase.DOWNLOADING -> "جارٍ تنزيل مكتبة الوصفات…"
+                            RecipeCataloguePhase.INSTALLING -> "نضيف الوصفات إلى مكتبة Midati…  $catalogueImportedRecipes / $catalogueExpectedRecipes"
+                            else -> null
+                        },
+                        catalogueError = catalogueError,
+                        onRetryCatalogue = { ensureArabicRecipeCatalogue() },
                         onOpenRecipeCorpusTester = if (BuildConfig.DEBUG) {
                             {
                                 showRecipeCorpusTester = true

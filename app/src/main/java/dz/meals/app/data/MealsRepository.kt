@@ -225,6 +225,11 @@ class MealsRepository(context: Context) {
     ): GenerationResult {
         ensureInitialized()
         val recipes = loadRecipes()
+        // Community recipes are browseable and manually plannable. Keep automatic
+        // generation on the curated, price-aware seed catalogue for now.
+        val generatorRecipes = recipes.filterNot {
+            it.id.startsWith(ArabicRecipeCatalogueInstaller.RECIPE_ID_PREFIX)
+        }
         val validSlots = selectedMealSlots.intersect(MealSlots.ids.toSet())
         if (validSlots.isEmpty()) {
             return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)
@@ -253,7 +258,7 @@ class MealsRepository(context: Context) {
                 budgetDzd = weeklyBudgetDzd
             )
         }
-        val allowed = recipes.filter { recipe ->
+        val allowed = generatorRecipes.filter { recipe ->
             isRecipeAllowed(recipe, ingredientCategories, allergyIds, dietPattern)
         }
         val pantry = dao.getPantryItems()
@@ -593,6 +598,7 @@ class MealsRepository(context: Context) {
     private suspend fun loadRecipes(): List<MealRecipe> {
         val ingredients = dao.getRecipeIngredients().groupBy { it.recipeId }
         val steps = dao.getRecipeSteps().groupBy { it.recipeId }
+        val attributions = dao.getRecipeAttributions().associateBy { it.recipeId }
         return dao.getRecipes().map { recipe ->
             val recipeSteps = steps[recipe.id].orEmpty().sortedBy { it.stepNumber }
             MealRecipe(
@@ -611,7 +617,20 @@ class MealsRepository(context: Context) {
                     RecipeIngredient(it.ingredientId, it.quantityBase, it.unit, it.prepNote, it.optional)
                 },
                 stepsAr = recipeSteps.map { it.instructionAr },
-                stepsFr = recipeSteps.map { it.instructionFr }
+                stepsFr = recipeSteps.map { it.instructionFr },
+                attribution = attributions[recipe.id]?.let {
+                    RecipeAttribution(
+                        sourceTitle = it.sourceTitle,
+                        sourceUrl = it.sourceUrl,
+                        revisionUrl = it.revisionUrl,
+                        historyUrl = it.historyUrl,
+                        credit = it.credit,
+                        sourceLicense = it.sourceLicense,
+                        license = it.license,
+                        licenseUrl = it.licenseUrl,
+                        changes = it.changes
+                    )
+                }
             )
         }
     }

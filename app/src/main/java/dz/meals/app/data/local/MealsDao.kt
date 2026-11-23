@@ -31,6 +31,33 @@ interface MealsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRecipeSteps(items: List<RecipeStepEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCatalogueIngredients(items: List<IngredientEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCatalogueRecipes(items: List<RecipeEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCatalogueRecipeIngredients(items: List<RecipeIngredientEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCatalogueRecipeSteps(items: List<RecipeStepEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertRecipeAttributions(items: List<RecipeAttributionEntity>)
+
+    @Query("DELETE FROM recipe_ingredients WHERE recipeId IN (:recipeIds)")
+    suspend fun deleteRecipeIngredientsForRecipes(recipeIds: List<String>)
+
+    @Query("DELETE FROM recipe_steps WHERE recipeId IN (:recipeIds)")
+    suspend fun deleteRecipeStepsForRecipes(recipeIds: List<String>)
+
+    @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'orc-%'")
+    suspend fun countArabicCatalogueRecipes(): Int
+
+    @Query("SELECT * FROM recipe_attributions")
+    suspend fun getRecipeAttributions(): List<RecipeAttributionEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPrices(items: List<PriceObservationEntity>)
 

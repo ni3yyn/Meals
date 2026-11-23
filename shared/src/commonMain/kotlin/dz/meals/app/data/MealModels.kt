@@ -32,7 +32,20 @@ data class MealRecipe(
     val allergens: Set<String>,
     val ingredients: List<RecipeIngredient>,
     val stepsAr: List<String>,
-    val stepsFr: List<String>
+    val stepsFr: List<String>,
+    val attribution: RecipeAttribution? = null
+)
+
+data class RecipeAttribution(
+    val sourceTitle: String,
+    val sourceUrl: String,
+    val revisionUrl: String,
+    val historyUrl: String,
+    val credit: String,
+    val sourceLicense: String,
+    val license: String,
+    val licenseUrl: String,
+    val changes: String
 )
 
 data class AppPreferences(

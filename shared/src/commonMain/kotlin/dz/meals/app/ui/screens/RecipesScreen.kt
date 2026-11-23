@@ -50,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -95,7 +96,11 @@ fun RecipesScreen(
     favoriteRecipeIds: Set<String>,
     onToggleFavorite: (String) -> Unit,
     onAddRecipe: (String) -> Unit,
-    onOpenRecipeCorpusTester: (() -> Unit)? = null
+    onOpenRecipeCorpusTester: (() -> Unit)? = null,
+    catalogueProgress: Float? = null,
+    catalogueStatusMessage: String? = null,
+    catalogueError: String? = null,
+    onRetryCatalogue: (() -> Unit)? = null
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
@@ -110,11 +115,17 @@ fun RecipesScreen(
     val ingredientNames = ingredients.associateBy { it.id }
     val layoutDirection = LocalLayoutDirection.current
     val appLocaleTag = LocalMealsLocaleTag.current
+    val uriHandler = LocalUriHandler.current
+    val availableCategories = remember(recipes) {
+        (recipeCategories + recipes.map { it.category.trim() }.filter { it.isNotBlank() })
+            .distinct()
+            .take(14)
+    }
 
     fun selectCategory(nextCategory: String) {
         if (nextCategory != category) {
             browseDirection = if (
-                recipeCategories.indexOf(nextCategory) >= recipeCategories.indexOf(category)
+                availableCategories.indexOf(nextCategory) >= availableCategories.indexOf(category)
             ) 1 else -1
             category = nextCategory
         }
@@ -136,6 +147,54 @@ fun RecipesScreen(
         ) {
             Text("وصفات من مطبخنا", style = MaterialTheme.typography.headlineMedium)
             Text("ابحث بالعربية أو الفرنسية أو بأسماء المكونات المحلية.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+
+            if (catalogueProgress != null && catalogueStatusMessage != null) {
+                MealsCard(
+                    containerColor = WarmSurface,
+                    borderColor = null,
+                    contentPadding = 14.dp
+                ) {
+                    Text(
+                        catalogueStatusMessage,
+                        color = Ink,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    MealsLiquidGlassProgressBar(
+                        progress = catalogueProgress,
+                        height = 19.dp,
+                        contentDescription = "تنزيل مكتبة الوصفات"
+                    )
+                    Text(
+                        (catalogueProgress * 100f).toInt().coerceIn(0, 100).toString() + "%",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            catalogueError?.let { error ->
+                MealsCard(
+                    containerColor = WarmSurface,
+                    borderColor = null,
+                    contentPadding = 14.dp
+                ) {
+                    Text(
+                        "تعذر تحميل مكتبة الوصفات",
+                        color = Ink,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(error, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                    onRetryCatalogue?.let { retry ->
+                        MealsSecondaryButton(
+                            label = "إعادة المحاولة",
+                            onClick = retry,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
             onOpenRecipeCorpusTester?.let { openTester ->
                 MealsSecondaryButton(
                     label = "اختبار الترجمة والبيانات",
@@ -155,7 +214,7 @@ fun RecipesScreen(
                 onSelect = { selectFavorites(it == "المفضلة") }
             )
             MealsFilterChips(
-                items = recipeCategories,
+                items = availableCategories,
                 selected = category,
                 onSelect = { selectCategory(it) },
                 modifier = Modifier.fillMaxWidth()
@@ -396,8 +455,15 @@ fun RecipesScreen(
                             ingredient.quantityBase.formatHouseholdQuantity(ingredient.unit),
                             appLocaleTag
                         )
+                        val quantityOrNote = when {
+                            ingredient.quantityBase > 0.0 && ingredient.prepNote.isNotBlank() ->
+                                quantityLabel + " · " + ingredient.prepNote
+                            ingredient.quantityBase > 0.0 -> quantityLabel
+                            ingredient.prepNote.isNotBlank() -> ingredient.prepNote
+                            else -> mealsText("حسب الحاجة", appLocaleTag)
+                        }
                         Text(
-                            "• " + bidiIsolate(ingredientName) + " — " + quantityLabel,
+                            "• " + bidiIsolate(ingredientName) + " — " + quantityOrNote,
                             translate = false
                         )
                     }
@@ -426,6 +492,51 @@ fun RecipesScreen(
                             mealsText("الحساسية: ", appLocaleTag) + allergenText,
                             translate = false
                         )
+                    }
+                    detail.attribution?.let { attribution ->
+                        item {
+                            MealsCard(
+                                containerColor = WarmSurface,
+                                borderColor = null,
+                                contentPadding = 13.dp
+                            ) {
+                                Text(
+                                    "المصدر والترخيص",
+                                    color = Ink,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    attribution.credit + " · " + attribution.sourceTitle,
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                if (attribution.sourceUrl.isNotBlank()) {
+                                    Text(
+                                        "فتح المصدر الأصلي",
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.clickable {
+                                            runCatching { uriHandler.openUri(attribution.sourceUrl) }
+                                        }
+                                    )
+                                }
+                                Text(
+                                    attribution.license,
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.clickable {
+                                        runCatching { uriHandler.openUri(attribution.licenseUrl) }
+                                    }
+                                )
+                                if (attribution.changes.isNotBlank()) {
+                                    Text(
+                                        attribution.changes,
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             },

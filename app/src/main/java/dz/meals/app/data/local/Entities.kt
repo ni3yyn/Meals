@@ -177,3 +177,18 @@ data class PlanPriceSnapshotEntity(
     val priceKind: String,
     val confidenceLabel: String
 )
+
+
+@Entity(tableName = "recipe_attributions")
+data class RecipeAttributionEntity(
+    @PrimaryKey val recipeId: String,
+    val sourceTitle: String,
+    val sourceUrl: String,
+    val revisionUrl: String,
+    val historyUrl: String,
+    val credit: String,
+    val sourceLicense: String,
+    val license: String,
+    val licenseUrl: String,
+    val changes: String
+)
