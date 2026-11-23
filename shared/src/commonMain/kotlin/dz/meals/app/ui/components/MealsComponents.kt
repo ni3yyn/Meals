@@ -155,6 +155,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.roundToInt
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = MealsLiquidGlass.CardShape
