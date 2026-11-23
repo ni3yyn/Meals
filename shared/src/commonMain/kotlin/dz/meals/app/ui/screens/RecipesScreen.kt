@@ -239,12 +239,12 @@ fun RecipesScreen(
                                 when {
                                     showFavorites && !movingForward -> selectFavorites(false)
                                     !showFavorites -> {
-                                        val currentIndex = recipeCategories.indexOf(category)
+                                        val currentIndex = availableCategories.indexOf(category)
                                         val nextIndex = currentIndex + if (movingForward) 1 else -1
                                         when {
-                                            nextIndex in recipeCategories.indices ->
-                                                selectCategory(recipeCategories[nextIndex])
-                                            movingForward && currentIndex == recipeCategories.lastIndex ->
+                                            nextIndex in availableCategories.indices ->
+                                                selectCategory(availableCategories[nextIndex])
+                                            movingForward && currentIndex == availableCategories.lastIndex ->
                                                 selectFavorites(true)
                                         }
                                     }
