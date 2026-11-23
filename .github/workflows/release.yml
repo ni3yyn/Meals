@@ -17,8 +17,9 @@ permissions:
   contents: write
 
 concurrency:
+  # A newer main push supersedes an older release build; only the latest source should publish.
   group: meals-android-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release:
