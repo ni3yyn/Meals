@@ -169,8 +169,8 @@ function translateRecipe_(recipe) {
 
   fields.forEach(function (field, index) {
     const pattern = new RegExp(
-      "<p\\\\b[^>]*\\\\bid=[\\\"']midati-field-" + index +
-      "[\\\"'][^>]*>([\\\\s\\\\S]*?)<\\\\/p>",
+      '<p\\b[^>]*\\bid="midati-field-' + index +
+      '"[^>]*>([\\s\\S]*?)<\\/p>',
       "i"
     );
     const match = translatedHtml.match(pattern);
