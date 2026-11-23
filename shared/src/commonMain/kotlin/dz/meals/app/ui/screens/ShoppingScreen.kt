@@ -734,6 +734,7 @@ private fun PriceReportDialog(
     onDismiss: () -> Unit,
     onSubmit: (String, Double, Double, String) -> Unit
 ) {
+    val appLocaleTag = LocalMealsLocaleTag.current
     var selectedId by rememberSaveable { mutableStateOf(ingredients.firstOrNull()?.id.orEmpty()) }
     var packQuantityText by rememberSaveable { mutableStateOf("1") }
     var priceText by rememberSaveable { mutableStateOf("") }
