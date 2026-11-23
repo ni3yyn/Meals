@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "language": "ar",
+  "sourceLanguage": "pl",
+  "targetLanguage": "ar",
+  "sourceCorpus": {
+    "name": "Open Recipe Corpus",
+    "repository": "https://github.com/Rippy1911/open-recipe-corpus",
+    "revision": "86102603bac07d79b94bc35cba5b50346798cc09",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "attribution": "Adapted from Open Recipe Corpus (Rippy1911), licensed under CC BY-SA 4.0. See recipe-level provenance."
+  },
+  "translation": {
+    "provider": "Google Apps Script LanguageApp",
+    "type": "machine",
+    "direction": "Polish to Arabic"
+  },
+  "generatedAt": "2026-11-23T18:17:50.293795+00:00",
+  "complete": false,
+  "translatedCount": 1,
+  "expectedCount": 3013,
+  "recipes": [
+    {
+      "id": "plwb:10140",
+      "name": "أرز مقلي",
+      "summary": "أرز جاف طويل الحبة يُحمّر في مقلاة مع الزيت ثم يُطهى على نار هادئة حتى يصبح طرياً في مرق ساخن.",
+      "category": "عشاء",
+      "cuisine": "آخر",
+      "servings": 2,
+      "prepMinutes": 5,
+      "cookMinutes": 20,
+      "ingredients": [
+        {
+          "name": "أرز طويل الحبة",
+          "note": "2 من 100 g (كيس 1 لكل شخص)",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "مرق",
+          "note": "",
+          "quantity": 500,
+          "unit": "ml"
+        },
+        {
+          "name": "زيت نباتي",
+          "note": "لتغطية قاع المقلاة",
+          "quantity": null,
+          "unit": "to_taste"
+        }
+      ],
+      "steps": [
+        "صب طبقة من الزيت في مقلاة باردة لتغطية القاع، ثم أضف الأرز الجاف طويل الحبة ووزعه بالتساوي.",
+        "اقلي الأرز مع التقليب من حين لآخر وإعادة توزيعه في طبقة متساوية، حتى يصبح لون معظم الحبوب بنياً ذهبياً، مع تسخين المرق في قدر منفصل.",
+        "صب المرق الساخن تدريجياً، بكميات صغيرة، من خلال الفتحة الموجودة أسفل الغطاء المفتوح قليلاً، مع الانتظار في كل مرة حتى يتوقف السائل عن التبخر والتناثر بعنف.",
+        "بعد إضافة كل المرق، اترك الأرز على نار عالية حتى ينتفخ ويمتص السائل تماماً."
+      ],
+      "tags": [
+        "خالي من الغلوتين",
+        "خالٍ من منتجات الألبان"
+      ],
+      "allergens": [
+        "كرفس"
+      ],
+      "sourceLanguage": "pl",
+      "machineTranslated": true,
+      "translatedFrom": "plwb:10140",
+      "provenance": {
+        "source": "pl-wikibooks",
+        "title": "Książka kucharska/Smażony ryż",
+        "url": "https://pl.wikibooks.org/wiki/Ksi%C4%85%C5%BCka_kucharska/Sma%C5%BCony_ry%C5%BC",
+        "history_url": "https://pl.wikibooks.org/w/index.php?curid=10140&action=history",
+        "revision": 550502,
+        "attribution": "Autorzy Wikibooks (pl.wikibooks.org, Książka kucharska)",
+        "source_license": "CC-BY-SA-4.0",
+        "license": "CC-BY-SA-4.0",
+        "adapted": false,
+        "changes": "structured into fields and edited for clarity"
+      },
+      "license": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "sourceUrl": "https://pl.wikibooks.org/wiki/Ksi%C4%85%C5%BCka_kucharska/Sma%C5%BCony_ry%C5%BC",
+      "sourceRevisionUrl": "",
+      "sourceHistoryUrl": "https://pl.wikibooks.org/w/index.php?curid=10140&action=history",
+      "sourceCredit": "Autorzy Wikibooks (pl.wikibooks.org, Książka kucharska)",
+      "sourceLicense": "CC-BY-SA-4.0",
+      "changes": "Machine-translated from the Polish corpus text into Arabic. Recipe-level attribution and source links are retained."
+    }
+  ],
+  "failedRecipes": []
+}
