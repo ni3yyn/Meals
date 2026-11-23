@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.scaleRecipeIngredientQuantity
 import coil3.compose.AsyncImage
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsCard
@@ -1095,8 +1096,13 @@ fun RecipesScreen(
                                 }
                                 items(cookingRecipe.ingredients) { ingredient ->
                                     val master = ingredientNames[ingredient.ingredientId]
-                                    val amount = ingredient.quantityBase * cookingServings.toDouble() /
+                                    val servingsFactor = cookingServings.toDouble() /
                                         cookingRecipe.baseServings.coerceAtLeast(1).toDouble()
+                                    val amount = scaleRecipeIngredientQuantity(
+                                        ingredient.quantityBase,
+                                        servingsFactor,
+                                        ingredient.scalingRule
+                                    )
                                     val unitLabel = mealsUnitLabel(ingredient.unit, appLocaleTag)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),

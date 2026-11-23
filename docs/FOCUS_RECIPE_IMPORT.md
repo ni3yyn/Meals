@@ -30,15 +30,15 @@ The catalogue preserves:
 - Servings, preparation/cooking minutes, recipe image, Spanish/English URLs and slugs.
 - Bilingual source text, complete `sourceRecord`, source attribution and CC BY 4.0 licence metadata.
 
-The Android Room model stores the Arabic category/dietary labels, macros and image URL. The Android installer maps IDs to the `focus-` namespace and streams the combined catalogue to Room in batches. Existing Open Recipe Corpus entries remain intact.
+The Android Room model stores the Arabic category/dietary labels, macros and image URL. The installer maps Focus IDs to the `focus-` namespace and streams the combined catalogue to Room in batches. Focus recipes remain alongside the new UniTools World Recipes collection; the former Polish-derived Open Recipe Corpus has been retired.
 
 ## Translation and workflow
 
-The workflow uses the existing `GOOGLE_APPS_SCRIPT_URL` and `GOOGLE_APPS_SCRIPT_TOKEN` GitHub Actions secrets and the same Google Apps Script `LanguageApp` provider as the Polish catalogue.
+The workflow uses the shared `GOOGLE_APPS_SCRIPT_URL` and `GOOGLE_APPS_SCRIPT_TOKEN` GitHub Actions secrets and the existing Google Apps Script `LanguageApp` translation bridge.
 
 The Python translator sends recipe text in Spanish to Arabic. It translates the unique cuisine, category and dietary labels in one separate English-to-Arabic `tags` request. This avoids treating the English metadata keys as Spanish and works with the already-deployed Apps Script version, which supports translated `tags` without requiring a redeployment.
 
-Run **Import Focus recipes into the Arabic catalogue** from GitHub Actions. The default maximum is 500. Safety exclusions mean the final accepted Focus count can be lower than 500. Translation batches are checkpointed into the JSON file when a run stops early; those partial checkpoints are not pinned for Android. Only a complete, validated catalogue updates the Android downloader's immutable commit, byte-size and Git-blob SHA pins.
+Run **Import Focus recipes into the Arabic catalogue** from GitHub Actions when intentionally refreshing the Focus source. The default maximum is 500. Safety exclusions mean the final accepted Focus count can be lower than 500. Translation batches are checkpointed into the JSON file when a run stops early; those partial checkpoints are not pinned for Android. The UniTools import workflow later assembles the final 912-recipe catalogue (481 Focus + 431 UniTools) and only pins a complete, validated replacement catalogue using the immutable commit, byte-size and Git-blob SHA checks.
 
 ## Local tests
 
