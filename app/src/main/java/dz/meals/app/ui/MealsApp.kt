@@ -510,7 +510,9 @@ private fun MealsAppContent(
                     .fillMaxSize()
                     .padding(top = innerPadding.calculateTopPadding())
                     .then(if (settingsOverlayVisible) Modifier else Modifier.fadeTopEdgeMask(28.dp))
-                    .then(if (settingsOverlayVisible) Modifier else Modifier.mealsHazeSource(hazeState, zIndex = 1f))
+                    // Keep the shared modal sheet's blur source active behind Settings.
+                    // Only the optional glass capture and edge mask are suspended for this overlay.
+                    .mealsHazeSource(hazeState, zIndex = 1f)
                     .then(if (settingsOverlayVisible) Modifier else Modifier.mealsGlassSource(screenGlassBackdrop))
             ) {
                 MealsBubblyTransition(
@@ -1069,7 +1071,6 @@ private fun SettingsDialog(
         titleText = "الإعدادات",
         subtitle = "إعدادات تجربتك على Midati",
         onDismissRequest = { if (!isLanguageChanging) onDismiss() },
-        lightweightPresentation = true,
         isLoading = isLanguageChanging,
         expandToFullScreenWhileLoading = true,
         restoreContentAfterLoadingExit = !closeAfterLoadingExit,
@@ -1445,7 +1446,6 @@ private fun HouseholdPreferencesDialog(
         titleText = if (isFirstSetup) "لنجهّز أسبوعك معاً" else "إعدادات الأسرة",
         subtitle = listOf("الميزانية والأسرة", "الوجبات", "ما يناسب عائلتك", "تفضيلات الطبخ", "مكان التسوق")[step],
         onDismissRequest = { if (!isFirstSetup) onDismiss() },
-        lightweightPresentation = !isFirstSetup,
         confirmLabel = if (step == 4) "حفظ وابدأ" else "التالي",
         onConfirm = {
             if (step < 4) {

@@ -1755,8 +1755,8 @@ fun MealsBottomSheet(
     dismissActionClosesSheet: Boolean = false,
     showCloseButton: Boolean = true,
     /**
-     * Avoid cross-window Haze and Android blur-behind for static settings surfaces.
-     * The translucent face and optical rim remain; only the costly backdrop sampling is skipped.
+     * Opt out of cross-window Haze and Android blur-behind only for exceptional,
+     * performance-sensitive static surfaces. The standard reusable sheet keeps both effects.
      */
     lightweightPresentation: Boolean = false,
     /** Opt-in fixed height for immersive flows such as guided cooking. */
