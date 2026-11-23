@@ -483,7 +483,21 @@ fun MealsOnboarding(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    listOf("gluten" to "الغلوتين", "egg" to "البيض", "milk" to "الحليب").forEach { (id, label) ->
+                                    listOf(
+                        "gluten" to "الغلوتين",
+                        "egg" to "البيض",
+                        "milk" to "الحليب",
+                        "tree_nuts" to "المكسرات",
+                        "celery" to "الكرفس",
+                        "sulphites" to "الكبريتيت",
+                        "fish" to "السمك",
+                        "mustard" to "الخردل",
+                        "crustaceans" to "القشريات",
+                        "soy" to "فول الصويا",
+                        "sesame" to "السمسم",
+                        "molluscs" to "الرخويات",
+                        "peanuts" to "الفول السوداني"
+                    ).forEach { (id, label) ->
                                         BubbleChip(label, id in allergies) {
                                             allergies = if (id in allergies) allergies - id else allergies + id
                                         }
@@ -565,11 +579,13 @@ fun MealsOnboarding(
                                 )
                                 val visible = remember(query, ingredients, dislikes, appLocaleTag) {
                                     val matches = ingredients.filter { ing ->
-                                        query.isBlank() ||
-                                            ing.nameAr.contains(query, true) ||
-                                                mealsText(ing.nameAr, appLocaleTag).contains(query, true) ||
-                                            ing.nameFr.contains(query, true) ||
-                                            ing.aliases.any { it.contains(query, true) }
+                                        !ing.id.startsWith("orc-ing-") && (
+                                            query.isBlank() ||
+                                                ing.nameAr.contains(query, true) ||
+                                                    mealsText(ing.nameAr, appLocaleTag).contains(query, true) ||
+                                                ing.nameFr.contains(query, true) ||
+                                                ing.aliases.any { it.contains(query, true) }
+                                        )
                                     }
                                     (matches.filter { it.id in dislikes } + matches.filter { it.id !in dislikes }).take(18)
                                 }
