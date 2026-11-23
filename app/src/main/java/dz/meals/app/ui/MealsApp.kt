@@ -1047,6 +1047,7 @@ private fun HouseholdPreferencesDialog(
     onQuickStart: (Int, Int) -> Unit,
     onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int, String, String, String) -> Unit
 ) {
+    val appLanguage = LocalMealsLocaleTag.current
     var step by rememberSaveable { mutableStateOf(0) }
     var noKnownAllergies by rememberSaveable { mutableStateOf(false) }
     var budgetText by rememberSaveable(preferences.weeklyBudgetDzd) { mutableStateOf(preferences.weeklyBudgetDzd.toString()) }
@@ -1136,7 +1137,7 @@ private fun HouseholdPreferencesDialog(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("الميزانية بالدينار الجزائري") },
-                        suffix = { Text("دج") }
+                        suffix = { Text("دج") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                     Text("كم شخصاً نطبخ له عادة؟", style = MaterialTheme.typography.titleMedium)
@@ -1146,7 +1147,7 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text("عدد الحصص") }
+                        label = { Text("عدد الحصص") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                     if (isFirstSetup) {
@@ -1230,7 +1231,7 @@ private fun HouseholdPreferencesDialog(
                         onValueChange = { searchIngredient = it },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("ابحثي عن مكوّن") },
-                        singleLine = true
+                        singleLine = true,
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     ingredients.filter { ingredient ->
@@ -1256,7 +1257,7 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text("الوقت الأقصى بالدقائق") }
+                        label = { Text("الوقت الأقصى بالدقائق") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                     OutlinedTextField(
@@ -1265,7 +1266,7 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text("هامش أمان للميزانية (%)") }
+                        label = { Text("هامش أمان للميزانية (%)") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                 }
@@ -1276,7 +1277,7 @@ private fun HouseholdPreferencesDialog(
                         onValueChange = { wilayaText = it.take(40) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        label = { Text("الولاية") }
+                        label = { Text("الولاية") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     OutlinedTextField(
@@ -1284,7 +1285,7 @@ private fun HouseholdPreferencesDialog(
                         onValueChange = { communeText = it.take(60) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        label = { Text("البلدية (اختياري)") }
+                        label = { Text("البلدية (اختياري)") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     Text("مكان التسوق المعتاد", style = MaterialTheme.typography.titleMedium)
@@ -1314,7 +1315,7 @@ private fun HouseholdPreferencesDialog(
                         onValueChange = { preferredShop = it.take(80) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("اسم المحل المفضل (اختياري)") },
-                        singleLine = true
+                        singleLine = true,
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     MealsCard(
