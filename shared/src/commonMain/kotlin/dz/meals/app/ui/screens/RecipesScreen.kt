@@ -7,9 +7,12 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -44,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
@@ -171,14 +175,30 @@ fun RecipesScreen(
                 },
             transitionSpec = {
                 val movingForward = browseDirection > 0
+                val arrivalSpring = spring<IntOffset>(
+                    dampingRatio = 0.82f,
+                    stiffness = 390f
+                )
                 (slideInHorizontally(
-                    animationSpec = tween(260, easing = FastOutSlowInEasing),
-                    initialOffsetX = { width -> if (movingForward) width else -width }
-                ) + fadeIn(animationSpec = tween(190))) togetherWith
+                    animationSpec = arrivalSpring,
+                    initialOffsetX = { width ->
+                        if (movingForward) width / 5 else -width / 5
+                    }
+                ) + fadeIn(animationSpec = tween(155, delayMillis = 18)) +
+                    scaleIn(
+                        initialScale = 0.975f,
+                        animationSpec = spring(dampingRatio = 0.80f, stiffness = 430f)
+                    )) togetherWith
                     (slideOutHorizontally(
-                        animationSpec = tween(220, easing = FastOutSlowInEasing),
-                        targetOffsetX = { width -> if (movingForward) -width else width }
-                    ) + fadeOut(animationSpec = tween(150)))
+                        animationSpec = spring(dampingRatio = 0.94f, stiffness = 560f),
+                        targetOffsetX = { width ->
+                            if (movingForward) -width / 12 else width / 12
+                        }
+                    ) + fadeOut(animationSpec = tween(125)) +
+                        scaleOut(
+                            targetScale = 0.989f,
+                            animationSpec = tween(150, easing = FastOutSlowInEasing)
+                        ))
             },
             contentAlignment = Alignment.TopStart,
             label = "recipeBrowseSwipe"
@@ -479,25 +499,30 @@ fun RecipesScreen(
                             )
                         },
                     transitionSpec = {
-                        if (targetState) {
-                            (slideInVertically(
-                                animationSpec = tween(360, easing = FastOutSlowInEasing),
-                                initialOffsetY = { height -> height / 5 }
-                            ) + fadeIn(tween(260))) togetherWith
-                                (slideOutVertically(
-                                    animationSpec = tween(220, easing = FastOutSlowInEasing),
-                                    targetOffsetY = { height -> -height / 12 }
-                                ) + fadeOut(tween(160)))
-                        } else {
-                            (slideInVertically(
-                                animationSpec = tween(300, easing = FastOutSlowInEasing),
-                                initialOffsetY = { height -> -height / 12 }
-                            ) + fadeIn(tween(220))) togetherWith
-                                (slideOutVertically(
-                                    animationSpec = tween(200, easing = FastOutSlowInEasing),
-                                    targetOffsetY = { height -> height / 6 }
-                                ) + fadeOut(tween(140)))
-                        }
+                        val enteringSpring = spring<IntOffset>(
+                            dampingRatio = 0.84f,
+                            stiffness = 360f
+                        )
+                        (slideInVertically(
+                            animationSpec = enteringSpring,
+                            initialOffsetY = { height ->
+                                if (targetState) height / 10 else -height / 12
+                            }
+                        ) + fadeIn(tween(185, delayMillis = 12)) +
+                            scaleIn(
+                                initialScale = 0.975f,
+                                animationSpec = spring(dampingRatio = 0.82f, stiffness = 390f)
+                            )) togetherWith
+                            (slideOutVertically(
+                                animationSpec = spring(dampingRatio = 0.94f, stiffness = 520f),
+                                targetOffsetY = { height ->
+                                    if (targetState) -height / 14 else height / 10
+                                }
+                            ) + fadeOut(tween(135)) +
+                                scaleOut(
+                                    targetScale = 0.99f,
+                                    animationSpec = tween(160, easing = FastOutSlowInEasing)
+                                ))
                     },
                     label = "cookingCompletionTransition"
                 ) { completed ->
@@ -560,18 +585,39 @@ fun RecipesScreen(
                             modifier = Modifier.fillMaxSize(),
                             transitionSpec = {
                                 val movingForward = cookingStepDirection > 0
+                                val incomingSpring = spring<IntOffset>(
+                                    dampingRatio = 0.80f,
+                                    stiffness = 410f
+                                )
                                 (slideInHorizontally(
-                                    animationSpec = tween(280, easing = FastOutSlowInEasing),
+                                    animationSpec = incomingSpring,
                                     initialOffsetX = { width ->
-                                        if (movingForward) width else -width
+                                        if (movingForward) width / 5 else -width / 5
                                     }
-                                ) + fadeIn(tween(200))) togetherWith
+                                ) + fadeIn(tween(150, delayMillis = 22)) +
+                                    scaleIn(
+                                        initialScale = 0.972f,
+                                        animationSpec = spring(
+                                            dampingRatio = 0.78f,
+                                            stiffness = 440f
+                                        )
+                                    )) togetherWith
                                     (slideOutHorizontally(
-                                        animationSpec = tween(230, easing = FastOutSlowInEasing),
+                                        animationSpec = spring(
+                                            dampingRatio = 0.92f,
+                                            stiffness = 540f
+                                        ),
                                         targetOffsetX = { width ->
-                                            if (movingForward) -width else width
+                                            if (movingForward) -width / 12 else width / 12
                                         }
-                                    ) + fadeOut(tween(150)))
+                                    ) + fadeOut(tween(125)) +
+                                        scaleOut(
+                                            targetScale = 0.988f,
+                                            animationSpec = tween(
+                                                145,
+                                                easing = FastOutSlowInEasing
+                                            )
+                                        ))
                             },
                             label = "cookingStepSlide"
                         ) { visibleStepIndex ->
