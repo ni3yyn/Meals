@@ -121,6 +121,33 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.rememberModalBottomSheetState
 
 
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.rememberHazeState
+import dz.meals.app.ui.theme.Border
+import dz.meals.app.ui.theme.Cream
+import dz.meals.app.ui.theme.Forest
+import dz.meals.app.ui.theme.ForestDark
+import dz.meals.app.ui.theme.Ink
+import dz.meals.app.ui.theme.MutedInk
+import dz.meals.app.ui.theme.Paper
+import dz.meals.app.ui.theme.SoftOrange
+import dz.meals.app.ui.theme.TextAccent
+import dz.meals.app.ui.theme.WarmSurface
+import dz.meals.app.ui.theme.mealsText
+import dz.meals.app.ui.theme.SoftPink
+import dz.meals.app.ui.icons.MealsIcon
+import dz.meals.app.ui.icons.MealsNavigationIcon
+import dz.meals.app.ui.icons.MealsIconName
+import dz.meals.app.shared.generated.resources.Res
+import dz.meals.app.shared.generated.resources.meals_kitchen_background
+import androidx.compose.ui.layout.ContentScale
+import org.jetbrains.compose.resources.painterResource
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.SolidColor
+
 /**
  * Modal sheets use a dedicated motion scheme so their movement feels consistent
  * with the app's spring-driven swipe transitions without changing motion globally.
@@ -151,32 +178,7 @@ private val MealsBottomSheetMotionScheme = object : MotionScheme {
         spring(dampingRatio = 1f, stiffness = 800f)
 }
 
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.blur.HazeBlurStyle
-import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.rememberHazeState
-import dz.meals.app.ui.theme.Border
-import dz.meals.app.ui.theme.Cream
-import dz.meals.app.ui.theme.Forest
-import dz.meals.app.ui.theme.ForestDark
-import dz.meals.app.ui.theme.Ink
-import dz.meals.app.ui.theme.MutedInk
-import dz.meals.app.ui.theme.Paper
-import dz.meals.app.ui.theme.SoftOrange
-import dz.meals.app.ui.theme.TextAccent
-import dz.meals.app.ui.theme.WarmSurface
-import dz.meals.app.ui.theme.mealsText
-import dz.meals.app.ui.theme.SoftPink
-import dz.meals.app.ui.icons.MealsIcon
-import dz.meals.app.ui.icons.MealsNavigationIcon
-import dz.meals.app.ui.icons.MealsIconName
-import dz.meals.app.shared.generated.resources.Res
-import dz.meals.app.shared.generated.resources.meals_kitchen_background
-import androidx.compose.ui.layout.ContentScale
-import org.jetbrains.compose.resources.painterResource
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.graphics.SolidColor
+
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = MealsLiquidGlass.CardShape
@@ -1591,191 +1593,191 @@ fun MealsBottomSheet(
     MaterialTheme(motionScheme = MealsBottomSheetMotionScheme) {
         CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        contentWindowInsets = {
-            // Let the sheet glass extend to the physical bottom edge. Its own
-            // content reserves navigation space below, while IME and top safe
-            // insets remain handled by Material 3.
-            BottomSheetDefaults.windowInsets
-                .only(WindowInsetsSides.Top)
-                .union(WindowInsets.ime)
-        },
-        sheetState = sheetState,
-        shape = topShape,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        scrimColor = Color(0xFFFFF8F1).copy(alpha = 0.14f),
-        tonalElevation = 0.dp,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 10.dp, bottom = 8.dp)
-                    .size(width = 42.dp, height = 5.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.White.copy(alpha = 0.96f),
-                                Color.White.copy(alpha = 0.60f)
-                            )
-                        )
-                    )
-            )
-        }
-    ) {
-        // The sheet is in a separate Android dialog window. Enable a subtle
-        // platform blur behind the full modal window where the device supports it.
-        MealsModalWindowBlur()
-
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            // Regular sheets remain content-driven. Only explicitly immersive flows
-            // opt into a fixed viewport; never change the default sizing behavior.
-            // AI AGENTS: keep fixedHeightFraction null for every normal dialog.
-            val maxSheetHeight = maxHeight * 0.87f
-            val fixedSheetHeight = fixedHeightFraction
-                ?.coerceIn(0.72f, 0.94f)
-                ?.let { maxHeight * it }
-            val sheetHeightModifier = fixedSheetHeight
-                ?.let { Modifier.height(it) }
-                ?: Modifier.heightIn(max = maxSheetHeight)
-            val columnHeightModifier = if (fixedSheetHeight != null) {
-                Modifier.fillMaxHeight()
-            } else {
-                Modifier.heightIn(max = maxSheetHeight)
-            }
-            val maxBodyHeight = ((fixedSheetHeight ?: maxSheetHeight) - 164.dp)
-                .coerceAtLeast(120.dp)
-
-            MealsModalSurface(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .then(sheetHeightModifier),
-                contentPadding = 0.dp,
+                onDismissRequest = onDismissRequest,
+                contentWindowInsets = {
+                    // Let the sheet glass extend to the physical bottom edge. Its own
+                    // content reserves navigation space below, while IME and top safe
+                    // insets remain handled by Material 3.
+                    BottomSheetDefaults.windowInsets
+                        .only(WindowInsetsSides.Top)
+                        .union(WindowInsets.ime)
+                },
+                sheetState = sheetState,
                 shape = topShape,
-                elevation = MealsLiquidGlass.ModalElevation,
-                hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
-                glassBackdropOverride = null,
-                forceHazeBlur = true,
-                padNavigationBars = true
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(columnHeightModifier)
-                        .padding(horizontal = 22.dp, vertical = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                if (titleText != null || title != null || subtitle != null || showCloseButton) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            titleText?.let {
-                                Text(
-                                    it,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Ink
-                                )
-                            }
-                            title?.invoke()
-                            subtitle?.let {
-                                Text(it, style = MaterialTheme.typography.bodySmall, color = MutedInk)
-                            }
-                        }
-                        if (showCloseButton) {
-                            MealsIconButton(
-                                onClick = { dismissSheet { onDismissRequest() } },
-                                modifier = Modifier.size(44.dp),
-                                size = 44.dp
-                            ) {
-                                MealsIcon(
-                                    MealsIconName.Close,
-                                    contentDescription = "إغلاق",
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (text != null) {
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                scrimColor = Color(0xFFFFF8F1).copy(alpha = 0.14f),
+                tonalElevation = 0.dp,
+                dragHandle = {
                     Box(
                         modifier = Modifier
+                            .padding(top = 10.dp, bottom = 8.dp)
+                            .size(width = 42.dp, height = 5.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.96f),
+                                        Color.White.copy(alpha = 0.60f)
+                                    )
+                                )
+                            )
+                    )
+                }
+            ) {
+                // The sheet is in a separate Android dialog window. Enable a subtle
+                // platform blur behind the full modal window where the device supports it.
+                MealsModalWindowBlur()
+        
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    // Regular sheets remain content-driven. Only explicitly immersive flows
+                    // opt into a fixed viewport; never change the default sizing behavior.
+                    // AI AGENTS: keep fixedHeightFraction null for every normal dialog.
+                    val maxSheetHeight = maxHeight * 0.87f
+                    val fixedSheetHeight = fixedHeightFraction
+                        ?.coerceIn(0.72f, 0.94f)
+                        ?.let { maxHeight * it }
+                    val sheetHeightModifier = fixedSheetHeight
+                        ?.let { Modifier.height(it) }
+                        ?: Modifier.heightIn(max = maxSheetHeight)
+                    val columnHeightModifier = if (fixedSheetHeight != null) {
+                        Modifier.fillMaxHeight()
+                    } else {
+                        Modifier.heightIn(max = maxSheetHeight)
+                    }
+                    val maxBodyHeight = ((fixedSheetHeight ?: maxSheetHeight) - 164.dp)
+                        .coerceAtLeast(120.dp)
+        
+                    MealsModalSurface(
+                        modifier = modifier
                             .fillMaxWidth()
-                            .then(
-                                if (fillBody) Modifier.weight(1f)
-                                else Modifier.heightIn(max = maxBodyHeight)
-                            )
+                            .then(sheetHeightModifier),
+                        contentPadding = 0.dp,
+                        shape = topShape,
+                        elevation = MealsLiquidGlass.ModalElevation,
+                        hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
+                        glassBackdropOverride = null,
+                        forceHazeBlur = true,
+                        padNavigationBars = true
                     ) {
-                        text()
-                    }
-                }
-
-                content()
-
-                if (confirmButton != null || dismissButton != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        confirmButton?.let { button ->
-                            Box(modifier = Modifier.weight(1f)) { button() }
-                        }
-                        dismissButton?.let { button ->
-                            Box(modifier = Modifier.weight(1f)) { button() }
-                        }
-                    }
-                }
-
-                if (confirmLabel != null || dismissLabel != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (confirmLabel != null && onConfirm != null) {
-                            MealsPrimaryButton(
-                                label = confirmLabel,
-                                onClick = {
-                                    if (confirmActionClosesSheet) {
-                                        dismissSheet { onConfirm() }
-                                    } else {
-                                        onConfirm()
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(columnHeightModifier)
+                                .padding(horizontal = 22.dp, vertical = 18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                        if (titleText != null || title != null || subtitle != null || showCloseButton) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    titleText?.let {
+                                        Text(
+                                            it,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Ink
+                                        )
                                     }
-                                },
-                                modifier = Modifier.weight(1f),
-                                enabled = confirmEnabled
-                            )
-                        }
-                        if (dismissLabel != null) {
-                            MealsSecondaryButton(
-                                label = dismissLabel,
-                                onClick = {
-                                    when {
-                                        onDismissAction == null ->
-                                            dismissSheet { onDismissRequest() }
-                                        dismissActionClosesSheet ->
-                                            dismissSheet { onDismissAction() }
-                                        else -> onDismissAction()
+                                    title?.invoke()
+                                    subtitle?.let {
+                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MutedInk)
                                     }
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
+                                }
+                                if (showCloseButton) {
+                                    MealsIconButton(
+                                        onClick = { dismissSheet { onDismissRequest() } },
+                                        modifier = Modifier.size(44.dp),
+                                        size = 44.dp
+                                    ) {
+                                        MealsIcon(
+                                            MealsIconName.Close,
+                                            contentDescription = "إغلاق",
+                                            modifier = Modifier.size(30.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+        
+                        if (text != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(
+                                        if (fillBody) Modifier.weight(1f)
+                                        else Modifier.heightIn(max = maxBodyHeight)
+                                    )
+                            ) {
+                                text()
+                            }
+                        }
+        
+                        content()
+        
+                        if (confirmButton != null || dismissButton != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                confirmButton?.let { button ->
+                                    Box(modifier = Modifier.weight(1f)) { button() }
+                                }
+                                dismissButton?.let { button ->
+                                    Box(modifier = Modifier.weight(1f)) { button() }
+                                }
+                            }
+                        }
+        
+                        if (confirmLabel != null || dismissLabel != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (confirmLabel != null && onConfirm != null) {
+                                    MealsPrimaryButton(
+                                        label = confirmLabel,
+                                        onClick = {
+                                            if (confirmActionClosesSheet) {
+                                                dismissSheet { onConfirm() }
+                                            } else {
+                                                onConfirm()
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        enabled = confirmEnabled
+                                    )
+                                }
+                                if (dismissLabel != null) {
+                                    MealsSecondaryButton(
+                                        label = dismissLabel,
+                                        onClick = {
+                                            when {
+                                                onDismissAction == null ->
+                                                    dismissSheet { onDismissRequest() }
+                                                dismissActionClosesSheet ->
+                                                    dismissSheet { onDismissAction() }
+                                                else -> onDismissAction()
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
                         }
                     }
-                }
                 }
             }
         }
-    }
-    }
     }
 }
 
