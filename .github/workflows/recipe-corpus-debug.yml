@@ -53,7 +53,7 @@ jobs:
         run: python tools/download_recipe_corpus.py
 
       - name: Run unit tests and assemble debug APK
-        run: ./gradlew testReleaseUnitTest assembleDebug --stacktrace
+        run: ./gradlew --no-configuration-cache testReleaseUnitTest assembleDebug --stacktrace
 
       - name: Upload corpus-enabled debug APK
         uses: actions/upload-artifact@v7
