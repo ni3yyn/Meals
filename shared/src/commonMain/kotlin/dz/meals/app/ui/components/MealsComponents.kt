@@ -71,6 +71,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -298,46 +303,62 @@ fun MealsGlassDot(
 
 
 /**
- * Shared liquid-glass progress track for guided flows and compact summaries.
+ * Shared pearl-glass progress capsule for guided flows and compact summaries.
  *
- * The track uses the same porcelain face and white optical edge as Meals
- * controls. Its filled capsule is softly tinted glass with a restrained upper
- * catchlight. It deliberately uses no refraction, displacement or shader.
+ * The single-surface drawing approach is inspired by PrismalAGSL's public
+ * Compose progress component. Meals keeps its own Haze glass frame and paints
+ * the moving warm fill directly into the track, with no refraction or shaders.
  */
 @Composable
 fun MealsLiquidGlassProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    height: Dp = 15.dp,
-    progressColor: Color = Forest,
+    height: Dp = 24.dp,
+    progressColor: Color = Color(0xFFE6D1B7),
     contentDescription: String = "التقدم"
 ) {
     val targetProgress = progress.coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
         animationSpec = tween(
-            durationMillis = 520,
+            durationMillis = 560,
             easing = FastOutSlowInEasing
         ),
         label = "mealsLiquidGlassProgress"
     )
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
-    val trackFace = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.56f),
-            0.34f to Color(0xFFF7F3ED).copy(alpha = 0.62f),
-            0.78f to Color(0xFFEDE7DF).copy(alpha = 0.42f),
-            1f to Color.White.copy(alpha = 0.48f)
+    val trackBrush = remember {
+        Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = 0.34f),
+                0.34f to Color(0xFFF0E8DE).copy(alpha = 0.30f),
+                0.76f to Color(0xFFDCCFC1).copy(alpha = 0.22f),
+                1f to Color.White.copy(alpha = 0.30f)
+            )
         )
-    )
-    val fillFace = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.86f),
-            0.20f to progressColor.copy(alpha = 0.88f),
-            0.68f to progressColor.copy(alpha = 0.96f),
-            1f to progressColor.copy(alpha = 0.80f)
+    }
+    val fillBrush = remember(progressColor) {
+        Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color(0xFFFFFEFA).copy(alpha = 0.96f),
+                0.20f to Color(0xFFF7EBDD).copy(alpha = 0.97f),
+                0.62f to progressColor.copy(alpha = 0.94f),
+                1f to Color(0xFFCDB596).copy(alpha = 0.91f)
+            )
         )
-    )
+    }
+    val highlightBrush = remember {
+        Brush.horizontalGradient(
+            colorStops = arrayOf(
+                0f to Color.Transparent,
+                0.20f to Color.White.copy(alpha = 0.36f),
+                0.50f to Color.White.copy(alpha = 0.82f),
+                0.80f to Color.White.copy(alpha = 0.36f),
+                1f to Color.Transparent
+            )
+        )
+    }
 
     MealsLiquidGlassFrame(
         modifier = modifier
@@ -346,61 +367,60 @@ fun MealsLiquidGlassProgressBar(
             .semantics { this.contentDescription = contentDescription },
         shape = CircleShape,
         elevation = 2.dp,
-        face = trackFace,
+        face = Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = 0.70f),
+                0.28f to Color(0xFFFFF9F1).copy(alpha = 0.58f),
+                0.72f to Color(0xFFE9DED1).copy(alpha = 0.38f),
+                1f to Color.White.copy(alpha = 0.50f)
+            )
+        ),
         hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
         blurRadius = MealsLiquidGlass.ControlBlurRadius,
         rim = MealsLiquidGlass.controlRim(),
         sideGlintHeight = height * 0.72f
     ) {
-        Box(
+        // Track and fill share one glass surface, avoiding stacked blur passes.
+        Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(2.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFEDE7DF).copy(alpha = 0.50f),
-                            Color.White.copy(alpha = 0.30f),
-                            Color(0xFFE7E0D8).copy(alpha = 0.36f)
-                        )
-                    )
-                )
+                .padding(horizontal = 3.dp, vertical = 3.dp)
         ) {
-            if (animatedProgress > 0f) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(animatedProgress)
-                        .clip(CircleShape)
-                        .background(fillFace)
-                ) {
-                    // A very fine top catchlight gives the fill a polished glass
-                    // surface without simulating lensing or bending the content.
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.White.copy(alpha = 0.66f),
-                                        Color.White.copy(alpha = 0.88f),
-                                        Color.White.copy(alpha = 0.66f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
+            val radius = size.height * 0.5f
+            drawRoundRect(
+                brush = trackBrush,
+                size = size,
+                cornerRadius = CornerRadius(radius, radius)
+            )
+
+            val fillWidth = size.width * animatedProgress
+            if (fillWidth > 0.5.dp.toPx()) {
+                val fillStart = if (isRtl) size.width - fillWidth else 0f
+                val fillRadius = minOf(radius, fillWidth * 0.5f)
+                drawRoundRect(
+                    brush = fillBrush,
+                    topLeft = Offset(fillStart, 0f),
+                    size = Size(fillWidth, size.height),
+                    cornerRadius = CornerRadius(fillRadius, fillRadius)
+                )
+
+                // A thin inset reflection creates a glass face without a second
+                // border or any bending/displacement of the background.
+                val inset = (fillWidth * 0.08f).coerceAtMost(7.dp.toPx())
+                val reflectionWidth = (fillWidth - inset * 2f).coerceAtLeast(0f)
+                if (reflectionWidth > 2.dp.toPx()) {
+                    drawRoundRect(
+                        brush = highlightBrush,
+                        topLeft = Offset(fillStart + inset, 1.4.dp.toPx()),
+                        size = Size(reflectionWidth, 2.2.dp.toPx()),
+                        cornerRadius = CornerRadius(1.1.dp.toPx(), 1.1.dp.toPx())
                     )
                 }
             }
         }
     }
 }
-
 
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 private val LocalMealsSheetDismissAction =

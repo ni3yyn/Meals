@@ -392,17 +392,61 @@ fun RecipesScreen(
             subtitle = if (cookingCompleted) {
                 "اكتمل التحضير"
             } else if (stepCount > 0) {
-                "الخطوة ${safeStepIndex + 1} من $stepCount · اسحبي للتنقل"
+                "اسحبي للتنقل بين الخطوات"
             } else {
                 "وضع الطبخ"
             },
             fixedHeightFraction = 0.88f,
             fillBody = true,
             text = {
-                AnimatedContent(
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Kept outside swipe transitions and the step list: this header
+                    // stays anchored while the cooking content moves or scrolls.
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                if (cookingCompleted) "اكتمل التحضير" else "التقدم في الوصفة",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MutedInk
+                            )
+                            Text(
+                                when {
+                                    cookingCompleted -> "$stepCount / $stepCount"
+                                    stepCount == 0 -> "لا توجد خطوات"
+                                    else -> "${safeStepIndex + 1} / $stepCount"
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = dz.meals.app.ui.theme.TextAccent
+                            )
+                        }
+                        MealsLiquidGlassProgressBar(
+                            progress = when {
+                                cookingCompleted -> 1f
+                                stepCount == 0 -> 0f
+                                else -> (safeStepIndex + 1).toFloat() / stepCount.toFloat()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            height = 24.dp,
+                            contentDescription = "التقدم في خطوات الوصفة"
+                        )
+                    }
+
+                    AnimatedContent(
                     targetState = cookingCompleted,
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxWidth()
                         .pointerInput(cookingCompleted, cookingStepIndex, stepCount) {
                             var dragDistance = 0f
                             val swipeThreshold = 72.dp.toPx()
@@ -504,11 +548,6 @@ fun RecipesScreen(
                                 color = MutedInk
                             )
                             Spacer(Modifier.height(20.dp))
-                            MealsLiquidGlassProgressBar(
-                                progress = 1f,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentDescription = "اكتملت خطوات الوصفة"
-                            )
                             Text(
                                 "اكتملت جميع الخطوات · $stepCount من $stepCount",
                                 style = MaterialTheme.typography.labelMedium,
@@ -540,35 +579,6 @@ fun RecipesScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(15.dp)
                             ) {
-                                item {
-                                    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                "التقدم في الوصفة",
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MutedInk
-                                            )
-                                            Text(
-                                                if (stepCount == 0) "لا توجد خطوات"
-                                                else "${visibleStepIndex + 1} / $stepCount",
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = dz.meals.app.ui.theme.TextAccent
-                                            )
-                                        }
-                                        MealsLiquidGlassProgressBar(
-                                            progress = if (stepCount == 0) 0f
-                                            else (visibleStepIndex + 1).toFloat() / stepCount.toFloat(),
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentDescription = "التقدم في خطوات الوصفة"
-                                        )
-                                    }
-                                }
-
                                 item {
                                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Text(
@@ -681,6 +691,7 @@ fun RecipesScreen(
                                 item { Spacer(Modifier.height(8.dp)) }
                             }
                         }
+                    }
                     }
                 }
             },
