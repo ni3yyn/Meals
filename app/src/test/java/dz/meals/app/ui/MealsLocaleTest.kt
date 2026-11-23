@@ -55,6 +55,9 @@ class MealsLocaleTest {
     fun englishCatalogueCoversMainNavigationAndSeededRecipeContent() {
         assertEquals("Plan", mealsText("الخطة", "en"))
         assertEquals("Recipes", mealsText("الوصفات", "en"))
+        assertEquals("Switching language…", mealsText("جارٍ تغيير اللغة...", "en"))
+        assertEquals("Language changed", mealsText("تم تغيير اللغة", "en"))
+        assertEquals("Couldn't change language", mealsText("تعذر تغيير اللغة", "en"))
         assertEquals("Vegetable couscous", mealsText("كسكس بالخضرة", "en"))
         assertEquals("Medium semolina", mealsText("سميد متوسط", "en"))
         assertEquals("Gluten", mealsText("الغلوتين", "en"))

@@ -6,9 +6,12 @@ import dz.meals.app.MealsStartupLogger
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 
@@ -25,6 +28,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 
 import android.content.Intent
 import android.net.Uri
@@ -46,6 +50,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -64,6 +69,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -76,6 +84,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
@@ -102,7 +111,11 @@ import dz.meals.app.ui.theme.LocalMealsLocaleTag
 import dz.meals.app.ui.theme.mealsText
 import dz.meals.app.ui.theme.DEFAULT_MEALS_LOCALE_TAG
 import dz.meals.app.ui.theme.mealsLayoutDirection
+import dz.meals.app.ui.theme.normalizeMealsLocaleTag
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -200,7 +213,17 @@ private fun MealsAppContent(
     val preferencesLoaded = storedPreferences != null
     val preferences = storedPreferences ?: AppPreferences(hasCompletedSetup = true)
     val appLanguage = preferences.appLanguage
+    val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
+    var languageTransitionTarget by remember { mutableStateOf<String?>(null) }
+
+    fun requestLanguageChange(languageTag: String) {
+        if (languageTransitionTarget != null) return
+        val target = normalizeMealsLocaleTag(languageTag)
+        if (target == normalizeMealsLocaleTag(appLanguage)) return
+        keyboardController?.hide()
+        languageTransitionTarget = target
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }
@@ -536,7 +559,7 @@ private fun MealsAppContent(
                 ingredients = snapshot.ingredients,
                 appLanguage = appLanguage,
                 onLanguageSelected = { languageTag ->
-                    scope.launch { preferencesStore.setAppLanguage(languageTag) }
+                    requestLanguageChange(languageTag)
                 },
                 onQuickStart = { budget, servings ->
                     scope.launch {
@@ -586,7 +609,7 @@ private fun MealsAppContent(
             SettingsDialog(
                 appLanguage = appLanguage,
                 onLanguageSelected = { languageTag ->
-                    scope.launch { preferencesStore.setAppLanguage(languageTag) }
+                    requestLanguageChange(languageTag)
                 },
                 onDismiss = { showSettings = false },
                 onOpenHouseholdSettings = {
@@ -720,9 +743,138 @@ private fun MealsAppContent(
             )
         }
 
+
+        languageTransitionTarget?.let { targetLanguage ->
+            LanguageTransitionOverlay(
+                targetLanguage = targetLanguage,
+                activeLanguage = appLanguage,
+                onCommitLanguage = { languageTag ->
+                    preferencesStore.setAppLanguage(languageTag)
+                },
+                onFinished = {
+                    if (languageTransitionTarget == targetLanguage) {
+                        languageTransitionTarget = null
+                    }
+                }
+            )
+        }
         }
 
 
+    }
+}
+
+@Composable
+private fun LanguageTransitionOverlay(
+    targetLanguage: String,
+    activeLanguage: String,
+    onCommitLanguage: suspend (String) -> Unit,
+    onFinished: () -> Unit
+) {
+    val coverage = remember(targetLanguage) { Animatable(0f) }
+    val activeLanguageState = rememberUpdatedState(activeLanguage)
+    var commitFailed by remember(targetLanguage) { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+
+    BackHandler(enabled = true, onBack = {})
+
+    LaunchedEffect(targetLanguage) {
+        coverage.snapTo(0f)
+        coverage.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(560, easing = FastOutSlowInEasing)
+        )
+
+        try {
+            // Persist only after the old-language UI is completely hidden.
+            onCommitLanguage(targetLanguage)
+            snapshotFlow { activeLanguageState.value }
+                .first { normalizeMealsLocaleTag(it) == normalizeMealsLocaleTag(targetLanguage) }
+
+            // Allow direction, text shaping and screen measurements to settle behind the cover.
+            withFrameNanos { }
+            withFrameNanos { }
+            delay(260)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            commitFailed = true
+            delay(760)
+        }
+
+        coverage.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(520, easing = FastOutSlowInEasing)
+        )
+        onFinished()
+    }
+
+    val isTargetLanguageActive =
+        normalizeMealsLocaleTag(activeLanguage) == normalizeMealsLocaleTag(targetLanguage)
+    val statusMessage = when {
+        commitFailed -> "تعذر تغيير اللغة"
+        isTargetLanguageActive -> "تم تغيير اللغة"
+        else -> "جارٍ تغيير اللغة..."
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            // Consume taps and keep the app inert while the branded surface enters and exits.
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {}
+            )
+            .graphicsLayer {
+                alpha = coverage.value
+                val settle = 1.025f - (0.025f * coverage.value)
+                scaleX = settle
+                scaleY = settle
+            }
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        dz.meals.app.ui.theme.Paper,
+                        Cream,
+                        dz.meals.app.ui.theme.WarmSurface
+                    )
+                )
+            ),
+        contentAlignment = androidx.compose.ui.Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.graphicsLayer {
+                alpha = coverage.value.coerceIn(0f, 1f)
+                val breathe = 0.965f + (0.035f * coverage.value)
+                scaleX = breathe
+                scaleY = breathe
+            },
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(22.dp)
+        ) {
+            MidatiBrandLogo(iconSize = 82.dp, showWordmark = true)
+
+            CircularProgressIndicator(
+                modifier = Modifier.size(27.dp),
+                color = dz.meals.app.ui.theme.ForestDark,
+                trackColor = dz.meals.app.ui.theme.Leaf.copy(alpha = 0.32f),
+                strokeWidth = 2.4.dp
+            )
+
+            Crossfade(
+                targetState = statusMessage,
+                animationSpec = tween(220, easing = FastOutSlowInEasing),
+                label = "midatiLanguageTransitionStatus"
+            ) { message ->
+                Text(
+                    text = message,
+                    color = dz.meals.app.ui.theme.BodyInk,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                )
+            }
+        }
     }
 }
 
@@ -734,6 +886,7 @@ private fun SettingsDialog(
     onOpenHouseholdSettings: () -> Unit,
     onRestartOnboarding: () -> Unit
 ) {
+    val dismissSheet = mealsSheetDismissAction()
     MealsBottomSheet(
         titleText = "الإعدادات",
         subtitle = "إعدادات تجربتك على Midati",
@@ -763,7 +916,13 @@ private fun SettingsDialog(
                 items = listOf("العربية", "English"),
                 selected = if (appLanguage.startsWith("en", ignoreCase = true)) "English" else "العربية",
                 onSelect = { selected ->
-                    onLanguageSelected(if (selected == "English") "en" else "ar-DZ")
+                    val targetLanguage = if (selected == "English") "en" else "ar-DZ"
+                    if (normalizeMealsLocaleTag(targetLanguage) != normalizeMealsLocaleTag(appLanguage)) {
+                        dismissSheet {
+                            onDismiss()
+                            onLanguageSelected(targetLanguage)
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             )

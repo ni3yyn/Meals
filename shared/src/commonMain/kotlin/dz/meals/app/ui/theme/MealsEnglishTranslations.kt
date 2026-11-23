@@ -423,8 +423,10 @@ internal object MealsEnglishTranslations {
         "الإصدار الجديد منشور، لكن ملف APK غير متاح للتنزيل بعد." to "The new release is published, but its APK isn't available for download yet.",
         "تعذر قراءة رقم إصدار التطبيق." to "Couldn't read the app version number.",
         "تعذر التحقق من رابط تنزيل APK الخاص بالإصدار." to "Couldn't verify the APK download link for this release.",
-        " · غير متوفر" to " · unavailable"
-
+        " · غير متوفر" to " · unavailable",
+        "جارٍ تغيير اللغة..." to "Switching language…",
+        "تم تغيير اللغة" to "Language changed",
+        "تعذر تغيير اللغة" to "Couldn't change language",
     )
 
     fun translate(source: String): String? = entries[source]
