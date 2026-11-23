@@ -33,7 +33,8 @@ data class MealRecipe(
     val ingredients: List<RecipeIngredient>,
     val stepsAr: List<String>,
     val stepsFr: List<String>,
-    val attribution: RecipeAttribution? = null
+    val attribution: RecipeAttribution? = null,
+    val tags: List<String> = emptyList()
 )
 
 data class RecipeAttribution(

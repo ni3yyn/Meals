@@ -641,7 +641,8 @@ class MealsRepository(context: Context) {
                         licenseUrl = it.licenseUrl,
                         changes = it.changes
                     )
-                }
+                },
+                tags = recipe.tagsCsv.split("|").filter { it.isNotBlank() }
             )
         }
     }

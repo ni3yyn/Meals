@@ -305,7 +305,8 @@ fun RecipesScreen(
                             recipe.descriptionAr.contains(query.trim(), true) ||
                             mealsText(recipe.descriptionAr, appLocaleTag).contains(query.trim(), true) ||
                             recipe.descriptionFr.contains(query.trim(), true) ||
-                            searchableIngredientNames.any { it.contains(query.trim(), true) })
+                            searchableIngredientNames.any { it.contains(query.trim(), true) } ||
+                            recipe.tags.any { it.contains(query.trim(), true) })
                 }
 
                 LazyColumn(
@@ -466,6 +467,15 @@ fun RecipesScreen(
                             "• " + bidiIsolate(ingredientName) + " — " + quantityOrNote,
                             translate = false
                         )
+                    }
+                    if (detail.tags.isNotEmpty()) {
+                        item {
+                            Text(
+                                "التصنيفات: " + detail.tags.joinToString("، "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                     item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
                     itemsIndexed(detail.stepsAr) { index, step ->

@@ -131,6 +131,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         var prepMinutes: Int? = null
         var cookMinutes: Int? = null
         var allergens = emptyList<String>()
+        var tags = emptyList<String>()
         var ingredients = emptyList<SourceIngredient>()
         var steps = emptyList<String>()
         var provenance = SourceProvenance()
@@ -147,6 +148,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 "prepMinutes" -> prepMinutes = readNullableInt(reader)
                 "cookMinutes" -> cookMinutes = readNullableInt(reader)
                 "allergens" -> allergens = readStringArray(reader)
+                "tags" -> tags = readStringArray(reader)
                 "ingredients" -> ingredients = readIngredients(reader)
                 "steps" -> steps = readStringArray(reader)
                 "provenance" -> provenance = readProvenance(reader)
@@ -177,6 +179,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             prepMinutes = prepMinutes,
             cookMinutes = cookMinutes,
             allergens = allergens,
+            tags = tags,
             ingredients = ingredients,
             steps = steps,
             provenance = provenance
@@ -326,7 +329,8 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             durationMinutes = ((prepMinutes ?: 0) + (cookMinutes ?: 0)).coerceAtLeast(0),
             baseServings = (servings ?: 2).coerceIn(1, 30),
             difficulty = "غير محدد",
-            allergensCsv = normalizeAllergens(allergens).distinct().joinToString(",")
+            allergensCsv = normalizeAllergens(allergens).distinct().joinToString(","),
+            tagsCsv = tags.distinct().joinToString("|")
         )
         val recipeSteps = steps.mapIndexed { index, step ->
             RecipeStepEntity(recipeId, index + 1, step, step)
@@ -431,6 +435,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val prepMinutes: Int?,
         val cookMinutes: Int?,
         val allergens: List<String>,
+        val tags: List<String>,
         val ingredients: List<SourceIngredient>,
         val steps: List<String>,
         val provenance: SourceProvenance

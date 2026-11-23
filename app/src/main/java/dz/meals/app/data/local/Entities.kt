@@ -28,7 +28,8 @@ data class RecipeEntity(
     val durationMinutes: Int,
     val baseServings: Int,
     val difficulty: String,
-    val allergensCsv: String
+    val allergensCsv: String,
+    @ColumnInfo(defaultValue = "''") val tagsCsv: String = ""
 )
 
 @Entity(
