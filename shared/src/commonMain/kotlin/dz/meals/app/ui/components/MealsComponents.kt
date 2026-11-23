@@ -36,8 +36,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
@@ -1906,9 +1904,6 @@ fun MealsBottomSheet(
                     // Regular sheets remain natural-height and are capped at 87%.
                     // AI AGENTS: preserve this default content-driven sizing contract.
                     val maxSheetHeight = maxHeight * 0.87f
-                    // Short sheets need enough vertical presence to read as a distinct
-                    // surface. Keep this floor bounded by the same viewport cap.
-                    val minSheetHeight = minOf(300.dp, maxSheetHeight)
                     val fixedSheetHeight = fixedHeightFraction
                         ?.coerceIn(0.72f, 0.94f)
                         ?.let { maxHeight * it }
@@ -1932,12 +1927,14 @@ fun MealsBottomSheet(
                         fixedSheetHeight != null ->
                             Modifier.height(fixedSheetHeight)
                         else ->
-                            Modifier.heightIn(min = minSheetHeight, max = maxSheetHeight)
+                            Modifier.heightIn(max = maxSheetHeight)
                     }
                     val contentHeightModifier = when {
                         fixedSheetHeight != null -> Modifier.height(fixedSheetHeight)
                         else -> Modifier.wrapContentHeight()
                     }
+                    val maxBodyHeight = ((fixedSheetHeight ?: maxSheetHeight) - 164.dp)
+                        .coerceAtLeast(120.dp)
 
                     MealsModalSurface(
                         modifier = modifier
@@ -1955,13 +1952,7 @@ fun MealsBottomSheet(
                             },
                         contentPadding = 0.dp,
                         shape = topShape,
-                        // Compact sheets receive a broader, still very soft pearl lift.
-                        // Larger sheets retain the restrained default elevation.
-                        elevation = if ((measuredNaturalHeight ?: minSheetHeight) < 420.dp) {
-                            6.dp
-                        } else {
-                            MealsLiquidGlass.ModalElevation
-                        },
+                        elevation = MealsLiquidGlass.ModalElevation,
                         hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
                         glassBackdropOverride = null,
                         forceHazeBlur = true,
@@ -1999,7 +1990,7 @@ fun MealsBottomSheet(
                                             .fillMaxWidth()
                                             .then(
                                                 if (fixedSheetHeight != null) Modifier.fillMaxHeight()
-                                                else Modifier.heightIn(min = minSheetHeight, max = maxSheetHeight)
+                                                else Modifier.heightIn(max = maxSheetHeight)
                                             )
                                             .padding(horizontal = 22.dp, vertical = 18.dp),
                                         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -2043,23 +2034,20 @@ fun MealsBottomSheet(
                                             }
                                         }
 
-                                        // Keep actions outside the scroll viewport. The content
-                                        // area absorbs extra height and scrolls independently,
-                                        // so actions remain reachable at the bottom on compact screens.
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .weight(1f, fill = true)
-                                                .verticalScroll(rememberScrollState()),
-                                            verticalArrangement = Arrangement.spacedBy(14.dp)
-                                        ) {
-                                            if (text != null) {
-                                                Box(modifier = Modifier.fillMaxWidth()) {
-                                                    text()
-                                                }
+                                        if (text != null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .then(
+                                                        if (fillBody) Modifier.weight(1f)
+                                                        else Modifier.heightIn(max = maxBodyHeight)
+                                                    )
+                                            ) {
+                                                text()
                                             }
-                                            content()
                                         }
+
+                                        content()
 
                                         if (confirmButton != null || dismissButton != null) {
                                             Row(
