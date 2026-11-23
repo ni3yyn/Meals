@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.BottomSheetDefaults
@@ -75,6 +76,8 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -110,6 +113,8 @@ import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.rememberHazeState
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
+import dz.meals.app.ui.theme.Forest
+import dz.meals.app.ui.theme.ForestDark
 import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
@@ -289,6 +294,111 @@ fun MealsGlassDot(
         rim = MealsLiquidGlass.controlRim(),
         sideGlintHeight = 9.dp
     ) {}
+}
+
+
+/**
+ * Shared liquid-glass progress track for guided flows and compact summaries.
+ *
+ * The track uses the same porcelain face and white optical edge as Meals
+ * controls. Its filled capsule is softly tinted glass with a restrained upper
+ * catchlight. It deliberately uses no refraction, displacement or shader.
+ */
+@Composable
+fun MealsLiquidGlassProgressBar(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    height: Dp = 15.dp,
+    progressColor: Color = Forest,
+    contentDescription: String = "التقدم"
+) {
+    val targetProgress = progress.coerceIn(0f, 1f)
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = tween(
+            durationMillis = 520,
+            easing = FastOutSlowInEasing
+        ),
+        label = "mealsLiquidGlassProgress"
+    )
+
+    val trackFace = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = 0.56f),
+            0.34f to Color(0xFFF7F3ED).copy(alpha = 0.62f),
+            0.78f to Color(0xFFEDE7DF).copy(alpha = 0.42f),
+            1f to Color.White.copy(alpha = 0.48f)
+        )
+    )
+    val fillFace = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = 0.86f),
+            0.20f to progressColor.copy(alpha = 0.88f),
+            0.68f to progressColor.copy(alpha = 0.96f),
+            1f to progressColor.copy(alpha = 0.80f)
+        )
+    )
+
+    MealsLiquidGlassFrame(
+        modifier = modifier
+            .height(height)
+            .progressSemantics(targetProgress)
+            .semantics { this.contentDescription = contentDescription },
+        shape = CircleShape,
+        elevation = 2.dp,
+        face = trackFace,
+        hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
+        blurStyle = MealsLiquidGlass.ControlBlurStyle,
+        blurRadius = MealsLiquidGlass.ControlBlurRadius,
+        rim = MealsLiquidGlass.controlRim(),
+        sideGlintHeight = height * 0.72f
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(2.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFFEDE7DF).copy(alpha = 0.50f),
+                            Color.White.copy(alpha = 0.30f),
+                            Color(0xFFE7E0D8).copy(alpha = 0.36f)
+                        )
+                    )
+                )
+        ) {
+            if (animatedProgress > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(animatedProgress)
+                        .clip(CircleShape)
+                        .background(fillFace)
+                ) {
+                    // A very fine top catchlight gives the fill a polished glass
+                    // surface without simulating lensing or bending the content.
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.White.copy(alpha = 0.66f),
+                                        Color.White.copy(alpha = 0.88f),
+                                        Color.White.copy(alpha = 0.66f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                }
+            }
+        }
+    }
 }
 
 

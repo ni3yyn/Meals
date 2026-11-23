@@ -51,6 +51,7 @@ import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsFilterChips
 import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.components.MealsLiquidGlassProgressBar
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSearchBar
 import dz.meals.app.ui.components.MealsSecondaryButton
@@ -503,11 +504,10 @@ fun RecipesScreen(
                                 color = MutedInk
                             )
                             Spacer(Modifier.height(20.dp))
-                            androidx.compose.material3.LinearProgressIndicator(
-                                progress = { 1f },
+                            MealsLiquidGlassProgressBar(
+                                progress = 1f,
                                 modifier = Modifier.fillMaxWidth(),
-                                color = dz.meals.app.ui.theme.Forest,
-                                trackColor = SoftGreen
+                                contentDescription = "اكتملت خطوات الوصفة"
                             )
                             Text(
                                 "اكتملت جميع الخطوات · $stepCount من $stepCount",
@@ -560,14 +560,11 @@ fun RecipesScreen(
                                                 color = dz.meals.app.ui.theme.TextAccent
                                             )
                                         }
-                                        androidx.compose.material3.LinearProgressIndicator(
-                                            progress = {
-                                                if (stepCount == 0) 0f
-                                                else (visibleStepIndex + 1).toFloat() / stepCount.toFloat()
-                                            },
+                                        MealsLiquidGlassProgressBar(
+                                            progress = if (stepCount == 0) 0f
+                                            else (visibleStepIndex + 1).toFloat() / stepCount.toFloat(),
                                             modifier = Modifier.fillMaxWidth(),
-                                            color = dz.meals.app.ui.theme.Forest,
-                                            trackColor = SoftGreen
+                                            contentDescription = "التقدم في خطوات الوصفة"
                                         )
                                     }
                                 }
