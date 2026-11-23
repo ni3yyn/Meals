@@ -52,7 +52,6 @@ class ArabicRecipeCatalogueDownloader(context: Context) {
         val request = Request.Builder()
             .url(DOWNLOAD_URL)
             .header("Accept", "application/json")
-            .header("Accept-Encoding", "identity")
             .header("User-Agent", "Midati-Android-Recipe-Catalogue")
             .build()
         val call = client.newCall(request)
