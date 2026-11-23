@@ -153,6 +153,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
@@ -1681,6 +1682,31 @@ private fun MealsModalSurface(
  * grows only as needed, up to 87% of the available height. Immersive flows may
  * explicitly request a fixed viewport and a body that fills the remaining space.
  */
+/**
+ * Updates only layout measurement while a sheet expands. Reading the animation
+ * state inside the measure block avoids recomposing the modal's entire glass
+ * subtree on every animation frame.
+ */
+private fun Modifier.mealsAnimatedHeight(
+    startHeight: Dp,
+    endHeight: Dp,
+    progress: () -> Float
+): Modifier = layout { measurable, constraints ->
+    val fraction = progress().coerceIn(0f, 1f)
+    val requestedHeight = (
+        startHeight.toPx() + (endHeight - startHeight).toPx() * fraction
+    ).roundToInt().coerceIn(constraints.minHeight, constraints.maxHeight)
+    val placeable = measurable.measure(
+        constraints.copy(
+            minHeight = requestedHeight,
+            maxHeight = requestedHeight
+        )
+    )
+    layout(placeable.width, requestedHeight) {
+        placeable.place(0, 0)
+    }
+}
+
 private enum class MealsSheetVisualPhase {
     Content,
     ContentExit,
@@ -1864,18 +1890,16 @@ fun MealsBottomSheet(
                     val restingSheetHeight = fixedSheetHeight
                         ?: measuredNaturalHeight
                         ?: maxSheetHeight
-                    val animatedSheetHeight = restingSheetHeight +
-                        (maxHeight - restingSheetHeight) * expansion.value
-                    val loadingSheetHeight = if (expandToFullScreenWhileLoading) {
-                        animatedSheetHeight
-                    } else {
-                        restingSheetHeight
-                    }
                     val isInLoadingTransition = visualPhase != MealsSheetVisualPhase.Content
                     val interactionLocked = activeLoading || isInLoadingTransition
                     val sheetHeightModifier = when {
                         expandToFullScreenWhileLoading && isInLoadingTransition ->
-                            Modifier.height(animatedSheetHeight)
+                            Modifier.mealsAnimatedHeight(
+                                startHeight = restingSheetHeight,
+                                endHeight = maxHeight
+                            ) { expansion.value }
+                        isInLoadingTransition ->
+                            Modifier.height(restingSheetHeight)
                         fixedSheetHeight != null ->
                             Modifier.height(fixedSheetHeight)
                         else ->
@@ -1896,7 +1920,6 @@ fun MealsBottomSheet(
                                 if (
                                     !activeLoading &&
                                     visualPhase == MealsSheetVisualPhase.Content &&
-                                    expansion.value <= 0.001f &&
                                     fixedSheetHeight == null &&
                                     naturalSheetHeightPx.value != size.height
                                 ) {
@@ -1917,7 +1940,7 @@ fun MealsBottomSheet(
                                 .fillMaxWidth()
                                 .then(
                                     if (visualPhase == MealsSheetVisualPhase.Content) contentHeightModifier
-                                    else Modifier.height(loadingSheetHeight)
+                                    else Modifier.fillMaxHeight()
                                 ),
                             transitionSpec = {
                                 fadeIn(
