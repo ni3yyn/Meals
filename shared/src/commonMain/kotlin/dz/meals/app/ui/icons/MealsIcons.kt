@@ -34,16 +34,12 @@ import dz.meals.app.shared.generated.resources.meals_icon_star
 import dz.meals.app.shared.generated.resources.meals_icon_star_outline
 import dz.meals.app.shared.generated.resources.meals_icon_update
 import dz.meals.app.shared.generated.resources.meals_icon_wallet
-import io.github.alexzhirkevich.compottie.LottieCompositionSpec
-import io.github.alexzhirkevich.compottie.animateLottieCompositionAsState
-import io.github.alexzhirkevich.compottie.rememberLottieComposition
-import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * The shared Meals icon vocabulary, rendered with With Icons' soft-3D assets.
- * Artwork is multi-colour and volume-shaded, so callers must not tint it.
+ * The shared Midati icon vocabulary. Every interface icon is rendered from the
+ * same bundled PNG family; callers must not tint the multi-colour artwork.
  */
 enum class MealsIconName {
     Plan,
@@ -74,7 +70,7 @@ enum class MealsIconName {
 }
 
 /**
- * Static soft-3D artwork for buttons, cards, labels and other app actions.
+ * Static artwork for buttons, cards, labels and other app actions.
  * Keep the supplied modifier responsible for the rendered size.
  */
 @Composable
@@ -91,9 +87,9 @@ fun MealsIcon(
 }
 
 /**
- * A destination icon with a small spring response and a one-shot soft-3D
- * animation on entry. The cookbook morphs from a closed book to an open one.
- * When a destination becomes inactive, its calm resting artwork is shown.
+ * Navigation artwork uses the exact same PNG as every other occurrence.
+ * Selection keeps the existing subtle spring response without swapping in
+ * a separate animation asset or a visually different icon.
  */
 @Composable
 fun MealsNavigationIcon(
@@ -110,60 +106,15 @@ fun MealsNavigationIcon(
         ),
         label = "mealsNavigationIconScale"
     )
-    val animatedModifier = modifier.graphicsLayer {
-        scaleX = scale
-        scaleY = scale
-    }
-    val animationFile = name.navigationAnimationFile()
 
-    if (animationFile == null) {
-        Image(
-            painter = painterResource(name.drawable()),
-            contentDescription = contentDescription,
-            modifier = animatedModifier
-        )
-        return
-    }
-
-    val compositionResult = rememberLottieComposition(animationFile) {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/$animationFile").decodeToString()
-        )
-    }
-    val composition by compositionResult
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        isPlaying = selected,
-        restartOnPlay = true,
-        iterations = 1,
-        speed = 1.04f
+    Image(
+        painter = painterResource(name.drawable()),
+        contentDescription = contentDescription,
+        modifier = modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
     )
-
-    if (selected && composition != null) {
-        Image(
-            painter = rememberLottiePainter(
-                composition = composition,
-                progress = { progress },
-                enableExpressions = false
-            ),
-            contentDescription = contentDescription,
-            modifier = animatedModifier
-        )
-    } else {
-        Image(
-            painter = painterResource(name.drawable()),
-            contentDescription = contentDescription,
-            modifier = animatedModifier
-        )
-    }
-}
-
-private fun MealsIconName.navigationAnimationFile(): String? = when (this) {
-    MealsIconName.Plan -> "meals_nav_plan.json"
-    MealsIconName.Cookbook -> "meals_nav_cookbook.json"
-    MealsIconName.Basket -> "meals_nav_basket.json"
-    MealsIconName.Pantry -> "meals_nav_pantry.json"
-    else -> null
 }
 
 private fun MealsIconName.drawable(): DrawableResource = when (this) {
