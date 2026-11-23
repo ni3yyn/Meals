@@ -77,7 +77,34 @@ interface MealsDao {
     @Query("DELETE FROM recipes WHERE id LIKE 'orc-%'")
     suspend fun deleteLegacyOpenRecipes()
 
-    @Query("DELETE FROM ingredients WHERE id LIKE 'orc-ing-%' AND id NOT IN (SELECT ingredientId FROM pantry_items) AND id NOT IN (SELECT ingredientId FROM price_observations) AND id NOT IN (SELECT ingredientId FROM shopping_items WHERE ingredientId IS NOT NULL)")
+    @Query("""
+        DELETE FROM ingredients
+        WHERE substr(id, 1, 8) = 'orc-ing-'
+          AND NOT EXISTS (
+              SELECT 1 FROM recipe_ingredients
+              WHERE recipe_ingredients.ingredientId = ingredients.id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM pantry_items
+              WHERE pantry_items.ingredientId = ingredients.id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM price_observations
+              WHERE price_observations.ingredientId = ingredients.id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM shopping_items
+              WHERE shopping_items.ingredientId = ingredients.id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM plan_price_snapshots
+              WHERE plan_price_snapshots.ingredientId = ingredients.id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM cooked_meal_deductions
+              WHERE cooked_meal_deductions.ingredientId = ingredients.id
+          )
+    """)
     suspend fun deleteUnusedLegacyOpenRecipeIngredients()
 
 
