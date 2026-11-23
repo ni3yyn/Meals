@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import dz.meals.app.ui.theme.mealsText
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_icon_add
 import dz.meals.app.shared.generated.resources.meals_icon_arrow_back
@@ -79,10 +82,18 @@ fun MealsIcon(
     contentDescription: String? = null,
     modifier: Modifier = Modifier
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+    val shouldMirror = layoutDirection == LayoutDirection.Rtl && name in setOf(
+        MealsIconName.ArrowBack,
+        MealsIconName.ArrowForward,
+        MealsIconName.ChevronRight
+    )
     Image(
         painter = painterResource(name.drawable()),
-        contentDescription = contentDescription,
-        modifier = modifier
+        contentDescription = contentDescription?.let { mealsText(it) },
+        modifier = modifier.graphicsLayer {
+            if (shouldMirror) scaleX = -1f
+        }
     )
 }
 
@@ -107,11 +118,17 @@ fun MealsNavigationIcon(
         label = "mealsNavigationIconScale"
     )
 
+    val layoutDirection = LocalLayoutDirection.current
+    val shouldMirror = layoutDirection == LayoutDirection.Rtl && name in setOf(
+        MealsIconName.ArrowBack,
+        MealsIconName.ArrowForward,
+        MealsIconName.ChevronRight
+    )
     Image(
         painter = painterResource(name.drawable()),
-        contentDescription = contentDescription,
+        contentDescription = mealsText(contentDescription),
         modifier = modifier.graphicsLayer {
-            scaleX = scale
+            scaleX = scale * if (shouldMirror) -1f else 1f
             scaleY = scale
         }
     )
