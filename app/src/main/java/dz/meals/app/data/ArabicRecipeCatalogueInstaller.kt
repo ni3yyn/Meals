@@ -462,7 +462,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
     companion object {
         const val RECIPE_ID_PREFIX = "orc-"
-        private const val INGREDIENT_ID_PREFIX = "orc-ing-"
+        const val INGREDIENT_ID_PREFIX = "orc-ing-"
         private const val DEFAULT_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
         private const val BATCH_SIZE = 80
         private const val PREFERENCES_NAME = "arabic_recipe_catalogue"

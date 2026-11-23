@@ -34,6 +34,9 @@ class MealsRepository(context: Context) {
     private val database = MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
     private val initializationMutex = Mutex()
+    private val catalogueCacheMutex = Mutex()
+    private var cachedCatalogueRecipes: List<MealRecipe>? = null
+    private var cachedCatalogueIngredients: List<IngredientMaster>? = null
 
     suspend fun ensureInitialized() = initializationMutex.withLock {
         SeedRecipes.validateCatalogue()
@@ -93,13 +96,20 @@ class MealsRepository(context: Context) {
         }
     }
 
+    suspend fun invalidateCatalogueCache() {
+        catalogueCacheMutex.withLock {
+            cachedCatalogueRecipes = null
+            cachedCatalogueIngredients = null
+        }
+    }
+
     suspend fun snapshot(
         weekStartIso: String,
         selectedWilaya: String? = null,
         selectedMealSlots: Set<String> = MealSlots.ids.toSet()
     ): MealsSnapshot {
         ensureInitialized()
-        val ingredients = dao.getIngredients().map { it.toModel() }
+        val ingredients = loadIngredients()
         val recipes = loadRecipes()
         val savedRun = dao.getPlanRun(weekStartIso)
         val slotsForThisWeek = savedRun?.mealSlotsCsv
@@ -251,7 +261,7 @@ class MealsRepository(context: Context) {
                 budgetDzd = weeklyBudgetDzd
             )
         }
-        val ingredientsById = dao.getIngredients().associateBy { it.id }
+        val ingredientsById = loadIngredients().associateBy { it.id }
         val ingredientCategories = ingredientsById.mapValues { it.value.category }
         val pinnedDietConflict = findPinnedDietConflict(locked, recipes, ingredientCategories, dietPattern)
         if (pinnedDietConflict != null) {
@@ -599,55 +609,74 @@ class MealsRepository(context: Context) {
         dao.deleteCustomShoppingItem(id)
     }
 
-    private suspend fun loadRecipes(): List<MealRecipe> {
+    private suspend fun loadIngredients(): List<IngredientMaster> = catalogueCacheMutex.withLock {
+        cachedCatalogueIngredients ?: run {
+            val catalogueInstalled = hasInstalledArabicRecipeCatalogue()
+            dao.getIngredients()
+                .filter { ingredient ->
+                    !ingredient.id.startsWith(ArabicRecipeCatalogueInstaller.INGREDIENT_ID_PREFIX) ||
+                        catalogueInstalled
+                }
+                .map { it.toModel() }
+                .also { cachedCatalogueIngredients = it }
+        }
+    }
+
+    private suspend fun loadRecipes(): List<MealRecipe> = catalogueCacheMutex.withLock {
+        cachedCatalogueRecipes ?: loadRecipesFromDatabase().also { cachedCatalogueRecipes = it }
+    }
+
+    private suspend fun hasInstalledArabicRecipeCatalogue(): Boolean =
+        appContext.getSharedPreferences("arabic_recipe_catalogue", Context.MODE_PRIVATE)
+            .getString("installed_revision", null) == ArabicRecipeCatalogueDownloader.REVISION &&
+            dao.countArabicCatalogueRecipes() == ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
+
+    private suspend fun loadRecipesFromDatabase(): List<MealRecipe> {
         val ingredients = dao.getRecipeIngredients().groupBy { it.recipeId }
         val steps = dao.getRecipeSteps().groupBy { it.recipeId }
         val attributions = dao.getRecipeAttributions().associateBy { it.recipeId }
         // Hide partially imported community rows until the entire pinned
         // catalogue revision has passed validation and has been committed.
-        val catalogueInstalled =
-            appContext.getSharedPreferences("arabic_recipe_catalogue", Context.MODE_PRIVATE)
-                .getString("installed_revision", null) == ArabicRecipeCatalogueDownloader.REVISION &&
-                dao.countArabicCatalogueRecipes() == ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
+        val catalogueInstalled = hasInstalledArabicRecipeCatalogue()
         return dao.getRecipes()
             .filter { recipe ->
                 !recipe.id.startsWith(ArabicRecipeCatalogueInstaller.RECIPE_ID_PREFIX) || catalogueInstalled
             }
             .map { recipe ->
-            val recipeSteps = steps[recipe.id].orEmpty().sortedBy { it.stepNumber }
-            MealRecipe(
-                id = recipe.id,
-                nameAr = recipe.nameAr,
-                nameFr = recipe.nameFr,
-                descriptionAr = recipe.descriptionAr,
-                descriptionFr = recipe.descriptionFr,
-                category = recipe.category,
-                region = recipe.region,
-                durationMinutes = recipe.durationMinutes,
-                baseServings = recipe.baseServings,
-                difficulty = recipe.difficulty,
-                allergens = recipe.allergensCsv.split(",").filter { it.isNotBlank() }.toSet(),
-                ingredients = ingredients[recipe.id].orEmpty().map {
-                    RecipeIngredient(it.ingredientId, it.quantityBase, it.unit, it.prepNote, it.optional)
-                },
-                stepsAr = recipeSteps.map { it.instructionAr },
-                stepsFr = recipeSteps.map { it.instructionFr },
-                attribution = attributions[recipe.id]?.let {
-                    RecipeAttribution(
-                        sourceTitle = it.sourceTitle,
-                        sourceUrl = it.sourceUrl,
-                        revisionUrl = it.revisionUrl,
-                        historyUrl = it.historyUrl,
-                        credit = it.credit,
-                        sourceLicense = it.sourceLicense,
-                        license = it.license,
-                        licenseUrl = it.licenseUrl,
-                        changes = it.changes
-                    )
-                },
-                tags = recipe.tagsCsv.split("|").filter { it.isNotBlank() }
-            )
-        }
+                val recipeSteps = steps[recipe.id].orEmpty().sortedBy { it.stepNumber }
+                MealRecipe(
+                    id = recipe.id,
+                    nameAr = recipe.nameAr,
+                    nameFr = recipe.nameFr,
+                    descriptionAr = recipe.descriptionAr,
+                    descriptionFr = recipe.descriptionFr,
+                    category = recipe.category,
+                    region = recipe.region,
+                    durationMinutes = recipe.durationMinutes,
+                    baseServings = recipe.baseServings,
+                    difficulty = recipe.difficulty,
+                    allergens = recipe.allergensCsv.split(",").filter { it.isNotBlank() }.toSet(),
+                    ingredients = ingredients[recipe.id].orEmpty().map {
+                        RecipeIngredient(it.ingredientId, it.quantityBase, it.unit, it.prepNote, it.optional)
+                    },
+                    stepsAr = recipeSteps.map { it.instructionAr },
+                    stepsFr = recipeSteps.map { it.instructionFr },
+                    attribution = attributions[recipe.id]?.let {
+                        RecipeAttribution(
+                            sourceTitle = it.sourceTitle,
+                            sourceUrl = it.sourceUrl,
+                            revisionUrl = it.revisionUrl,
+                            historyUrl = it.historyUrl,
+                            credit = it.credit,
+                            sourceLicense = it.sourceLicense,
+                            license = it.license,
+                            licenseUrl = it.licenseUrl,
+                            changes = it.changes
+                        )
+                    },
+                    tags = recipe.tagsCsv.split("|").filter { it.isNotBlank() }
+                )
+            }
     }
 
     private fun demoPrices(): List<PriceObservationEntity> {

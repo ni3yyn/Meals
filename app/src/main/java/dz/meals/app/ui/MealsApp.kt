@@ -317,6 +317,7 @@ private fun MealsAppContent(
                     catalogueExpectedRecipes = total
                 }
 
+                repository.invalidateCatalogueCache()
                 refresh()
                 cataloguePhase = RecipeCataloguePhase.READY
             } catch (cancelled: CancellationException) {

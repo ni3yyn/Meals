@@ -112,7 +112,7 @@ fun RecipesScreen(
     var cookingCompleted by rememberSaveable { mutableStateOf(false) }
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
     var browseDirection by rememberSaveable { mutableStateOf(1) }
-    val ingredientNames = ingredients.associateBy { it.id }
+    val ingredientNames = remember(ingredients) { ingredients.associateBy { it.id } }
     val layoutDirection = LocalLayoutDirection.current
     val appLocaleTag = LocalMealsLocaleTag.current
     val uriHandler = LocalUriHandler.current
@@ -288,25 +288,35 @@ fun RecipesScreen(
         ) { page ->
             key(page) {
                 val listState = rememberLazyListState()
-                val filtered = recipes.filter { recipe ->
-                    val ingredientMasters = recipe.ingredients.mapNotNull {
-                        ingredientNames[it.ingredientId]
+                val filtered = remember(
+                    recipes,
+                    allergyIds,
+                    page,
+                    favoriteRecipeIds,
+                    query,
+                    appLocaleTag,
+                    ingredientNames
+                ) {
+                    recipes.filter { recipe ->
+                        val ingredientMasters = recipe.ingredients.mapNotNull {
+                            ingredientNames[it.ingredientId]
+                        }
+                        val searchableIngredientNames = ingredientMasters.flatMap { master ->
+                            listOf(master.nameAr, master.nameFr, mealsText(master.nameAr, appLocaleTag)) +
+                                master.aliases
+                        }
+                        recipe.allergens.intersect(allergyIds).isEmpty() &&
+                            (!page.first || recipe.id in favoriteRecipeIds) &&
+                            (page.second == "الكل" || recipe.category == page.second) &&
+                            (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
+                                mealsText(recipe.nameAr, appLocaleTag).contains(query.trim(), true) ||
+                                recipe.nameFr.contains(query.trim(), true) ||
+                                recipe.descriptionAr.contains(query.trim(), true) ||
+                                mealsText(recipe.descriptionAr, appLocaleTag).contains(query.trim(), true) ||
+                                recipe.descriptionFr.contains(query.trim(), true) ||
+                                searchableIngredientNames.any { it.contains(query.trim(), true) } ||
+                                recipe.tags.any { it.contains(query.trim(), true) })
                     }
-                    val searchableIngredientNames = ingredientMasters.flatMap { master ->
-                        listOf(master.nameAr, master.nameFr, mealsText(master.nameAr, appLocaleTag)) +
-                            master.aliases
-                    }
-                    recipe.allergens.intersect(allergyIds).isEmpty() &&
-                        (!page.first || recipe.id in favoriteRecipeIds) &&
-                        (page.second == "الكل" || recipe.category == page.second) &&
-                        (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
-                            mealsText(recipe.nameAr, appLocaleTag).contains(query.trim(), true) ||
-                            recipe.nameFr.contains(query.trim(), true) ||
-                            recipe.descriptionAr.contains(query.trim(), true) ||
-                            mealsText(recipe.descriptionAr, appLocaleTag).contains(query.trim(), true) ||
-                            recipe.descriptionFr.contains(query.trim(), true) ||
-                            searchableIngredientNames.any { it.contains(query.trim(), true) } ||
-                            recipe.tags.any { it.contains(query.trim(), true) })
                 }
 
                 LazyColumn(
