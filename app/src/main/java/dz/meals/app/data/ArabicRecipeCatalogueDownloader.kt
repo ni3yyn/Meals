@@ -60,7 +60,7 @@ class ArabicRecipeCatalogueDownloader(context: Context) {
         try {
             call.execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw IOException("تعذر تنزيل مكتبة الوصفات (HTTP \${response.code}).")
+                    throw IOException("تعذر تنزيل مكتبة الوصفات (HTTP ${response.code}).")
                 }
                 val body = response.body ?: throw IOException("لم يصل محتوى مكتبة الوصفات.")
                 val totalBytes = body.contentLength().takeIf { it > 0L } ?: EXPECTED_BYTES
@@ -122,7 +122,7 @@ class ArabicRecipeCatalogueDownloader(context: Context) {
 
     private fun hasExpectedGitBlobSha(file: File): Boolean {
         val digest = MessageDigest.getInstance("SHA-1")
-        digest.update("blob \${file.length()}\u0000".toByteArray(Charsets.UTF_8))
+        digest.update("blob ${file.length()}\u0000".toByteArray(Charsets.UTF_8))
         FileInputStream(file).use { input ->
             val buffer = ByteArray(DEFAULT_BUFFER_SIZE * 4)
             while (true) {
