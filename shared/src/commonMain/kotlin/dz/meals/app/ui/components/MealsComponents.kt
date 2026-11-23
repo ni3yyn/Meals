@@ -1350,9 +1350,9 @@ private fun MealsModalSurface(
 
 /**
  * The only modal presentation in Meals. All former alerts, dialogs and edit
- * modals now use this sheet. It wraps short content naturally and grows only
- * as needed, up to 87% of the available height. Long content stays scrollable
- * within the remaining space.
+ * modals now use this sheet. By default it wraps short content naturally and
+ * grows only as needed, up to 87% of the available height. Immersive flows may
+ * explicitly request a fixed viewport and a body that fills the remaining space.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1373,6 +1373,13 @@ fun MealsBottomSheet(
     onDismissAction: (() -> Unit)? = null,
     dismissActionClosesSheet: Boolean = false,
     showCloseButton: Boolean = true,
+    /**
+     * Opt-in fixed height for immersive flows such as guided cooking.
+     * Null preserves the regular content-driven, dynamic sheet sizing.
+     */
+    fixedHeightFraction: Float? = null,
+    /** Makes the text slot occupy the space between the header and footer. */
+    fillBody: Boolean = false,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1438,17 +1445,28 @@ fun MealsBottomSheet(
         MealsModalWindowBlur()
 
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            // IMPORTANT: this is a ceiling, never a target height. Keep the sheet
-            // content-driven so short dialogs stay compact and only long content
-            // reaches the 87% cap. AI AGENTS: do not replace heightIn(max = ...)
-            // below with fillMaxHeight/fillMaxSize or a fixed/minimum sheet height.
+            // Regular sheets remain content-driven. Only explicitly immersive flows
+            // opt into a fixed viewport; never change the default sizing behavior.
+            // AI AGENTS: keep fixedHeightFraction null for every normal dialog.
             val maxSheetHeight = maxHeight * 0.87f
-            val maxBodyHeight = (maxSheetHeight - 164.dp).coerceAtLeast(120.dp)
+            val fixedSheetHeight = fixedHeightFraction
+                ?.coerceIn(0.72f, 0.94f)
+                ?.let { maxHeight * it }
+            val sheetHeightModifier = fixedSheetHeight
+                ?.let { Modifier.height(it) }
+                ?: Modifier.heightIn(max = maxSheetHeight)
+            val columnHeightModifier = if (fixedSheetHeight != null) {
+                Modifier.fillMaxHeight()
+            } else {
+                Modifier.heightIn(max = maxSheetHeight)
+            }
+            val maxBodyHeight = ((fixedSheetHeight ?: maxSheetHeight) - 164.dp)
+                .coerceAtLeast(120.dp)
 
             MealsModalSurface(
                 modifier = modifier
                     .fillMaxWidth()
-                    .heightIn(max = maxSheetHeight),
+                    .then(sheetHeightModifier),
                 contentPadding = 0.dp,
                 shape = topShape,
                 elevation = MealsLiquidGlass.ModalElevation,
@@ -1460,7 +1478,7 @@ fun MealsBottomSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = maxSheetHeight)
+                        .then(columnHeightModifier)
                         .padding(horizontal = 22.dp, vertical = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
@@ -1507,7 +1525,10 @@ fun MealsBottomSheet(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = maxBodyHeight)
+                            .then(
+                                if (fillBody) Modifier.weight(1f)
+                                else Modifier.heightIn(max = maxBodyHeight)
+                            )
                     ) {
                         text()
                     }
