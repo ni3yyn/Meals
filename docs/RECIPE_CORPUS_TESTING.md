@@ -50,10 +50,11 @@ The debug tester currently calls the keyless MyMemory endpoint directly:
 \`https://api.mymemory.translated.net/get\`
 
 The anonymous allowance is documented as 5,000 characters per day, with a
-500-byte maximum per translation segment. The implementation splits long
-fields into smaller segments and requests them sequentially. This is for
-small-scale quality testing only; the provider can rate-limit or return weak
-culinary translations.
+500-byte maximum per translation segment. Long fields are split into smaller
+segments, and independent recipe fields/segments are translated concurrently
+with a four-request limit. Results are reassembled in source order and cached
+locally. This is for small-scale quality testing only; provider latency, rate
+limits, or weak culinary translations can still affect results.
 
 Do not ship this direct-from-device integration in a production build. Before
 release, replace it with a server-side translation adapter and persist
