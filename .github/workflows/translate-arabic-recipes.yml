@@ -33,30 +33,36 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check translation credentials
+        id: credentials
+        shell: bash
+        run: |
+          if [[ -z "$GOOGLE_APPS_SCRIPT_URL" || -z "$GOOGLE_APPS_SCRIPT_TOKEN" ]]; then
+            echo "::notice::Translation is not configured yet. Add GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN under Settings > Secrets and variables > Actions."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
       - name: Set up Python
+        if: steps.credentials.outputs.ready == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Verify translation credentials
-        shell: bash
-        run: |
-          if [[ -z "$GOOGLE_APPS_SCRIPT_URL" || -z "$GOOGLE_APPS_SCRIPT_TOKEN" ]]; then
-            echo "::error::Add GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN under Settings > Secrets and variables > Actions."
-            exit 1
-          fi
-
       - name: Download pinned source corpus
+        if: steps.credentials.outputs.ready == 'true'
         run: python tools/download_recipe_corpus.py
 
       - name: Translate recipes and save progress
+        if: steps.credentials.outputs.ready == 'true'
         run: |
           python tools/translate_recipe_corpus.py \
             --max-recipes "$MAX_RECIPES" \
             --batch-size 10
 
       - name: Commit translated JSON
-        if: always()
+        if: always() && steps.credentials.outputs.ready == 'true'
         shell: bash
         run: |
           if [[ ! -f data/recipes/ar/recipes.json ]]; then
