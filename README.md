@@ -71,3 +71,7 @@ The normal Android CI workflow intentionally uploads only the debug APK. It no l
 ## Kotlin Multiplatform migration
 
 See [docs/MULTIPLATFORM_MIGRATION.md](docs/MULTIPLATFORM_MIGRATION.md) for the shared source-set layout, platform boundaries and remaining work before iOS is release-ready.
+
+For a resumable no-card Google Apps Script workflow that generates Arabic
+translations into a single JSON file, see
+[docs/RECIPE_ARABIC_TRANSLATION.md](docs/RECIPE_ARABIC_TRANSLATION.md).

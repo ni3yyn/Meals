@@ -1,0 +1,70 @@
+name: Translate recipe corpus to Arabic
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_recipes:
+        description: Maximum new recipes to translate in this run
+        required: true
+        default: "4000"
+        type: string
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: translate-recipe-corpus-ar
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    name: Translate and checkpoint recipe data
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      GOOGLE_APPS_SCRIPT_URL: ${{ secrets.GOOGLE_APPS_SCRIPT_URL }}
+      GOOGLE_APPS_SCRIPT_TOKEN: ${{ secrets.GOOGLE_APPS_SCRIPT_TOKEN }}
+      MAX_RECIPES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_recipes || '4000' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify translation credentials
+        shell: bash
+        run: |
+          if [[ -z "$GOOGLE_APPS_SCRIPT_URL" || -z "$GOOGLE_APPS_SCRIPT_TOKEN" ]]; then
+            echo "::error::Add GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Download pinned source corpus
+        run: python tools/download_recipe_corpus.py
+
+      - name: Translate recipes and save progress
+        run: |
+          python tools/translate_recipe_corpus.py \
+            --max-recipes "$MAX_RECIPES" \
+            --batch-size 10
+
+      - name: Commit translated JSON
+        if: always()
+        shell: bash
+        run: |
+          git add data/recipes/ar/recipes.json
+          if git diff --cached --quiet; then
+            echo "No translated recipe changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add or update Arabic recipe translations [skip ci]"
+          git push origin HEAD:main
