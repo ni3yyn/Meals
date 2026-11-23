@@ -28,7 +28,8 @@ import java.time.LocalDate
 import java.util.UUID
 
 class MealsRepository(context: Context) {
-    private val database = MealsDatabase.getInstance(context)
+    private val appContext = context.applicationContext
+    private val database = MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
 
     suspend fun ensureInitialized() {
@@ -599,7 +600,17 @@ class MealsRepository(context: Context) {
         val ingredients = dao.getRecipeIngredients().groupBy { it.recipeId }
         val steps = dao.getRecipeSteps().groupBy { it.recipeId }
         val attributions = dao.getRecipeAttributions().associateBy { it.recipeId }
-        return dao.getRecipes().map { recipe ->
+        // Hide partially imported community rows until the entire pinned
+        // catalogue revision has passed validation and has been committed.
+        val catalogueInstalled =
+            appContext.getSharedPreferences("arabic_recipe_catalogue", Context.MODE_PRIVATE)
+                .getString("installed_revision", null) == ArabicRecipeCatalogueDownloader.REVISION &&
+                dao.countArabicCatalogueRecipes() == ArabicRecipeCatalogueDownloader.EXPECTED_RECIPE_COUNT
+        return dao.getRecipes()
+            .filter { recipe ->
+                !recipe.id.startsWith(ArabicRecipeCatalogueInstaller.RECIPE_ID_PREFIX) || catalogueInstalled
+            }
+            .map { recipe ->
             val recipeSteps = steps[recipe.id].orEmpty().sortedBy { it.stepNumber }
             MealRecipe(
                 id = recipe.id,
