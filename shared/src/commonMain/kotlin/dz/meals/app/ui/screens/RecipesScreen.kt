@@ -530,6 +530,7 @@ fun RecipesScreen(
             attemptedAutomaticImageRecipeIds.remove(recipe.id)
             throw cancelled
         } catch (error: Exception) {
+            attemptedAutomaticImageRecipeIds.remove(recipe.id)
             automaticImageError = error.message ?: "تعذر العثور على صورة مناسبة حالياً."
             automaticImageErrorRecipeId = recipe.id
         } finally {
