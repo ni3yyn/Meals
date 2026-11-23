@@ -4,6 +4,11 @@ import android.graphics.Color as AndroidColor
 import android.os.Build
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.spring
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -81,6 +86,36 @@ private fun configureLegacyDialogNavigationBar(window: android.view.Window) {
         window.isNavigationBarContrastEnforced = false
         window.navigationBarDividerColor = AndroidColor.TRANSPARENT
     }
+}
+
+private val MealsBottomSheetMotionScheme = object : MotionScheme {
+    override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> =
+        spring(dampingRatio = 0.80f, stiffness = 430f)
+
+    override fun <T> fastSpatialSpec(): FiniteAnimationSpec<T> =
+        spring(dampingRatio = 0.76f, stiffness = 560f)
+
+    override fun <T> slowSpatialSpec(): FiniteAnimationSpec<T> =
+        spring(dampingRatio = 0.88f, stiffness = 320f)
+
+    override fun <T> defaultEffectsSpec(): FiniteAnimationSpec<T> =
+        spring(dampingRatio = 1f, stiffness = 1600f)
+
+    // ModalBottomSheet uses this token for hide(). The softer spring removes its abrupt snap.
+    override fun <T> fastEffectsSpec(): FiniteAnimationSpec<T> =
+        spring(dampingRatio = 0.90f, stiffness = 420f)
+
+    override fun <T> slowEffectsSpec(): FiniteAnimationSpec<T> =
+        spring(dampingRatio = 1f, stiffness = 800f)
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+actual fun MealsBottomSheetMotionProvider(content: @Composable () -> Unit) {
+    MaterialTheme(
+        motionScheme = MealsBottomSheetMotionScheme,
+        content = content
+    )
 }
 
 @Composable

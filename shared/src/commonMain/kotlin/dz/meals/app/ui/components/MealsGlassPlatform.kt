@@ -46,3 +46,7 @@ expect fun Modifier.mealsHazeSource(
  */
 @Composable
 expect fun MealsModalWindowBlur()
+
+/** Applies the sheet-specific motion curve without changing the app-wide theme. */
+@Composable
+expect fun MealsBottomSheetMotionProvider(content: @Composable () -> Unit)

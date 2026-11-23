@@ -101,7 +101,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -116,8 +115,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.rememberModalBottomSheetState
 
 
@@ -147,38 +144,6 @@ import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
-
-/**
- * Modal sheets use a dedicated motion scheme so their movement feels consistent
- * with the app's spring-driven swipe transitions without changing motion globally.
- *
- * Material 3 maps sheet dismissal to fastEffectsSpec(), whose standard spring is
- * intentionally very short. A softer local spring gives the sheet time to settle
- * instead of disappearing abruptly.
- */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val MealsBottomSheetMotionScheme = object : MotionScheme {
-    override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> =
-        spring(dampingRatio = 0.80f, stiffness = 430f)
-
-    override fun <T> fastSpatialSpec(): FiniteAnimationSpec<T> =
-        spring(dampingRatio = 0.76f, stiffness = 560f)
-
-    override fun <T> slowSpatialSpec(): FiniteAnimationSpec<T> =
-        spring(dampingRatio = 0.88f, stiffness = 320f)
-
-    override fun <T> defaultEffectsSpec(): FiniteAnimationSpec<T> =
-        spring(dampingRatio = 1f, stiffness = 1600f)
-
-    // ModalBottomSheet uses this token for hide(). Keep it spring-based, but less abrupt.
-    override fun <T> fastEffectsSpec(): FiniteAnimationSpec<T> =
-        spring(dampingRatio = 0.90f, stiffness = 420f)
-
-    override fun <T> slowEffectsSpec(): FiniteAnimationSpec<T> =
-        spring(dampingRatio = 1f, stiffness = 800f)
-}
-
-
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = MealsLiquidGlass.CardShape
@@ -1538,7 +1503,7 @@ private fun MealsModalSurface(
  * grows only as needed, up to 87% of the available height. Immersive flows may
  * explicitly request a fixed viewport and a body that fills the remaining space.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealsBottomSheet(
     onDismissRequest: () -> Unit,
@@ -1590,7 +1555,7 @@ fun MealsBottomSheet(
     }
     val topShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
 
-    MaterialTheme(motionScheme = MealsBottomSheetMotionScheme) {
+    MealsBottomSheetMotionProvider {
         CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
                 onDismissRequest = onDismissRequest,
@@ -1778,7 +1743,6 @@ fun MealsBottomSheet(
                 }
             }
         }
-    }
 }
 
 /** A navigation drawer keeps its drawer interaction but shares the glass modal material. */

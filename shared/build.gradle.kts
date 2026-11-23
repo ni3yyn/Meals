@@ -39,6 +39,8 @@ kotlin {
             // WindowCompat / WindowInsetsControllerCompat are used by the
             // Android modal-window system-bar configuration.
             implementation(libs.androidx.core.ktx)
+            // Stable AndroidX Material 3 exposes the public motion-scheme API.
+            implementation("androidx.compose.material3:material3:1.5.0")
             implementation("com.github.styropyr0:PrismalAGSL:v1.0.7")
         }
 
