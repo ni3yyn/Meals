@@ -1,6 +1,12 @@
 name: Import UniTools recipes into the Arabic catalogue
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/translate_unitools_recipe_corpus.py"
+      - "tools/test_unitools_recipe_pipeline.py"
+      - ".github/workflows/import-unitools-recipes.yml"
   workflow_dispatch:
     inputs:
       max_recipes:

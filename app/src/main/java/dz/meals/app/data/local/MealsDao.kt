@@ -55,6 +55,10 @@ interface MealsDao {
     @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'orc-%' OR id LIKE 'focus-%' OR id LIKE 'unitools-%'")
     suspend fun countArabicCatalogueRecipes(): Int
 
+    @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'unitools-%'")
+    suspend fun countUnitoolsRecipes(): Int
+
+
     @Query("DELETE FROM recipe_ingredients WHERE recipeId LIKE 'orc-%'")
     suspend fun deleteLegacyOpenRecipeIngredients()
 

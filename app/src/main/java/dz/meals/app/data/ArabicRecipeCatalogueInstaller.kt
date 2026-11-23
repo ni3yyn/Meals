@@ -115,14 +115,18 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
         // Retire Polish-derived community rows only after the replacement catalogue
         // has been completely parsed, validated and written to Room.
-        database.withTransaction {
-            dao.deleteLegacyOpenRecipeFavorites()
-            dao.detachLegacyOpenRecipePlans()
-            dao.deleteLegacyOpenRecipeIngredients()
-            dao.deleteLegacyOpenRecipeSteps()
-            dao.deleteLegacyOpenRecipeAttributions()
-            dao.deleteLegacyOpenRecipes()
-            dao.deleteUnusedLegacyOpenRecipeIngredients()
+        // Do not retire the old rows while a client is still pinned to the legacy
+        // JSON. This guard also protects users during staggered app/catalogue releases.
+        if (dao.countUnitoolsRecipes() > 0) {
+            database.withTransaction {
+                dao.deleteLegacyOpenRecipeFavorites()
+                dao.detachLegacyOpenRecipePlans()
+                dao.deleteLegacyOpenRecipeIngredients()
+                dao.deleteLegacyOpenRecipeSteps()
+                dao.deleteLegacyOpenRecipeAttributions()
+                dao.deleteLegacyOpenRecipes()
+                dao.deleteUnusedLegacyOpenRecipeIngredients()
+            }
         }
 
         preferences.edit()
