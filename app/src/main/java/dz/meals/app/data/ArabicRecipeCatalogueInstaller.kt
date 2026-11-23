@@ -617,7 +617,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         const val FOCUS_RECIPE_ID_PREFIX = "focus-"
         const val UNITOOLS_RECIPE_ID_PREFIX = "unitools-"
         const val INGREDIENT_ID_PREFIX = "orc-ing-"
-        const val METADATA_MAPPING_VERSION = 3
+        const val METADATA_MAPPING_VERSION = 4
         const val METADATA_MAPPING_VERSION_KEY = "metadata_mapping_version"
         private const val DEFAULT_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
         private const val BATCH_SIZE = 80
