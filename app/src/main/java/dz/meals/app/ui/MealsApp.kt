@@ -296,6 +296,7 @@ private fun MealsAppContent(
                 // This also protects restored launches that reopen directly on Recipes.
                 repository.ensureInitialized()
                 if (arabicCatalogueInstaller.isInstalled()) {
+                    refresh()
                     cataloguePhase = RecipeCataloguePhase.READY
                     return@launch
                 }

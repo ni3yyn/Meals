@@ -31,12 +31,13 @@ class MealsRepository(context: Context) {
     private val appContext = context.applicationContext
     private val database = MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
+    private val initializationMutex = Mutex()
 
-    suspend fun ensureInitialized() {
+    suspend fun ensureInitialized() = initializationMutex.withLock {
         SeedRecipes.validateCatalogue()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
-        if (dao.recipeCount() > 0) return
+        if (dao.recipeCount() > 0) return@withLock
         database.withTransaction {
             dao.insertIngredients(SeedRecipes.ingredients.map {
                 IngredientEntity(

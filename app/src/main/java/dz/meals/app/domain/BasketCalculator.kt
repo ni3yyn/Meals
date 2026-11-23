@@ -38,6 +38,15 @@ fun isRecipeAllowed(
     dietPattern: String
 ): Boolean {
     if (recipe.allergens.intersect(allergyIds).isNotEmpty()) return false
+    if (recipe.id.startsWith("orc-")) {
+        return when (dietPattern) {
+            "vegetarian" -> "نباتي" in recipe.tags
+            // The source corpus has no reliable vegan marker for most recipes;
+            // do not infer vegan suitability from "vegetarian" or dairy-free alone.
+            "vegan" -> "نباتي صرف" in recipe.tags
+            else -> true
+        }
+    }
     return when (dietPattern) {
         "vegetarian" -> recipe.ingredients.none {
             ingredientCategories[it.ingredientId] == "لحوم ودواجن"
