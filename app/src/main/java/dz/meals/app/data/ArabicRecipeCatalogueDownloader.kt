@@ -140,10 +140,10 @@ class ArabicRecipeCatalogueDownloader(context: Context) {
     }
 
     companion object {
-        const val REVISION = "080846f7e2a6fa8e2a0feb61a34f2a83d333ec23"
-        const val EXPECTED_RECIPE_COUNT = 3494
-        const val EXPECTED_BYTES = 20_005_199L
-        const val EXPECTED_GIT_BLOB_SHA = "80160b1c30740e65f9428c377cfe8cda71df38cd"
+        const val REVISION = "e4b1e988c105be9df3510d6567090c6b6577d17e"
+        const val EXPECTED_RECIPE_COUNT = 912
+        const val EXPECTED_BYTES = 12_842_041L
+        const val EXPECTED_GIT_BLOB_SHA = "85ac40c05e8e9f2eb090866af43b0d47472e1e41"
         const val DOWNLOAD_URL =
             "https://raw.githubusercontent.com/ni3yyn/Meals/$REVISION/data/recipes/ar/recipes.json"
         private const val PROGRESS_INTERVAL_NANOS = 120_000_000L
