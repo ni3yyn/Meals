@@ -1756,7 +1756,13 @@ fun MealsBottomSheet(
     expandToFullScreenWhileLoading: Boolean = false,
     /** Called after expansion and loading-content entrance, when work should begin. */
     onLoadingStarted: (() -> Unit)? = null,
-    /** Called after the exit sequence restores the content and resting height. */
+    /**
+     * When true (default), the exit sequence contracts and restores the original
+     * content. Set false when the owner will dismiss this sheet from the expanded
+     * state; the loader fades out and the sheet remains full-height for its hide motion.
+     */
+    restoreContentAfterLoadingExit: Boolean = true,
+    /** Called after the exit presentation completes, before any optional restoration. */
     onLoadingExitFinished: (() -> Unit)? = null,
     /** Custom loading UI rendered inside the existing glass surface. */
     loadingContent: (@Composable BoxScope.() -> Unit)? = null,
@@ -1794,23 +1800,27 @@ fun MealsBottomSheet(
             delay(145)
             onLoadingStartedState.value?.invoke()
         } else if (!activeLoading && visualPhase != MealsSheetVisualPhase.Content) {
-            // Reverse the same sequence: clear the loader, restore natural height,
-            // then reveal the original content before the caller dismisses the sheet.
+            // The loader always fades first. Successful operations may then dismiss
+            // directly from the expanded viewport instead of shrinking to a nearly
+            // full-height settings sheet and immediately hiding it.
             visualPhase = MealsSheetVisualPhase.LoadingExit
-            delay(125)
+            delay(155)
 
-            if (expandToFullScreenWhileLoading) {
-                expansion.animateTo(
-                    targetValue = 0f,
-                    animationSpec = tween(
-                        durationMillis = 330,
-                        easing = FastOutSlowInEasing
+            if (restoreContentAfterLoadingExit) {
+                if (expandToFullScreenWhileLoading) {
+                    expansion.animateTo(
+                        targetValue = 0f,
+                        animationSpec = tween(
+                            durationMillis = 330,
+                            easing = FastOutSlowInEasing
+                        )
                     )
-                )
+                }
+
+                visualPhase = MealsSheetVisualPhase.Content
+                delay(170)
             }
 
-            visualPhase = MealsSheetVisualPhase.Content
-            delay(170)
             onLoadingExitFinishedState.value?.invoke()
         }
     }

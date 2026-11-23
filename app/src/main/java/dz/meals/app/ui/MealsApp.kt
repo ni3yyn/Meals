@@ -909,6 +909,7 @@ private fun SettingsDialog(
         onDismissRequest = { if (!isLanguageChanging) onDismiss() },
         isLoading = isLanguageChanging,
         expandToFullScreenWhileLoading = true,
+        restoreContentAfterLoadingExit = !closeAfterLoadingExit,
         onLoadingStarted = {
             if (operationTarget == null) {
                 operationTarget = languageChangeTarget
