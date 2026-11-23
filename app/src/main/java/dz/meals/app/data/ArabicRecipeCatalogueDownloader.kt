@@ -44,7 +44,12 @@ class ArabicRecipeCatalogueDownloader(context: Context) {
     suspend fun download(
         onProgress: (ArabicCatalogueDownloadProgress) -> Unit
     ): File = withContext(Dispatchers.IO) {
-        if (isValidFile(targetFile)) return@withContext targetFile
+        if (isValidFile(targetFile)) {
+            withContext(Dispatchers.Main.immediate) {
+                onProgress(ArabicCatalogueDownloadProgress(EXPECTED_BYTES, EXPECTED_BYTES))
+            }
+            return@withContext targetFile
+        }
 
         catalogueDirectory.mkdirs()
         temporaryFile.delete()

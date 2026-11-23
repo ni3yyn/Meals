@@ -113,7 +113,9 @@ fun calculateBasket(
     plannedMeals.forEach { meal ->
         val recipe = meal.recipeId?.let(recipesById::get) ?: return@forEach
         val factor = meal.servings.toDouble() / recipe.baseServings.coerceAtLeast(1)
-        recipe.ingredients.filterNot { it.optional }.forEach { ingredient ->
+        // Unquantified "to taste" / free-text amounts stay visible in recipe details,
+        // but cannot create misleading zero-quantity shopping requirements.
+        recipe.ingredients.filter { !it.optional && it.quantityBase > 0.0 }.forEach { ingredient ->
             val key = RequirementKey(ingredient.ingredientId, ingredient.unit)
             required[key] = (required[key] ?: 0.0) + ingredient.quantityBase * factor
         }
