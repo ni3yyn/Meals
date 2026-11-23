@@ -198,6 +198,7 @@ fun RecipesScreen(
     val imageSearchScope = rememberCoroutineScope()
     var isCookingMode by rememberSaveable { mutableStateOf(false) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
+    var recipeServings by rememberSaveable { mutableStateOf(2) }
     var cookingServings by rememberSaveable { mutableStateOf(2) }
     var cookingCompleted by rememberSaveable { mutableStateOf(false) }
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
@@ -231,6 +232,7 @@ fun RecipesScreen(
     LaunchedEffect(selectedRecipeId) {
         imageSearchOpen = false
         isCookingMode = false
+        recipeServings = recipes.firstOrNull { it.id == selectedRecipeId }?.baseServings?.coerceIn(1, 12) ?: 2
         cookingCompleted = false
         cookingStepIndex = 0
         imageSearchQuery = ""
@@ -767,8 +769,7 @@ fun RecipesScreen(
                         recipe = detail,
                         ingredientNames = ingredientNames,
                         localeTag = appLocaleTag,
-                        servings = cookingServings,
-                        onServingsChange = { cookingServings = it },
+                        servings = recipeServings,
                         stepIndex = cookingStepIndex,
                         onStepIndexChange = { cookingStepIndex = it },
                         stepDirection = cookingStepDirection,
@@ -1046,16 +1047,34 @@ fun RecipesScreen(
                             }
                         }
                     }
-                    item { Text("المكونات", fontWeight = FontWeight.Bold) }
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("المكونات", color = Ink, fontWeight = FontWeight.Bold)
+                            RecipeServingsControl(
+                                servings = recipeServings,
+                                onServingsChange = { recipeServings = it },
+                                localeTag = appLocaleTag
+                            )
+                        }
+                    }
                     items(detail.ingredients) { ingredient ->
                         val master = ingredientNames[ingredient.ingredientId]
                         val ingredientName = mealsText(
                             recipeIngredientDisplayName(master, ingredient.ingredientId, appLocaleTag),
                             appLocaleTag
                         )
-                        val quantityLabel = if (ingredient.quantityBase > 0.0) {
+                        val scaledQuantity = scaleRecipeIngredientQuantity(
+                            ingredient.quantityBase,
+                            recipeServings.toDouble() / detail.baseServings.coerceAtLeast(1).toDouble(),
+                            ingredient.scalingRule
+                        )
+                        val quantityLabel = if (scaledQuantity > 0.0) {
                             mealsRecipeIngredientQuantity(
-                                ingredient.quantityBase,
+                                scaledQuantity,
                                 ingredient.unit,
                                 appLocaleTag
                             )
@@ -1298,7 +1317,7 @@ fun RecipesScreen(
                         onClick = {
                             cookingStepIndex = 0
                             cookingStepDirection = 1
-                            cookingServings = detail.baseServings
+                            cookingServings = recipeServings
                             cookingCompleted = false
                             isCookingMode = true
                         },
@@ -1313,12 +1332,53 @@ fun RecipesScreen(
 
 
 @Composable
+private fun RecipeServingsControl(
+    servings: Int,
+    onServingsChange: (Int) -> Unit,
+    localeTag: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            if (isMealsEnglish(localeTag)) "Servings" else "الحصص",
+            color = MutedInk,
+            style = MaterialTheme.typography.labelMedium
+        )
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .background(WarmSurface, CircleShape)
+                .clickable(enabled = servings > 1) { onServingsChange((servings - 1).coerceAtLeast(1)) },
+            contentAlignment = Alignment.Center
+        ) {
+            Text("−", color = if (servings > 1) Ink else MutedInk, fontWeight = FontWeight.Bold)
+        }
+        Text(
+            servings.toString(),
+            color = Ink,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .background(WarmSurface, CircleShape)
+                .clickable(enabled = servings < 12) { onServingsChange((servings + 1).coerceAtMost(12)) },
+            contentAlignment = Alignment.Center
+        ) {
+            Text("+", color = if (servings < 12) Ink else MutedInk, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
 private fun RecipeCookingFlow(
     recipe: MealRecipe,
     ingredientNames: Map<String, IngredientMaster>,
     localeTag: String,
     servings: Int,
-    onServingsChange: (Int) -> Unit,
     stepIndex: Int,
     onStepIndexChange: (Int) -> Unit,
     stepDirection: Int,
@@ -1542,42 +1602,6 @@ private fun RecipeCookingFlow(
                                         fontWeight = FontWeight.SemiBold,
                                         style = MaterialTheme.typography.headlineSmall
                                     )
-                                }
-                            }
-
-                            item {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "المكونات",
-                                        color = Ink,
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleSmall
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        MealsTextButton(
-                                            onClick = { onServingsChange((servings - 1).coerceAtLeast(1)) },
-                                            enabled = servings > 1
-                                        ) { Text("−") }
-                                        Text(
-                                            servings.toString(),
-                                            color = Ink,
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        MealsTextButton(
-                                            onClick = { onServingsChange((servings + 1).coerceAtMost(12)) },
-                                            enabled = servings < 12
-                                        ) { Text("+") }
-                                        Text(
-                                            " حصص",
-                                            color = MutedInk,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
                                 }
                             }
 
