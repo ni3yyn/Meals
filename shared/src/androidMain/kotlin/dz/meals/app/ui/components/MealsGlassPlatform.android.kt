@@ -88,6 +88,7 @@ private fun configureLegacyDialogNavigationBar(window: android.view.Window) {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val MealsBottomSheetMotionScheme = object : MotionScheme {
     override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> =
         spring(dampingRatio = 0.80f, stiffness = 430f)
