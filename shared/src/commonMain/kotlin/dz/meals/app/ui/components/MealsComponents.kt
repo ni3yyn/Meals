@@ -441,8 +441,9 @@ fun MealsLiquidGlassProgressBar(
 
 /**
  * Shared Midati loading treatment for long-running sheet actions and full-screen
- * transitions. The motion is intentionally soft: warm pearl surfaces drift
- * around a source-blurred glass core instead of showing a generic spinner.
+ * transitions. The motion is intentionally soft: warm pearl surfaces orbit
+ * a single-drawn glass core, using the modal's existing backdrop instead of
+ * stacking additional blur passes or generic progress spinners.
  *
  * Callers own the message and operation lifecycle. This component owns only
  * the reusable visual language and its continuous, low-amplitude motion.
@@ -1810,12 +1811,12 @@ fun MealsBottomSheet(
         CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    if (!activeLoading) onDismissRequest()
+                    if (!interactionLocked) onDismissRequest()
                 },
-                sheetGesturesEnabled = !activeLoading,
+                sheetGesturesEnabled = !interactionLocked,
                 properties = ModalBottomSheetProperties(
-                    shouldDismissOnBackPress = !activeLoading,
-                    shouldDismissOnClickOutside = !activeLoading
+                    shouldDismissOnBackPress = !interactionLocked,
+                    shouldDismissOnClickOutside = !interactionLocked
                 ),
                 contentWindowInsets = {
                     BottomSheetDefaults.windowInsets
@@ -1864,7 +1865,13 @@ fun MealsBottomSheet(
                         ?: maxSheetHeight
                     val animatedSheetHeight = restingSheetHeight +
                         (maxHeight - restingSheetHeight) * expansion.value
+                    val loadingSheetHeight = if (expandToFullScreenWhileLoading) {
+                        animatedSheetHeight
+                    } else {
+                        restingSheetHeight
+                    }
                     val isInLoadingTransition = visualPhase != MealsSheetVisualPhase.Content
+                    val interactionLocked = activeLoading || isInLoadingTransition
                     val sheetHeightModifier = when {
                         expandToFullScreenWhileLoading && isInLoadingTransition ->
                             Modifier.height(animatedSheetHeight)
@@ -1909,7 +1916,7 @@ fun MealsBottomSheet(
                                 .fillMaxWidth()
                                 .then(
                                     if (visualPhase == MealsSheetVisualPhase.Content) contentHeightModifier
-                                    else Modifier.height(animatedSheetHeight)
+                                    else Modifier.height(loadingSheetHeight)
                                 ),
                             transitionSpec = {
                                 fadeIn(
