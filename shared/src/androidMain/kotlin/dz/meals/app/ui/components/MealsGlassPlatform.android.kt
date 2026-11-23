@@ -120,51 +120,46 @@ actual fun MealsBottomSheetMotionProvider(content: @Composable () -> Unit) {
 }
 
 @Composable
-actual fun MealsModalWindowBlur() {
+actual fun MealsModalWindowBlur(enableBlurBehind: Boolean) {
     val view = LocalView.current
     val window = (view.parent as? DialogWindowProvider)?.window ?: return
-    val blurRadiusPx = with(LocalDensity.current) { 18.dp.roundToPx() }
 
-    // ModalBottomSheet owns a separate Dialog window; configuring the Activity
-    // window alone does not affect it. Apply edge-to-edge navigation once, before
-    // the first dialog frame, so Android never inserts its default solid/scrim bar.
-    // This is a static window configuration: no navigation-bar alpha animation,
-    // scrim interpolation, or per-frame system-bar updates are used.
+    // Preserve edge-to-edge and navigation glyph styling for every modal sheet.
     DisposableEffect(window) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         configureLegacyDialogNavigationBar(window)
-
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            // Match the app's warm, light surfaces with dark navigation glyphs.
             isAppearanceLightNavigationBars = true
         }
-
         onDispose { }
     }
 
-    // Keep the optional blur-behind effect independent from system-bar state.
-    // A density change may update blur radius, but never touches nav-bar opacity.
-    DisposableEffect(window, blurRadiusPx) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val hadBlurBehindFlag =
-                (window.attributes.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0
-            val previousBlurRadius = window.attributes.blurBehindRadius
+    // Settings opts out of blur-behind: the static glass face and rim remain,
+    // while Android avoids an additional full-window blur during sheet motion.
+    if (enableBlurBehind) {
+        val blurRadiusPx = with(LocalDensity.current) { 18.dp.roundToPx() }
+        DisposableEffect(window, blurRadiusPx) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val hadBlurBehindFlag =
+                    (window.attributes.flags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND) != 0
+                val previousBlurRadius = window.attributes.blurBehindRadius
 
-            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            window.attributes = window.attributes.apply {
-                blurBehindRadius = blurRadiusPx
-            }
-
-            onDispose {
+                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 window.attributes = window.attributes.apply {
-                    blurBehindRadius = previousBlurRadius
+                    blurBehindRadius = blurRadiusPx
                 }
-                if (!hadBlurBehindFlag) {
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+
+                onDispose {
+                    window.attributes = window.attributes.apply {
+                        blurBehindRadius = previousBlurRadius
+                    }
+                    if (!hadBlurBehindFlag) {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    }
                 }
+            } else {
+                onDispose { }
             }
-        } else {
-            onDispose { }
         }
     }
 }

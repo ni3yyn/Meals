@@ -45,7 +45,8 @@ actual fun MealsBottomSheetMotionProvider(content: @Composable () -> Unit) {
     content()
 }
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
-actual fun MealsModalWindowBlur() {
+actual fun MealsModalWindowBlur(enableBlurBehind: Boolean) {
     // iOS presents the sheet in the existing window; Haze handles its backdrop blur.
 }

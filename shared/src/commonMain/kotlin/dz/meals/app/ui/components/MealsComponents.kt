@@ -179,6 +179,7 @@ private fun MealsLiquidGlassFrame(
     glassBackdrop: MealsGlassBackdrop? = null,
     /** Use source-backed Haze when the surface lives in a separate modal window. */
     forceHazeBlur: Boolean = false,
+    enableBackdropBlur: Boolean = true,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
     content: @Composable BoxScope.() -> Unit
@@ -1643,11 +1644,18 @@ private fun MealsModalSurface(
     hazeStateOverride: HazeState? = null,
     glassBackdropOverride: MealsGlassBackdrop? = null,
     forceHazeBlur: Boolean = false,
+    enableBackdropBlur: Boolean = true,
     fillHeight: Boolean = false,
     padNavigationBars: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val hazeState = hazeStateOverride ?: LocalMealsCardHazeState.current
+    // Disabling backdrop blur also removes the haze dependency entirely.
+    // This is important for static settings surfaces on mid-range Android devices.
+    val hazeState = if (enableBackdropBlur) {
+        hazeStateOverride ?: LocalMealsCardHazeState.current
+    } else {
+        null
+    }
     val face = remember(tintColor) {
         MealsLiquidGlass.modalFace(tintColor)
     }
@@ -1746,6 +1754,11 @@ fun MealsBottomSheet(
     onDismissAction: (() -> Unit)? = null,
     dismissActionClosesSheet: Boolean = false,
     showCloseButton: Boolean = true,
+    /**
+     * Avoid cross-window Haze and Android blur-behind for static settings surfaces.
+     * The translucent face and optical rim remain; only the costly backdrop sampling is skipped.
+     */
+    lightweightPresentation: Boolean = false,
     /** Opt-in fixed height for immersive flows such as guided cooking. */
     fixedHeightFraction: Float? = null,
     /** Makes the text slot occupy the space between the header and footer. */
@@ -1885,7 +1898,7 @@ fun MealsBottomSheet(
                     )
                 }
             ) {
-                MealsModalWindowBlur()
+                MealsModalWindowBlur(enableBlurBehind = !lightweightPresentation)
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     // Regular sheets remain natural-height and are capped at 87%.
@@ -1943,6 +1956,7 @@ fun MealsBottomSheet(
                         hazeStateOverride = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
                         glassBackdropOverride = null,
                         forceHazeBlur = true,
+                        enableBackdropBlur = !lightweightPresentation,
                         padNavigationBars = true
                     ) {
                         AnimatedContent(

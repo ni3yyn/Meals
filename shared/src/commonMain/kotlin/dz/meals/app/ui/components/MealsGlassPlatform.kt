@@ -45,7 +45,7 @@ expect fun Modifier.mealsHazeSource(
  * Platforms without a separate modal window can keep this as a no-op.
  */
 @Composable
-expect fun MealsModalWindowBlur()
+expect fun MealsModalWindowBlur(enableBlurBehind: Boolean = true)
 
 /** Applies the sheet-specific motion curve without changing the app-wide theme. */
 @Composable

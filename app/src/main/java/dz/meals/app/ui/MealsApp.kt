@@ -262,6 +262,7 @@ private fun MealsAppContent(
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Plan) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showHouseholdSettings by rememberSaveable { mutableStateOf(false) }
+    val settingsOverlayVisible = showSettings || showHouseholdSettings
     var isGenerating by remember { mutableStateOf(false) }
     var generationMessage by remember { mutableStateOf<String?>(null) }
     var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
@@ -508,9 +509,9 @@ private fun MealsAppContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = innerPadding.calculateTopPadding())
-                    .fadeTopEdgeMask(28.dp)
-                    .mealsHazeSource(hazeState, zIndex = 1f)
-                    .mealsGlassSource(screenGlassBackdrop)
+                    .then(if (settingsOverlayVisible) Modifier else Modifier.fadeTopEdgeMask(28.dp))
+                    .then(if (settingsOverlayVisible) Modifier else Modifier.mealsHazeSource(hazeState, zIndex = 1f))
+                    .then(if (settingsOverlayVisible) Modifier else Modifier.mealsGlassSource(screenGlassBackdrop))
             ) {
                 MealsBubblyTransition(
                     targetState = selectedTab,
@@ -1068,6 +1069,7 @@ private fun SettingsDialog(
         titleText = "الإعدادات",
         subtitle = "إعدادات تجربتك على Midati",
         onDismissRequest = { if (!isLanguageChanging) onDismiss() },
+        lightweightPresentation = true,
         isLoading = isLanguageChanging,
         expandToFullScreenWhileLoading = true,
         restoreContentAfterLoadingExit = !closeAfterLoadingExit,
@@ -1443,6 +1445,7 @@ private fun HouseholdPreferencesDialog(
         titleText = if (isFirstSetup) "لنجهّز أسبوعك معاً" else "إعدادات الأسرة",
         subtitle = listOf("الميزانية والأسرة", "الوجبات", "ما يناسب عائلتك", "تفضيلات الطبخ", "مكان التسوق")[step],
         onDismissRequest = { if (!isFirstSetup) onDismiss() },
+        lightweightPresentation = !isFirstSetup,
         confirmLabel = if (step == 4) "حفظ وابدأ" else "التالي",
         onConfirm = {
             if (step < 4) {
