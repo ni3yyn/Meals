@@ -310,13 +310,13 @@ def main() -> int:
 
     output["recipes"] = list(existing.values())
     output["failedRecipes"] = list(failures.values())
-    write_output(args.output, output, len(source_records))
     print(
         f"Corpus: {len(source_records)} unique Polish recipes; "
         f"already translated: {len(existing)}; pending this run: {len(pending)}."
     )
 
     if not pending:
+        write_output(args.output, output, len(source_records))
         print(f"Nothing to translate. Output is complete: {output['complete']}.")
         return 0
 
