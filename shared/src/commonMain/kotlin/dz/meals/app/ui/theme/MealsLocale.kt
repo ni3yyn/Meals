@@ -109,7 +109,7 @@ private fun translateDynamicMealsText(source: String): String? {
         Regex("^التكلفة التقديرية: (.+)$") to "Estimated cost: %s",
         Regex("^الإنفاق الفعلي المُدخل: (.+)$") to "Entered actual spend: %s",
         Regex("^المطلوب (.+)$") to "Needed %s",
-        Regex("^(.+) · في المخزون (.+)$") to "%s · in pantry %s",
+        Regex("^المطلوب (.+) · في المخزون (.+)$") to "Needed %s · in pantry %s",
         Regex("^تنبيه: يوجد (\\d+) عنصر دون سعر مؤكد\\.$") to "Notice: %s items have no confirmed price.",
         Regex("^الأسعار تقديرية · (.+) دون سعر$") to "Estimated prices · %s without a price",
         Regex("^(\\d+) من (\\d+) وجبات محددة$") to "%s of %s meals selected",
