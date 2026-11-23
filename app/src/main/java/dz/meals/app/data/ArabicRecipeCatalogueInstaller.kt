@@ -284,31 +284,32 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val recipeIngredients = ArrayList<RecipeIngredientEntity>()
 
         ingredients.forEach { source ->
-            val normalizedUnit = source.unit.trim().ifBlank {
-                if (source.quantity.isBlank()) "حسب الحاجة" else "حبة"
-            }
-            val ingredientId = ingredientId(source.name, normalizedUnit)
+            val measure = normalizeMeasure(source.quantity, source.unit)
+            val ingredientId = ingredientId(source.name, measure.unit)
             ingredientEntities += IngredientEntity(
                 id = ingredientId,
                 nameAr = source.name,
                 nameFr = source.name,
                 category = "مكوّن",
-                baseUnit = normalizedUnit,
+                baseUnit = measure.unit,
                 allergensCsv = "",
                 aliasesCsv = ""
             )
 
-            val numericQuantity = parseQuantity(source.quantity)
             val preparationNote = buildList {
-                if (numericQuantity == null && source.quantity.isNotBlank()) add(source.quantity)
+                if (measure.quantityBase == null &&
+                    source.quantity.isNotBlank() &&
+                    measure.unit != "حسب الحاجة"
+                ) add(source.quantity)
+                if (measure.note.isNotBlank()) add(measure.note)
                 if (source.note.isNotBlank()) add(source.note)
             }.joinToString(" · ")
 
             recipeIngredients += RecipeIngredientEntity(
                 recipeId = recipeId,
                 ingredientId = ingredientId,
-                quantityBase = numericQuantity ?: 0.0,
-                unit = normalizedUnit,
+                quantityBase = measure.quantityBase ?: 0.0,
+                unit = measure.unit,
                 prepNote = preparationNote,
                 optional = false
             )
@@ -325,7 +326,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             durationMinutes = ((prepMinutes ?: 0) + (cookMinutes ?: 0)).coerceAtLeast(0),
             baseServings = (servings ?: 2).coerceIn(1, 30),
             difficulty = "غير محدد",
-            allergensCsv = allergens.distinct().joinToString(",")
+            allergensCsv = normalizeAllergens(allergens).distinct().joinToString(",")
         )
         val recipeSteps = steps.mapIndexed { index, step ->
             RecipeStepEntity(recipeId, index + 1, step, step)
@@ -345,6 +346,49 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         return RecipeBundle(recipe, ingredientEntities, recipeIngredients, recipeSteps, attribution)
     }
 
+    private fun normalizeMeasure(quantity: String, sourceUnit: String): NormalizedMeasure {
+        val amount = parseQuantity(quantity)
+        return when (sourceUnit.trim().lowercase()) {
+            "kg" -> NormalizedMeasure(amount?.times(1000.0), "g")
+            "l" -> NormalizedMeasure(amount?.times(1000.0), "ml")
+            "pcs", "pc" -> NormalizedMeasure(amount, "piece")
+            "g" -> NormalizedMeasure(amount, "g")
+            "ml" -> NormalizedMeasure(amount, "ml")
+            "tbsp" -> NormalizedMeasure(amount, "ملعقة كبيرة")
+            "tsp" -> NormalizedMeasure(amount, "ملعقة صغيرة")
+            "to_taste" -> NormalizedMeasure(null, "حسب الحاجة")
+            "pinch" -> NormalizedMeasure(amount, "رشة")
+            "clove" -> NormalizedMeasure(amount, "فص")
+            "bunch" -> NormalizedMeasure(amount, "ربطة")
+            "slice" -> NormalizedMeasure(amount, "شريحة")
+            "" -> NormalizedMeasure(
+                amount,
+                if (quantity.isBlank()) "حسب الحاجة" else "piece"
+            )
+            else -> NormalizedMeasure(amount, sourceUnit.trim())
+        }
+    }
+
+    private fun normalizeAllergens(values: List<String>): List<String> =
+        values.map { value ->
+            when (value.trim().lowercase()) {
+                "لبن", "الحليب", "حليب" -> "milk"
+                "الغولتين", "الغلوتين" -> "gluten"
+                "بيضة", "بيض", "البيض" -> "egg"
+                "المكسرات", "مكسرات" -> "tree_nuts"
+                "كرفس", "الكرفس" -> "celery"
+                "الكبريتيت", "كبريتيت" -> "sulphites"
+                "سمكة", "السمك", "سمك" -> "fish"
+                "الخردل", "خردل" -> "mustard"
+                "القشريات", "قشريات" -> "crustaceans"
+                "فول الصويا", "الصويا", "فول الصويا" -> "soy"
+                "سمسم", "السمسم" -> "sesame"
+                "الرخويات", "رخويات" -> "molluscs"
+                "الفول السوداني", "فول سوداني", "الفول السوداني" -> "peanuts"
+                else -> value.trim()
+            }
+        }.filter { it.isNotBlank() }
+
     private fun ingredientId(name: String, unit: String): String {
         val normalized = name.trim().lowercase().replace(Regex("\\s+"), " ") +
             "|" + unit.trim().lowercase()
@@ -362,6 +406,12 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val denominator = fraction.groupValues[2].toDoubleOrNull()?.takeIf { it > 0.0 } ?: return null
         return (numerator / denominator).takeIf { it > 0.0 }
     }
+
+    private data class NormalizedMeasure(
+        val quantityBase: Double?,
+        val unit: String,
+        val note: String = ""
+    )
 
     private data class RecipeBundle(
         val recipe: RecipeEntity,
