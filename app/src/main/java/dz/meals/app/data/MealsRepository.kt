@@ -24,6 +24,8 @@ import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.pricesForSavedPlan
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.util.UUID
 
