@@ -203,6 +203,7 @@ private fun MealsAppContent(
     var snapshot by remember { mutableStateOf(MealsSnapshot()) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Plan) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showHouseholdSettings by rememberSaveable { mutableStateOf(false) }
     var isGenerating by remember { mutableStateOf(false) }
     var generationMessage by remember { mutableStateOf<String?>(null) }
     var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
@@ -565,10 +566,28 @@ private fun MealsAppContent(
 
         if (showSettings) {
             SettingsDialog(
+                onDismiss = { showSettings = false },
+                onOpenHouseholdSettings = {
+                    showSettings = false
+                    showHouseholdSettings = true
+                },
+                onRestartOnboarding = {
+                    scope.launch {
+                        // Reopen the first-run flow without clearing the household's saved data.
+                        preferencesStore.restartOnboarding()
+                        selectedTab = AppTab.Plan
+                        showSettings = false
+                    }
+                }
+            )
+        }
+
+        if (showHouseholdSettings) {
+            HouseholdPreferencesDialog(
                 preferences = preferences,
                 ingredients = snapshot.ingredients,
-                isFirstSetup = !preferences.hasCompletedSetup,
-                onDismiss = { showSettings = false },
+                isFirstSetup = false,
+                onDismiss = { showHouseholdSettings = false },
                 onQuickStart = { budget, servings ->
                     scope.launch {
                         preferencesStore.saveSettings(
@@ -585,7 +604,7 @@ private fun MealsAppContent(
                             preferences.shoppingChannel,
                             preferences.preferredShop
                         )
-                        showSettings = false
+                        showHouseholdSettings = false
                         refresh()
                     }
                 },
@@ -595,7 +614,7 @@ private fun MealsAppContent(
                             budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer,
                             commune, shoppingChannel, preferredShop
                         )
-                        showSettings = false
+                        showHouseholdSettings = false
                         refresh()
                     }
                 }
@@ -686,6 +705,281 @@ private fun MealsAppContent(
 
 @Composable
 private fun SettingsDialog(
+    onDismiss: () -> Unit,
+    onOpenHouseholdSettings: () -> Unit,
+    onRestartOnboarding: () -> Unit
+) {
+    MealsBottomSheet(
+        titleText = "الإعدادات",
+        subtitle = "إعدادات تجربتك على Midati",
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 560.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(7.dp)
+        ) {
+            SettingsSectionHeading("التفضيلات")
+
+            SettingsPreferenceRow(
+                title = "لغة التطبيق",
+                description = "لغة الواجهة المعتمدة حاليًا",
+                value = "العربية",
+                glyph = "ع"
+            )
+            SettingsHairline()
+            SettingsPreferenceRow(
+                title = "المظهر",
+                description = "التبديل بين الوضع الفاتح والداكن",
+                value = "فاتح",
+                icon = MealsIconName.Settings,
+                showSwitch = true
+            )
+
+            SettingsSectionHeading("تفضيلات التخطيط")
+            SettingsActionRow(
+                title = "تفضيلات الأسرة",
+                description = "الميزانية والوجبات والحساسية وعدد الحصص",
+                icon = MealsIconName.Wallet,
+                onClick = onOpenHouseholdSettings
+            )
+
+            SettingsSectionHeading("حول Midati")
+            SettingsUnavailableLink(
+                title = "موقع Midati",
+                icon = MealsIconName.Cookbook
+            )
+            SettingsUnavailableLink(
+                title = "سياسة الخصوصية",
+                icon = MealsIconName.Lock
+            )
+            SettingsUnavailableLink(
+                title = "شروط الاستخدام",
+                icon = MealsIconName.Info
+            )
+
+            SettingsSectionHeading("إعداد التطبيق")
+            MealsPrimaryButton(
+                label = "إعادة بدء التهيئة",
+                onClick = onRestartOnboarding,
+                modifier = Modifier.fillMaxWidth(),
+                icon = MealsIconName.Refresh
+            )
+            Text(
+                text = "ستُفتح خطوات البداية مجددًا، مع الاحتفاظ بخطتك وبياناتك المحفوظة.",
+                color = dz.meals.app.ui.theme.MutedInk,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 3.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionHeading(title: String) {
+    Text(
+        text = title,
+        modifier = Modifier.padding(top = 7.dp, bottom = 1.dp),
+        color = dz.meals.app.ui.theme.BodyInk,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+    )
+}
+
+@Composable
+private fun SettingsPreferenceRow(
+    title: String,
+    description: String,
+    value: String,
+    glyph: String? = null,
+    icon: MealsIconName? = null,
+    showSwitch: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 7.dp),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(dz.meals.app.ui.theme.WarmSurface),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            if (glyph != null) {
+                Text(
+                    text = glyph,
+                    color = dz.meals.app.ui.theme.TextAccent,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
+                )
+            } else if (icon != null) {
+                MealsIcon(icon, contentDescription = null, modifier = Modifier.size(27.dp))
+            }
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)
+        ) {
+            Text(
+                title,
+                color = dz.meals.app.ui.theme.Ink,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Text(
+                description,
+                color = dz.meals.app.ui.theme.MutedInk,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        Column(
+            horizontalAlignment = androidx.compose.ui.Alignment.End,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
+        ) {
+            if (showSwitch) {
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        value,
+                        color = dz.meals.app.ui.theme.BodyInk,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    SettingsDisabledSwitch()
+                }
+            } else {
+                Text(
+                    value,
+                    color = dz.meals.app.ui.theme.BodyInk,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+            SettingsComingSoonTag()
+        }
+    }
+}
+
+@Composable
+private fun SettingsDisabledSwitch() {
+    Box(
+        modifier = Modifier
+            .size(width = 40.dp, height = 23.dp)
+            .clip(CircleShape)
+            .background(dz.meals.app.ui.theme.Border.copy(alpha = 0.92f)),
+        contentAlignment = androidx.compose.ui.Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(3.dp)
+                .size(17.dp)
+                .clip(CircleShape)
+                .background(dz.meals.app.ui.theme.Paper)
+        )
+    }
+}
+
+@Composable
+private fun SettingsComingSoonTag() {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(dz.meals.app.ui.theme.SoftOrange)
+            .padding(horizontal = 7.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = "قريبًا",
+            color = dz.meals.app.ui.theme.TextAccent,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun SettingsUnavailableLink(
+    title: String,
+    icon: MealsIconName
+) {
+    MealsTextButton(
+        onClick = {},
+        modifier = Modifier.fillMaxWidth(),
+        enabled = false
+    ) {
+        MealsIcon(icon, contentDescription = null, modifier = Modifier.size(23.dp))
+        Text(
+            title,
+            color = dz.meals.app.ui.theme.MutedInk,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+        )
+        androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+        SettingsComingSoonTag()
+        MealsIcon(
+            MealsIconName.ChevronRight,
+            contentDescription = null,
+            modifier = Modifier.size(19.dp)
+        )
+    }
+}
+
+@Composable
+private fun SettingsActionRow(
+    title: String,
+    description: String,
+    icon: MealsIconName,
+    onClick: () -> Unit
+) {
+    MealsTextButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        MealsIcon(icon, contentDescription = null, modifier = Modifier.size(25.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)
+        ) {
+            Text(
+                title,
+                color = dz.meals.app.ui.theme.Ink,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Text(
+                description,
+                color = dz.meals.app.ui.theme.MutedInk,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        MealsIcon(
+            MealsIconName.ChevronRight,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun SettingsHairline() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 52.dp)
+            .height(1.dp)
+            .background(dz.meals.app.ui.theme.Border.copy(alpha = 0.8f))
+    )
+}
+
+@Composable
+private fun HouseholdPreferencesDialog(
     preferences: AppPreferences,
     onDismiss: () -> Unit,
     ingredients: List<dz.meals.app.data.IngredientMaster>,

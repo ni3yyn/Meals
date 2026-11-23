@@ -91,4 +91,11 @@ class PreferencesStore(context: Context) {
             values[Keys.hasCompletedSetup] = true
         }
     }
+
+    suspend fun restartOnboarding() {
+        // Keep saved preferences and meal data; only reopen first-run setup.
+        dataStore.edit { values ->
+            values[Keys.hasCompletedSetup] = false
+        }
+    }
 }
