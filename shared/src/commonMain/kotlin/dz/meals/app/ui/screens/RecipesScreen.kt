@@ -48,6 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -96,6 +98,7 @@ fun RecipesScreen(
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
     var browseDirection by rememberSaveable { mutableStateOf(1) }
     val ingredientNames = ingredients.associateBy { it.id }
+    val layoutDirection = LocalLayoutDirection.current
 
     fun selectCategory(nextCategory: String) {
         if (nextCategory != category) {
@@ -145,7 +148,7 @@ fun RecipesScreen(
             targetState = browsePage,
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(showFavorites, category) {
+                .pointerInput(showFavorites, category, layoutDirection) {
                     var dragDistance = 0f
                     val swipeThreshold = 72.dp.toPx()
                     detectHorizontalDragGestures(
@@ -155,16 +158,20 @@ fun RecipesScreen(
                         },
                         onDragEnd = {
                             if (abs(dragDistance) >= swipeThreshold) {
+                                val movingForward = if (layoutDirection == LayoutDirection.Rtl) {
+                                    dragDistance > 0f
+                                } else {
+                                    dragDistance < 0f
+                                }
                                 when {
-                                    showFavorites && dragDistance > 0f -> selectFavorites(false)
+                                    showFavorites && !movingForward -> selectFavorites(false)
                                     !showFavorites -> {
                                         val currentIndex = recipeCategories.indexOf(category)
-                                        val nextIndex = currentIndex + if (dragDistance < 0f) 1 else -1
+                                        val nextIndex = currentIndex + if (movingForward) 1 else -1
                                         when {
                                             nextIndex in recipeCategories.indices ->
                                                 selectCategory(recipeCategories[nextIndex])
-                                            dragDistance < 0f &&
-                                                currentIndex == recipeCategories.lastIndex ->
+                                            movingForward && currentIndex == recipeCategories.lastIndex ->
                                                 selectFavorites(true)
                                         }
                                     }
@@ -469,7 +476,7 @@ fun RecipesScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .pointerInput(cookingCompleted, cookingStepIndex, stepCount) {
+                        .pointerInput(cookingCompleted, cookingStepIndex, stepCount, layoutDirection) {
                             var dragDistance = 0f
                             val swipeThreshold = 72.dp.toPx()
                             detectHorizontalDragGestures(
@@ -481,15 +488,20 @@ fun RecipesScreen(
                                     if (!cookingCompleted && stepCount > 0 &&
                                         abs(dragDistance) >= swipeThreshold
                                     ) {
+                                        val movingForward = if (layoutDirection == LayoutDirection.Rtl) {
+                                            dragDistance > 0f
+                                        } else {
+                                            dragDistance < 0f
+                                        }
                                         when {
-                                            dragDistance < 0f && safeStepIndex < stepCount - 1 -> {
+                                            movingForward && safeStepIndex < stepCount - 1 -> {
                                                 cookingStepDirection = 1
                                                 cookingStepIndex = safeStepIndex + 1
                                             }
-                                            dragDistance < 0f && safeStepIndex == stepCount - 1 -> {
+                                            movingForward && safeStepIndex == stepCount - 1 -> {
                                                 cookingCompleted = true
                                             }
-                                            dragDistance > 0f && safeStepIndex > 0 -> {
+                                            !movingForward && safeStepIndex > 0 -> {
                                                 cookingStepDirection = -1
                                                 cookingStepIndex = safeStepIndex - 1
                                             }
