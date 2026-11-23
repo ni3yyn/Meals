@@ -169,14 +169,10 @@ fun MidatiBrandLogo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealsApp(
-    localeTag: String = DEFAULT_MEALS_LOCALE_TAG,
     onInitialContentReady: () -> Unit = {},
     onExit: () -> Unit = {}
 ) {
-    val layoutDirection = remember(localeTag) { mealsLayoutDirection(localeTag) }
-    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-        MealsAppContent(onInitialContentReady = onInitialContentReady, onExit = onExit)
-    }
+    MealsAppContent(onInitialContentReady = onInitialContentReady, onExit = onExit)
 }
 
 @Composable
@@ -197,6 +193,7 @@ private fun MealsAppContent(
     val storedPreferences by preferencesFlow.collectAsState(initial = null)
     val preferencesLoaded = storedPreferences != null
     val preferences = storedPreferences ?: AppPreferences(hasCompletedSetup = true)
+    val appLanguage = preferences.appLanguage
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
@@ -293,6 +290,10 @@ private fun MealsAppContent(
         generationMessage = null
     }
 
+    CompositionLocalProvider(
+        LocalLayoutDirection provides mealsLayoutDirection(appLanguage),
+        LocalMealsLocaleTag provides appLanguage
+    ) {
     MealsBackdrop {
         val hazeState = requireNotNull(LocalMealsHazeState.current) {
             "MealsApp must be hosted inside MealsBackdrop so the shared Haze source is available."
@@ -703,6 +704,7 @@ private fun MealsAppContent(
         }
 
 
+    }
 }
 
 @Composable

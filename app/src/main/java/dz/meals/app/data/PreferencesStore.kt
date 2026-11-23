@@ -12,6 +12,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import dz.meals.app.ui.theme.DEFAULT_MEALS_LOCALE_TAG
+import dz.meals.app.ui.theme.ENGLISH_MEALS_LOCALE_TAG
 import java.io.IOException
 
 private val Context.mealsDataStore: DataStore<Preferences> by preferencesDataStore(name = "meals_preferences")
@@ -33,6 +35,7 @@ class PreferencesStore(context: Context) {
         val maxCookingMinutes = intPreferencesKey("max_cooking_minutes")
         val budgetBufferPercent = intPreferencesKey("budget_buffer_percent")
         val hasCompletedSetup = booleanPreferencesKey("has_completed_setup")
+        val appLanguage = stringPreferencesKey("app_language")
     }
 
     val preferences: Flow<AppPreferences> = dataStore.data
@@ -55,7 +58,8 @@ class PreferencesStore(context: Context) {
                 dietPattern = values[Keys.dietPattern] ?: "none",
                 maxCookingMinutes = (values[Keys.maxCookingMinutes] ?: 60).coerceIn(10, 240),
                 budgetBufferPercent = (values[Keys.budgetBufferPercent] ?: 5).coerceIn(0, 30),
-                hasCompletedSetup = values[Keys.hasCompletedSetup] ?: false
+                hasCompletedSetup = values[Keys.hasCompletedSetup] ?: false,
+                appLanguage = normalizeStoredLanguage(values[Keys.appLanguage])
             )
         }
 
@@ -98,4 +102,20 @@ class PreferencesStore(context: Context) {
             values[Keys.hasCompletedSetup] = false
         }
     }
+    
+    suspend fun setAppLanguage(languageTag: String) {
+        val normalized = when (languageTag.lowercase().substringBefore('-')) {
+            "en" -> ENGLISH_MEALS_LOCALE_TAG
+            "ar" -> DEFAULT_MEALS_LOCALE_TAG
+            else -> return
+        }
+        dataStore.edit { values -> values[Keys.appLanguage] = normalized }
+    }
+
+    private fun normalizeStoredLanguage(languageTag: String?): String =
+        when (languageTag?.lowercase()?.substringBefore('-')) {
+            "en" -> ENGLISH_MEALS_LOCALE_TAG
+            "ar" -> DEFAULT_MEALS_LOCALE_TAG
+            else -> DEFAULT_MEALS_LOCALE_TAG
+        }
 }

@@ -36,6 +36,7 @@ data class MealRecipe(
 )
 
 data class AppPreferences(
+    val appLanguage: String = "ar-DZ",
     val weeklyBudgetDzd: Int = 15_000,
     val wilaya: String = "الجزائر",
     val householdServings: Int = 3,
