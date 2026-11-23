@@ -272,8 +272,13 @@ def substitute_pork(text: str) -> tuple[str, list[dict[str, str]]]:
 
     def adapt_generic_sausage(match: re.Match[str]) -> str:
         nonlocal sausage_changes
-        prefix = safe_text[max(0, match.start() - 24):match.start()]
-        if re.search(r"\b(?:beef|chicken|turkey|vegetarian|vegan)\s*$|\bplant[- ]based\s*$", prefix, re.IGNORECASE):
+        prefix = safe_text[max(0, match.start() - 40):match.start()]
+        if re.search(
+            r"\b(?:beef|chicken|turkey)(?:\s+blood)?\s*$|"
+            r"\b(?:vegetarian|vegan)\s*$|\bplant[- ]based\s*$",
+            prefix,
+            re.IGNORECASE,
+        ):
             return match.group(0)
         sausage_changes += 1
         suffix = "s" if match.group(1) else ""
