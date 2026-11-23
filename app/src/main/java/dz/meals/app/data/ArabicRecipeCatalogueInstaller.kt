@@ -415,7 +415,6 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             "clove" -> NormalizedMeasure(amount, "فص")
             "bunch" -> NormalizedMeasure(amount, "ربطة")
             "slice" -> NormalizedMeasure(amount, "شريحة")
-            "bunch" -> NormalizedMeasure(amount, "ربطة")
             "handful" -> NormalizedMeasure(amount, "حفنة")
             "" -> NormalizedMeasure(
                 amount,
