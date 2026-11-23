@@ -1367,7 +1367,7 @@ private fun RecipeCookingFlow(
                 else -> (safeStepIndex + 1).toFloat() / stepCount.toFloat()
             },
             modifier = Modifier.fillMaxWidth(),
-            height = 8.dp,
+            height = 14.dp,
             contentDescription = "التقدم في خطوات الوصفة"
         )
 
