@@ -125,6 +125,10 @@ class MealsLocaleTest {
             mealsText("اختر وصفة لـ الفطور", "en")
         )
         assertEquals(
+            "We keep a ${bidiIsolate("5")}% buffer so you do not exceed your budget.",
+            mealsText("نحتفظ بنسبة 5% كاحتياط حتى لا تتجاوزي ميزانيتك.", "en")
+        )
+        assertEquals(
             "${bidiIsolate("25")} min · ${bidiIsolate("2")} servings",
             mealsText("25 دقيقة · 2 حصص", "en")
         )
