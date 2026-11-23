@@ -1,0 +1,141 @@
+name: Import UniTools recipes into the Arabic catalogue
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_recipes:
+        description: Maximum new UniTools recipes to translate in this run
+        required: true
+        default: "501"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-unitools-recipes-ar
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: Screen, translate and replace the legacy recipe corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      GOOGLE_APPS_SCRIPT_URL: ${{ secrets.GOOGLE_APPS_SCRIPT_URL }}
+      GOOGLE_APPS_SCRIPT_TOKEN: ${{ secrets.GOOGLE_APPS_SCRIPT_TOKEN }}
+      MAX_RECIPES: ${{ inputs.max_recipes }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install country-name lookup
+        run: python -m pip install --disable-pip-version-check pycountry
+
+      - name: Validate safety adaptation rules
+        run: python -m unittest tools.test_unitools_recipe_pipeline -v
+
+      - name: Check translation credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$GOOGLE_APPS_SCRIPT_URL" || -z "$GOOGLE_APPS_SCRIPT_TOKEN" ]]; then
+            echo "::error::The existing Google Apps Script translation secrets are required."
+            exit 1
+          fi
+          if [[ ! "$GOOGLE_APPS_SCRIPT_URL" =~ ^https://script\.google\.com/macros/s/.+/exec$ ]]; then
+            echo "::error::GOOGLE_APPS_SCRIPT_URL must be the deployed /exec URL."
+            exit 1
+          fi
+
+      - name: Screen, translate and build the replacement catalogue
+        id: translate
+        run: |
+          python tools/translate_unitools_recipe_corpus.py \
+            --max-recipes "$MAX_RECIPES" \
+            --batch-size 10
+
+      - name: Save resumable translation checkpoint
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          CATALOGUE="data/recipes/ar/recipes.json"
+          if [[ ! -f "$CATALOGUE" ]] || git diff --quiet -- "$CATALOGUE"; then
+            echo "No new catalogue checkpoint to save."
+            exit 0
+          fi
+          git add "$CATALOGUE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+users.noreply.github.com"
+          git commit -m "Checkpoint UniTools Arabic recipe import"
+          git push origin HEAD:main
+
+      - name: Publish complete catalogue and pin Android downloader
+        if: success() && steps.translate.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          CATALOGUE="data/recipes/ar/recipes.json"
+          DOWNLOADER="app/src/main/java/dz/meals/app/data/ArabicRecipeCatalogueDownloader.kt"
+          python - "$CATALOGUE" <<'PY'
+          import json, pathlib, sys
+          path = pathlib.Path(sys.argv[1])
+          data = json.loads(path.read_text(encoding="utf-8"))
+          if data.get("complete") is not True or data.get("translatedCount") != data.get("expectedCount"):
+              raise SystemExit("Refusing to publish an incomplete replacement catalogue.")
+          recipes = data.get("recipes") or []
+          ids = [item.get("id") for item in recipes]
+          if len(ids) != len(set(ids)):
+              raise SystemExit("The catalogue contains duplicate recipe IDs.")
+          if not recipes or any(not str(value).startswith(("focus:", "unitools:")) for value in ids):
+              raise SystemExit("The catalogue still contains legacy Polish records or is empty.")
+          if not any(str(value).startswith("unitools:") for value in ids):
+              raise SystemExit("No UniTools recipes were imported.")
+          if not any(str(value).startswith("focus:") for value in ids):
+              raise SystemExit("The existing Focus collection was not preserved.")
+          PY
+
+          git add "$CATALOGUE"
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+users.noreply.github.com"
+            git commit -m "Replace Polish recipe corpus with UniTools world recipes"
+          fi
+
+          DATA_REVISION="$(git rev-parse HEAD)"
+          python - "$CATALOGUE" "$DOWNLOADER" "$DATA_REVISION" <<'PY'
+          import json, pathlib, re, subprocess, sys
+          catalogue_path = pathlib.Path(sys.argv[1])
+          downloader_path = pathlib.Path(sys.argv[2])
+          revision = sys.argv[3]
+          catalogue = json.loads(catalogue_path.read_text(encoding="utf-8"))
+          count = int(catalogue["expectedCount"])
+          size = catalogue_path.stat().st_size
+          blob_sha = subprocess.check_output(["git", "hash-object", str(catalogue_path)], text=True).strip()
+          source = downloader_path.read_text(encoding="utf-8")
+          replacements = {
+              r'const val REVISION = "[^"]+"': f'const val REVISION = "{revision}"',
+              r'const val EXPECTED_RECIPE_COUNT = \d+': f'const val EXPECTED_RECIPE_COUNT = {count}',
+              r'const val EXPECTED_BYTES = [0-9_]+L': f'const val EXPECTED_BYTES = {size:_}L',
+              r'const val EXPECTED_GIT_BLOB_SHA = "[^"]+"': f'const val EXPECTED_GIT_BLOB_SHA = "{blob_sha}"',
+          }
+          for pattern, replacement in replacements.items():
+              source, changed = re.subn(pattern, replacement, source)
+              if changed != 1:
+                  raise SystemExit(f"Expected one downloader constant: {pattern}")
+          downloader_path.write_text(source, encoding="utf-8")
+          print(f"Pinned {count} recipes, {size:,} bytes, revision {revision}.")
+          PY
+          git add "$DOWNLOADER"
+          if ! git diff --cached --quiet; then
+            git commit -m "Pin UniTools Arabic recipe catalogue"
+            git push origin HEAD:main
+          fi
