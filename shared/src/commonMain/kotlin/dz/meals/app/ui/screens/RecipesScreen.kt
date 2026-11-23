@@ -452,8 +452,15 @@ fun RecipesScreen(
         MealsBottomSheet(
             onDismissRequest = { selectedRecipeId = null },
             title = { Text(detail.nameAr) },
+            // Keep the recipe actions anchored above the system navigation area.
+            // Long recipe content scrolls independently instead of pushing the footer off-screen.
+            fixedHeightFraction = 0.88f,
+            fillBody = true,
             text = {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     item { Text(detail.descriptionAr, color = MutedInk) }
                     item { Text("المكونات", fontWeight = FontWeight.Bold) }
                     items(detail.ingredients) { ingredient ->
