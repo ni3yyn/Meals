@@ -199,7 +199,6 @@ fun RecipesScreen(
     var isCookingMode by rememberSaveable { mutableStateOf(false) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
     var recipeServings by rememberSaveable { mutableStateOf(2) }
-    var cookingServings by rememberSaveable { mutableStateOf(2) }
     var cookingCompleted by rememberSaveable { mutableStateOf(false) }
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
     var browseDirection by rememberSaveable { mutableStateOf(1) }
@@ -1317,7 +1316,6 @@ fun RecipesScreen(
                         onClick = {
                             cookingStepIndex = 0
                             cookingStepDirection = 1
-                            cookingServings = recipeServings
                             cookingCompleted = false
                             isCookingMode = true
                         },
