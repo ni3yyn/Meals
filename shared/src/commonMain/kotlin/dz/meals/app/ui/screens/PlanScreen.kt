@@ -1,5 +1,7 @@
 package dz.meals.app.ui.screens
 
+import dz.meals.app.ui.components.MealsText as Text
+
 import androidx.compose.ui.text.style.TextAlign
 
 import dz.meals.app.ui.components.MealsIconAction
@@ -33,7 +35,7 @@ import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.mealsSheetDismissAction
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

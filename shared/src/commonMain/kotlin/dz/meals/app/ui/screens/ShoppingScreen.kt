@@ -1,5 +1,7 @@
 package dz.meals.app.ui.screens
 
+import dz.meals.app.ui.components.MealsText as Text
+
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -34,7 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsGlassDropdown
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect

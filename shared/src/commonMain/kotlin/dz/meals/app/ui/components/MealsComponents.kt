@@ -1,5 +1,7 @@
 package dz.meals.app.ui.components
 
+import dz.meals.app.ui.components.MealsText as Text
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
@@ -52,7 +54,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
