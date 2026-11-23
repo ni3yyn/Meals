@@ -94,6 +94,7 @@ import dz.meals.app.ui.theme.LocalMealsLocaleTag
 import dz.meals.app.ui.theme.mealsText
 import kotlin.math.abs
 import kotlin.math.roundToLong
+import kotlinx.coroutines.launch
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
 @Composable
@@ -621,7 +622,371 @@ fun RecipesScreen(
                         }
                     }
                 } else {
-                    ${detailBody}
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
+                        item {
+                            AsyncImage(
+                                model = detail.imageUrl,
+                                contentDescription = detail.nameAr,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(188.dp)
+                                    .clip(RoundedCornerShape(17.dp))
+                            )
+                        }
+                    } else {
+                        item {
+                            Text(
+                                "لا توجد صورة لهذه الوصفة بعد",
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (onSearchRecipeImages != null && onSaveRecipeImage != null) {
+                        item {
+                            MealsSecondaryButton(
+                                label = if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
+                                    "ابحث عن صورة أخرى"
+                                } else {
+                                    "ابحث وأضف صورة"
+                                },
+                                onClick = {
+                                    imageSearchQuery = detail.nameFr.takeIf {
+                                        it.isNotBlank() && it != detail.nameAr
+                                    } ?: detail.nativeName.ifBlank { detail.nameAr }
+                                    imageSearchResults = emptyList()
+                                    imageSearchError = null
+                                    imageSearchOpen = true
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                    if (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank()) {
+                        item {
+                            Text(
+                                "الصورة: " + listOf(detail.imageCredit.ifBlank { detail.imageAuthor }, detail.imageLicense)
+                                    .filter { it.isNotBlank() }
+                                    .joinToString(" · "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                    if (detail.imageSourcePageUrl.isNotBlank()) {
+                        item {
+                            Text(
+                                "فتح مصدر الصورة",
+                                color = dz.meals.app.ui.theme.TextAccent,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.clickable {
+                                    runCatching { uriHandler.openUri(detail.imageSourcePageUrl) }
+                                }
+                            )
+                        }
+                    }
+                    if (detail.imageLicenseUrl.isNotBlank()) {
+                        item {
+                            Text(
+                                "عرض ترخيص الصورة: " + detail.imageLicense,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.clickable {
+                                    runCatching { uriHandler.openUri(detail.imageLicenseUrl) }
+                                }
+                            )
+                        }
+                    }
+                    item { Text(detail.descriptionAr, color = MutedInk) }
+                    if (detail.nativeName.isNotBlank()) {
+                        item {
+                            Text(
+                                "الاسم الأصلي: " + detail.nativeName,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    item {
+                        val facts = buildList {
+                            detail.prepMinutes?.let { add("التحضير" to formatRecipeTime(it)) }
+                            detail.cookMinutes?.let { add("الطهي" to formatRecipeTime(it)) }
+                            if (detail.durationMinutes > 0) {
+                                add("الإجمالي" to formatRecipeTime(detail.durationMinutes))
+                            }
+                            add("الحصص" to detail.baseServings.toString())
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            facts.forEachIndexed { index, fact ->
+                                if (index > 0) {
+                                    Spacer(
+                                        Modifier
+                                            .width(1.dp)
+                                            .height(30.dp)
+                                            .background(Border.copy(alpha = 0.55f))
+                                    )
+                                }
+                                RecipeDetailFact(
+                                    label = fact.first,
+                                    value = fact.second,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                    if (detail.region.isNotBlank()) {
+                        item {
+                            Text(
+                                "المطبخ: " + detail.region,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.categories.isNotEmpty()) {
+                        item {
+                            Text(
+                                "الفئات: " + detail.categories.distinct().joinToString("، "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.dietary.isNotEmpty()) {
+                        item {
+                            Text(
+                                "النمط الغذائي: " + detail.dietary.distinct().joinToString("، "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.category.isNotBlank()) {
+                        item {
+                            Text(
+                                "التصنيف الرئيسي: " + detail.category,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (detail.difficulty.isNotBlank() && detail.difficulty != "غير محدد") {
+                        item {
+                            Text(
+                                "مستوى الصعوبة: " + detail.difficulty,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    if (
+                        detail.caloriesPerServing != null ||
+                        detail.proteinGramsPerServing != null ||
+                        detail.carbsGramsPerServing != null ||
+                        detail.fatGramsPerServing != null
+                    ) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                                Text(
+                                    "القيمة الغذائية لكل حصة",
+                                    color = Ink,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                val nutritionFacts = listOf(
+                                    "السعرات" to formatNutritionValue(detail.caloriesPerServing, "ك.س"),
+                                    "بروتين" to formatNutritionValue(detail.proteinGramsPerServing, "غ"),
+                                    "كربوهيدرات" to formatNutritionValue(detail.carbsGramsPerServing, "غ"),
+                                    "دهون" to formatNutritionValue(detail.fatGramsPerServing, "غ")
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    nutritionFacts.forEachIndexed { index, fact ->
+                                        if (index > 0) {
+                                            Spacer(
+                                                Modifier
+                                                    .width(1.dp)
+                                                    .height(32.dp)
+                                                    .background(Border.copy(alpha = 0.45f))
+                                            )
+                                        }
+                                        RecipeDetailFact(
+                                            label = fact.first,
+                                            value = fact.second,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    item { Text("المكونات", fontWeight = FontWeight.Bold) }
+                    items(detail.ingredients) { ingredient ->
+                        val master = ingredientNames[ingredient.ingredientId]
+                        val ingredientName = mealsText(
+                            master?.nameAr ?: ingredient.ingredientId,
+                            appLocaleTag
+                        )
+                        val quantityLabel = mealsText(
+                            ingredient.quantityBase.formatHouseholdQuantity(ingredient.unit),
+                            appLocaleTag
+                        )
+                        val quantityOrNote = when {
+                            ingredient.quantityBase > 0.0 && ingredient.prepNote.isNotBlank() ->
+                                quantityLabel + " · " + ingredient.prepNote
+                            ingredient.quantityBase > 0.0 -> quantityLabel
+                            ingredient.prepNote.isNotBlank() -> ingredient.prepNote
+                            else -> mealsText("حسب الحاجة", appLocaleTag)
+                        }
+                        Text(
+                            "• " + bidiIsolate(ingredientName) + " — " + quantityOrNote,
+                            translate = false
+                        )
+                    }
+                    if (detail.tags.isNotEmpty()) {
+                        item {
+                            Text(
+                                "وسوم الوصفة: " + detail.tags.distinct().joinToString("، "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
+                    itemsIndexed(detail.stepsAr) { index, step ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                bidiIsolate((index + 1).toString()) + ". " + mealsText(step, appLocaleTag),
+                                modifier = Modifier.weight(1f),
+                                translate = false
+                            )
+                            detail.stepMinutes.getOrNull(index)?.let { minutes ->
+                                Text(
+                                    formatRecipeTime(minutes),
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                    item {
+                        val allergenLabels = detail.allergens.map { allergen ->
+                            when (allergen) {
+                                "gluten" -> "الغلوتين"
+                                "egg" -> "البيض"
+                                "milk" -> "الحليب"
+                                "tree_nuts" -> "المكسرات"
+                                "celery" -> "الكرفس"
+                                "sulphites" -> "الكبريتيت"
+                                "fish" -> "السمك"
+                                "mustard" -> "الخردل"
+                                "crustaceans" -> "القشريات"
+                                "soy" -> "فول الصويا"
+                                "sesame" -> "السمسم"
+                                "molluscs" -> "الرخويات"
+                                "peanuts" -> "الفول السوداني"
+                                else -> allergen
+                            }
+                        }
+                        val allergenText = if (allergenLabels.isEmpty()) {
+                            mealsText("لا توجد مسببات مسجلة", appLocaleTag)
+                        } else {
+                            allergenLabels.joinToString(if (isMealsEnglish(appLocaleTag)) ", " else "، ")
+                        }
+                        Text(
+                            mealsText("الحساسية: ", appLocaleTag) + allergenText,
+                            translate = false
+                        )
+                    }
+                    detail.attribution?.let { attribution ->
+                        item {
+                            MealsCard(
+                                containerColor = WarmSurface,
+                                borderColor = null,
+                                contentPadding = 13.dp
+                            ) {
+                                Text(
+                                    "المصدر والترخيص",
+                                    color = Ink,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    attribution.credit + " · " + attribution.sourceTitle,
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                if (attribution.sourceUrl.isNotBlank()) {
+                                    Text(
+                                        "فتح المصدر الأصلي",
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.clickable {
+                                            runCatching { uriHandler.openUri(attribution.sourceUrl) }
+                                        }
+                                    )
+                                }
+                                if (attribution.sourceLicense.isNotBlank()) {
+                                    Text(
+                                        "ترخيص المصدر: " + attribution.sourceLicense,
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                                Text(
+                                    attribution.license,
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.clickable {
+                                        if (attribution.licenseUrl.isNotBlank()) {
+                                            runCatching { uriHandler.openUri(attribution.licenseUrl) }
+                                        }
+                                    }
+                                )
+                                if (attribution.revisionUrl.isNotBlank()) {
+                                    Text(
+                                        "مراجعة الوصفة الأصلية",
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.clickable {
+                                            runCatching { uriHandler.openUri(attribution.revisionUrl) }
+                                        }
+                                    )
+                                }
+                                if (attribution.historyUrl.isNotBlank()) {
+                                    Text(
+                                        "سجل تعديلات المصدر",
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.clickable {
+                                            runCatching { uriHandler.openUri(attribution.historyUrl) }
+                                        }
+                                    )
+                                }
+                                if (attribution.changes.isNotBlank()) {
+                                    Text(
+                                        attribution.changes,
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 }
             },
             confirmButton = {

@@ -569,7 +569,17 @@ private fun MealsAppContent(
                             repository.searchCommonsRecipeImages(recipe, query)
                         },
                         onSaveRecipeImage = { recipeId, image ->
-                            perform { repository.saveRecipeImage(recipeId, image) }
+                            scope.launch {
+                                try {
+                                    repository.saveRecipeImage(recipeId, image)
+                                    refresh()
+                                    generationMessage = "تم حفظ صورة الوصفة مع بيانات الترخيص"
+                                } catch (error: Exception) {
+                                    snackbarHostState.showSnackbar(
+                                        error.message ?: "تعذر حفظ صورة الوصفة."
+                                    )
+                                }
+                            }
                         },
                         onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                         onAddRecipe = { id ->

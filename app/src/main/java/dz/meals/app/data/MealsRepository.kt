@@ -41,9 +41,9 @@ class MealsRepository(context: Context) {
     private val database = MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
     private val commonsClient = OkHttpClient.Builder()
-        .callTimeout(java.time.Duration.ofSeconds(35))
-        .connectTimeout(java.time.Duration.ofSeconds(12))
-        .readTimeout(java.time.Duration.ofSeconds(25))
+        .callTimeout(35, java.util.concurrent.TimeUnit.SECONDS)
+        .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
         .build()
     private val initializationMutex = Mutex()
     private val catalogueCacheMutex = Mutex()
@@ -525,8 +525,13 @@ class MealsRepository(context: Context) {
         recipe: MealRecipe,
         query: String
     ): List<RecipeImageCandidate> = withContext(Dispatchers.IO) {
-        val searchTerm = query.trim().take(120)
-        require(searchTerm.isNotBlank()) { "أدخلي اسم الطبق للبحث عن صورة." }
+        val typedTerm = query.trim().take(100)
+        require(typedTerm.isNotBlank()) { "أدخلي اسم الطبق للبحث عن صورة." }
+        val sourceName = recipe.nameFr.trim().takeIf {
+            it.isNotBlank() && !it.equals(recipe.nameAr, ignoreCase = true) &&
+                !typedTerm.contains(it, ignoreCase = true)
+        }.orEmpty()
+        val searchTerm = listOf(typedTerm, sourceName).filter { it.isNotBlank() }.distinct().joinToString(" ").take(140)
 
         val requestUrl = "https://commons.wikimedia.org/w/api.php".toHttpUrl().newBuilder()
             .addQueryParameter("action", "query")
