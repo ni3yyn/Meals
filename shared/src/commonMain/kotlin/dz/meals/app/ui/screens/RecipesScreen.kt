@@ -990,29 +990,39 @@ fun RecipesScreen(
                 }
             },
             confirmButton = {
-                val dismissSheet = mealsSheetDismissAction()
-                MealsPrimaryButton(
-                    label = "أضف للخطة",
-                    onClick = { dismissSheet { onAddRecipe(detail.id); selectedRecipeId = null } },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (imageSearchOpen) {
+                    MealsSecondaryButton(
+                        label = "رجوع إلى الوصفة",
+                        onClick = { imageSearchOpen = false },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    val dismissSheet = mealsSheetDismissAction()
+                    MealsPrimaryButton(
+                        label = "أضف للخطة",
+                        onClick = { dismissSheet { onAddRecipe(detail.id); selectedRecipeId = null } },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             dismissButton = {
-                val dismissSheet = mealsSheetDismissAction()
-                MealsSecondaryButton(
-                    label = "ابدأ الطبخ",
-                    onClick = {
-                        dismissSheet {
-                            cookingRecipeId = detail.id
-                            cookingStepIndex = 0
-                            cookingStepDirection = 1
-                            cookingServings = detail.baseServings
-                            cookingCompleted = false
-                            selectedRecipeId = null
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (!imageSearchOpen) {
+                    val dismissSheet = mealsSheetDismissAction()
+                    MealsSecondaryButton(
+                        label = "ابدأ الطبخ",
+                        onClick = {
+                            dismissSheet {
+                                cookingRecipeId = detail.id
+                                cookingStepIndex = 0
+                                cookingStepDirection = 1
+                                cookingServings = detail.baseServings
+                                cookingCompleted = false
+                                selectedRecipeId = null
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         )
     }
