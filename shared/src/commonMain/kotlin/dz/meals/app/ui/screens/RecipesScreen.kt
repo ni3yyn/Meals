@@ -478,7 +478,27 @@ fun RecipesScreen(
                             )
                         }
                     }
+                    if (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank()) {
+                        item {
+                            Text(
+                                "الصورة: " + listOf(detail.imageAuthor, detail.imageLicense)
+                                    .filter { it.isNotBlank() }
+                                    .joinToString(" · "),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                     item { Text(detail.descriptionAr, color = MutedInk) }
+                    if (detail.nativeName.isNotBlank()) {
+                        item {
+                            Text(
+                                "الاسم الأصلي: " + detail.nativeName,
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                     item {
                         val facts = buildList {
                             detail.prepMinutes?.let { add("التحضير" to formatRecipeTime(it)) }
@@ -630,10 +650,24 @@ fun RecipesScreen(
                     }
                     item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
                     itemsIndexed(detail.stepsAr) { index, step ->
-                        Text(
-                            bidiIsolate((index + 1).toString()) + ". " + mealsText(step, appLocaleTag),
-                            translate = false
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                bidiIsolate((index + 1).toString()) + ". " + mealsText(step, appLocaleTag),
+                                modifier = Modifier.weight(1f),
+                                translate = false
+                            )
+                            detail.stepMinutes.getOrNull(index)?.let { minutes ->
+                                Text(
+                                    formatRecipeTime(minutes),
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
                     }
                     item {
                         val allergenLabels = detail.allergens.map { allergen ->

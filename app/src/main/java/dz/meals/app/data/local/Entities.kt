@@ -38,7 +38,11 @@ data class RecipeEntity(
     val fatGramsPerServing: Double? = null,
     @ColumnInfo(defaultValue = "''") val imageUrl: String = "",
     val prepMinutes: Int? = null,
-    val cookMinutes: Int? = null
+    val cookMinutes: Int? = null,
+    @ColumnInfo(defaultValue = "''") val nativeName: String = "",
+    @ColumnInfo(defaultValue = "''") val countryCode: String = "",
+    @ColumnInfo(defaultValue = "''") val imageAuthor: String = "",
+    @ColumnInfo(defaultValue = "''") val imageLicense: String = ""
 )
 
 @Entity(
@@ -52,7 +56,8 @@ data class RecipeIngredientEntity(
     val quantityBase: Double,
     val unit: String,
     val prepNote: String,
-    val optional: Boolean
+    val optional: Boolean,
+    @ColumnInfo(defaultValue = "'linear'") val scalingRule: String = "linear"
 )
 
 @Entity(tableName = "recipe_steps", primaryKeys = ["recipeId", "stepNumber"])
@@ -60,7 +65,8 @@ data class RecipeStepEntity(
     val recipeId: String,
     val stepNumber: Int,
     val instructionAr: String,
-    val instructionFr: String
+    val instructionFr: String,
+    val durationMinutes: Int? = null
 )
 
 @Entity(

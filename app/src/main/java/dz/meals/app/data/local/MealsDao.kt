@@ -52,8 +52,30 @@ interface MealsDao {
     @Query("DELETE FROM recipe_steps WHERE recipeId IN (:recipeIds)")
     suspend fun deleteRecipeStepsForRecipes(recipeIds: List<String>)
 
-    @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'orc-%' OR id LIKE 'focus-%'")
+    @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'orc-%' OR id LIKE 'focus-%' OR id LIKE 'unitools-%'")
     suspend fun countArabicCatalogueRecipes(): Int
+
+    @Query("DELETE FROM recipe_ingredients WHERE recipeId LIKE 'orc-%'")
+    suspend fun deleteLegacyOpenRecipeIngredients()
+
+    @Query("DELETE FROM recipe_steps WHERE recipeId LIKE 'orc-%'")
+    suspend fun deleteLegacyOpenRecipeSteps()
+
+    @Query("DELETE FROM recipe_attributions WHERE recipeId LIKE 'orc-%'")
+    suspend fun deleteLegacyOpenRecipeAttributions()
+
+    @Query("DELETE FROM favorite_recipes WHERE recipeId LIKE 'orc-%'")
+    suspend fun deleteLegacyOpenRecipeFavorites()
+
+    @Query("UPDATE plan_meals SET recipeId = NULL WHERE recipeId LIKE 'orc-%'")
+    suspend fun detachLegacyOpenRecipePlans()
+
+    @Query("DELETE FROM recipes WHERE id LIKE 'orc-%'")
+    suspend fun deleteLegacyOpenRecipes()
+
+    @Query("DELETE FROM ingredients WHERE id LIKE 'orc-ing-%' AND id NOT IN (SELECT ingredientId FROM pantry_items) AND id NOT IN (SELECT ingredientId FROM price_observations) AND id NOT IN (SELECT ingredientId FROM shopping_items WHERE ingredientId IS NOT NULL)")
+    suspend fun deleteUnusedLegacyOpenRecipeIngredients()
+
 
     @Query("SELECT * FROM recipe_attributions")
     suspend fun getRecipeAttributions(): List<RecipeAttributionEntity>

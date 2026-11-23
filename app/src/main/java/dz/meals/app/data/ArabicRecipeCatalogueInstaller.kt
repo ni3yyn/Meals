@@ -113,6 +113,18 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             throw IOException("عدد الوصفات داخل الملف لا يطابق بيانات النسخة المتوقعة.")
         }
 
+        // Retire Polish-derived community rows only after the replacement catalogue
+        // has been completely parsed, validated and written to Room.
+        database.withTransaction {
+            dao.deleteLegacyOpenRecipeFavorites()
+            dao.detachLegacyOpenRecipePlans()
+            dao.deleteLegacyOpenRecipeIngredients()
+            dao.deleteLegacyOpenRecipeSteps()
+            dao.deleteLegacyOpenRecipeAttributions()
+            dao.deleteLegacyOpenRecipes()
+            dao.deleteUnusedLegacyOpenRecipeIngredients()
+        }
+
         preferences.edit()
             .putString(INSTALLED_REVISION_KEY, ArabicRecipeCatalogueDownloader.REVISION)
             .putInt(METADATA_MAPPING_VERSION_KEY, METADATA_MAPPING_VERSION)
@@ -141,6 +153,15 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         var carbsGramsPerServing: Double? = null
         var fatGramsPerServing: Double? = null
         var imageUrl = ""
+        var imageAuthor = ""
+        var imageLicense = ""
+        var nativeName = ""
+        var sourceNameEn = ""
+        var sourceSummaryEn = ""
+        var countryCode = ""
+        var difficulty = "غير محدد"
+        var stepMinutes = emptyList<Int?>()
+        var stepsEn = emptyList<String>()
         var ingredients = emptyList<SourceIngredient>()
         var steps = emptyList<String>()
         var provenance = SourceProvenance()
@@ -176,6 +197,15 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                     reader.endObject()
                 }
                 "image" -> imageUrl = readString(reader)
+                "imageAuthor" -> imageAuthor = readString(reader)
+                "imageLicense" -> imageLicense = readString(reader)
+                "nativeName" -> nativeName = readString(reader)
+                "sourceNameEn" -> sourceNameEn = readString(reader)
+                "sourceSummaryEn" -> sourceSummaryEn = readString(reader)
+                "countryCode" -> countryCode = readString(reader)
+                "difficulty" -> difficulty = readString(reader)
+                "stepMinutes" -> stepMinutes = readNullableIntArray(reader)
+                "stepsEn" -> stepsEn = readStringArray(reader)
                 "ingredients" -> ingredients = readIngredients(reader)
                 "steps" -> steps = readStringArray(reader)
                 "provenance" -> provenance = readProvenance(reader)
@@ -214,6 +244,15 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             carbsGramsPerServing = carbsGramsPerServing,
             fatGramsPerServing = fatGramsPerServing,
             imageUrl = imageUrl,
+            imageAuthor = imageAuthor,
+            imageLicense = imageLicense,
+            nativeName = nativeName,
+            sourceNameEn = sourceNameEn,
+            sourceSummaryEn = sourceSummaryEn,
+            countryCode = countryCode,
+            difficulty = difficulty,
+            stepMinutes = stepMinutes,
+            stepsEn = stepsEn,
             ingredients = ingredients,
             steps = steps,
             provenance = provenance
@@ -228,6 +267,9 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val result = ArrayList<SourceIngredient>()
         reader.beginArray()
         while (reader.hasNext()) {
+            var sourceId = ""
+            var sourceNameEn = ""
+            var scaling = "linear"
             var name = ""
             var note = ""
             var quantity = ""
@@ -235,6 +277,9 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             reader.beginObject()
             while (reader.hasNext()) {
                 when (reader.nextName()) {
+                    "id" -> sourceId = readString(reader)
+                    "sourceNameEn" -> sourceNameEn = readString(reader)
+                    "scaling" -> scaling = readString(reader)
                     "name" -> name = readString(reader)
                     "note" -> note = readString(reader)
                     "quantity" -> quantity = readString(reader)
@@ -243,7 +288,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 }
             }
             reader.endObject()
-            if (name.isNotBlank()) result += SourceIngredient(name, note, quantity, unit)
+            if (name.isNotBlank()) result += SourceIngredient(sourceId, name, sourceNameEn, note, quantity, unit, scaling)
         }
         reader.endArray()
         return result
@@ -280,6 +325,18 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         }
         reader.endObject()
         return SourceProvenance(sourceTitle, sourceUrl, revisionUrl, historyUrl, credit, sourceLicense, license, licenseUrl, changes)
+    }
+
+    private fun readNullableIntArray(reader: JsonReader): List<Int?> {
+        if (reader.peek() == JsonToken.NULL) {
+            reader.nextNull()
+            return emptyList()
+        }
+        val values = ArrayList<Int?>()
+        reader.beginArray()
+        while (reader.hasNext()) values += readNullableInt(reader)
+        reader.endArray()
+        return values
     }
 
     private fun readStringArray(reader: JsonReader): List<String> {
@@ -319,21 +376,24 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         readString(reader).replace(",", ".").toDoubleOrNull()?.takeIf { it >= 0.0 }
 
     private fun SourceRecipe.toBundle(): RecipeBundle {
-        val recipeId = if (id.startsWith("focus:")) {
-            FOCUS_RECIPE_ID_PREFIX + id.substringAfter(":")
-        } else {
-            RECIPE_ID_PREFIX + id
+        val recipeId = when {
+            id.startsWith("focus:") -> FOCUS_RECIPE_ID_PREFIX + id.substringAfter(":")
+            id.startsWith("unitools:") -> UNITOOLS_RECIPE_ID_PREFIX + id.substringAfter(":")
+            else -> RECIPE_ID_PREFIX + id
         }
         val ingredientEntities = ArrayList<IngredientEntity>()
         val recipeIngredients = ArrayList<RecipeIngredientEntity>()
 
         ingredients.forEach { source ->
             val measure = normalizeMeasure(source.quantity, source.unit)
-            val ingredientId = ingredientId(source.name, measure.unit)
+            val ingredientId = if (source.sourceId.isNotBlank()) {
+                INGREDIENT_ID_PREFIX + "unitools-" + source.sourceId.trim().lowercase()
+                    .replace(Regex("[^a-z0-9._-]"), "-")
+            } else ingredientId(source.name, measure.unit)
             ingredientEntities += IngredientEntity(
                 id = ingredientId,
                 nameAr = source.name,
-                nameFr = source.name,
+                nameFr = source.sourceNameEn.ifBlank { source.name },
                 category = "مكوّن",
                 baseUnit = measure.unit,
                 allergensCsv = "",
@@ -355,21 +415,22 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 quantityBase = measure.quantityBase ?: 0.0,
                 unit = measure.unit,
                 prepNote = preparationNote,
-                optional = false
+                optional = false,
+                scalingRule = source.scaling.ifBlank { "linear" }
             )
         }
 
         val recipe = RecipeEntity(
             id = recipeId,
             nameAr = name,
-            nameFr = name,
+            nameFr = sourceNameEn.ifBlank { name },
             descriptionAr = summary,
-            descriptionFr = summary,
+            descriptionFr = sourceSummaryEn.ifBlank { summary },
             category = category.trim().ifBlank { "تقليدي" },
             region = cuisine,
             durationMinutes = ((prepMinutes ?: 0) + (cookMinutes ?: 0)).coerceAtLeast(0),
             baseServings = (servings ?: 2).coerceIn(1, 30),
-            difficulty = "غير محدد",
+            difficulty = difficulty.ifBlank { "غير محدد" },
             allergensCsv = normalizeAllergens(allergens).distinct().joinToString(","),
             tagsCsv = tags.distinct().joinToString("|"),
             categoriesCsv = categories.distinct().joinToString("|"),
@@ -380,18 +441,28 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             fatGramsPerServing = fatGramsPerServing,
             imageUrl = imageUrl,
             prepMinutes = prepMinutes,
-            cookMinutes = cookMinutes
+            cookMinutes = cookMinutes,
+            nativeName = nativeName,
+            countryCode = countryCode,
+            imageAuthor = imageAuthor,
+            imageLicense = imageLicense
         )
         val recipeSteps = steps.mapIndexed { index, step ->
-            RecipeStepEntity(recipeId, index + 1, step, step)
+            RecipeStepEntity(
+                recipeId,
+                index + 1,
+                step,
+                stepsEn.getOrNull(index).orEmpty().ifBlank { step },
+                stepMinutes.getOrNull(index)
+            )
         }
         val attribution = RecipeAttributionEntity(
             recipeId = recipeId,
-            sourceTitle = provenance.sourceTitle.ifBlank { "Open Recipe Corpus" },
+            sourceTitle = provenance.sourceTitle.ifBlank { if (id.startsWith("unitools:")) "UniTools World Recipes" else if (id.startsWith("focus:")) "Focus Recipes" else "Open Recipe Corpus" },
             sourceUrl = provenance.sourceUrl,
             revisionUrl = provenance.revisionUrl,
             historyUrl = provenance.historyUrl,
-            credit = provenance.credit.ifBlank { "Open Recipe Corpus contributors" },
+            credit = provenance.credit.ifBlank { if (id.startsWith("unitools:")) "UniTools — theunitools.com" else if (id.startsWith("focus:")) "Focus Recipes" else "Open Recipe Corpus contributors" },
             sourceLicense = provenance.sourceLicense,
             license = provenance.license.ifBlank { "CC BY-SA 4.0" },
             licenseUrl = provenance.licenseUrl.ifBlank { DEFAULT_LICENSE_URL },
@@ -498,16 +569,28 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val carbsGramsPerServing: Double?,
         val fatGramsPerServing: Double?,
         val imageUrl: String,
+        val imageAuthor: String,
+        val imageLicense: String,
+        val nativeName: String,
+        val sourceNameEn: String,
+        val sourceSummaryEn: String,
+        val countryCode: String,
+        val difficulty: String,
+        val stepMinutes: List<Int?>,
+        val stepsEn: List<String>,
         val ingredients: List<SourceIngredient>,
         val steps: List<String>,
         val provenance: SourceProvenance
     )
 
     private data class SourceIngredient(
+        val sourceId: String,
         val name: String,
+        val sourceNameEn: String,
         val note: String,
         val quantity: String,
-        val unit: String
+        val unit: String,
+        val scaling: String
     )
 
     private data class SourceProvenance(
@@ -525,8 +608,9 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
     companion object {
         const val RECIPE_ID_PREFIX = "orc-"
         const val FOCUS_RECIPE_ID_PREFIX = "focus-"
+        const val UNITOOLS_RECIPE_ID_PREFIX = "unitools-"
         const val INGREDIENT_ID_PREFIX = "orc-ing-"
-        const val METADATA_MAPPING_VERSION = 2
+        const val METADATA_MAPPING_VERSION = 3
         const val METADATA_MAPPING_VERSION_KEY = "metadata_mapping_version"
         private const val DEFAULT_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
         private const val BATCH_SIZE = 80

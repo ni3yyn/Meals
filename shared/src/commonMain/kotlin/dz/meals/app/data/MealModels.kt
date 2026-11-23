@@ -1,5 +1,7 @@
 package dz.meals.app.data
 
+import kotlin.math.sqrt
+
 data class IngredientMaster(
     val id: String,
     val nameAr: String,
@@ -15,7 +17,8 @@ data class RecipeIngredient(
     val quantityBase: Double,
     val unit: String,
     val prepNote: String = "",
-    val optional: Boolean = false
+    val optional: Boolean = false,
+    val scalingRule: String = "linear"
 )
 
 data class MealRecipe(
@@ -43,7 +46,12 @@ data class MealRecipe(
     val proteinGramsPerServing: Double? = null,
     val carbsGramsPerServing: Double? = null,
     val fatGramsPerServing: Double? = null,
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val nativeName: String = "",
+    val countryCode: String = "",
+    val imageAuthor: String = "",
+    val imageLicense: String = "",
+    val stepMinutes: List<Int?> = emptyList()
 )
 
 data class RecipeAttribution(
@@ -168,3 +176,14 @@ data class MealsSnapshot(
     val planRun: PlanRunSummary? = null,
     val basket: BasketSummary = BasketSummary()
 )
+
+/** Applies the dataset's linear, sublinear/damped or fixed ingredient rule. */
+fun scaleRecipeIngredientQuantity(quantity: Double, servingsFactor: Double, scalingRule: String): Double {
+    require(servingsFactor > 0.0) { "servingsFactor must be positive" }
+    val appliedFactor = when (scalingRule.trim().lowercase()) {
+        "fixed" -> 1.0
+        "sublinear", "damped" -> sqrt(servingsFactor)
+        else -> servingsFactor
+    }
+    return quantity * appliedFactor
+}

@@ -381,7 +381,7 @@ class MealsRepository(context: Context) {
                 val required = recipe.ingredients.filterNot { it.optional }
                     .groupBy { it.ingredientId to it.unit }
                 required.forEach { (key, parts) ->
-                    val needed = parts.sumOf { it.quantityBase * factor }
+                    val needed = parts.sumOf { scaleRecipeIngredientQuantity(it.quantityBase, factor, it.scalingRule) }
                     val stock = dao.getPantryItems().firstOrNull {
                         it.ingredientId == key.first && it.unit == key.second
                     } ?: return@forEach
@@ -645,7 +645,9 @@ class MealsRepository(context: Context) {
         val catalogueInstalled = hasInstalledArabicRecipeCatalogue()
         return dao.getRecipes()
             .filter { recipe ->
-                !recipe.id.startsWith(ArabicRecipeCatalogueInstaller.RECIPE_ID_PREFIX) || catalogueInstalled
+                !(recipe.id.startsWith(ArabicRecipeCatalogueInstaller.RECIPE_ID_PREFIX) ||
+                    recipe.id.startsWith(ArabicRecipeCatalogueInstaller.FOCUS_RECIPE_ID_PREFIX) ||
+                    recipe.id.startsWith(ArabicRecipeCatalogueInstaller.UNITOOLS_RECIPE_ID_PREFIX)) || catalogueInstalled
             }
             .map { recipe ->
                 val recipeSteps = steps[recipe.id].orEmpty().sortedBy { it.stepNumber }
@@ -662,7 +664,7 @@ class MealsRepository(context: Context) {
                     difficulty = recipe.difficulty,
                     allergens = recipe.allergensCsv.split(",").filter { it.isNotBlank() }.toSet(),
                     ingredients = ingredients[recipe.id].orEmpty().map {
-                        RecipeIngredient(it.ingredientId, it.quantityBase, it.unit, it.prepNote, it.optional)
+                        RecipeIngredient(it.ingredientId, it.quantityBase, it.unit, it.prepNote, it.optional, it.scalingRule)
                     },
                     stepsAr = recipeSteps.map { it.instructionAr },
                     stepsFr = recipeSteps.map { it.instructionFr },
@@ -688,7 +690,12 @@ class MealsRepository(context: Context) {
                     proteinGramsPerServing = recipe.proteinGramsPerServing,
                     carbsGramsPerServing = recipe.carbsGramsPerServing,
                     fatGramsPerServing = recipe.fatGramsPerServing,
-                    imageUrl = recipe.imageUrl
+                    imageUrl = recipe.imageUrl,
+                    nativeName = recipe.nativeName,
+                    countryCode = recipe.countryCode,
+                    imageAuthor = recipe.imageAuthor,
+                    imageLicense = recipe.imageLicense,
+                    stepMinutes = recipeSteps.map { it.durationMinutes }
                 )
             }
     }

@@ -189,6 +189,9 @@ def _replace_pork_text(text: str) -> tuple[str, list[dict[str, str]]]:
         if count:
             changes.append({"replacement": replacement, "occurrences": str(count)})
 
+    # Protect safe meat names created by pork substitutions before handling generic sausage.
+    protect(SAFE_MEAT, "")
+
     # An unspecified sausage is commonly pork-based; use a neutral beef substitute.
     def sausage_replacement(match: re.Match[str]) -> str:
         return "beef sausages" if match.group(1) else "beef sausage"
@@ -207,10 +210,7 @@ def adapt_recipe(recipe: dict[str, Any]) -> tuple[dict[str, Any] | None, list[di
         return None, [], f"alcohol ingredient or method reference: {alcohol}"
 
     # Unspecified animal gelatin has an unclear source and is not safe to assume bovine.
-    for item in recipe.get("ingredients") or []:
-        if not isinstance(item, dict):
-            continue
-        text = clean_text(item.get("name")) + " " + clean_text(item.get("note"))
+    for text in recipe_english_text(recipe):
         if GELATIN.search(text) and not SAFE_GELATIN.search(text):
             return None, [], "unverified gelatin source"
 
@@ -459,6 +459,9 @@ def output_recipe(
         "name": str(translation.get("name") or ""),
         "summary": str(translation.get("summary") or ""),
         "nativeName": str(source.get("nativeName") or ""),
+        "sourceNameEn": clean_text(source.get("name")),
+        "sourceSummaryEn": clean_text(source.get("summary")),
+        "stepsEn": [clean_text(step.get("text")) if isinstance(step, dict) else str(step) for step in raw_steps],
         "category": taxonomy.get(category, "وصفة"),
         "cuisine": taxonomy[country_en],
         "countryCode": str(source.get("country") or "").upper(),

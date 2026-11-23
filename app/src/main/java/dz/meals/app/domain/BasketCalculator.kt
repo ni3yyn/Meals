@@ -1,5 +1,7 @@
 package dz.meals.app.domain
 
+import dz.meals.app.data.scaleRecipeIngredientQuantity
+
 import dz.meals.app.data.BasketSummary
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.PlannedMeal
@@ -117,7 +119,7 @@ fun calculateBasket(
         // but cannot create misleading zero-quantity shopping requirements.
         recipe.ingredients.filter { !it.optional && it.quantityBase > 0.0 }.forEach { ingredient ->
             val key = RequirementKey(ingredient.ingredientId, ingredient.unit)
-            required[key] = (required[key] ?: 0.0) + ingredient.quantityBase * factor
+            required[key] = (required[key] ?: 0.0) + scaleRecipeIngredientQuantity(ingredient.quantityBase, factor, ingredient.scalingRule)
         }
     }
 

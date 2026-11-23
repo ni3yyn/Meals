@@ -60,6 +60,12 @@ class UnitoolsSafetyTests(unittest.TestCase):
         self.assertEqual(adapted["ingredients"][0]["name"]["en"], "Turkey bacon")
         self.assertEqual(adapted["ingredients"][1]["name"]["en"], "Beef sausage")
 
+    def test_pork_sausage_is_not_double_replaced(self):
+        item = recipe(ingredients=[{"id": "sausage", "name": {"en": "Pork sausage"}}])
+        adapted, _, reason = adapt_recipe(item)
+        self.assertIsNone(reason)
+        self.assertEqual(adapted["ingredients"][0]["name"]["en"], "beef sausage")
+
     def test_replaces_unspecified_sausage(self):
         item = recipe(ingredients=[{"id": "sausage", "name": {"en": "Sausage"}}])
         adapted, _, reason = adapt_recipe(item)
@@ -92,5 +98,5 @@ class UnitoolsSafetyTests(unittest.TestCase):
         self.assertEqual(adapted["ingredients"][0]["name"]["en"], "beef ribs")
 
 
-if __filename__ == "__main__":
+if __name__ == "__main__":
     unittest.main()

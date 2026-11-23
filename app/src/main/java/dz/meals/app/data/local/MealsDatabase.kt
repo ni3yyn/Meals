@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PlanPriceSnapshotEntity::class,
         RecipeAttributionEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -150,6 +150,17 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE recipes ADD COLUMN nativeName TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE recipes ADD COLUMN countryCode TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE recipes ADD COLUMN imageAuthor TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE recipes ADD COLUMN imageLicense TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE recipe_ingredients ADD COLUMN scalingRule TEXT NOT NULL DEFAULT 'linear'")
+                db.execSQL("ALTER TABLE recipe_steps ADD COLUMN durationMinutes INTEGER")
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -158,7 +169,7 @@ abstract class MealsDatabase : RoomDatabase() {
                     context.applicationContext,
                     MealsDatabase::class.java,
                     "meals_local.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12).build().also { INSTANCE = it }
             }
     }
 }
