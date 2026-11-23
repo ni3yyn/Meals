@@ -36,7 +36,6 @@ data class MealRecipe(
 )
 
 data class AppPreferences(
-    val appLanguage: String = "ar-DZ",
     val weeklyBudgetDzd: Int = 15_000,
     val wilaya: String = "الجزائر",
     val householdServings: Int = 3,
@@ -49,7 +48,9 @@ data class AppPreferences(
     val hasCompletedSetup: Boolean = false,
     val commune: String = "",
     val shoppingChannel: String = "market",
-    val preferredShop: String = ""
+    val preferredShop: String = "",
+    // Kept last to preserve the positional constructor order for existing callers.
+    val appLanguage: String = "ar-DZ"
 )
 
 data class PantryItem(

@@ -76,7 +76,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import dz.meals.app.BuildConfig
 import dz.meals.app.data.AppPreferences
@@ -256,7 +258,7 @@ private fun MealsAppContent(
             context.startActivity(
                 Intent.createChooser(
                     Intent(Intent.ACTION_VIEW, Uri.parse(url)),
-                    "تنزيل Midati"
+                    mealsText("تنزيل Midati", appLanguage)
                 )
             )
         } catch (_: Exception) {
@@ -353,7 +355,12 @@ private fun MealsAppContent(
                     title = {
                         Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)) {
                             Text("صباح الخير", style = MaterialTheme.typography.titleLarge)
-                            Text("Midati · " + selectedTab.title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                    "Midati · " + mealsText(selectedTab.title, appLanguage),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    translate = false
+                )
                         }
                     },
                     actions = {
@@ -467,11 +474,11 @@ private fun MealsAppContent(
                         onShareList = { body ->
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "قائمة مشتريات Midati")
+                                putExtra(Intent.EXTRA_SUBJECT, mealsText("قائمة مشتريات Midati", appLanguage))
                                 putExtra(Intent.EXTRA_TEXT, body)
                             }
                             runCatching {
-                                context.startActivity(Intent.createChooser(send, "مشاركة قائمة المشتريات"))
+                                context.startActivity(Intent.createChooser(send, mealsText("مشاركة قائمة المشتريات", appLanguage)))
                             }
                         },
                         onToggleItem = { id, checked ->
@@ -527,6 +534,10 @@ private fun MealsAppContent(
             MealsOnboarding(
                 initial = preferences,
                 ingredients = snapshot.ingredients,
+                appLanguage = appLanguage,
+                onLanguageSelected = { languageTag ->
+                    scope.launch { preferencesStore.setAppLanguage(languageTag) }
+                },
                 onQuickStart = { budget, servings ->
                     scope.launch {
                         preferencesStore.saveSettings(
@@ -825,6 +836,7 @@ private fun SettingsPreferenceRow(
     showSwitch: Boolean = false,
     showSelector: Boolean = false
 ) {
+    val layoutDirection = LocalLayoutDirection.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -900,7 +912,9 @@ private fun SettingsPreferenceRow(
                     MealsIcon(
                         MealsIconName.ChevronRight,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = 90f }
+                        modifier = Modifier.size(16.dp).graphicsLayer {
+                            rotationZ = if (layoutDirection == LayoutDirection.Rtl) 270f else 90f
+                        }
                     )
                 }
                 else -> Text(
@@ -1123,6 +1137,7 @@ private fun HouseholdPreferencesDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("الميزانية بالدينار الجزائري") },
                         suffix = { Text("دج") }
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                     Text("كم شخصاً نطبخ له عادة؟", style = MaterialTheme.typography.titleMedium)
                     OutlinedTextField(
@@ -1132,6 +1147,7 @@ private fun HouseholdPreferencesDialog(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("عدد الحصص") }
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                     if (isFirstSetup) {
                         MealsCheckRow(
@@ -1215,15 +1231,17 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("ابحثي عن مكوّن") },
                         singleLine = true
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     ingredients.filter { ingredient ->
                         searchIngredient.isBlank() ||
                             ingredient.nameAr.contains(searchIngredient, true) ||
+                            mealsText(ingredient.nameAr, appLanguage).contains(searchIngredient, true) ||
                             ingredient.nameFr.contains(searchIngredient, true) ||
                             ingredient.aliases.any { it.contains(searchIngredient, true) }
                     }.take(10).forEach { ingredient ->
                         MealsCheckRow(
-                            title = ingredient.nameAr,
+                            title = mealsText(ingredient.nameAr, appLanguage),
                             supportingText = ingredient.nameFr,
                             checked = ingredient.id in dislikes,
                             onCheckedChange = { checked ->
@@ -1239,6 +1257,7 @@ private fun HouseholdPreferencesDialog(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("الوقت الأقصى بالدقائق") }
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                     OutlinedTextField(
                         value = buffer,
@@ -1247,6 +1266,7 @@ private fun HouseholdPreferencesDialog(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("هامش أمان للميزانية (%)") }
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
                 }
                 4 -> {
@@ -1257,6 +1277,7 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         label = { Text("الولاية") }
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     OutlinedTextField(
                         value = communeText,
@@ -1264,6 +1285,7 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         label = { Text("البلدية (اختياري)") }
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     Text("مكان التسوق المعتاد", style = MaterialTheme.typography.titleMedium)
                     Row(
@@ -1293,6 +1315,7 @@ private fun HouseholdPreferencesDialog(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("اسم المحل المفضل (اختياري)") },
                         singleLine = true
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     MealsCard(
                         containerColor = dz.meals.app.ui.theme.WarmSurface,

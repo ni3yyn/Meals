@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,10 +36,18 @@ fun MealsText(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
+    translate: Boolean = true
 ) {
+    // Resolve direction from the string's first strong character, not the screen's
+    // direction. Mixed Arabic/Latin values stay readable in either app language.
+    val contentAwareStyle = if (style.textDirection == TextDirection.Unspecified) {
+        style.copy(textDirection = TextDirection.Content)
+    } else {
+        style
+    }
     MaterialText(
-        text = mealsText(text),
+        text = if (translate) mealsText(text) else text,
         modifier = modifier,
         color = color,
         fontSize = fontSize,
@@ -54,6 +63,6 @@ fun MealsText(
         maxLines = maxLines,
         minLines = minLines,
         onTextLayout = onTextLayout,
-        style = style
+        style = contentAwareStyle
     )
 }

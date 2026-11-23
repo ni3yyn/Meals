@@ -45,6 +45,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
@@ -88,6 +90,7 @@ fun PlanScreen(
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
 ) {
+    val layoutDirection = LocalLayoutDirection.current
     val weekStart = LocalDate.parse(weekStartIso)
     var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
@@ -134,7 +137,7 @@ fun PlanScreen(
                 ) {
                     MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(48.dp)) {
                         MealsIcon(
-                            MealsIconName.ArrowForward,
+                            MealsIconName.ArrowBack,
                             contentDescription = "الأسبوع السابق",
                             modifier = Modifier.size(28.dp),
                         )
@@ -149,7 +152,7 @@ fun PlanScreen(
                     )
                     MealsIconAction(onClick = onNextWeek, modifier = Modifier.size(44.dp)) {
                         MealsIcon(
-                            MealsIconName.ArrowBack,
+                            MealsIconName.ArrowForward,
                             contentDescription = "الأسبوع التالي",
                             modifier = Modifier.size(28.dp),
                         )
@@ -391,7 +394,9 @@ fun PlanScreen(
                             name = MealsIconName.ChevronRight,
                             contentDescription = if (isExpanded) "طي اليوم" else "عرض وجبات اليوم",
                             modifier = Modifier.size(25.dp).graphicsLayer {
-                                rotationZ = if (isExpanded) 90f else 0f
+                                rotationZ = if (isExpanded) {
+                                            if (layoutDirection == LayoutDirection.Rtl) 270f else 90f
+                                        } else 0f
                             }
                         )
                     }

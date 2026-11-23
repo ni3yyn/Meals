@@ -128,6 +128,7 @@ import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftOrange
 import dz.meals.app.ui.theme.TextAccent
 import dz.meals.app.ui.theme.WarmSurface
+import dz.meals.app.ui.theme.mealsText
 import dz.meals.app.ui.theme.SoftPink
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsNavigationIcon
@@ -319,6 +320,7 @@ fun MealsLiquidGlassProgressBar(
     progressColor: Color = Color(0xFFE6D1B7),
     contentDescription: String = "التقدم"
 ) {
+    val localizedContentDescription = mealsText(contentDescription)
     val targetProgress = progress.coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
@@ -366,7 +368,7 @@ fun MealsLiquidGlassProgressBar(
         modifier = modifier
             .height(height)
             .progressSemantics(targetProgress)
-            .semantics { this.contentDescription = contentDescription },
+            .semantics { this.contentDescription = localizedContentDescription },
         shape = CircleShape,
         elevation = 2.dp,
         face = Brush.verticalGradient(
@@ -870,8 +872,14 @@ fun <T> MealsGlassDropdown(
     maxMenuHeight: Dp = 300.dp
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val layoutDirection = LocalLayoutDirection.current
     val arrowRotation by animateFloatAsState(
-        targetValue = if (expanded) 270f else 90f,
+        targetValue = when {
+            layoutDirection == LayoutDirection.Rtl && expanded -> 90f
+            layoutDirection == LayoutDirection.Rtl -> 270f
+            expanded -> 270f
+            else -> 90f
+        },
         animationSpec = tween(durationMillis = 190, easing = FastOutSlowInEasing),
         label = "mealsDropdownArrowRotation"
     )
@@ -1060,6 +1068,10 @@ fun MealsLiquidGlassTextField(
     isError: Boolean = false,
     singleLine: Boolean = true
 ) {
+    val textDirection = if (
+        keyboardOptions.keyboardType == KeyboardType.Decimal ||
+        keyboardOptions.keyboardType == KeyboardType.Number
+    ) TextDirection.Ltr else TextDirection.Content
     val rim = if (isError) MealsLiquidGlass.errorRim() else MealsLiquidGlass.controlRim()
     MealsLiquidGlassFrame(
         modifier = modifier.fillMaxWidth(),
@@ -1099,7 +1111,8 @@ fun MealsLiquidGlassTextField(
                     keyboardOptions = keyboardOptions,
                     cursorBrush = SolidColor(TextAccent),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = if (enabled) Ink else MutedInk
+                        color = if (enabled) Ink else MutedInk,
+                        textDirection = textDirection
                     )
                 )
                 suffix?.invoke()
@@ -1142,7 +1155,7 @@ fun MealsSearchBar(
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 cursorBrush = SolidColor(TextAccent),
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink, textDirection = TextDirection.Content),
                 decorationBox = { innerTextField ->
                     Box {
                         if (value.isEmpty()) {

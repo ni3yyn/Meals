@@ -1,6 +1,9 @@
 package dz.meals.app.ui.onboarding
 
 import dz.meals.app.ui.components.MealsText as Text
+import dz.meals.app.ui.theme.LocalMealsLocaleTag
+import dz.meals.app.ui.theme.isLogicalForwardSwipe
+import dz.meals.app.ui.theme.mealsText
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -19,6 +22,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -157,8 +161,11 @@ fun MealsOnboarding(
     onQuickStart: (budget: Int, servings: Int) -> Unit,
     onFinish: (MealsOnboardingResult) -> Unit,
     modifier: Modifier = Modifier,
-    backHandler: @Composable (enabled: Boolean, onBack: () -> Unit) -> Unit = { _, _ -> }
+    backHandler: @Composable (enabled: Boolean, onBack: () -> Unit) -> Unit = { _, _ -> },
+    appLanguage: String = initial.appLanguage,
+    onLanguageSelected: (String) -> Unit = {}
 ) {
+    val appLocaleTag = LocalMealsLocaleTag.current
     var budget by rememberSaveable { mutableStateOf(initial.weeklyBudgetDzd.coerceAtLeast(500)) }
     var servings by rememberSaveable { mutableStateOf(initial.householdServings.coerceIn(1, 12)) }
     var wilaya by rememberSaveable { mutableStateOf(initial.wilaya) }
@@ -294,6 +301,8 @@ fun MealsOnboarding(
                             pagerState.currentPage.toFloat() +
                                 pagerState.currentPageOffsetFraction + 1f
                             ).div(PageCount).coerceIn(1f / PageCount, 1f),
+                        appLanguage = appLanguage,
+                        onLanguageSelected = onLanguageSelected,
                         onBack = { goTo(current - 1) }
                     )
 
@@ -317,9 +326,7 @@ fun MealsOnboarding(
                                     },
                                     onDragEnd = {
                                         if (abs(dragDistance) >= swipeThreshold) {
-                                            val movingForward = if (
-                                                layoutDirection == LayoutDirection.Rtl
-                                            ) dragDistance > 0f else dragDistance < 0f
+                                            val movingForward = isLogicalForwardSwipe(dragDistance, layoutDirection)
                                             when {
                                                 movingForward && valid && current < LastPage ->
                                                     goTo(current + 1)
@@ -556,10 +563,11 @@ fun MealsOnboarding(
                                     onValueChange = { query = it },
                                     label = { Text("ابحثي عن مكوّن") }
                                 )
-                                val visible = remember(query, ingredients, dislikes) {
+                                val visible = remember(query, ingredients, dislikes, appLocaleTag) {
                                     val matches = ingredients.filter { ing ->
                                         query.isBlank() ||
                                             ing.nameAr.contains(query, true) ||
+                                                mealsText(ing.nameAr, appLocaleTag).contains(query, true) ||
                                             ing.nameFr.contains(query, true) ||
                                             ing.aliases.any { it.contains(query, true) }
                                     }
@@ -667,16 +675,22 @@ fun MealsOnboarding(
 // ─────────────────────────────── building blocks ───────────────────────────────
 
 @Composable
-private fun Header(current: Int, progress: Float, onBack: () -> Unit) {
+private fun Header(
+    current: Int,
+    progress: Float,
+    appLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    onBack: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth().height(56.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(Modifier.size(44.dp)) {
             if (current > 0) {
-                // In a right-to-left layout "back" points to the right, which is the app's ArrowForward.
+                // Use the semantic Back glyph; MealsIcon mirrors its artwork for RTL.
                 MealsIconButton(onClick = onBack) {
-                    MealsIcon(MealsIconName.ArrowForward, contentDescription = "رجوع", modifier = Modifier.size(26.dp))
+                    MealsIcon(MealsIconName.ArrowBack, contentDescription = "رجوع", modifier = Modifier.size(26.dp))
                 }
             }
         }
@@ -685,7 +699,25 @@ private fun Header(current: Int, progress: Float, onBack: () -> Unit) {
             progress = progress,
             modifier = Modifier.weight(1f)
         )
-        Spacer(Modifier.size(44.dp))
+        Box(
+            Modifier.width(70.dp).height(44.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Text(
+                text = if (appLanguage.startsWith("en", ignoreCase = true)) "العربية" else "English",
+                modifier = Modifier
+                    .clickable {
+                        onLanguageSelected(
+                            if (appLanguage.startsWith("en", ignoreCase = true)) "ar-DZ" else "en"
+                        )
+                    }
+                    .padding(horizontal = 6.dp, vertical = 9.dp),
+                color = TextAccent,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                translate = false
+            )
+        }
     }
 }
 
@@ -740,6 +772,7 @@ private fun StepLayout(
     artCount: Int = 3,
     panel: @Composable ColumnScope.() -> Unit
 ) {
+    val layoutDirection = LocalLayoutDirection.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val panelMax = maxHeight * 0.52f
         Column(
@@ -750,7 +783,7 @@ private fun StepLayout(
                 val offset = pageOffset().coerceIn(-1f, 1f)
                 val away = abs(offset)
                 alpha = 1f - away * 0.16f
-                translationX = -offset * 12.dp.toPx()
+                translationX = -offset * 12.dp.toPx() * if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
                 translationY = away * 10.dp.toPx()
                 val pageScale = lerp(1f, 0.975f, away)
                 scaleX = pageScale

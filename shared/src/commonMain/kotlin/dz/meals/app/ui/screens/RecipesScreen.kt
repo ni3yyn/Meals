@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -71,9 +72,17 @@ import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
+import dz.meals.app.ui.theme.isLogicalForwardSwipe
+import dz.meals.app.ui.theme.isMealsEnglish
+import dz.meals.app.ui.theme.bidiIsolate
+import dz.meals.app.ui.theme.logicalAnimationDirectionSign
+import dz.meals.app.ui.theme.mealsUnitLabel
+import dz.meals.app.shared.format.formatHouseholdQuantity
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.SoftGreen
 import dz.meals.app.ui.theme.WarmSurface
+import dz.meals.app.ui.theme.LocalMealsLocaleTag
+import dz.meals.app.ui.theme.mealsText
 import kotlin.math.abs
 import kotlin.math.roundToLong
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
@@ -99,6 +108,7 @@ fun RecipesScreen(
     var browseDirection by rememberSaveable { mutableStateOf(1) }
     val ingredientNames = ingredients.associateBy { it.id }
     val layoutDirection = LocalLayoutDirection.current
+    val appLocaleTag = LocalMealsLocaleTag.current
 
     fun selectCategory(nextCategory: String) {
         if (nextCategory != category) {
@@ -158,11 +168,7 @@ fun RecipesScreen(
                         },
                         onDragEnd = {
                             if (abs(dragDistance) >= swipeThreshold) {
-                                val movingForward = if (layoutDirection == LayoutDirection.Rtl) {
-                                    dragDistance > 0f
-                                } else {
-                                    dragDistance < 0f
-                                }
+                                val movingForward = isLogicalForwardSwipe(dragDistance, layoutDirection)
                                 when {
                                     showFavorites && !movingForward -> selectFavorites(false)
                                     !showFavorites -> {
@@ -184,6 +190,7 @@ fun RecipesScreen(
                 },
             transitionSpec = {
                 val movingForward = browseDirection > 0
+                val directionSign = logicalAnimationDirectionSign(layoutDirection)
                 val arrivalSpring = spring<IntOffset>(
                     dampingRatio = 0.82f,
                     stiffness = 390f
@@ -191,7 +198,7 @@ fun RecipesScreen(
                 (slideInHorizontally(
                     animationSpec = arrivalSpring,
                     initialOffsetX = { width ->
-                        if (movingForward) width / 5 else -width / 5
+                        (if (movingForward) width / 5 else -width / 5) * directionSign
                     }
                 ) + fadeIn(animationSpec = tween(155, delayMillis = 18)) +
                     scaleIn(
@@ -201,7 +208,7 @@ fun RecipesScreen(
                     (slideOutHorizontally(
                         animationSpec = spring(dampingRatio = 0.94f, stiffness = 560f),
                         targetOffsetX = { width ->
-                            if (movingForward) -width / 12 else width / 12
+                            (if (movingForward) -width / 12 else width / 12) * directionSign
                         }
                     ) + fadeOut(animationSpec = tween(125)) +
                         scaleOut(
@@ -215,17 +222,23 @@ fun RecipesScreen(
             key(page) {
                 val listState = rememberLazyListState()
                 val filtered = recipes.filter { recipe ->
-                    val aliases = recipe.ingredients.flatMap {
-                        ingredientNames[it.ingredientId]?.aliases.orEmpty()
+                    val ingredientMasters = recipe.ingredients.mapNotNull {
+                        ingredientNames[it.ingredientId]
+                    }
+                    val searchableIngredientNames = ingredientMasters.flatMap { master ->
+                        listOf(master.nameAr, master.nameFr, mealsText(master.nameAr, appLocaleTag)) +
+                            master.aliases
                     }
                     recipe.allergens.intersect(allergyIds).isEmpty() &&
                         (!page.first || recipe.id in favoriteRecipeIds) &&
                         (page.second == "الكل" || recipe.category == page.second) &&
                         (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
+                            mealsText(recipe.nameAr, appLocaleTag).contains(query.trim(), true) ||
                             recipe.nameFr.contains(query.trim(), true) ||
                             recipe.descriptionAr.contains(query.trim(), true) ||
+                            mealsText(recipe.descriptionAr, appLocaleTag).contains(query.trim(), true) ||
                             recipe.descriptionFr.contains(query.trim(), true) ||
-                            aliases.any { it.contains(query.trim(), true) })
+                            searchableIngredientNames.any { it.contains(query.trim(), true) })
                 }
 
                 LazyColumn(
@@ -367,16 +380,45 @@ fun RecipesScreen(
                     item { Text("المكونات", fontWeight = FontWeight.Bold) }
                     items(detail.ingredients) { ingredient ->
                         val master = ingredientNames[ingredient.ingredientId]
+                        val ingredientName = mealsText(
+                            master?.nameAr ?: ingredient.ingredientId,
+                            appLocaleTag
+                        )
+                        val quantityLabel = mealsText(
+                            ingredient.quantityBase.formatHouseholdQuantity(ingredient.unit),
+                            appLocaleTag
+                        )
                         Text(
-                            "• " + (master?.nameAr ?: ingredient.ingredientId) +
-                                " — " + ingredient.quantityBase.toString() + " " + ingredient.unit
+                            "• " + bidiIsolate(ingredientName) + " — " + quantityLabel,
+                            translate = false
                         )
                     }
                     item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
-                    items(detail.stepsAr) { step ->
-                        Text((detail.stepsAr.indexOf(step) + 1).toString() + ". " + step)
+                    itemsIndexed(detail.stepsAr) { index, step ->
+                        Text(
+                            bidiIsolate((index + 1).toString()) + ". " + mealsText(step, appLocaleTag),
+                            translate = false
+                        )
                     }
-                    item { Text("الحساسية: " + if (detail.allergens.isEmpty()) "لا توجد مسببات مسجلة" else detail.allergens.joinToString("، ")) }
+                    item {
+                        val allergenLabels = detail.allergens.map { allergen ->
+                            when (allergen) {
+                                "gluten" -> mealsText("الغلوتين", appLocaleTag)
+                                "egg" -> mealsText("البيض", appLocaleTag)
+                                "milk" -> mealsText("الحليب", appLocaleTag)
+                                else -> allergen
+                            }
+                        }
+                        val allergenText = if (allergenLabels.isEmpty()) {
+                            mealsText("لا توجد مسببات مسجلة", appLocaleTag)
+                        } else {
+                            allergenLabels.joinToString(if (isMealsEnglish(appLocaleTag)) ", " else "، ")
+                        }
+                        Text(
+                            mealsText("الحساسية: ", appLocaleTag) + allergenText,
+                            translate = false
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -488,11 +530,7 @@ fun RecipesScreen(
                                     if (!cookingCompleted && stepCount > 0 &&
                                         abs(dragDistance) >= swipeThreshold
                                     ) {
-                                        val movingForward = if (layoutDirection == LayoutDirection.Rtl) {
-                                            dragDistance > 0f
-                                        } else {
-                                            dragDistance < 0f
-                                        }
+                                        val movingForward = isLogicalForwardSwipe(dragDistance, layoutDirection)
                                         when {
                                             movingForward && safeStepIndex < stepCount - 1 -> {
                                                 cookingStepDirection = 1
@@ -599,6 +637,7 @@ fun RecipesScreen(
                             modifier = Modifier.fillMaxSize(),
                             transitionSpec = {
                                 val movingForward = cookingStepDirection > 0
+                                val directionSign = if (layoutDirection == LayoutDirection.Rtl) -1 else 1
                                 val incomingSpring = spring<IntOffset>(
                                     dampingRatio = 0.80f,
                                     stiffness = 410f
@@ -705,28 +744,27 @@ fun RecipesScreen(
                                     val master = ingredientNames[ingredient.ingredientId]
                                     val amount = ingredient.quantityBase * cookingServings.toDouble() /
                                         cookingRecipe.baseServings.coerceAtLeast(1).toDouble()
-                                    val unitLabel = when (ingredient.unit) {
-                                        "g" -> "غ"
-                                        "ml" -> "مل"
-                                        "piece" -> "حبة"
-                                        else -> ingredient.unit
-                                    }
+                                    val unitLabel = mealsUnitLabel(ingredient.unit, appLocaleTag)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            master?.nameAr ?: ingredient.ingredientId,
+                                            bidiIsolate(
+                                                mealsText(master?.nameAr ?: ingredient.ingredientId, appLocaleTag)
+                                            ),
                                             modifier = Modifier.weight(1f),
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = Ink
+                                            color = Ink,
+                                            translate = false
                                         )
                                         Text(
-                                            amount.prettyQuantity() + " " + unitLabel,
+                                            mealsText(amount.prettyQuantity() + " " + unitLabel, appLocaleTag),
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = MutedInk
+                                            color = MutedInk,
+                                            translate = false
                                         )
                                     }
                                 }

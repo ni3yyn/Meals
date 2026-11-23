@@ -3,6 +3,9 @@ package dz.meals.app.ui.screens
 import dz.meals.app.ui.components.MealsText as Text
 
 import dz.meals.app.ui.components.MealsIconAction
+import dz.meals.app.ui.theme.LocalMealsLocaleTag
+import dz.meals.app.ui.theme.mealsText
+import dz.meals.app.ui.theme.mealsUnitLabel
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsTextButton
@@ -66,11 +69,13 @@ fun PantryScreen(
     var search by rememberSaveable { mutableStateOf("") }
     var selectedIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingItem by rememberSaveable { mutableStateOf<PantryItem?>(null) }
+    val appLocaleTag = LocalMealsLocaleTag.current
 
     val selectedIngredient = selectedIngredientId?.let { id -> ingredients.firstOrNull { it.id == id } }
     val matchingIngredients = ingredients.filter { ingredient ->
         search.isNotBlank() && (
             ingredient.nameAr.contains(search.trim(), true) ||
+                mealsText(ingredient.nameAr, appLocaleTag).contains(search.trim(), true) ||
                 ingredient.nameFr.contains(search.trim(), true) ||
                 ingredient.aliases.any { it.contains(search.trim(), true) }
             )
@@ -122,7 +127,13 @@ fun PantryScreen(
                         ) {
                             Column(Modifier.weight(1f)) {
                                 Text(ingredient.nameAr, color = MaterialTheme.colorScheme.onSurface)
-                                Text(ingredient.nameFr + " · " + ingredient.baseUnit, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                mealsText(ingredient.nameAr, appLocaleTag) + " · " +
+                    mealsUnitLabel(ingredient.baseUnit, appLocaleTag),
+                color = MutedInk,
+                style = MaterialTheme.typography.bodySmall,
+                translate = false
+            )
                             }
                             MealsIcon(MealsIconName.Add, contentDescription = "إضافة أو تعديل", modifier = Modifier.size(28.dp))
                         }

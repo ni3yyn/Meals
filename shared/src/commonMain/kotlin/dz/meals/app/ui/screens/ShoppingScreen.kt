@@ -1,6 +1,10 @@
 package dz.meals.app.ui.screens
 
 import dz.meals.app.ui.components.MealsText as Text
+import dz.meals.app.ui.theme.LocalMealsLocaleTag
+import dz.meals.app.ui.theme.bidiIsolate
+import dz.meals.app.ui.theme.mealsText
+import dz.meals.app.ui.theme.logicalStartRevealSign
 
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
@@ -56,6 +60,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.mealsSheetDismissAction
 import dz.meals.app.ui.components.MealsCard
@@ -108,6 +114,8 @@ fun ShoppingScreen(
     onRecordPrice: (String, Double, Double, String) -> Unit,
     onShareList: (String) -> Unit
 ) {
+    val appLocaleTag = LocalMealsLocaleTag.current
+    val layoutDirection = LocalLayoutDirection.current
     var addDialog by rememberSaveable { mutableStateOf(false) }
     var showPurchased by rememberSaveable { mutableStateOf(false) }
     var showPriceHistory by rememberSaveable { mutableStateOf(false) }
@@ -179,7 +187,7 @@ fun ShoppingScreen(
                     )
                     MealsSecondaryButton(
                         label = "مشاركة",
-                        onClick = { onShareList(buildShoppingShareText(rows, snapshot)) },
+                        onClick = { onShareList(buildShoppingShareText(rows, snapshot, appLocaleTag)) },
                         modifier = Modifier.weight(1f),
                         enabled = rows.isNotEmpty()
                     )
@@ -484,7 +492,11 @@ fun ShoppingScreen(
                                         modifier = Modifier
                                             .padding(start = 7.dp)
                                             .size(21.dp)
-                                            .graphicsLayer { rotationZ = if (expandedCategories[category] == false) 0f else 90f }
+                                            .graphicsLayer {
+                                                rotationZ = if (expandedCategories[category] == false) 0f else {
+                                                    if (layoutDirection == LayoutDirection.Rtl) 270f else 90f
+                                                }
+                                            }
                                     )
                                 }
                                 AnimatedVisibility(
@@ -751,10 +763,14 @@ private fun PriceReportDialog(
                     )
                 }
                 Text(
-                    "الوحدة الأساسية: " + (selectedIngredient?.baseUnit?.let { formatHouseholdUnit(it) } ?: "—") +
-                        " · الولاية: " + wilaya,
+                    mealsText(
+                        "الوحدة الأساسية: " +
+                            (selectedIngredient?.baseUnit?.let { formatHouseholdUnit(it) } ?: "—"),
+                        appLocaleTag
+                    ) + " · " + mealsText("الولاية", appLocaleTag) + " " + bidiIsolate(wilaya),
                     color = MutedInk,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    translate = false
                 )
                 MealsLiquidGlassTextField(
                     value = packQuantityText,
@@ -830,14 +846,14 @@ private fun PriceObservationRow(price: PriceObservationSummary) {
             Text(price.packPriceDzd.toInt().formatDzd(), fontWeight = FontWeight.Bold, color = Ink)
         }
         Text(
-            price.packQuantityBase.formatHouseholdQuantity(price.unit) + " · " +
-                price.locationLabel + " · " + date,
+            mealsText(price.packQuantityBase.formatHouseholdQuantity(price.unit)) + " · " +
+                bidiIsolate(price.locationLabel) + " · " + date,
             color = MutedInk,
             style = MaterialTheme.typography.bodySmall
         )
         Text(
-            price.sourceLabel + " · " +
-                if (price.priceKind == "demo") "قيمة تجريبية" else "ملاحظة مستخدم غير موثّقة",
+            mealsText(price.sourceLabel) + " · " +
+                mealsText(if (price.priceKind == "demo") "قيمة تجريبية" else "ملاحظة مستخدم غير موثّقة"),
             color = MutedInk,
             style = MaterialTheme.typography.labelSmall
         )
@@ -860,16 +876,21 @@ private fun ShoppingItemRow(
 ) {
     val actionWidth = 56.dp
     val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
+    val layoutDirection = LocalLayoutDirection.current
+    // Reveal the action at logical Start. The foreground moves right in LTR and left in RTL.
+    val revealSign = logicalStartRevealSign(layoutDirection)
+    val minDragOffset = minOf(0f, revealSign * actionWidthPx)
+    val maxDragOffset = maxOf(0f, revealSign * actionWidthPx)
     var dragOffset by remember(item.id) { mutableFloatStateOf(0f) }
     var isDragging by remember(item.id) { mutableStateOf(false) }
     var isActionRevealed by remember(item.id) { mutableStateOf(false) }
     val settledOffset by animateFloatAsState(
-        targetValue = if (isActionRevealed) -actionWidthPx else 0f,
+        targetValue = if (isActionRevealed) revealSign * actionWidthPx else 0f,
         animationSpec = spring(dampingRatio = 0.86f, stiffness = 520f),
         label = "shoppingSwipeSettle"
     )
     val dragState = rememberDraggableState { delta ->
-        dragOffset = (dragOffset + delta).coerceIn(-actionWidthPx, 0f)
+        dragOffset = (dragOffset + delta).coerceIn(minDragOffset, maxDragOffset)
     }
     val foregroundOffset = if (isDragging) dragOffset else settledOffset
 
@@ -904,10 +925,14 @@ private fun ShoppingItemRow(
                 .draggable(
                     state = dragState,
                     orientation = Orientation.Horizontal,
-                    onDragStarted = { isDragging = true },
+                    onDragStarted = {
+                        // Begin from the settled position so a second swipe can close the action.
+                        dragOffset = settledOffset
+                        isDragging = true
+                    },
                     onDragStopped = {
                         isDragging = false
-                        isActionRevealed = dragOffset < -actionWidthPx * 0.42f
+                        isActionRevealed = dragOffset * revealSign > actionWidthPx * 0.42f
                         dragOffset = 0f
                     }
                 )
@@ -925,6 +950,7 @@ private fun ShoppingItemRow(
             ) {
                 Text(
                     item.name,
+                    translate = !item.userAdded,
                     color = if (item.checked) MutedInk else dz.meals.app.ui.theme.Ink,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -965,10 +991,11 @@ private fun ShoppingItemRow(
                 if (item.isApproximatePantry || item.isUnavailable || item.storeNote.isNotBlank()) {
                     Text(
                         listOfNotNull(
-                            if (item.isApproximatePantry) "مخزون تقريبي" else null,
-                            if (item.isUnavailable) "غير متوفر" else null,
-                            item.storeNote.takeIf { it.isNotBlank() }
+                            if (item.isApproximatePantry) mealsText("مخزون تقريبي") else null,
+                            if (item.isUnavailable) mealsText("غير متوفر") else null,
+                            item.storeNote.takeIf { it.isNotBlank() }?.let(::bidiIsolate)
                         ).joinToString(" · "),
+                        translate = false,
                         color = MutedInk,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
@@ -990,12 +1017,13 @@ private fun ShoppingItemRow(
 
 private fun buildShoppingShareText(
     rows: List<ShoppingListItem>,
-    snapshot: MealsSnapshot
+    snapshot: MealsSnapshot,
+    localeTag: String
 ): String = buildString {
-    appendLine("قائمة مشتريات Midati")
-    appendLine("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd())
+    appendLine(mealsText("قائمة مشتريات Midati", localeTag))
+    appendLine(mealsText("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(), localeTag))
     if (snapshot.basket.actualSpendDzd > 0.0) {
-        appendLine("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd())
+        appendLine(mealsText("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(), localeTag))
     }
     appendLine()
 
@@ -1003,25 +1031,25 @@ private fun buildShoppingShareText(
         rows.groupBy { row: ShoppingListItem -> row.category }
 
     groupedRows.keys.sorted().forEach { category: String ->
-        appendLine(category)
+        appendLine(mealsText(category, localeTag))
         val categoryRows: List<ShoppingListItem> = groupedRows.getValue(category)
         categoryRows.forEach { item: ShoppingListItem ->
             append(if (item.checked) "[x] " else "[ ] ")
-            append(item.name)
+            append(bidiIsolate(if (item.userAdded) item.name else mealsText(item.name, localeTag)))
             append(" — ")
-            append(item.purchaseQuantity.formatHouseholdQuantity(item.unit))
+            append(mealsText(item.purchaseQuantity.formatHouseholdQuantity(item.unit), localeTag))
             val itemCost: Double? = item.cashOutlayDzd
-            if (itemCost != null) append(" · " + itemCost.toInt().formatDzd())
-            if (item.isUnavailable) append(" · غير متوفر")
-            if (item.storeNote.isNotBlank()) append(" · " + item.storeNote)
+            if (itemCost != null) append(" · " + mealsText(itemCost.toInt().formatDzd(), localeTag))
+            if (item.isUnavailable) append(" · " + mealsText("غير متوفر", localeTag))
+            if (item.storeNote.isNotBlank()) append(" · " + bidiIsolate(item.storeNote))
             appendLine()
         }
         appendLine()
     }
     if (snapshot.basket.unknownPriceCount > 0) {
-        appendLine("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.")
+        appendLine(mealsText("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.", localeTag))
     }
-    append("الأسعار تقديرية وليست ضماناً لسعر المحل أو التوفر.")
+    append(mealsText("الأسعار تقديرية وليست ضماناً لسعر المحل أو التوفر.", localeTag))
 }
 
 
