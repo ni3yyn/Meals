@@ -1568,7 +1568,21 @@ private fun HouseholdPreferencesDialog(
                 2 -> {
                     Text("هل هناك أطعمة يجب تجنبها؟", style = MaterialTheme.typography.titleMedium)
                     Text("نستخدم هذه الاختيارات لاستبعاد الوصفات التي قد لا تناسب عائلتك.", color = dz.meals.app.ui.theme.MutedInk, style = MaterialTheme.typography.bodySmall)
-                    listOf("gluten" to "الغلوتين", "egg" to "البيض", "milk" to "الحليب").forEach { (id, label) ->
+                    listOf(
+                        "gluten" to "الغلوتين",
+                        "egg" to "البيض",
+                        "milk" to "الحليب",
+                        "tree_nuts" to "المكسرات",
+                        "celery" to "الكرفس",
+                        "sulphites" to "الكبريتيت",
+                        "fish" to "السمك",
+                        "mustard" to "الخردل",
+                        "crustaceans" to "القشريات",
+                        "soy" to "فول الصويا",
+                        "sesame" to "السمسم",
+                        "molluscs" to "الرخويات",
+                        "peanuts" to "الفول السوداني"
+                    ).forEach { (id, label) ->
                         MealsCheckRow(
                             title = label,
                             checked = id in allergies,
@@ -1601,11 +1615,13 @@ private fun HouseholdPreferencesDialog(
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     ingredients.filter { ingredient ->
-                        searchIngredient.isBlank() ||
-                            ingredient.nameAr.contains(searchIngredient, true) ||
-                            mealsText(ingredient.nameAr, appLanguage).contains(searchIngredient, true) ||
-                            ingredient.nameFr.contains(searchIngredient, true) ||
-                            ingredient.aliases.any { it.contains(searchIngredient, true) }
+                        !ingredient.id.startsWith("orc-ing-") && (
+                            searchIngredient.isBlank() ||
+                                ingredient.nameAr.contains(searchIngredient, true) ||
+                                mealsText(ingredient.nameAr, appLanguage).contains(searchIngredient, true) ||
+                                ingredient.nameFr.contains(searchIngredient, true) ||
+                                ingredient.aliases.any { it.contains(searchIngredient, true) }
+                        )
                     }.take(10).forEach { ingredient ->
                         MealsCheckRow(
                             title = mealsText(ingredient.nameAr, appLanguage),
