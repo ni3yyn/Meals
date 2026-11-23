@@ -72,6 +72,17 @@ actual fun Modifier.mealsGlassBlur(
 actual fun Modifier.mealsHazeSource(state: HazeState, zIndex: Float): Modifier =
     hazeSource(state, zIndex = zIndex)
 
+@Suppress("DEPRECATION")
+private fun configureLegacyDialogNavigationBar(window: android.view.Window) {
+    if (Build.VERSION.SDK_INT >= 35) return
+
+    window.navigationBarColor = AndroidColor.TRANSPARENT
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        window.isNavigationBarContrastEnforced = false
+        window.navigationBarDividerColor = AndroidColor.TRANSPARENT
+    }
+}
+
 @Composable
 actual fun MealsModalWindowBlur() {
     val view = LocalView.current
@@ -85,12 +96,7 @@ actual fun MealsModalWindowBlur() {
     // scrim interpolation, or per-frame system-bar updates are used.
     DisposableEffect(window) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.navigationBarColor = AndroidColor.TRANSPARENT
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-            window.navigationBarDividerColor = AndroidColor.TRANSPARENT
-        }
+        configureLegacyDialogNavigationBar(window)
 
         WindowInsetsControllerCompat(window, window.decorView).apply {
             // Match the app's warm, light surfaces with dark navigation glyphs.

@@ -89,7 +89,7 @@ object MealsStartupLogger {
 
         val report = buildString {
             append(timestamp()).append("  [FATAL CRASH]\n")
-            append("Thread: ").append(thread.name).append(" (").append(thread.id).append(")\n")
+            append("Thread: ").append(thread.name).append(" (").append("legacy-thread-id-omitted").append(")\n")
             append("App version: ").append(appVersion).append("\n")
             append(writer.toString()).append("\n")
         }
