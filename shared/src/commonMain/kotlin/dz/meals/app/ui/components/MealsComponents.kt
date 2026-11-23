@@ -1745,6 +1745,8 @@ fun MealsBottomSheet(
         }
 }
 
+}
+
 /** A navigation drawer keeps its drawer interaction but shares the glass modal material. */
 @Composable
 fun MealsNavigationDrawer(
