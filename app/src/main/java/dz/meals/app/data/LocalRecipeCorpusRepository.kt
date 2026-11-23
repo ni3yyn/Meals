@@ -3,6 +3,11 @@ package dz.meals.app.data
 import android.content.Context
 import android.text.Html
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -78,6 +83,9 @@ data class LocalCorpusTranslation(
 class LocalRecipeCorpusRepository(context: Context) {
     private val appContext = context.applicationContext
     private val translationCacheDir = File(appContext.filesDir, "recipe-corpus-translations")
+    // MyMemory allows small segments. Bound parallel requests to keep the
+    // anonymous service responsive without flooding it or losing segment order.
+    private val translationRequestPermits = Semaphore(4)
     private val httpClient = OkHttpClient.Builder()
         .callTimeout(25, TimeUnit.SECONDS)
         .build()
@@ -115,17 +123,31 @@ class LocalRecipeCorpusRepository(context: Context) {
         withContext(Dispatchers.IO) {
             loadCachedTranslation(recipe)?.let { return@withContext it }
 
-            val translated = LocalCorpusTranslation(
-                name = translateText(recipe.name, recipe.language),
-                summary = translateText(recipe.summary, recipe.language),
-                ingredients = recipe.ingredients.map { ingredient ->
-                    LocalCorpusIngredientTranslation(
-                        name = translateText(ingredient.name, recipe.language),
-                        note = translateText(ingredient.note, recipe.language)
-                    )
-                },
-                steps = recipe.steps.map { step -> translateText(step, recipe.language) }
-            )
+            // Translate independent recipe fields concurrently. Each field also
+            // translates its own byte-limited chunks concurrently; the shared
+            // semaphore caps total in-flight HTTP requests at four.
+            val translated = coroutineScope {
+                val name = async { translateText(recipe.name, recipe.language) }
+                val summary = async { translateText(recipe.summary, recipe.language) }
+                val ingredients = recipe.ingredients.map { ingredient ->
+                    async {
+                        LocalCorpusIngredientTranslation(
+                            name = translateText(ingredient.name, recipe.language),
+                            note = translateText(ingredient.note, recipe.language)
+                        )
+                    }
+                }
+                val steps = recipe.steps.map { step ->
+                    async { translateText(step, recipe.language) }
+                }
+
+                LocalCorpusTranslation(
+                    name = name.await(),
+                    summary = summary.await(),
+                    ingredients = ingredients.awaitAll(),
+                    steps = steps.awaitAll()
+                )
+            }
 
             val output = JSONObject()
                 .put("schemaVersion", 1)
@@ -245,7 +267,7 @@ class LocalRecipeCorpusRepository(context: Context) {
         )
     }
 
-    private fun translateText(sourceText: String, sourceLanguage: String): String {
+    private suspend fun translateText(sourceText: String, sourceLanguage: String): String {
         if (sourceText.isBlank()) return sourceText
         val tokens = mutableListOf<String>()
         val protectedText = NUMBER_PATTERN.replace(sourceText) { match ->
@@ -253,8 +275,14 @@ class LocalRecipeCorpusRepository(context: Context) {
             "MIDATINUMTOKEN" + (tokens.lastIndex) + "END"
         }
 
-        val translated = splitForApi(protectedText).joinToString(" ") { chunk ->
-            translateChunk(chunk, sourceLanguage)
+        val translated = coroutineScope {
+            splitForApi(protectedText).map { chunk ->
+                async(Dispatchers.IO) {
+                    translationRequestPermits.withPermit {
+                        translateChunk(chunk, sourceLanguage)
+                    }
+                }
+            }.awaitAll().joinToString(" ")
         }
 
         var restored = translated
