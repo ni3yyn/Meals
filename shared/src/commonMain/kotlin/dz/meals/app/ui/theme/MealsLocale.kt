@@ -124,6 +124,7 @@ private fun translateDynamicMealsText(source: String): String? {
             val localizedArgument = when (pattern.pattern) {
                 "^إضافة (.+)$", "^تعديل (.+)$", "^اختر وصفة لـ (.+)$" ->
                     MealsEnglishTranslations.translate(argument) ?: argument
+                "^الكمية \\((.+)\\)$",
                 "^الوحدة: (.+)$", "^الوحدة الأساسية: (.+)$",
                 "^حجم العبوة أو الكمية المباعة \\((.+)\\)$" ->
                     translateUnitSymbol(argument) ?: argument
