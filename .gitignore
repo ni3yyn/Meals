@@ -12,3 +12,6 @@ captures/
 *.aab
 *.jks
 *.keystore
+
+# Downloaded locally for the temporary Debug-only recipe translation tester.
+local-data/open-recipe-corpus/

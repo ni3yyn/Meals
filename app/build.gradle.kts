@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Sync
 
 plugins {
     alias(libs.plugins.android.application)
@@ -22,6 +23,34 @@ val hasReleaseSigning = listOf(
 ).all { !it.isNullOrBlank() }
 
 val generatedTajawalRes = layout.buildDirectory.dir("generated/tajawal-res")
+val localRecipeCorpusDir = rootProject.file("local-data/open-recipe-corpus")
+val generatedRecipeCorpusAssets = layout.buildDirectory.dir("generated/recipe-corpus/debug-assets")
+val prepareRecipeCorpusDebugAssets = tasks.register<Sync>("prepareRecipeCorpusDebugAssets") {
+    from(localRecipeCorpusDir) {
+        include(
+            "data/recipes.jsonl",
+            "data/sources.json",
+            "data/text/en.jsonl",
+            "data/text/pl.jsonl"
+        )
+    }
+    into(generatedRecipeCorpusAssets)
+    doLast {
+        val requiredFiles = listOf(
+            "data/recipes.jsonl",
+            "data/text/en.jsonl",
+            "data/text/pl.jsonl"
+        )
+        val missingFiles = requiredFiles.filterNot {
+            generatedRecipeCorpusAssets.get().file(it).asFile.isFile
+        }
+        if (missingFiles.isNotEmpty()) {
+            logger.lifecycle(
+                "Midati local recipe corpus is not installed. Run: python tools/download_recipe_corpus.py"
+            )
+        }
+    }
+}
 val copyTajawalFonts = tasks.register<Copy>("copyTajawalFonts") {
     from(rootProject.file("shared/src/commonMain/composeResources/font")) {
         include(
@@ -101,6 +130,8 @@ android {
     // The same shared Tajawal assets are exposed as Android font resources
     // for a deterministic native Typeface fallback in MainActivity.
     sourceSets.getByName("main").res.srcDir(generatedTajawalRes.get().asFile)
+    // Local corpus assets are attached to Debug only, never to release APKs.
+    sourceSets.getByName("debug").assets.srcDir(generatedRecipeCorpusAssets.get().asFile)
 
     room {
         schemaDirectory("$projectDir/schemas")
@@ -130,6 +161,10 @@ tasks.configureEach {
     if (isFontResourceConsumer && name != "copyTajawalFonts") {
         dependsOn(copyTajawalFonts)
     }
+}
+
+tasks.matching { it.name == "mergeDebugAssets" }.configureEach {
+    dependsOn(prepareRecipeCorpusDebugAssets)
 }
 
 dependencies {

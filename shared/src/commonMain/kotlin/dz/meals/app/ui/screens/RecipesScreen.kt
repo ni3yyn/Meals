@@ -94,7 +94,8 @@ fun RecipesScreen(
     allergyIds: Set<String>,
     favoriteRecipeIds: Set<String>,
     onToggleFavorite: (String) -> Unit,
-    onAddRecipe: (String) -> Unit
+    onAddRecipe: (String) -> Unit,
+    onOpenRecipeCorpusTester: (() -> Unit)? = null
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
@@ -135,6 +136,13 @@ fun RecipesScreen(
         ) {
             Text("وصفات من مطبخنا", style = MaterialTheme.typography.headlineMedium)
             Text("ابحث بالعربية أو الفرنسية أو بأسماء المكونات المحلية.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+            onOpenRecipeCorpusTester?.let { openTester ->
+                MealsSecondaryButton(
+                    label = "اختبار الترجمة والبيانات",
+                    onClick = openTester,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             MealsSearchBar(
                 value = query,
                 onValueChange = { query = it },

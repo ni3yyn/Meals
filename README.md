@@ -47,6 +47,10 @@ Release ID: `dz.meals.app`
 
 See [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) for status and the remaining roadmap.
 
+For the temporary local recipe corpus and Arabic translation tester, see
+[docs/RECIPE_CORPUS_TESTING.md](docs/RECIPE_CORPUS_TESTING.md). The corpus is
+downloaded into an ignored local folder and included in Debug builds only.
+
 
 ## Signed releases and in-app updates
 

@@ -86,7 +86,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dz.meals.app.BuildConfig
+import dz.meals.app.data.LocalCorpusRecipe
+import dz.meals.app.data.LocalCorpusTranslation
+import dz.meals.app.data.LocalRecipeCorpusRepository
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.AppUpdateChecker
 import dz.meals.app.data.AppUpdateCheckResult
@@ -226,6 +231,14 @@ private fun MealsAppContent(
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }
 
     var snapshot by remember { mutableStateOf(MealsSnapshot()) }
+    val recipeCorpusRepository = remember(context) { LocalRecipeCorpusRepository(context) }
+    var showRecipeCorpusTester by rememberSaveable { mutableStateOf(false) }
+    var recipeCorpusLoading by remember { mutableStateOf(false) }
+    var recipeCorpusLoadError by remember { mutableStateOf<String?>(null) }
+    var recipeCorpusRecipes by remember { mutableStateOf<List<LocalCorpusRecipe>>(emptyList()) }
+    var recipeCorpusTranslations by remember { mutableStateOf<Map<String, LocalCorpusTranslation>>(emptyMap()) }
+    var recipeCorpusTranslating by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var recipeCorpusTranslationErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Plan) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showHouseholdSettings by rememberSaveable { mutableStateOf(false) }
@@ -239,8 +252,14 @@ private fun MealsAppContent(
     var availableUpdate by remember { mutableStateOf<AppUpdateInfo?>(null) }
 
     BackHandler(
+        enabled = showRecipeCorpusTester,
+        onBack = { showRecipeCorpusTester = false }
+    )
+
+    BackHandler(
         enabled = preferencesLoaded && preferences.hasCompletedSetup &&
-            !showSettings && !showHouseholdSettings && !showUpdateDialog && !showExitConfirmation,
+            !showSettings && !showHouseholdSettings && !showUpdateDialog &&
+            !showExitConfirmation && !showRecipeCorpusTester,
         onBack = { showExitConfirmation = true }
     )
 
@@ -482,7 +501,25 @@ private fun MealsAppContent(
                             generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
                             perform { repository.addRecipeToNextSlot(weekStartIso, id, preferences.householdServings) }
                             selectedTab = AppTab.Plan
-                        }
+                        },
+                        onOpenRecipeCorpusTester = if (BuildConfig.DEBUG) {
+                            {
+                                showRecipeCorpusTester = true
+                                if (recipeCorpusRecipes.isEmpty() && !recipeCorpusLoading) {
+                                    scope.launch {
+                                        recipeCorpusLoading = true
+                                        recipeCorpusLoadError = null
+                                        try {
+                                            recipeCorpusRecipes = recipeCorpusRepository.loadRecipes()
+                                        } catch (error: Exception) {
+                                            recipeCorpusLoadError = error.message ?: "تعذر تحميل بيانات الوصفات."
+                                        } finally {
+                                            recipeCorpusLoading = false
+                                        }
+                                    }
+                                }
+                            }
+                        } else null
                     )
                     AppTab.Shopping -> ShoppingScreen(
                         snapshot = snapshot,
@@ -665,6 +702,50 @@ private fun MealsAppContent(
                     }
                 }
             )
+        }
+
+        if (showRecipeCorpusTester && BuildConfig.DEBUG) {
+            Dialog(
+                onDismissRequest = { showRecipeCorpusTester = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                RecipeCorpusTesterScreen(
+                    recipes = recipeCorpusRecipes,
+                    isLoading = recipeCorpusLoading,
+                    loadError = recipeCorpusLoadError,
+                    translations = recipeCorpusTranslations,
+                    translatingKeys = recipeCorpusTranslating,
+                    translationErrors = recipeCorpusTranslationErrors,
+                    onSelectRecipe = { recipe ->
+                        if (recipe.key !in recipeCorpusTranslations) {
+                            scope.launch {
+                                val cached = recipeCorpusRepository.loadCachedTranslation(recipe)
+                                if (cached != null) {
+                                    recipeCorpusTranslations = recipeCorpusTranslations + (recipe.key to cached)
+                                }
+                            }
+                        }
+                    },
+                    onTranslate = { recipe ->
+                        if (recipe.key !in recipeCorpusTranslating) {
+                            scope.launch {
+                                recipeCorpusTranslating = recipeCorpusTranslating + recipe.key
+                                recipeCorpusTranslationErrors = recipeCorpusTranslationErrors - recipe.key
+                                try {
+                                    val translation = recipeCorpusRepository.translateAndCache(recipe)
+                                    recipeCorpusTranslations = recipeCorpusTranslations + (recipe.key to translation)
+                                } catch (error: Exception) {
+                                    recipeCorpusTranslationErrors = recipeCorpusTranslationErrors +
+                                        (recipe.key to (error.message ?: "تعذرت ترجمة الوصفة."))
+                                } finally {
+                                    recipeCorpusTranslating = recipeCorpusTranslating - recipe.key
+                                }
+                            }
+                        }
+                    },
+                    onClose = { showRecipeCorpusTester = false }
+                )
+            }
         }
 
         if (showUpdateDialog) {
