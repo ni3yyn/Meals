@@ -297,6 +297,10 @@ private fun MealsAppContent(
                 // This also protects restored launches that reopen directly on Recipes.
                 repository.ensureInitialized()
                 if (arabicCatalogueInstaller.isInstalled()) {
+                    // The first app snapshot may have populated a seed-only ingredient cache
+                    // before the recipes tab was opened. Refresh both lookups even when the
+                    // on-disk catalogue is already current.
+                    repository.invalidateCatalogueCache()
                     refresh()
                     cataloguePhase = RecipeCataloguePhase.READY
                     return@launch

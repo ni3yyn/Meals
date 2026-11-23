@@ -477,24 +477,27 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
     private fun normalizeMeasure(quantity: String, sourceUnit: String): NormalizedMeasure {
         val amount = parseQuantity(quantity)
-        return when (sourceUnit.trim().lowercase()) {
+        val normalizedUnit = sourceUnit.trim().lowercase().replace(Regex("[\\s_-]+"), "")
+        return when (normalizedUnit) {
             "kg" -> NormalizedMeasure(amount?.times(1000.0), "g")
             "mg" -> NormalizedMeasure(amount?.div(1000.0), "g")
             "oz" -> NormalizedMeasure(amount?.times(28.3495), "g")
             "lb", "lbs" -> NormalizedMeasure(amount?.times(453.592), "g")
             "l" -> NormalizedMeasure(amount?.times(1000.0), "ml")
-            "pcs", "pc" -> NormalizedMeasure(amount, "piece")
+            "pcs", "pc", "piece", "pieces" -> NormalizedMeasure(amount, "piece")
             "g" -> NormalizedMeasure(amount, "g")
             "ml" -> NormalizedMeasure(amount, "ml")
-            "tbsp" -> NormalizedMeasure(amount, "ملعقة كبيرة")
-            "tsp" -> NormalizedMeasure(amount, "ملعقة صغيرة")
-            "cup" -> NormalizedMeasure(amount, "كوب")
-            "to_taste" -> NormalizedMeasure(null, "حسب الحاجة")
-            "pinch" -> NormalizedMeasure(amount, "رشة")
-            "clove" -> NormalizedMeasure(amount, "فص")
-            "bunch" -> NormalizedMeasure(amount, "ربطة")
-            "slice" -> NormalizedMeasure(amount, "شريحة")
-            "handful" -> NormalizedMeasure(amount, "حفنة")
+            "tbsp", "tbs", "tablespoon", "tablespoons" -> NormalizedMeasure(amount, "ملعقة كبيرة")
+            "tsp", "teaspoon", "teaspoons" -> NormalizedMeasure(amount, "ملعقة صغيرة")
+            "cup", "cups" -> NormalizedMeasure(amount, "كوب")
+            "totaste", "taste" -> NormalizedMeasure(null, "حسب الحاجة")
+            "pinch", "pinches" -> NormalizedMeasure(amount, "رشة")
+            "clove", "cloves" -> NormalizedMeasure(amount, "فص")
+            "bunch", "bunches" -> NormalizedMeasure(amount, "ربطة")
+            "slice", "slices" -> NormalizedMeasure(amount, "شريحة")
+            "handful", "handfuls" -> NormalizedMeasure(amount, "حفنة")
+            "sprig", "sprigs" -> NormalizedMeasure(amount, "sprig")
+            "stalk", "stalks" -> NormalizedMeasure(amount, "stalk")
             "" -> NormalizedMeasure(
                 amount,
                 if (quantity.isBlank()) "حسب الحاجة" else "piece"

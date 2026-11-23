@@ -3,6 +3,8 @@ package dz.meals.app.ui.theme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.LayoutDirection
+import dz.meals.app.shared.format.prettyQuantity
+import kotlin.math.abs
 
 /**
  * The active app language, independent of the device language.
@@ -281,6 +283,74 @@ fun isLogicalForwardSwipe(
  * Display a stable domain unit in the active UI language. Unit IDs remain
  * machine-readable (g/ml/piece) in storage and calculations.
  */
+/**
+ * Formats the amount shown beside a recipe ingredient. The imported recipe
+ * catalogue includes cooking units beyond the pantry's base units, so never
+ * leak raw source labels such as "sprig" or "toTaste" into the UI.
+ */
+fun mealsRecipeIngredientQuantity(quantity: Double, unit: String, localeTag: String): String {
+    if (!quantity.isFinite()) return "—"
+    val normalized = unit.trim().lowercase()
+    val english = isMealsEnglish(localeTag)
+    val number = quantity.prettyQuantity()
+
+    if (normalized in setOf("totaste", "to_taste", "to taste", "حسب الحاجة")) {
+        return if (english) "to taste" else "حسب الحاجة"
+    }
+
+    fun countedArabic(one: String, two: String, many: String): String = when (quantity) {
+        1.0 -> one
+        2.0 -> two
+        else -> "$number $many"
+    }
+
+    fun countedEnglish(one: String, many: String): String =
+        "$number " + if (quantity == 1.0) one else many
+
+    return when (normalized) {
+        "g" -> if (abs(quantity) >= 1000.0) {
+            "${(quantity / 1000.0).prettyQuantity()} ${if (english) "kg" else "كغ"}"
+        } else "$number ${if (english) "g" else "غ"}"
+        "ml" -> if (abs(quantity) >= 1000.0) {
+            "${(quantity / 1000.0).prettyQuantity()} ${if (english) "L" else "لتر"}"
+        } else "$number ${if (english) "ml" else "مل"}"
+        "piece", "pieces", "pc", "pcs" -> if (english) {
+            countedEnglish("piece", "pieces")
+        } else countedArabic("حبة", "حبتان", "حبات")
+        "tbsp", "tbs", "tbsps", "tablespoon", "tablespoons", "ملعقة كبيرة" -> if (english) {
+            countedEnglish("tablespoon", "tablespoons")
+        } else countedArabic("ملعقة كبيرة", "ملعقتان كبيرتان", "ملاعق كبيرة")
+        "tsp", "tsps", "teaspoon", "teaspoons", "ملعقة صغيرة" -> if (english) {
+            countedEnglish("teaspoon", "teaspoons")
+        } else countedArabic("ملعقة صغيرة", "ملعقتان صغيرتان", "ملاعق صغيرة")
+        "cup", "cups", "كوب" -> if (english) {
+            countedEnglish("cup", "cups")
+        } else countedArabic("كوب", "كوبان", "أكواب")
+        "sprig", "sprigs" -> if (english) {
+            countedEnglish("sprig", "sprigs")
+        } else countedArabic("غصن", "غصنان", "أغصان")
+        "clove", "cloves", "فص" -> if (english) {
+            countedEnglish("clove", "cloves")
+        } else countedArabic("فص", "فصان", "فصوص")
+        "pinch", "pinches", "رشة" -> if (english) {
+            countedEnglish("pinch", "pinches")
+        } else countedArabic("رشة", "رشتان", "رشات")
+        "bunch", "bunches", "ربطة" -> if (english) {
+            countedEnglish("bunch", "bunches")
+        } else countedArabic("ربطة", "ربطتان", "ربطات")
+        "slice", "slices", "شريحة" -> if (english) {
+            countedEnglish("slice", "slices")
+        } else countedArabic("شريحة", "شريحتان", "شرائح")
+        "handful", "handfuls", "حفنة" -> if (english) {
+            countedEnglish("handful", "handfuls")
+        } else countedArabic("حفنة", "حفنتان", "حفنات")
+        "stalk", "stalks" -> if (english) {
+            countedEnglish("stalk", "stalks")
+        } else countedArabic("عود", "عودان", "أعواد")
+        else -> "$number ${mealsUnitLabel(unit, localeTag)}"
+    }
+}
+
 fun mealsUnitLabel(unit: String, localeTag: String): String {
     val normalized = unit.trim().lowercase()
     return if (isMealsEnglish(localeTag)) {
@@ -290,6 +360,10 @@ fun mealsUnitLabel(unit: String, localeTag: String): String {
             "piece" -> "piece"
             "kg" -> "kg"
             "l" -> "L"
+            "sprig", "sprigs" -> "sprig"
+            "totaste", "to_taste" -> "to taste"
+            "tbsp" -> "tbsp"
+            "tsp" -> "tsp"
             else -> unit
         }
     } else {
@@ -299,6 +373,10 @@ fun mealsUnitLabel(unit: String, localeTag: String): String {
             "piece" -> "حبة"
             "kg" -> "كغ"
             "l" -> "لتر"
+            "sprig", "sprigs" -> "غصن"
+            "totaste", "to_taste" -> "حسب الحاجة"
+            "tbsp" -> "ملعقة كبيرة"
+            "tsp" -> "ملعقة صغيرة"
             else -> unit
         }
     }
