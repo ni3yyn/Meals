@@ -59,6 +59,10 @@ jobs:
         if: always()
         shell: bash
         run: |
+          if [[ ! -f data/recipes/ar/recipes.json ]]; then
+            echo "No translation output was created in this run."
+            exit 0
+          fi
           git add data/recipes/ar/recipes.json
           if git diff --cached --quiet; then
             echo "No translated recipe changes to commit."
