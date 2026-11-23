@@ -194,7 +194,7 @@ def _replace_pork_text(text: str) -> tuple[str, list[dict[str, str]]]:
 
     # An unspecified sausage is commonly pork-based; use a neutral beef substitute.
     def sausage_replacement(match: re.Match[str]) -> str:
-        return "beef sausages" if match.group(2) else "beef sausage"
+        return "beef sausages" if match.group(0).lower().endswith("s") else "beef sausage"
     text, sausage_count = re.subn(r"\bsausages?\b", sausage_replacement, text, flags=re.IGNORECASE)
     if sausage_count:
         changes.append({"replacement": "beef sausage", "occurrences": str(sausage_count)})
