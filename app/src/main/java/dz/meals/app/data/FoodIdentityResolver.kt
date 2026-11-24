@@ -112,7 +112,7 @@ class FoodIdentityResolver(context: Context) {
             "chickpeas" to "ba7f4611-f247-4be4-89ea-41f970be51c1",
             "tomato" to "f04fe295-6527-4e4e-b9b2-68de6ed1dd29",
             "lentils" to "d3274082-ddb1-425d-9261-fbbb9230a28e",
-            "onion" to "a5d374ee-6cd7-430f-9d69-e26c1967ba57",
+            "onion" to "a5d374ee-c9f0-4443-8d9c-3d1f76987691",
             "garlic" to "d957b3b5-c887-4216-aff6-263403dbc9e1",
             "oil" to "aab650af-92cf-441f-95f7-16411177dfe2",
             "eggs" to "312802bc-f608-43a9-8644-54c9696143b5",
