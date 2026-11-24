@@ -214,7 +214,7 @@ fun PantryScreen(
                 editingItem = null
             },
             onSave = { amount, approximate, note, expiry ->
-                onSave(selectedIngredient.id, amount, approximate, note, expiry)
+                onSave(existing?.id ?: selectedIngredient.id, amount, approximate, note, expiry)
                 selectedIngredientId = null
                 editingItem = null
                 search = ""
