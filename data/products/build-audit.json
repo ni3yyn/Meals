@@ -1,44 +1,44 @@
 {
   "schemaVersion": 1,
   "sourceCounts": {
-    "offTaxonomyRecords": 4170,
+    "offTaxonomyRecords": 4190,
     "foodOnClasses": 29255,
     "recipeCount": 912,
-    "uniqueRecipeIngredientGroups": 938,
+    "uniqueRecipeIngredientGroups": 896,
     "uniqueRecipeIngredientIds": 1261
   },
   "catalogueCounts": {
-    "products": 4653,
+    "products": 4651,
     "mappedRecipeIngredientIds": 1261,
-    "uniqueRecipeIngredientsMapped": 938,
-    "offMatchedGroups": 443,
-    "unmatchedRecipeGroups": 454,
+    "uniqueRecipeIngredientsMapped": 896,
+    "offMatchedGroups": 425,
+    "unmatchedRecipeGroups": 431,
     "ambiguousRecipeGroups": 1,
-    "foodOnMatchedGroups": 40,
+    "foodOnMatchedGroups": 39,
     "foodOnAmbiguousGroups": 1,
-    "offMatchCoveragePercent": 47.23,
-    "missingArabicNames": 3423,
-    "missingEnglishNames": 0,
-    "missingFrenchNames": 1615,
-    "fallbackOtherCategory": 310,
-    "missingImages": 4653,
-    "missingNutrition": 4653,
+    "offMatchCoveragePercent": 47.43,
+    "missingArabicNames": 3435,
+    "missingEnglishNames": 1,
+    "missingFrenchNames": 1598,
+    "fallbackOtherCategory": 320,
+    "missingImages": 4651,
+    "missingNutrition": 4651,
     "duplicateIds": 0,
     "duplicateEnglishNames": 0,
-    "uuidv4Ids": 4653,
+    "uuidv4Ids": 4651,
     "recipeRowsMapped": 8623,
     "legacyIdConflicts": 0
   },
   "recipeMatchingMethods": {
-    "exact_alias": 110,
-    "exact_en_base_alias": 15,
-    "exact_en_base_variant": 58,
-    "exact_en_primary": 254,
+    "exact_alias": 117,
+    "exact_en_base_alias": 1,
+    "exact_en_base_variant": 22,
+    "exact_en_primary": 279,
     "exact_localized_alias": 6,
     "foodon_ambiguous": 1,
-    "foodon_exact": 34,
+    "foodon_exact": 33,
     "foodon_exact_to_off": 6,
-    "unmatched": 454
+    "unmatched": 431
   },
   "unmatchedRecipeIngredients": [
     {
@@ -55,7 +55,7 @@
     },
     {
       "nameAr": "نقانق دجاج مطبوخة",
-      "nameEn": "Chicken sausage, cooked",
+      "nameEn": "Chicken sausage",
       "legacyIds": [
         "orc-ing-26db37760d8c16b25b00",
         "orc-ing-66232b0f1ecfb6232296",
@@ -89,8 +89,16 @@
       ]
     },
     {
+      "nameAr": "الفاصوليا السوداء المطبوخة",
+      "nameEn": "Black beans, : from 350 g dry",
+      "legacyIds": [
+        "orc-ing-5c73bb5ce1b538738d37"
+      ],
+      "units": []
+    },
+    {
       "nameAr": "كتف لحم بقري قليل الدهن، مطبوخ",
-      "nameEn": "Beef chuck, lean, cooked",
+      "nameEn": "Beef chuck, lean",
       "legacyIds": [
         "orc-ing-560959d921a1be62164a",
         "orc-ing-f647bacb67e29c0a087c"
@@ -101,13 +109,21 @@
     },
     {
       "nameAr": "لحم بقري مطبوخ",
-      "nameEn": "beef tenderloin, cooked",
+      "nameEn": "beef tenderloin",
       "legacyIds": [
         "orc-ing-6b5410c78ac86dd0c22a"
       ],
       "units": [
         "g"
       ]
+    },
+    {
+      "nameAr": "أرز أبيض مطبوخ",
+      "nameEn": "White rice, : from 200 g",
+      "legacyIds": [
+        "orc-ing-0eb712bc31c3b3fcea1f"
+      ],
+      "units": []
     },
     {
       "nameAr": "شاي أسود مُخمر",
@@ -121,7 +137,7 @@
     },
     {
       "nameAr": "لحم ديك رومي 7 93 ، مطبوخ",
-      "nameEn": "Ground turkey 93/7, cooked",
+      "nameEn": "Ground turkey 93/7",
       "legacyIds": [
         "orc-ing-12a3695c8457d010be10",
         "orc-ing-429b0896e38548496cef",
@@ -134,7 +150,7 @@
     },
     {
       "nameAr": "الفاصوليا الحمراء المطبوخة",
-      "nameEn": "Kidney beans, cooked",
+      "nameEn": "Kidney beans",
       "legacyIds": [
         "orc-ing-b75f00af16eedc4480b2"
       ],
@@ -280,7 +296,7 @@
     },
     {
       "nameAr": "بطاطس مسلوقة",
-      "nameEn": "g baby potatoes",
+      "nameEn": "baby potatoes",
       "legacyIds": [
         "orc-ing-e8e785d59f53e74a0bb3"
       ],
@@ -317,7 +333,7 @@
     },
     {
       "nameAr": "شرائح لحم بقري مدخنة (لحم الخاصرة البقري المعالج) مطبوخة",
-      "nameEn": "Peameal smoked beef strips, cooked",
+      "nameEn": "Peameal smoked beef strips",
       "legacyIds": [
         "orc-ing-51975fff4e2d08efc4e9"
       ],
@@ -392,7 +408,7 @@
     },
     {
       "nameAr": "لحم الخاصرة البقري، مطبوخ",
-      "nameEn": "Sirloin steak, cooked",
+      "nameEn": "Sirloin steak",
       "legacyIds": [
         "orc-ing-4afd0ff10ac4039fd67b"
       ],
@@ -528,7 +544,7 @@
     },
     {
       "nameAr": "10 90",
-      "nameEn": "Lean ground beef 90/10, cooked",
+      "nameEn": "Lean ground beef 90/10",
       "legacyIds": [
         "orc-ing-411d087f67060e281205",
         "orc-ing-862fce30368c5204d712"
@@ -540,10 +556,11 @@
     },
     {
       "nameAr": "أراتشيرا (شريحة لحم بقري مطبوخة)",
-      "nameEn": "Flank steak, cooked",
+      "nameEn": "Flank steak",
       "legacyIds": [
         "orc-ing-ace0add5fe94c0d0ddb4",
-        "orc-ing-cda55323d02a3feaede4"
+        "orc-ing-cda55323d02a3feaede4",
+        "orc-ing-fae16964950990189561"
       ],
       "units": [
         "g",
@@ -574,30 +591,12 @@
     },
     {
       "nameAr": "شريحة لحم بقري مطبوخة قليلة الدسم",
-      "nameEn": "Lean beef steak, cooked",
+      "nameEn": "Lean beef steak",
       "legacyIds": [
         "orc-ing-9a82c93443a16a95a5df"
       ],
       "units": [
         "g"
-      ]
-    },
-    {
-      "nameAr": "أراتشيرا (شريحة لحم بقري مطبوخة)",
-      "nameEn": "kg raw flank steak",
-      "legacyIds": [
-        "orc-ing-fae16964950990189561"
-      ],
-      "units": []
-    },
-    {
-      "nameAr": "إدامامي بدون قرون، مطبوخ",
-      "nameEn": "Edamame, shelled, cooked",
-      "legacyIds": [
-        "orc-ing-f9ba4a69993022485089"
-      ],
-      "units": [
-        "كوب"
       ]
     },
     {
@@ -625,7 +624,7 @@
     },
     {
       "nameAr": "الشمندر المطبوخ",
-      "nameEn": "Beets, cooked",
+      "nameEn": "Beets",
       "legacyIds": [
         "orc-ing-80a38327d58b6977b954"
       ],
@@ -720,7 +719,7 @@
     },
     {
       "nameAr": "سمك القد المجفف",
-      "nameEn": "g dried salt cod",
+      "nameEn": "dried salt cod",
       "legacyIds": [
         "orc-ing-ca6ec5a85817b170409d"
       ],
@@ -730,7 +729,7 @@
     },
     {
       "nameAr": "أكي في علبة، مُصفّى",
-      "nameEn": "Ackee, canned, drained",
+      "nameEn": "Ackee, canned",
       "legacyIds": [
         "orc-ing-aef601ca033a0b568e9b"
       ],
@@ -742,7 +741,10 @@
       "nameAr": "الموز الأخضر",
       "nameEn": "green plantains",
       "legacyIds": [
-        "orc-ing-0e412707da0285df83e3"
+        "orc-ing-0e412707da0285df83e3",
+        "orc-ing-58f826aeb41b7f4dc25f",
+        "orc-ing-9bcb1b92813ceb0927a0",
+        "orc-ing-9bd5c1fbbbd7f632d6c5"
       ],
       "units": [
         "piece"
@@ -750,21 +752,14 @@
     },
     {
       "nameAr": "يوكا صغيرة، مقطعة إلى قطع",
-      "nameEn": "small yuca, in chunks",
+      "nameEn": "yuca, in chunks",
       "legacyIds": [
+        "orc-ing-8106a56e42b2a13a40a2",
         "orc-ing-f33bac3ae759b8fcac02"
       ],
       "units": [
         "piece"
       ]
-    },
-    {
-      "nameAr": "حوالي 600 g من الروبيان النيء المقشر",
-      "nameEn": "g raw peeled shrimp",
-      "legacyIds": [
-        "orc-ing-46186e8a91713b05acf5"
-      ],
-      "units": []
     },
     {
       "nameAr": "جبن قريش قليل الدسم",
@@ -809,7 +804,7 @@
     },
     {
       "nameAr": "معجون الفول الحار (دوبانجيانغ)",
-      "nameEn": "Chili bean paste (doubanjiang)",
+      "nameEn": "Chili bean paste",
       "legacyIds": [
         "orc-ing-0da060e0581360ede864"
       ],
@@ -906,16 +901,6 @@
       ]
     },
     {
-      "nameAr": "موز أخضر متوسط ​​الحجم",
-      "nameEn": "medium green plantains",
-      "legacyIds": [
-        "orc-ing-58f826aeb41b7f4dc25f"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "القهوة المفلترة",
       "nameEn": "Brewed coffee",
       "legacyIds": [
@@ -927,7 +912,7 @@
     },
     {
       "nameAr": "سمك أبيض نيء متماسك، مقطع إلى قطع",
-      "nameEn": "g raw firm white fish, in chunks",
+      "nameEn": "firm white fish, in chunks",
       "legacyIds": [
         "orc-ing-6a22e76456a223683f0a"
       ],
@@ -948,7 +933,7 @@
     },
     {
       "nameAr": "سمك التونة صفراء الزعانف، نيئاً",
-      "nameEn": "Ahi tuna, raw",
+      "nameEn": "Ahi tuna",
       "legacyIds": [
         "orc-ing-4a43ae912514dba8f91e"
       ],
@@ -1012,7 +997,7 @@
     },
     {
       "nameAr": "الملفوف الأحمر",
-      "nameEn": "cup shredded",
+      "nameEn": "",
       "legacyIds": [
         "orc-ing-84826868c3cb669722c1"
       ],
@@ -1021,28 +1006,21 @@
       ]
     },
     {
-      "nameAr": "بابايا صغيرة",
-      "nameEn": "small papaya",
-      "legacyIds": [
-        "orc-ing-c447c1a766c62e6954e9"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "بطاطس صفراء متوسطة اللون",
-      "nameEn": "medium yellow potatoes",
+      "nameEn": "yellow potatoes",
       "legacyIds": [
-        "orc-ing-e2cf7f3bb9808668b37e"
+        "orc-ing-e2cf7f3bb9808668b37e",
+        "orc-ing-unitools-criolla",
+        "orc-ing-unitools-yellowpotato"
       ],
       "units": [
+        "g",
         "piece"
       ]
     },
     {
       "nameAr": "خيار إنجليزي كبير",
-      "nameEn": "large English cucumber",
+      "nameEn": "English cucumber",
       "legacyIds": [
         "orc-ing-931739a7483cb7ee5a63"
       ],
@@ -1052,7 +1030,7 @@
     },
     {
       "nameAr": "نودلز البطاطا الحلوة (دانغميون)، مطبوخة",
-      "nameEn": "Glass noodles, cooked",
+      "nameEn": "Glass noodles",
       "legacyIds": [
         "orc-ing-feb79dad52bd4d20a1b5"
       ],
@@ -1082,7 +1060,7 @@
     },
     {
       "nameAr": "لحم ريب آي نيء قليل الدهن (لحم بقري مستدير)",
-      "nameEn": "Beef eye of round, lean, raw",
+      "nameEn": "Beef eye of round, lean",
       "legacyIds": [
         "orc-ing-e34c4c871052371abb51"
       ],
@@ -1113,16 +1091,6 @@
       ]
     },
     {
-      "nameAr": "عدس أحمر مطبوخ",
-      "nameEn": "cups cooked red lentils",
-      "legacyIds": [
-        "orc-ing-793548e2ce88d3eb102d"
-      ],
-      "units": [
-        "كوب"
-      ]
-    },
-    {
       "nameAr": "توابل بربرية",
       "nameEn": "Berbere spice",
       "legacyIds": [
@@ -1134,22 +1102,13 @@
     },
     {
       "nameAr": "إنجيرا كبيرة",
-      "nameEn": "large injera",
+      "nameEn": "injera",
       "legacyIds": [
-        "orc-ing-610ff60611eeee3d63ee"
+        "orc-ing-610ff60611eeee3d63ee",
+        "orc-ing-unitools-injera"
       ],
       "units": [
         "piece"
-      ]
-    },
-    {
-      "nameAr": "البروكلي الصيني",
-      "nameEn": "bunch Chinese broccoli",
-      "legacyIds": [
-        "orc-ing-a89929e50d5e28d2f354"
-      ],
-      "units": [
-        "ربطة"
       ]
     },
     {
@@ -1205,22 +1164,12 @@
     },
     {
       "nameAr": "باذنجان صغير أو 3 باذنجان تايلاندي",
-      "nameEn": "small or 3 Thai eggplants",
+      "nameEn": "Thai eggplants",
       "legacyIds": [
         "orc-ing-d267d966a82d87484b6a"
       ],
       "units": [
         "piece"
-      ]
-    },
-    {
-      "nameAr": "الريحان التايلاندي",
-      "nameEn": "cup Thai basil",
-      "legacyIds": [
-        "orc-ing-458ec17b3aef95d87973"
-      ],
-      "units": [
-        "كوب"
       ]
     },
     {
@@ -1235,22 +1184,12 @@
     },
     {
       "nameAr": "نشا الكسافا (التابيوكا)",
-      "nameEn": "cup hydrated tapioca gum",
+      "nameEn": "tapioca gum",
       "legacyIds": [
         "orc-ing-97da28c82584e0a1d36d"
       ],
       "units": [
         "كوب"
-      ]
-    },
-    {
-      "nameAr": "نبات اليوكا الكبير",
-      "nameEn": "large yuca",
-      "legacyIds": [
-        "orc-ing-64427d5ab3eb1b88d25b"
-      ],
-      "units": [
-        "piece"
       ]
     },
     {
@@ -1287,7 +1226,7 @@
     },
     {
       "nameAr": "موزة كبيرة ناضجة",
-      "nameEn": "large ripe plantain",
+      "nameEn": "ripe plantain",
       "legacyIds": [
         "orc-ing-ae889dad024cfd008379"
       ],
@@ -1317,14 +1256,6 @@
       ]
     },
     {
-      "nameAr": "حوالي 1.1 kg من صدر الديك الرومي النيء",
-      "nameEn": "kg raw turkey breast",
-      "legacyIds": [
-        "orc-ing-1e8543ca1aab90c8e0de"
-      ],
-      "units": []
-    },
-    {
       "nameAr": "توت أحمر مجمد",
       "nameEn": "Mixed berries, frozen",
       "legacyIds": [
@@ -1339,16 +1270,6 @@
       "nameEn": "bananas",
       "legacyIds": [
         "orc-ing-1a74fc952d8cc4ac736f"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
-      "nameAr": "موز ناضج",
-      "nameEn": "ripe plantains",
-      "legacyIds": [
-        "orc-ing-359c25858c9d1176bb6d"
       ],
       "units": [
         "piece"
@@ -1396,7 +1317,7 @@
     },
     {
       "nameAr": "، مفتت (جبنة باراغواي)",
-      "nameEn": "g, crumbled (queso Paraguay)",
+      "nameEn": "queso Paraguay",
       "legacyIds": [
         "orc-ing-458c0dbf5b09a546a125"
       ],
@@ -1406,7 +1327,7 @@
     },
     {
       "nameAr": "لحم ضأن مفروم مطبوخ",
-      "nameEn": "Lamb, ground, cooked",
+      "nameEn": "Lamb, ground",
       "legacyIds": [
         "orc-ing-a560b6e23661c7f90dff"
       ],
@@ -1415,21 +1336,13 @@
       ]
     },
     {
-      "nameAr": "موز أخضر كبير",
-      "nameEn": "large green plantains",
-      "legacyIds": [
-        "orc-ing-9bcb1b92813ceb0927a0",
-        "orc-ing-9bd5c1fbbbd7f632d6c5"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "سمك القد المملح",
-      "nameEn": "Salt cod, soaked",
+      "nameEn": "Salt cod",
       "legacyIds": [
-        "orc-ing-3b18e44faf659708e085"
+        "orc-ing-3b18e44faf659708e085",
+        "orc-ing-unitools-codfish",
+        "orc-ing-unitools-saltcod",
+        "orc-ing-unitools-saltfish"
       ],
       "units": [
         "g"
@@ -1437,32 +1350,12 @@
     },
     {
       "nameAr": "الفول المطبوخ",
-      "nameEn": "Fava beans, cooked",
+      "nameEn": "Fava beans",
       "legacyIds": [
         "orc-ing-77823f9443ccbdb5101d"
       ],
       "units": [
         "كوب"
-      ]
-    },
-    {
-      "nameAr": "الكسافا متوسطة الحجم، مقطعة إلى قطع",
-      "nameEn": "medium yuca, in chunks",
-      "legacyIds": [
-        "orc-ing-8106a56e42b2a13a40a2"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
-      "nameAr": "موزة خضراء كبيرة",
-      "nameEn": "large green plantain",
-      "legacyIds": [
-        "orc-ing-f865e7930a4c2c957c7f"
-      ],
-      "units": [
-        "piece"
       ]
     },
     {
@@ -1504,28 +1397,8 @@
       ]
     },
     {
-      "nameAr": "صلصة الصويا الحلوة (كيتشاب مانس)",
-      "nameEn": "Sweet soy sauce (kecap manis)",
-      "legacyIds": [
-        "orc-ing-a9025a1dd8bbb2849192"
-      ],
-      "units": [
-        "ملعقة كبيرة"
-      ]
-    },
-    {
-      "nameAr": "عود قرفة ورشة من القرفة المطحونة",
-      "nameEn": "cinnamon stick plus a pinch ground",
-      "legacyIds": [
-        "orc-ing-840bf139f589538ad4fb"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "فجل دايكون صغير أو 10 حبات فجل",
-      "nameEn": "small daikon or 10 radishes",
+      "nameEn": "daikon or 10 radishes",
       "legacyIds": [
         "orc-ing-d45bc0001f3e15aa744d"
       ],
@@ -1535,7 +1408,7 @@
     },
     {
       "nameAr": "جبنة كوستينو، مكعبات",
-      "nameEn": "g queso costeño, cubed",
+      "nameEn": "queso costeño, cubed",
       "legacyIds": [
         "orc-ing-9cbd8013b055cc1e7b0e"
       ],
@@ -1545,7 +1418,7 @@
     },
     {
       "nameAr": "بطاطس مشكلة (كريول، سافانا، باستوسا)",
-      "nameEn": "g mixed potatoes (criolla, sabanera, pastusa)",
+      "nameEn": "mixed potatoes",
       "legacyIds": [
         "orc-ing-f1498c2f2848ebeceaba"
       ],
@@ -1575,7 +1448,7 @@
     },
     {
       "nameAr": "لحم البيسون المفروم، مطبوخ",
-      "nameEn": "Bison, ground, cooked",
+      "nameEn": "Bison, ground",
       "legacyIds": [
         "orc-ing-113164be6a8bcb726b11"
       ],
@@ -1615,7 +1488,7 @@
     },
     {
       "nameAr": "رقائق التورتيلا المخبوزة",
-      "nameEn": "Baked tortilla chips",
+      "nameEn": "tortilla chips",
       "legacyIds": [
         "orc-ing-bc9dc918c26f6da6e615"
       ],
@@ -1628,18 +1501,6 @@
       "nameEn": "Tinned ackee",
       "legacyIds": [
         "orc-ing-unitools-ackee"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
-      "nameAr": "سمك القد المملح",
-      "nameEn": "Salt cod",
-      "legacyIds": [
-        "orc-ing-unitools-codfish",
-        "orc-ing-unitools-saltcod",
-        "orc-ing-unitools-saltfish"
       ],
       "units": [
         "g"
@@ -1663,16 +1524,6 @@
       ],
       "units": [
         "ملعقة كبيرة"
-      ]
-    },
-    {
-      "nameAr": "بطاطس صفراء صغيرة",
-      "nameEn": "Small yellow potatoes",
-      "legacyIds": [
-        "orc-ing-unitools-criolla"
-      ],
-      "units": [
-        "g"
       ]
     },
     {
@@ -1864,16 +1715,6 @@
       ]
     },
     {
-      "nameAr": "موز الجنة الناضج",
-      "nameEn": "Ripe plantain",
-      "legacyIds": [
-        "orc-ing-unitools-ripeplantain"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "أريباس",
       "nameEn": "Arepas",
       "legacyIds": [
@@ -2031,7 +1872,7 @@
     },
     {
       "nameAr": "سمكة صخرية عظمية صغيرة",
-      "nameEn": "Small bony rockfish",
+      "nameEn": "bony rockfish",
       "legacyIds": [
         "orc-ing-unitools-rockfish"
       ],
@@ -2233,36 +2074,6 @@
       "nameEn": "Chayote or courgette",
       "legacyIds": [
         "orc-ing-unitools-chayote"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
-      "nameAr": "بطاطا صفراء",
-      "nameEn": "Yellow potatoes",
-      "legacyIds": [
-        "orc-ing-unitools-yellowpotato"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
-      "nameAr": "بطاطس نيئة",
-      "nameEn": "Raw potatoes",
-      "legacyIds": [
-        "orc-ing-unitools-potatoraw"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
-      "nameAr": "بطاطس مسلوقة",
-      "nameEn": "Boiled potatoes",
-      "legacyIds": [
-        "orc-ing-unitools-potatoboiled"
       ],
       "units": [
         "g"
@@ -2974,7 +2785,7 @@
     },
     {
       "nameAr": "أسماك نهرية صغيرة",
-      "nameEn": "Small river fish",
+      "nameEn": "river fish",
       "legacyIds": [
         "orc-ing-unitools-smallfish"
       ],
@@ -3368,16 +3179,6 @@
       ]
     },
     {
-      "nameAr": "إنجيرا",
-      "nameEn": "Injera",
-      "legacyIds": [
-        "orc-ing-unitools-injera"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "محلب",
       "nameEn": "Mahlab",
       "legacyIds": [
@@ -3385,16 +3186,6 @@
       ],
       "units": [
         "ملعقة صغيرة"
-      ]
-    },
-    {
-      "nameAr": "معكرونة صغيرة",
-      "nameEn": "Small pasta",
-      "legacyIds": [
-        "orc-ing-unitools-macaroni"
-      ],
-      "units": [
-        "g"
       ]
     },
     {
@@ -3435,17 +3226,6 @@
       ],
       "units": [
         "g"
-      ]
-    },
-    {
-      "nameAr": "الفجل المبشور",
-      "nameEn": "Grated horseradish",
-      "legacyIds": [
-        "orc-ing-unitools-horseradish"
-      ],
-      "units": [
-        "g",
-        "ملعقة صغيرة"
       ]
     },
     {
@@ -4517,7 +4297,7 @@
     },
     {
       "nameAr": "دزافار (قمح مجروش)",
-      "nameEn": "Dzavar (cracked wheat)",
+      "nameEn": "Dzavar",
       "legacyIds": [
         "orc-ing-unitools-dzavar"
       ],
