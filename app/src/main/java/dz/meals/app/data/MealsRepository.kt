@@ -750,7 +750,7 @@ class MealsRepository internal constructor(
                     userAdded = true,
                     updatedAtEpochMillis = System.currentTimeMillis(),
                     weekStartIso = weekStartIso,
-                    purchaseQuantityOverride = 1.0
+                    purchaseQuantityOverride = null
                 )
             )
         )

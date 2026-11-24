@@ -140,6 +140,7 @@ fun ShoppingCataloguePicker(
         onDismissRequest = onDismiss,
         titleText = "إضافة إلى قائمة المشتريات",
         fillBody = true,
+        fixedHeightFraction = 0.88f,
         text = {
             Column(
                 modifier = Modifier.fillMaxSize(),
