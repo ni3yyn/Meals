@@ -569,7 +569,9 @@ class MealsRepository internal constructor(
         // Most catalogue foods live in food_items, not the legacy ingredients
         // table. Resolve that canonical master row as a fallback so every one of
         // the 4,649 searchable foods can be added to pantry on first use.
-        val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId }
+        val ingredient = dao.getIngredients()
+            .firstOrNull { it.id == canonicalIngredientId }
+            ?.toModel()
             ?: dao.getFoodItem(canonicalIngredientId)?.toIngredientMaster()
             ?: return
         val targetUnit = existingRow?.unit ?: ingredient.baseUnit
