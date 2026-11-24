@@ -342,8 +342,10 @@ internal class FoodIdentityMigration(
         val nameAr = ordered.firstOrNull { it.nameAr.isNotBlank() }?.nameAr ?: canonicalId
         val nameFr = ordered.firstOrNull { it.nameFr.isNotBlank() }?.nameFr ?: nameAr
         val category = ordered.firstOrNull {
-            it.category.isNotBlank() && it.category != GENERIC_INGREDIENT_CATEGORY
-        }?.category ?: ordered.firstOrNull { it.category.isNotBlank() }?.category.orEmpty()
+            it.category.isNotBlank() &&
+                it.category != GENERIC_INGREDIENT_CATEGORY &&
+                it.category != LEGACY_GENERIC_INGREDIENT_CATEGORY
+        }?.category ?: GENERIC_INGREDIENT_CATEGORY
         val baseUnit = ordered.groupingBy { it.baseUnit.ifBlank { "piece" } }
             .eachCount()
             .entries
@@ -402,5 +404,6 @@ internal class FoodIdentityMigration(
 
     private companion object {
         const val GENERIC_INGREDIENT_CATEGORY = "أخرى"
+        const val LEGACY_GENERIC_INGREDIENT_CATEGORY = "مكوّن"
     }
 }
