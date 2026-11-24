@@ -10,6 +10,8 @@ on:
       - "data/products/translations.json"
       - "tools/build_food_product_catalogue.py"
       - "tools/test_food_product_catalogue.py"
+      - "tools/translate_food_catalogue.py"
+      - "tools/test_translate_food_catalogue.py"
       - ".github/workflows/build-food-product-catalogue.yml"
   workflow_dispatch:
 
