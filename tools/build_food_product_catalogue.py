@@ -260,6 +260,8 @@ def parse_off_taxonomy(path: Path) -> list[dict[str, Any]]:
                     record["sourceProperties"]["usdaFdcCode"] = values[0] if values else ""
                 elif key.startswith("ciqual_food_code"):
                     record["sourceProperties"]["ciqualFoodCode"] = values[0] if values else ""
+                elif key == "countryOfOrigin" and values:
+                    record["sourceProperties"]["countryOfOrigin"] = list(dict.fromkeys(values))
             records.append(record)
         fields = defaultdict(list)
         parents = []
@@ -283,6 +285,14 @@ def parse_off_taxonomy(path: Path) -> list[dict[str, Any]]:
                 if language in {"ar", "en", "fr"} and value:
                     fields[language].extend(split_values(value))
                 continue
+            origin_match = re.match(r"^(?:origin|origins|country_of_origin):[a-z]{2,3}:\s*(.*)$", line, re.IGNORECASE)
+            if origin_match and origin_match.group(1).strip():
+                for origin in re.split(r"[,;]", origin_match.group(1)):
+                    value = re.sub(r"^[a-z]{2,3}:\s*", "", origin.strip(), flags=re.IGNORECASE)
+                    value = value.replace("_", " ").strip()
+                    if value:
+                        fields["countryOfOrigin"].append(value[:1].upper() + value[1:])
+
             property_match = re.match(r"^(ecobalyse_default_origin|usda_fdc_code|ciqual_food_code):en:\s*(.*)$", line)
             if property_match and property_match.group(2).strip():
                 fields[property_match.group(1)].append(property_match.group(2).strip())
@@ -1061,7 +1071,11 @@ def build_product(
         },
         # Reserved for a later market-product/package variant, not a food identity.
         "quantity": None,
-        "countryOfOrigin": None,
+        "countryOfOrigin": (
+            record.get("sourceProperties", {}).get("countryOfOrigin")
+            if record and record.get("sourceProperties", {}).get("countryOfOrigin")
+            else None
+        ),
         "nutrition": None,
         "sourceMappings": source_mappings,
         "recipeIngredientIds": legacy_ids,
