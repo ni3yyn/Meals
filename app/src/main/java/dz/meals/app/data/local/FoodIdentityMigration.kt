@@ -337,7 +337,7 @@ internal class FoodIdentityMigration(
             .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
             .firstOrNull()?.key ?: "piece"
         val allergens = ordered.flatMap { it.allergensCsv.split(',') }
-            .map(String::trim).filter(String::isNotEmpty).distinct().sorted()
+            .map { it.trim() }.filter { it.isNotEmpty() }.distinct().sorted()
         val aliases = buildList {
             ordered.flatMap { it.aliasesCsv.split('|') }.forEach(::add)
             ordered.map { it.nameAr }.filter { it.isNotBlank() && it != nameAr }.forEach(::add)
