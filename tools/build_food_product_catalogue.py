@@ -971,10 +971,9 @@ def assign_stable_product_ids(
     products: list[dict[str, Any]],
     registry: dict[str, Any],
 ) -> dict[str, Any]:
-    """Assign persistent opaque UUIDv4 IDs, never IDs derived from display names."""
+    """Assign persistent opaque UUIDv4 IDs while safely handling previous merges/splits."""
     ids: dict[str, str] = registry.setdefault("ids", {})
     redirects: dict[str, str] = registry.setdefault("redirects", {})
-    key_owners: dict[str, int] = {}
 
     def resolve(value: str) -> str:
         seen: set[str] = set()
@@ -983,6 +982,13 @@ def assign_stable_product_ids(
             value = redirects[value]
         return value
 
+    product_keys: list[set[str]] = []
+    key_owners: dict[str, int] = {}
+    candidate_ids: list[set[str]] = []
+    id_claimants: dict[str, set[int]] = {}
+
+    # First collect every claim. A historical merge may have assigned the same
+    # UUID to distinct source keys which are now correctly separate concepts.
     for product_index, product in enumerate(products):
         source_keys = set(str(key) for key in product.pop("identityKeys", []) if str(key))
         source_keys.update(
@@ -999,18 +1005,57 @@ def assign_stable_product_ids(
                 raise RuntimeError("A source identity key was assigned to multiple food items: " + key)
             key_owners[key] = product_index
 
-        existing_ids = sorted({resolve(ids[key]) for key in source_keys if key in ids})
-        if existing_ids:
-            product_id = existing_ids[0]
-            for retired_id in existing_ids[1:]:
-                if retired_id != product_id:
-                    redirects[retired_id] = product_id
+        existing = {
+            resolve(ids[key])
+            for key in source_keys
+            if key in ids and ids[key]
+        }
+        product_keys.append(source_keys)
+        candidate_ids.append(existing)
+        for existing_id in existing:
+            id_claimants.setdefault(existing_id, set()).add(product_index)
+
+    assigned_ids: set[str] = set()
+    split_assignments: list[dict[str, str]] = []
+
+    for product_index, product in enumerate(products):
+        existing_ids = candidate_ids[product_index]
+
+        # An old UUID can only be retained by one of the current concepts that
+        # claims it. Others receive fresh UUIDs; this resolves historical
+        # over-merges without ever publishing duplicate canonical IDs.
+        reusable = sorted(
+            existing_id
+            for existing_id in existing_ids
+            if existing_id not in assigned_ids
+            and min(id_claimants[existing_id]) == product_index
+        )
+        if reusable:
+            product_id = reusable[0]
         else:
             product_id = str(uuid.uuid4())
+            while product_id in assigned_ids:
+                product_id = str(uuid.uuid4())
 
-        for key in source_keys:
-            ids[key] = product_id
+        # When this current concept legitimately merges old identities, retire
+        # only IDs which no other current concept still claims.
+        for retired_id in sorted(existing_ids):
+            if retired_id == product_id:
+                continue
+            if id_claimants.get(retired_id) == {product_index}:
+                redirects[retired_id] = product_id
+
+        assigned_ids.add(product_id)
         product["id"] = product_id
+        for key in product_keys[product_index]:
+            old_id = resolve(ids[key]) if key in ids else None
+            ids[key] = product_id
+            if old_id and old_id != product_id and id_claimants.get(old_id, set()) != {product_index}:
+                split_assignments.append({
+                    "sourceKey": key,
+                    "previousId": old_id,
+                    "newId": product_id,
+                })
 
     for old_id in list(redirects):
         redirects[old_id] = resolve(redirects[old_id])
@@ -1021,6 +1066,7 @@ def assign_stable_product_ids(
 
     registry["version"] = 1
     registry["idFormat"] = "UUIDv4"
+    registry["splitIdentityAssignments"] = split_assignments
     return registry
 
 
