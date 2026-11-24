@@ -1,8 +1,12 @@
 import unittest
 
 from tools.build_food_catalogue import (
-    build_catalogue, clean_recipe_ingredient, classify_food,
-    normalize_term, parse_foodon_tsv, parse_off_taxonomy
+    build_catalogue,
+    clean_recipe_ingredient,
+    classify_food,
+    normalize_term,
+    parse_foodon_tsv,
+    parse_off_taxonomy,
 )
 
 
@@ -26,7 +30,7 @@ fr: pois chiches
         self.assertEqual(milk["names"]["fr"], ["lait"])
         self.assertEqual(milk["country_of_origin"], ["Ireland"])
 
-    def test_foodon_rdf_tsv_language_suffix_and_parent(self):
+    def test_foodon_tsv_language_suffix_and_parent(self):
         root = "http://purl.obolibrary.org/obo/FOODON_00001002"
         child = "http://purl.obolibrary.org/obo/FOODON_00001014"
         source = (
@@ -47,44 +51,64 @@ fr: pois chiches
     def test_arabic_normalization_and_recipe_preparation_cleanup(self):
         self.assertEqual(normalize_term("أَرُزّ"), normalize_term("ارز"))
         value = clean_recipe_ingredient(
-            {"sourceTextEn":"Chicken thigh, skinless, cooked: 560 g cooked"},
-            "focus:recipe"
+            {"sourceTextEn": "Chicken thigh, skinless, cooked: 560 g cooked"},
+            "focus:recipe",
         )
         self.assertEqual(normalize_term(value), "chicken thigh")
 
-    def test_market_food_categories_do_not_confuse_eggplant_or_oil(self):
+    def test_market_food_categories(self):
         self.assertEqual(classify_food(["Eggplant"])[0], "vegetables")
         self.assertEqual(classify_food(["Vegetable oil"])[0], "oils-fats")
         self.assertEqual(classify_food(["Canned chickpeas"]), ("legumes", "canned-legumes"))
         self.assertEqual(classify_food(["Mayonnaise"]), ("sauces-condiments", "mayonnaise-dressings"))
+        self.assertEqual(classify_food(["Raib"]), ("dairy", "fermented-dairy"))
 
     def test_recipe_rows_map_to_existing_food_item_without_duplicate(self):
-        off = parse_off_taxonomy("< en: dairy\\nen: milk, cow milk\\nar: حليب\\nfr: lait\\n")
+        off = parse_off_taxonomy("""< en: dairy
+en: milk, cow milk
+ar: حليب
+fr: lait
+""")
         root = "FOODON_00001002"
         child = "FOODON_00001014"
         foodon_source = (
-            "?class\\t?parent\\t?type\\t?label\\n"
-            f"<http://purl.obolibrary.org/obo/{root}>\\t\\t\\t\\n"
-            f"<http://purl.obolibrary.org/obo/{root}>\\t\\t\\"label\\"\\t\\"food product\\"@en\\n"
-            f"<http://purl.obolibrary.org/obo/{child}>\\t<http://purl.obolibrary.org/obo/{root}>\\t\\t\\n"
-            f"<http://purl.obolibrary.org/obo/{child}>\\t\\t\\"label\\"\\t\\"milk\\"@en\\n"
+            "?class\t?parent\t?type\t?label\n"
+            f"<http://purl.obolibrary.org/obo/{root}>\t\t\t\n"
+            f'<http://purl.obolibrary.org/obo/{root}>\t\t"label"\t"food product"@en\n'
+            f"<http://purl.obolibrary.org/obo/{child}>\t<http://purl.obolibrary.org/obo/{root}>\t\t\n"
+            f'<http://purl.obolibrary.org/obo/{child}>\t\t"label"\t"milk"@en\n'
         )
         nodes, parents = parse_foodon_tsv(foodon_source)
         recipes = {
-            "complete":True,"expectedCount":1,"translatedCount":1,
-            "recipes":[{"id":"unitools:sample","ingredients":[
-                {"id":"milk","name":"حليب","sourceNameEn":"Milk","quantity":250,"unit":"ml"}
-            ]}]
+            "complete": True,
+            "expectedCount": 1,
+            "translatedCount": 1,
+            "recipes": [
+                {
+                    "id": "unitools:sample",
+                    "ingredients": [
+                        {
+                            "id": "milk",
+                            "name": "حليب",
+                            "sourceNameEn": "Milk",
+                            "quantity": 250,
+                            "unit": "ml",
+                        }
+                    ],
+                }
+            ],
         }
-        items, categories, rows, report = build_catalogue(recipes,off,nodes,parents,[],{"ids":{},"redirects":{}})
-        self.assertEqual(len(items),1)
-        self.assertEqual(len(rows),1)
-        self.assertEqual(rows[0]["foodItemId"],items[0]["id"])
-        self.assertEqual(rows[0]["recipeId"],"unitools:sample")
-        self.assertIn("ml",items[0]["acceptedUnits"])
-        self.assertEqual(items[0]["names"]["ar"],"حليب")
-        self.assertEqual(report["recipeRowsFullyMapped"],1)
-
+        registry = {"ids": {}, "redirects": {}}
+        items, categories, rows, report = build_catalogue(recipes, off, nodes, parents, [], registry)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["foodItemId"], items[0]["id"])
+        self.assertEqual(rows[0]["recipeId"], "unitools:sample")
+        self.assertIn("ml", items[0]["acceptedUnits"])
+        self.assertEqual(items[0]["names"]["ar"], "حليب")
+        self.assertEqual(report["recipeRowsFullyMapped"], 1)
+        self.assertTrue(items[0]["id"])
+        self.assertEqual(items[0]["categoryId"], "dairy")
 
 if __name__ == "__main__":
     unittest.main()
