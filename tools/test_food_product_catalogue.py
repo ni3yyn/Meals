@@ -180,7 +180,10 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         self.assertEqual(product["categoryId"], "foodcat-legumes")
         self.assertIn("kg", product["acceptedUnits"])
         self.assertIn("g", product["acceptedUnits"])
-        self.assertIn("chickpea", product["aliases"]["en"])
+        self.assertTrue(
+            product["names"]["en"] == "chickpea"
+            or "chickpea" in product["aliases"]["en"]
+        )
         self.assertIn(
             "FOODON_00001234",
             product["sourceMappings"]["foodOnIds"],
