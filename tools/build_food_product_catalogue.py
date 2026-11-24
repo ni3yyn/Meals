@@ -933,13 +933,22 @@ def assign_stable_product_ids(
     return registry
 
 
-def choose_names(record: dict[str, Any], groups: list[dict[str, Any]]) -> dict[str, str | None]:
+def choose_names(
+    record: dict[str, Any] | None,
+    groups: list[dict[str, Any]],
+    foodon_ids: list[str],
+    foodon: dict[str, dict[str, Any]],
+) -> dict[str, str | None]:
     names: dict[str, str | None] = {}
     for lang in ("ar", "en", "fr"):
         values: Counter[str] = Counter()
         taxonomy_name = record["names"].get(lang) if record else None
         if taxonomy_name:
             values[str(taxonomy_name)] += 1000
+        for foodon_id in foodon_ids:
+            foodon_name = (foodon.get(foodon_id, {}).get("names") or {}).get(lang)
+            if foodon_name:
+                values[str(foodon_name)] += 500
         for group in groups:
             value = group["names"].get(lang)
             if value:
@@ -995,7 +1004,7 @@ def build_product(
             identity_keys.add("recipe-term:" + group_name)
         identity_keys.update("legacy-room:" + legacy_id for legacy_id in group["legacyIds"])
 
-    names = choose_names(record, groups)
+    names = choose_names(record, groups, foodon_ids, foodon)
     aliases: dict[str, set[str]] = {"ar": set(), "en": set(), "fr": set()}
     if record:
         for lang in aliases:
@@ -1006,12 +1015,18 @@ def build_product(
             if name and name != names[lang]:
                 aliases[lang].add(name)
             aliases[lang].update(group["aliases"].get(lang, []))
-    # FoodOn synonyms enrich this identity but never create duplicate items.
+    # FoodOn labels and synonyms enrich each language without overriding a
+    # preferred OFF label or producing a second identity.
     for item_id in foodon_ids:
         foodon_item = foodon.get(item_id)
         if foodon_item:
-            aliases["en"].add(foodon_item["name"])
-            aliases["en"].update(foodon_item.get("aliases", []))
+            for language in ("ar", "en", "fr"):
+                translated = (foodon_item.get("names") or {}).get(language)
+                if translated:
+                    aliases[language].add(translated)
+                aliases[language].update(
+                    (foodon_item.get("aliasesByLanguage") or {}).get(language, [])
+                )
 
     observed_units = sorted({
         unit for group in groups for unit in group["units"]
