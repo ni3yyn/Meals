@@ -829,11 +829,13 @@ class MealsRepository(context: Context) {
     private suspend fun loadIngredients(): List<IngredientMaster> = catalogueCacheMutex.withLock {
         cachedCatalogueIngredients ?: run {
             val catalogueInstalled = hasInstalledArabicRecipeCatalogue()
+            val unpublishedIngredientIds = if (catalogueInstalled) {
+                emptySet()
+            } else {
+                dao.getUnpublishedArabicCatalogueIngredientIds().toSet()
+            }
             dao.getIngredients()
-                .filter { ingredient ->
-                    !ingredient.id.startsWith(ArabicRecipeCatalogueInstaller.INGREDIENT_ID_PREFIX) ||
-                        catalogueInstalled
-                }
+                .filter { ingredient -> ingredient.id !in unpublishedIngredientIds }
                 .map { it.toModel() }
                 .also { cachedCatalogueIngredients = it }
         }
