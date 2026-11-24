@@ -212,7 +212,12 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
-    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("org.robolectric:robolectric:4.16.1") {
+        // This migration test is pinned to API 35 (V). Robolectric uses
+        // android-all for the native runtime from V onward, so its 151 MB
+        // O-U compatibility distribution is not needed on this test classpath.
+        exclude(group = "org.robolectric", module = "nativeruntime-dist-compat")
+    }
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
