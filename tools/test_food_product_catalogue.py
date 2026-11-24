@@ -661,7 +661,7 @@ class FoodCatalogueCuratedTranslationTests(unittest.TestCase):
             "translations": {
                 food_id: {
                     "en": {
-                        "text": "Red cabbage",
+                        "text": "Shredded red cabbage",
                         "sourceLanguage": "ar",
                         "sourceText": "الملفوف الأحمر",
                         "provider": "Midati reviewed translation",
@@ -673,7 +673,7 @@ class FoodCatalogueCuratedTranslationTests(unittest.TestCase):
         report = apply_machine_name_translations([product], sidecar)
 
         self.assertEqual(product["id"], food_id)
-        self.assertEqual(product["names"]["en"], "Red cabbage")
+        self.assertEqual(product["names"]["en"], "Shredded red cabbage")
         self.assertEqual(report["appliedByLanguage"]["en"], 1)
         self.assertEqual(report["englishNameConflictCount"], 0)
 
