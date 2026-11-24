@@ -140,7 +140,7 @@ jobs:
             fi
           done
 
-          git reset --soft origin/main
+          git reset --mixed origin/main
           git add data/products/translations.json data/products/catalogue.json data/products/build-audit.json data/products/identity_registry.json
           if git diff --cached --quiet; then
             echo "The latest main already contains these translation outputs."
