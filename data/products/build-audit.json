@@ -8,23 +8,26 @@
     "uniqueRecipeIngredientIds": 1261
   },
   "catalogueCounts": {
-    "products": 4654,
+    "products": 4653,
     "mappedRecipeIngredientIds": 1261,
     "uniqueRecipeIngredientsMapped": 938,
     "offMatchedGroups": 443,
     "unmatchedRecipeGroups": 454,
-    "ambiguousRecipeGroups": 2,
-    "foodOnMatchedGroups": 39,
-    "foodOnAmbiguousGroups": 2,
+    "ambiguousRecipeGroups": 1,
+    "foodOnMatchedGroups": 40,
+    "foodOnAmbiguousGroups": 1,
     "offMatchCoveragePercent": 47.23,
-    "missingArabicNames": 3424,
+    "missingArabicNames": 3423,
     "missingEnglishNames": 0,
-    "missingFrenchNames": 1616,
+    "missingFrenchNames": 1615,
     "fallbackOtherCategory": 310,
-    "missingImages": 4654,
-    "missingNutrition": 4654,
+    "missingImages": 4653,
+    "missingNutrition": 4653,
     "duplicateIds": 0,
-    "duplicateEnglishNames": 0
+    "duplicateEnglishNames": 0,
+    "uuidv4Ids": 4653,
+    "recipeRowsMapped": 8623,
+    "legacyIdConflicts": 0
   },
   "recipeMatchingMethods": {
     "exact_alias": 110,
@@ -32,9 +35,9 @@
     "exact_en_base_variant": 58,
     "exact_en_primary": 254,
     "exact_localized_alias": 6,
-    "foodon_ambiguous": 2,
+    "foodon_ambiguous": 1,
     "foodon_exact": 34,
-    "foodon_exact_to_off": 5,
+    "foodon_exact_to_off": 6,
     "unmatched": 454
   },
   "unmatchedRecipeIngredients": [
@@ -4704,20 +4707,6 @@
     }
   ],
   "ambiguousRecipeIngredients": [
-    {
-      "nameAr": "الجيكاما",
-      "nameEn": "Jicama",
-      "legacyIds": [
-        "orc-ing-2b17199b822fb397d170"
-      ],
-      "units": [
-        "piece"
-      ],
-      "candidateFoodOnIds": [
-        "FOODON_00003739",
-        "FOODON_03309754"
-      ]
-    },
     {
       "nameAr": "زعفران",
       "nameEn": "Saffron",
