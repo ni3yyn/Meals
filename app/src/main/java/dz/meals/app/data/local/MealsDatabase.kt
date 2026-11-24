@@ -187,6 +187,7 @@ abstract class MealsDatabase : RoomDatabase() {
             }
 
         /** Opens an isolated database through the production migration chain. */
+        @androidx.annotation.Keep
         internal fun createForTesting(context: Context, databaseName: String): MealsDatabase =
             createDatabase(context, databaseName)
 
