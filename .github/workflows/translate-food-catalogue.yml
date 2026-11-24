@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
-      GOOGLE_APPS_SCRIPT_URL: ${ secrets.GOOGLE_APPS_SCRIPT_URL }}
-      GOOGLE_APPS_SCRIPT_TOKEN: ${ secrets.GOOGLE_APPS_SCRIPT_TOKEN }}
-      MAX_TRANSLATIONS: ${ github.event_name == 'workflow_dispatch' && inputs.max_translations || '6000' }}
+      GOOGLE_APPS_SCRIPT_URL: ${{ secrets.GOOGLE_APPS_SCRIPT_URL }}
+      GOOGLE_APPS_SCRIPT_TOKEN: ${{ secrets.GOOGLE_APPS_SCRIPT_TOKEN }}
+      MAX_TRANSLATIONS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_translations || '6000' }}
       MIDATI_DATA_CACHE: .cache/product-catalogue
     steps:
       - name: Check out repository
