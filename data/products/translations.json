@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "provider": "Google Apps Script LanguageApp",
+  "languages": [
+    "ar",
+    "en",
+    "fr"
+  ],
+  "generatedAt": null,
+  "translationCount": 0,
+  "translations": {}
+}
