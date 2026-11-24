@@ -149,26 +149,10 @@ class MealsRepository internal constructor(
         val planned = dao.getPlanMeals(weekStartIso)
             .filter { it.mealSlot in slotsForThisWeek }
             .map { it.toModel() }
-        val pantryEntities = dao.getPantryItems()
-        // Multiple old IDs can now refer to one food UUID. Keep raw rows in Room,
-        // but show one combined pantry line per canonical food and unit.
-        val pantry = pantryEntities.groupBy { it.ingredientId to it.unit }.map { (_, rows) ->
-            val first = rows.first()
-            val exactRows = rows.filter { !it.isApproximate && it.quantityBase != null }
-            val master = ingredients.firstOrNull { it.id == first.ingredientId }
-            PantryItem(
-                id = first.id,
-                ingredientId = first.ingredientId,
-                nameAr = master?.nameAr ?: first.ingredientId,
-                quantityBase = exactRows.sumOf { it.quantityBase ?: 0.0 }.takeIf { exactRows.isNotEmpty() },
-                unit = first.unit,
-                isApproximate = rows.any { it.isApproximate || it.quantityBase == null },
-                note = rows.map { it.note.trim() }.filter { it.isNotEmpty() }.distinct().joinToString(" · "),
-                expiryAtEpochMillis = rows.mapNotNull { it.expiryAtEpochMillis }.minOrNull(),
-                categoryId = master?.categoryId ?: FoodTaxonomyIds.OTHER_CATEGORY,
-                subcategoryId = master?.subcategoryId ?: FoodTaxonomyIds.OTHER_SUBCATEGORY
-            )
-        }
+        // Household stock is intentionally not loaded into the shopping flow.
+        // Keep legacy Room rows intact for upgrade compatibility.
+        val pantryEntities = emptyList<PantryItemEntity>()
+        val pantry = emptyList<PantryItem>()
         val currentPrices = dao.getPriceObservations()
         val savedPriceSnapshot = if (savedRun != null) {
             dao.getPlanPriceSnapshots(weekStartIso).map { it.toPriceObservation() }
