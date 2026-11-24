@@ -16,7 +16,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -466,16 +465,17 @@ fun RecipesScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filtered, key = { it.id }) { recipe ->
-                        MealsCard(
-                            modifier = Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { selectedRecipeId = recipe.id }
-                            ),
-                            containerColor = Paper,
-                            borderColor = Border,
-                            contentPadding = 14.dp
+                        MealsPressable(
+                            onClick = { selectedRecipeId = recipe.id },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(21.dp)
                         ) {
+                            MealsCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                containerColor = Paper,
+                                borderColor = Border,
+                                contentPadding = 14.dp
+                            ) {              ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(9.dp)
@@ -562,6 +562,7 @@ fun RecipesScreen(
                                     }
                                 }
                             }
+                        }
                         }
                     }
 
