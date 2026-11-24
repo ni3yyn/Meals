@@ -1061,64 +1061,86 @@ fun RecipesScreen(
                             )
                         }
                     }
-                    items(detail.ingredients) { ingredient ->
-                        val master = ingredientNames[ingredient.ingredientId]
-                        val ingredientName = mealsText(
-                            recipeIngredientDisplayName(master, ingredient.ingredientId, appLocaleTag),
-                            appLocaleTag
-                        )
-                        val scaledQuantity = scaleRecipeIngredientQuantity(
-                            ingredient.quantityBase,
-                            recipeServings.toDouble() / detail.baseServings.coerceAtLeast(1).toDouble(),
-                            ingredient.scalingRule
-                        )
-                        val quantityLabel = if (scaledQuantity > 0.0) {
-                            mealsRecipeIngredientQuantity(
-                                scaledQuantity,
-                                ingredient.unit,
-                                appLocaleTag
-                            )
-                        } else ""
+                    item {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(WarmSurface)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    "• " + bidiIsolate(ingredientName),
-                                    modifier = Modifier.weight(1f),
-                                    color = Ink,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    translate = false
+                            detail.ingredients.forEachIndexed { index, ingredient ->
+                                val master = ingredientNames[ingredient.ingredientId]
+                                val ingredientName = mealsText(
+                                    recipeIngredientDisplayName(master, ingredient.ingredientId, appLocaleTag),
+                                    appLocaleTag
                                 )
-                                if (quantityLabel.isNotBlank()) {
-                                    Text(
-                                        bidiIsolate(quantityLabel),
-                                        color = dz.meals.app.ui.theme.TextAccent,
-                                        fontWeight = FontWeight.SemiBold,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        translate = false
+                                val scaledQuantity = scaleRecipeIngredientQuantity(
+                                    ingredient.quantityBase,
+                                    recipeServings.toDouble() / detail.baseServings.coerceAtLeast(1).toDouble(),
+                                    ingredient.scalingRule
+                                )
+                                val quantityLabel = if (scaledQuantity > 0.0) {
+                                    mealsRecipeIngredientQuantity(
+                                        scaledQuantity,
+                                        ingredient.unit,
+                                        appLocaleTag
+                                    )
+                                } else ""
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            bidiIsolate(ingredientName),
+                                            color = Ink,
+                                            fontWeight = FontWeight.SemiBold,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            translate = false
+                                        )
+                                        val supportingText = when {
+                                            ingredient.prepNote.isNotBlank() ->
+                                                mealsText(ingredient.prepNote, appLocaleTag)
+                                            quantityLabel.isBlank() ->
+                                                if (isMealsEnglish(appLocaleTag)) "To taste" else "حسب الحاجة"
+                                            else -> ""
+                                        }
+                                        if (supportingText.isNotBlank()) {
+                                            Text(
+                                                supportingText,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                color = MutedInk,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    }
+                                    if (quantityLabel.isNotBlank()) {
+                                        Text(
+                                            bidiIsolate(quantityLabel),
+                                            color = dz.meals.app.ui.theme.TextAccent,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            translate = false
+                                        )
+                                    }
+                                }
+
+                                if (index < detail.ingredients.lastIndex) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .height(1.dp)
+                                            .background(Border.copy(alpha = 0.45f))
                                     )
                                 }
-                            }
-                            if (ingredient.prepNote.isNotBlank()) {
-                                Text(
-                                    mealsText(ingredient.prepNote, appLocaleTag),
-                                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            } else if (quantityLabel.isBlank()) {
-                                Text(
-                                    if (isMealsEnglish(appLocaleTag)) "To taste" else "حسب الحاجة",
-                                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
                             }
                         }
                     }
