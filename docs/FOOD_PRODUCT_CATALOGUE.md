@@ -82,3 +82,19 @@ Neither ingredient taxonomy is a dependable source of generic product photograph
 Country of origin must be supported by an explicit, item-specific origin field. A default regional cultivation assumption is not proof that a food item originated there.
 
 A future market-product record will reference the generic food UUID and add brand, barcode, package quantity/unit, country-of-origin evidence, retailer SKU, price and product-specific imagery/nutrition where licensed and available.
+
+## Canonical taxonomy contract and identity baseline
+
+`data/products/categories.json` is the sole source of public food-category and subcategory IDs and their Arabic, English and French display labels. It currently defines exactly 22 main categories and 82 subcategories. Category and subcategory IDs are stable identifiers; localized labels are display values and must never be used as keys, foreign keys, or identity inputs.
+
+`data/products/taxonomy.schema.json` describes the file shape for editors and tooling. `tools/validate_food_taxonomy.py` enforces the full contract with the Python standard library: exact taxonomy counts, locale completeness, Arabic-script labels, unique IDs and labels, stable ordering and parentage, and valid category references from every catalogue item. Food catalogue records may contain `categoryId` and `subcategoryId` only; translated category labels belong to the taxonomy source.
+
+`data/products/catalogue-baseline.json` is the reviewed stage-one compatibility baseline. It captures all existing food UUIDs, all legacy Room ingredient-ID mappings, all 8,623 existing recipe ingredient rows, the initial category/subcategory IDs and their ordering, and the source Git blob SHAs used for the snapshot. Future catalogue builds may add new food identities and recipe rows, but must not silently remove or re-key an existing identity or recipe reference. Classification corrections may change a food item's category assignment without changing its food UUID.
+
+The baseline is intentionally not a copy of the generated catalogue. It records identity and compatibility invariants, not mutable names, aliases, accepted units or category assignments. Update it only as part of a reviewed identity migration or an explicitly approved taxonomy version change. Do not regenerate it as a side effect of the catalogue build.
+
+Run the canonical data guard from the repository root with:
+
+`python tools/validate_food_taxonomy.py`
+
+The food catalogue build workflow runs this guard after generating the catalogue, crosswalk and audit. It is not an Android build or a device test; it validates the data contract and compatibility invariants directly.

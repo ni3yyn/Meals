@@ -6,12 +6,15 @@ on:
     paths:
       - "data/recipes/ar/recipes.json"
       - "data/products/categories.json"
+      - "data/products/catalogue-baseline.json"
+      - "data/products/taxonomy.schema.json"
       - "data/products/curated-food-items.json"
       - "data/products/translations.json"
       - "tools/build_food_product_catalogue.py"
       - "tools/test_food_product_catalogue.py"
       - "tools/translate_food_catalogue.py"
       - "tools/test_translate_food_catalogue.py"
+      - "tools/validate_food_taxonomy.py"
       - ".github/workflows/build-food-product-catalogue.yml"
   workflow_dispatch:
 
@@ -52,79 +55,8 @@ jobs:
       - name: Build catalogue, legacy-ID crosswalk and audit
         run: python tools/build_food_product_catalogue.py
 
-      - name: Validate generated catalogue and complete recipe links
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          catalogue = json.loads(Path("data/products/catalogue.json").read_text(encoding="utf-8"))
-          mapping = json.loads(Path("data/products/recipe-ingredient-map.json").read_text(encoding="utf-8"))
-          audit = json.loads(Path("data/products/build-audit.json").read_text(encoding="utf-8"))
-          category_data = json.loads(Path("data/products/categories.json").read_text(encoding="utf-8"))
-          identity_registry = json.loads(Path("data/products/identity_registry.json").read_text(encoding="utf-8"))
-          products = catalogue.get("products") or []
-          categories = category_data.get("categories") or []
-          category_ids = {item.get("id") for item in categories}
-          subcategory_parent = {
-              child.get("id"): item.get("id")
-              for item in categories
-              for child in item.get("subcategories", [])
-          }
-          ids = [item.get("id") for item in products]
-          english = [
-              " ".join(str(item.get("names", {}).get("en") or "").casefold().split())
-              for item in products
-              if item.get("names", {}).get("en")
-          ]
-          links = mapping.get("recipeIngredientToProductId") or {}
-          if not products or len(ids) != len(set(ids)):
-              raise SystemExit("Product catalogue is empty or contains duplicate IDs.")
-          if catalogue.get("idFormat") != "UUIDv4" or any(
-              not isinstance(item_id, str) or len(item_id) != 36
-              or item_id[14] != "4" or item_id[19] not in "89ab"
-              for item_id in ids
-          ):
-              raise SystemExit("Every food item must have an opaque UUIDv4 ID.")
-          registry_ids = set((identity_registry.get("ids") or {}).values())
-          if not set(ids).issubset(registry_ids):
-              raise SystemExit("Persistent registry is missing one or more published food-item IDs.")
-          if len(english) != len(set(english)):
-              raise SystemExit("Product catalogue contains duplicate normalized English names.")
-          if not links:
-              raise SystemExit("No recipe ingredient mappings were generated.")
-          if any(target not in set(ids) for target in links.values()):
-              raise SystemExit("A recipe ingredient mapping points to a missing product ID.")
-          for product in products:
-              if product.get("categoryId") not in category_ids:
-                  raise SystemExit(f"Invalid category ID on product {product.get('id')}.")
-              subcategory_id = product.get("subcategoryId")
-              if subcategory_id is not None and subcategory_parent.get(subcategory_id) != product.get("categoryId"):
-                  raise SystemExit(f"Invalid subcategory relationship on product {product.get('id')}.")
-          counts = audit.get("catalogueCounts") or {}
-          if counts.get("mappedRecipeIngredientIds") != len(links):
-              raise SystemExit("Audit mapping count does not match the mapping file.")
-          if counts.get("duplicateIds") != 0 or counts.get("duplicateEnglishNames") != 0:
-              raise SystemExit("Duplicate validation failed.")
-          if counts.get("uuidv4Ids") != len(products):
-              raise SystemExit("Audit confirms a missing or invalid UUIDv4 ID.")
-          recipe_rows = mapping.get("recipeRows") or []
-          if counts.get("recipeRowsMapped") != len(recipe_rows):
-              raise SystemExit("Recipe row audit does not match the crosswalk.")
-          for row in recipe_rows:
-              if links.get(row.get("legacyRoomIngredientId")) != row.get("foodItemId"):
-                  raise SystemExit("A recipe row does not resolve through the legacy-ID map.")
-          recipe_rows = mapping.get("recipeRows") or []
-          row_ids = {
-              (row.get("recipeId"), row.get("ingredientIndex"))
-              for row in recipe_rows
-          }
-          if len(row_ids) != len(recipe_rows):
-              raise SystemExit("Duplicate recipe-row mappings were generated.")
-          print(f"Validated {len(products)} unique food items, {len(links)} legacy ingredient IDs and {len(recipe_rows)} recipe rows.")
-          PY
+      - name: Validate canonical taxonomy, catalogue identities and recipe compatibility
+        run: python tools/validate_food_taxonomy.py
 
       - name: Commit generated catalogue
         shell: bash
@@ -148,11 +80,14 @@ jobs:
           input_paths=(
             "data/recipes/ar/recipes.json"
             "data/products/categories.json"
+            "data/products/catalogue-baseline.json"
+            "data/products/taxonomy.schema.json"
             "data/products/curated-food-items.json"
             "data/products/translations.json"
             ".github/apps-script/recipe_translation_api.gs"
             "tools/build_food_product_catalogue.py"
             "tools/test_food_product_catalogue.py"
+            "tools/validate_food_taxonomy.py"
             ".github/workflows/build-food-product-catalogue.yml"
           )
           for path in "${input_paths[@]}"; do
