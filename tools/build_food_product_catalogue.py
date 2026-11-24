@@ -484,8 +484,8 @@ def _food_type_hints(label: str) -> dict[str, bool]:
         "seafood": _label_has(
             label, "fish", "tuna", "sardine", "anchovy", "salmon", "shrimp",
             "prawn", "seafood", "shellfish", "mollusc", "mussel", "oyster",
-            "squid", "octopus", "crab", "lobster", "clam", "scallop",
-            "herring", "cod", "seaweed", "nori", "kombu", "wakame",
+            "squid", "octopus", "crab", "crayfish", "lobster", "clam", "scallop",
+            "herring", "cod", "rockfish", "seaweed", "nori", "kombu", "wakame",
             "سمك", "تونة", "سردين", "جمبري", "طحالب بحرية"
         ),
         "legumes": (
@@ -501,21 +501,26 @@ def _food_type_hints(label: str) -> dict[str, bool]:
             )
         ),
         "vegetables": _label_has(
-            label, "vegetable", "tomato", "potato", "onion", "carrot", "pepper",
-            "courgette", "zucchini", "cabbage", "spinach", "lettuce", "eggplant",
-            "aubergine", "green bean", "bean sprout", "sprout", "okra", "beet",
-            "radish", "turnip", "sweet potato", "cassava", "taro", "yam",
-            "cucumber", "pumpkin", "squash", "asparagus", "broccoli", "celery",
-            "garlic", "leek", "bok choy", "collard", "kale", "chard",
+            label, "vegetable", "tomato", "potato", "onion", "shallot", "carrot",
+            "pepper", "habanero", "courgette", "zucchini", "cabbage", "spinach",
+            "lettuce", "eggplant", "aubergine", "green bean", "bean sprout",
+            "sprout", "okra", "beet", "beetroot", "radish", "daikon", "turnip",
+            "sweet potato", "cassava", "taro", "yam", "yambean", "jicama", "cucumber", "pumpkin",
+            "squash", "asparagus", "broccoli", "celery", "garlic", "leek",
+            "bok choy", "collard", "kale", "chard", "chayote", "rocket",
+            "arugula", "sorrel", "vine leaf", "vine leaves", "waterleaf",
+            "mixed greens", "coleslaw", "sweetcorn", "sweet corn",
             "سبانخ", "بطاطا", "طماطم", "بصل", "جزر", "فلفل", "كرنب", "ملفوف",
             "خيار", "شمندر", "فجل", "بامية", "ثوم", "قرع", "كسافا"
         ),
         "fruit": _label_has(
-            label, "fruit", "apple", "banana", "orange", "lemon", "lime", "date",
-            "grape", "berry", "mango", "pear", "peach", "apricot", "cherry",
-            "plum", "pineapple", "papaya", "kiwi", "guanabana", "soursop",
-            "lulo", "cranberry", "barberry", "prune", "تمر", "تفاح", "موز",
-            "برتقال", "ليمون", "كرز", "برقوق", "توت"
+            label, "fruit", "apple", "avocado", "banana", "orange", "lemon", "lime",
+            "date", "grape", "berry", "bilberry", "blueberry", "strawberry",
+            "blackberry", "raspberry", "watermelon", "plantain", "olive", "olives",
+            "raisin", "tamarind", "goraka", "acai", "açai", "mango", "pear",
+            "peach", "apricot", "cherry", "plum", "pineapple", "papaya", "kiwi",
+            "guanabana", "soursop", "lulo", "cranberry", "barberry", "prune",
+            "تمر", "تفاح", "موز", "برتقال", "ليمون", "كرز", "برقوق", "توت"
         ),
         "meat": _label_has(
             label, "meat", "beef", "lamb", "mutton", "veal", "pork", "bison",
@@ -544,6 +549,9 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
         if hints["vegetables"]:
             return "frozen", "frozen_vegetables", "frozen_vegetable"
         return "frozen", None, "frozen_other"
+
+    if has("kimchi", "kimchee"):
+        return "canned_preserved", "pickled_preserved", "fermented_preserved_vegetable"
 
     if has(
         "canned", "tinned", "in brine", "brined", "pickled", "preserved",
@@ -574,7 +582,7 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
     if has(
         "cocoa", "cacao", "chocolate", "cocoa powder", "cacao powder",
         "baking powder", "baking soda", "bicarbonate of soda", "bicarbonate",
-        "agar agar", "gelatin", "gelatine", "vanilla extract", "raising agent",
+        "agar agar", "gelatin", "gelatine", "vanilla", "vanilla extract", "raising agent",
         "leavening agent", "yeast", "خميرة", "كاكاو", "شوكولاتة", "أجار"
     ):
         if has("baking powder", "baking soda", "bicarbonate", "yeast", "raising agent", "خميرة"):
@@ -592,6 +600,7 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
         "sauce", "paste", "condiment", "dressing", "marinade", "chutney",
         "relish", "vinegar", "harissa", "salsa", "zhug", "chimichurri",
         "gochujang", "doubanjiang", "amba", "chamoy", "kecap", "soy sauce",
+        "tahini", "sesame paste",
         "bouillon", "stock cube", "seasoning sauce", "صلصة", "معجون",
         "هريسة", "خل", "تتبيلة"
     ):
@@ -642,7 +651,8 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
     # "nut" as an arbitrary substring, and chilli powder is not fresh produce.
     if has(
         "spice", "spices", "seasoning", "peppercorn", "black pepper",
-        "white pepper", "cumin", "coriander", "coriander seed", "coriander seeds",
+        "white pepper", "aniseed", "anise seed", "nutmeg", "sumac", "allspice",
+        "garam masala", "cumin", "coriander", "coriander seed", "coriander seeds",
         "ground coriander", "coriander powder", "cardamom", "green cardamom",
         "ginger", "garlic powder", "onion powder", "paprika", "turmeric", "cinnamon",
         "clove", "cloves", "saffron", "annatto", "mahlab", "berbere",
@@ -654,7 +664,7 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
         "kashmiri", "pepper flakes", "بهارات", "كمون", "فلفل أسود",
         "قرفة", "هيل", "يانسون", "كركم", "زعفران", "كزبرة حب"
     ):
-        if has("blend", "mix", "seasoning", "berbere", "tajin", "gochugaru blend", "بهارات مشكلة"):
+        if has("blend", "mix", "seasoning", "berbere", "tajin", "garam masala", "gochugaru blend", "بهارات مشكلة"):
             return "spices", "spice_blends", "spice_blend"
         if has("powder", "ground", "flakes", "flake", "crushed", "مطحون", "مسحوق", "رقائق"):
             return "spices", "ground_spices", "ground_spice"
@@ -678,12 +688,13 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
         "raib", "rayeb", "leben", "lben", "kefir", "buttermilk",
         "fermented milk", "cream", "cheese", "fromage", "butter", "beurre",
         "ricotta", "rennet", "casein", "whey protein", "qurut", "curd",
+        "mozzarella", "paneer", "pecorino", "queso", "jameed",
         "حليب", "لبن", "رايب", "زبادي", "جبن", "قشدة", "زبدة", "مصل اللبن",
         "منفحة"
     ):
-        if has("cheese", "fromage", "ricotta", "rennet", "curd", "جبن", "منفحة"):
+        if has("cheese", "fromage", "ricotta", "rennet", "curd", "mozzarella", "paneer", "pecorino", "queso", "جبن", "منفحة"):
             return "dairy", "cheese", "cheese_or_cheese_making"
-        if has("raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "qurut", "لبن", "رايب"):
+        if has("raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "qurut", "jameed", "لبن", "رايب"):
             return "dairy", "fermented_dairy", "fermented_dairy"
         if has("yogurt", "yoghurt", "yoghourt", "yaourt", "زبادي"):
             return "dairy", "yogurt", "yogurt"
@@ -696,7 +707,7 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
     if has("seaweed", "nori", "kombu", "wakame", "dulse", "kelp", "طحالب بحرية", "أعشاب بحرية"):
         return "seafood", "preserved", "edible_seaweed"
     if hints["seafood"]:
-        if has("shrimp", "prawn", "crab", "lobster", "shellfish", "crustacean", "جمبري"):
+        if has("shrimp", "prawn", "crab", "crayfish", "lobster", "shellfish", "crustacean", "جمبري"):
             return "seafood", "crustaceans", "crustacean"
         if has("mussel", "oyster", "squid", "octopus", "mollusc", "clam", "scallop", "رخويات", "محار"):
             return "seafood", "molluscs", "mollusc"
@@ -738,11 +749,13 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
         return "legumes", "beans", "bean_or_pulse"
 
     if hints["vegetables"]:
+        if has("coleslaw"):
+            return "vegetables", "other", "prepared_vegetable_salad"
         if has("bean sprout", "sprout", "sprouts", "ground dried okra"):
             return "vegetables", "other", "sprouted_or_prepared_vegetable"
         if has(
             "potato", "carrot", "beet", "beetroot", "radish", "turnip",
-            "sweet potato", "cassava", "taro", "yam", "daikon", "parsnip",
+            "sweet potato", "cassava", "taro", "yam", "yambean", "jicama", "daikon", "parsnip",
             "celeriac", "burdock", "yautia", "yuca", "بطاطا", "جزر", "شمندر",
             "فجل", "لفت", "كسافا", "يام"
         ):
@@ -751,8 +764,9 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
             return "vegetables", "bulb_vegetables", "bulb_vegetable"
         if has(
             "spinach", "lettuce", "cabbage", "kale", "chard", "parsley leaf",
-            "bok choy", "collard", "molokhia", "arugula", "rocket", "leafy",
-            "sprout", "جرجير", "سبانخ", "ملفوف", "كرنب", "ملوخية"
+            "bok choy", "collard", "molokhia", "arugula", "rocket", "sorrel",
+            "vine leaf", "waterleaf", "mixed greens", "leafy", "sprout",
+            "جرجير", "سبانخ", "ملفوف", "كرنب", "ملوخية"
         ):
             return "vegetables", "leafy_vegetables", "leafy_vegetable"
         return "vegetables", "fruit_vegetables", "fruit_vegetable_or_pod"
@@ -760,18 +774,18 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
     if hints["fruit"]:
         if has("lemon", "lime", "orange", "citrus", "grapefruit", "citron", "برتقال", "ليمون"):
             return "fruits", "citrus", "citrus_fruit"
-        if has("berry", "strawberry", "raspberry", "blueberry", "cranberry", "barberry", "توت"):
+        if has("berry", "strawberry", "raspberry", "blueberry", "bilberry", "cranberry", "barberry", "acai", "açai", "توت"):
             return "fruits", "berries", "berry"
-        if has("date", "raisin", "dried fruit", "تمر", "زبيب"):
-            return "fruits", "dried_fruits", "dried_fruit_or_date"
-        if has("mango", "pineapple", "papaya", "banana", "kiwi", "guanabana", "soursop", "lulo", "موز"):
+        if has("date", "dates", "تمر", "التمر"):
+            return "fruits", "dried_fruits", "date"
+        if has("mango", "pineapple", "papaya", "banana", "plantain", "kiwi", "guanabana", "soursop", "lulo", "tamarind", "goraka", "موز"):
             return "fruits", "tropical_fruits", "tropical_fruit"
         return "fruits", None, "other_fruit"
 
-    if has("peanut", "almond", "walnut", "hazelnut", "pistachio", "cashew", "pecan", "macadamia", "nut", "nuts", "seed", "sesame", "لوز", "جوز", "فول سوداني", "بذور"):
+    if has("peanut", "almond", "walnut", "hazelnut", "pistachio", "cashew", "pecan", "macadamia", "chestnut", "chestnuts", "nut", "nuts", "seed", "sesame", "لوز", "جوز", "فول سوداني", "بذور"):
         if has("peanut", "فول سوداني"):
             return "nuts_seeds", "peanuts", "peanut"
-        if has("almond", "walnut", "hazelnut", "pistachio", "cashew", "pecan", "macadamia", "لوز", "جوز"):
+        if has("almond", "walnut", "hazelnut", "pistachio", "cashew", "pecan", "macadamia", "chestnut", "chestnuts", "لوز", "جوز"):
             return "nuts_seeds", "tree_nuts", "tree_nut"
         return "nuts_seeds", "seeds", "seed"
 
@@ -785,7 +799,8 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
 
     if has(
         "bread", "pasta", "couscous", "noodle", "macaroni", "tortilla",
-        "phyllo", "filo", "pastry", "dough", "arepa", "injera", "roti",
+        "naan", "panko", "breadcrumb", "breadcrumbs", "phyllo", "filo",
+        "pastry", "dough", "arepa", "injera", "roti",
         "paratha", "lavash", "bun", "cracker", "biscuit", "wafer",
         "empanada", "kataifi", "yufka", "malsouka", "flatbread", "خبز",
         "عجائن", "كسكس", "معجنات"
@@ -794,13 +809,14 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
             return "bakery_pasta", "couscous", "couscous"
         if has("pasta", "noodle", "macaroni", "عجائن"):
             return "bakery_pasta", "pasta", "pasta_or_noodle"
-        if has("bread", "bun", "tortilla", "arepa", "injera", "roti", "paratha", "lavash", "flatbread", "خبز"):
+        if has("bread", "bun", "tortilla", "naan", "panko", "breadcrumb", "breadcrumbs", "arepa", "injera", "roti", "paratha", "lavash", "flatbread", "خبز"):
             return "bakery_pasta", "bread", "bread_or_flatbread"
         return "bakery_pasta", "pastry", "pastry_or_baked_dough"
 
     if has(
         "rice", "wheat", "semolina", "semoule", "flour", "farine", "oat",
-        "barley", "cornmeal", "maize", "millet", "sorghum", "bulgur",
+        "barley", "cornmeal", "corn flakes", "muesli", "müesli", "granola",
+        "malt", "rye malt", "maize", "millet", "sorghum", "bulgur",
         "quinoa", "hominy", "popcorn", "gari", "attieke", "dzavar",
         "tapioca", "cassava starch", "starch", "cereal", "grain", "couscous grain",
         "أرز", "سميد", "فرينة", "دقيق", "قمح", "حبوب", "شوفان"

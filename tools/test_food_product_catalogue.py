@@ -120,6 +120,65 @@ class FoodCatalogueParserTests(unittest.TestCase):
         self.assertEqual(category_for(["coriander seeds"]), ("spices", "whole_spices"))
         self.assertEqual(category_for(["ground coriander"]), ("spices", "ground_spices"))
 
+
+    def test_classifier_covers_common_recipe_food_families(self):
+        cases = {
+            "aniseed": ("spices", "whole_spices"),
+            "avocado": ("fruits", None),
+            "beetroot": ("vegetables", "root_tubers"),
+            "bilberry": ("fruits", "berries"),
+            "blueberry": ("fruits", "berries"),
+            "chestnut": ("nuts_seeds", "tree_nuts"),
+            "corn flakes": ("grains_cereals", None),
+            "daikon": ("vegetables", "root_tubers"),
+            "garam masala": ("spices", "spice_blends"),
+            "habanero chili": ("vegetables", "fruit_vegetables"),
+            "kimchi": ("canned_preserved", "pickled_preserved"),
+            "mozzarella": ("dairy", "cheese"),
+            "müesli": ("grains_cereals", None),
+            "nutmeg": ("spices", "whole_spices"),
+            "olive": ("fruits", None),
+            "paneer": ("dairy", "cheese"),
+            "Pecorino": ("dairy", "cheese"),
+            "raisin": ("fruits", None),
+            "rocket": ("vegetables", "leafy_vegetables"),
+            "rye malt": ("grains_cereals", None),
+            "shallot": ("vegetables", "bulb_vegetables"),
+            "sorrel": ("vegetables", "leafy_vegetables"),
+            "strawberry": ("fruits", "berries"),
+            "sumac": ("spices", "whole_spices"),
+            "sweetcorn": ("vegetables", "fruit_vegetables"),
+            "tahini": ("sauces_condiments", None),
+            "vanilla": ("baking", None),
+            "vine leaf": ("vegetables", "leafy_vegetables"),
+            "watermelon": ("fruits", None),
+            "yambean": ("vegetables", "root_tubers"),
+            "Acai pulp, unsweetened": ("fruits", "berries"),
+            "bony rockfish": ("seafood", "fish"),
+            "chayotes": ("vegetables", "fruit_vegetables"),
+            "coleslaw": ("vegetables", "other"),
+            "Goraka or tamarind": ("fruits", "tropical_fruits"),
+            "green plantain": ("fruits", "tropical_fruits"),
+            "green plantains": ("fruits", "tropical_fruits"),
+            "Ground allspice": ("spices", "ground_spices"),
+            "Ground dried crayfish": ("seafood", "crustaceans"),
+            "Jameed": ("dairy", "fermented_dairy"),
+            "mixed greens": ("vegetables", "leafy_vegetables"),
+            "Mozzarella, part skim": ("dairy", "cheese"),
+            "naan": ("bakery_pasta", "bread"),
+            "Panko breadcrumbs": ("bakery_pasta", "bread"),
+            "Plantain crisps": ("fruits", "tropical_fruits"),
+            "queso costeño, cubed": ("dairy", "cheese"),
+            "queso Paraguay": ("dairy", "cheese"),
+            "ripe plantain": ("fruits", "tropical_fruits"),
+            "split chickpea": ("legumes", "chickpeas"),
+            "Waterleaf": ("vegetables", "leafy_vegetables"),
+        }
+
+        for label, expected in cases.items():
+            with self.subTest(label=label):
+                self.assertEqual(category_for([label]), expected)
+
     def test_classifier_keeps_preferred_label_ahead_of_conflicting_synonyms(self):
         category, subcategory, decision = classify_food_category(
             ["cardamom"],
