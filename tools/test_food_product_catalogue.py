@@ -14,6 +14,7 @@ from tools.build_food_product_catalogue import (
     room_ingredient_id,
     _clean_english_ingredient,
     ingredient_name_variants,
+    assign_stable_product_ids,
 )
 
 
@@ -324,6 +325,49 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         self.assertEqual(normalize_recipe_unit("bunches", 2), "ربطة")
         self.assertEqual(normalize_recipe_unit("pinches", 1), "رشة")
         self.assertEqual(normalize_recipe_unit("", ""), "حسب الحاجة")
+
+    def test_uuid_registry_resolves_historical_split_without_duplicate_ids(self):
+        historical = str(uuid.uuid4())
+        registry = {
+            "version": 1,
+            "idFormat": "UUIDv4",
+            "ids": {"key:first": historical, "key:second": historical},
+            "redirects": {},
+        }
+        products = [
+            {"id": None, "identityKeys": ["key:first"], "recipeIngredientIds": []},
+            {"id": None, "identityKeys": ["key:second"], "recipeIngredientIds": []},
+        ]
+
+        assign_stable_product_ids(products, registry)
+
+        self.assertEqual(products[0]["id"], historical)
+        self.assertNotEqual(products[0]["id"], products[1]["id"])
+        self.assertEqual(uuid.UUID(products[1]["id"]).version, 4)
+        self.assertEqual(registry["ids"]["key:first"], products[0]["id"])
+        self.assertEqual(registry["ids"]["key:second"], products[1]["id"])
+        self.assertNotEqual(products[0]["id"], products[1]["id"])
+
+    def test_uuid_registry_redirects_retired_identity_on_merge(self):
+        first = str(uuid.uuid4())
+        second = str(uuid.uuid4())
+        registry = {
+            "version": 1,
+            "ids": {"key:first": first, "key:second": second},
+            "redirects": {},
+        }
+        products = [
+            {"id": None, "identityKeys": ["key:first", "key:second"], "recipeIngredientIds": []}
+        ]
+
+        assign_stable_product_ids(products, registry)
+
+        product_id = products[0]["id"]
+        self.assertIn(product_id, {first, second})
+        retired = second if product_id == first else first
+        self.assertEqual(registry["redirects"][retired], product_id)
+        self.assertEqual(registry["ids"]["key:first"], product_id)
+        self.assertEqual(registry["ids"]["key:second"], product_id)
 
     def test_unitools_legacy_id_does_not_slugify_source_id(self):
         item = {"id": "Mixed ID!?", "name": "زيت", "quantity": 1, "unit": "piece"}
