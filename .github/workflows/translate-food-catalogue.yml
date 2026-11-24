@@ -67,7 +67,8 @@ jobs:
         run: python tools/build_food_product_catalogue.py
 
       - name: Validate translated catalogue and UUID bindings
-        if: success()
+        id: validate
+        if: always()
         shell: bash
         run: |
           python - <<'PY'
@@ -99,7 +100,7 @@ jobs:
           PY
 
       - name: Commit saved translations and rebuilt catalogue
-        if: always()
+        if: always() && steps.validate.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
