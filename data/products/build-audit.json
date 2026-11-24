@@ -8,18 +8,21 @@
     "uniqueRecipeIngredientIds": 1261
   },
   "catalogueCounts": {
-    "products": 4661,
+    "products": 4654,
     "mappedRecipeIngredientIds": 1261,
     "uniqueRecipeIngredientsMapped": 938,
-    "offMatchedGroups": 364,
-    "unmatchedRecipeGroups": 495,
-    "ambiguousRecipeGroups": 0,
-    "missingArabicNames": 3426,
+    "offMatchedGroups": 443,
+    "unmatchedRecipeGroups": 454,
+    "ambiguousRecipeGroups": 2,
+    "foodOnMatchedGroups": 39,
+    "foodOnAmbiguousGroups": 2,
+    "offMatchCoveragePercent": 47.23,
+    "missingArabicNames": 3424,
     "missingEnglishNames": 0,
-    "missingFrenchNames": 1623,
-    "fallbackOtherCategory": 325,
-    "missingImages": 4661,
-    "missingNutrition": 4661,
+    "missingFrenchNames": 1616,
+    "fallbackOtherCategory": 310,
+    "missingImages": 4654,
+    "missingNutrition": 4654,
     "duplicateIds": 0,
     "duplicateEnglishNames": 0
   },
@@ -29,7 +32,10 @@
     "exact_en_base_variant": 58,
     "exact_en_primary": 254,
     "exact_localized_alias": 6,
-    "unmatched": 495
+    "foodon_ambiguous": 2,
+    "foodon_exact": 34,
+    "foodon_exact_to_off": 5,
+    "unmatched": 454
   },
   "unmatchedRecipeIngredients": [
     {
@@ -98,30 +104,6 @@
       ],
       "units": [
         "g"
-      ]
-    },
-    {
-      "nameAr": "نقانق الديك الرومي المطبوخة",
-      "nameEn": "Turkey sausage, cooked",
-      "legacyIds": [
-        "orc-ing-1daf3370136b7cef1c5f",
-        "orc-ing-4f12c20d830a77747353"
-      ],
-      "units": [
-        "g",
-        "piece"
-      ]
-    },
-    {
-      "nameAr": "شرائح ديك رومي مدخنة، مطبوخة",
-      "nameEn": "Turkey bacon, cooked",
-      "legacyIds": [
-        "orc-ing-021f1b25547d030cfa07",
-        "orc-ing-d0d0cda9178acec20531"
-      ],
-      "units": [
-        "piece",
-        "شريحة"
       ]
     },
     {
@@ -246,18 +228,6 @@
       ]
     },
     {
-      "nameAr": "دقيق الذرة المعالج بالنيكستامال (دقيق الماسا)",
-      "nameEn": "Masa harina",
-      "legacyIds": [
-        "orc-ing-7f13a1967717ae19666f",
-        "orc-ing-unitools-masa"
-      ],
-      "units": [
-        "g",
-        "كوب"
-      ]
-    },
-    {
       "nameAr": "فاصوليا مهروسة بدون دهون",
       "nameEn": "Refried beans, fat free",
       "legacyIds": [
@@ -306,19 +276,6 @@
       ]
     },
     {
-      "nameAr": "معكرونة القمح الكامل، مطبوخة",
-      "nameEn": "Whole wheat pasta, cooked",
-      "legacyIds": [
-        "orc-ing-0834f0243ad820d3e5e4",
-        "orc-ing-991c739c299c6bdd1416",
-        "orc-ing-e4c87c1c3601a54dfbd7"
-      ],
-      "units": [
-        "piece",
-        "كوب"
-      ]
-    },
-    {
       "nameAr": "بطاطس مسلوقة",
       "nameEn": "g baby potatoes",
       "legacyIds": [
@@ -353,28 +310,6 @@
       "units": [
         "g",
         "كوب"
-      ]
-    },
-    {
-      "nameAr": "خبز القمح الكامل",
-      "nameEn": "Whole wheat bread",
-      "legacyIds": [
-        "orc-ing-1df10e12db09297c1a84",
-        "orc-ing-1e2ceee3633e9b7e0c0f"
-      ],
-      "units": [
-        "piece",
-        "شريحة"
-      ]
-    },
-    {
-      "nameAr": "الكعك",
-      "nameEn": "English muffin, whole wheat",
-      "legacyIds": [
-        "orc-ing-4b960520023b5f2a8c50"
-      ],
-      "units": [
-        "piece"
       ]
     },
     {
@@ -451,14 +386,6 @@
         "g",
         "كوب"
       ]
-    },
-    {
-      "nameAr": "عصيدة الذرة المطبوخة",
-      "nameEn": "Grits, cooked",
-      "legacyIds": [
-        "orc-ing-f043d5de921fd9c50551"
-      ],
-      "units": []
     },
     {
       "nameAr": "لحم الخاصرة البقري، مطبوخ",
@@ -539,16 +466,6 @@
       ]
     },
     {
-      "nameAr": "بذور الكتان المطحونة",
-      "nameEn": "Flaxseed, ground",
-      "legacyIds": [
-        "orc-ing-107eac5c3eaae58b29a7"
-      ],
-      "units": [
-        "ملعقة كبيرة"
-      ]
-    },
-    {
       "nameAr": "صدر ديك رومي",
       "nameEn": "Turkey breast, deli",
       "legacyIds": [
@@ -619,18 +536,6 @@
       ]
     },
     {
-      "nameAr": "بيكو دي جالو",
-      "nameEn": "Pico de gallo",
-      "legacyIds": [
-        "orc-ing-9ca27ed41143d51521a3",
-        "orc-ing-d2712ebf8646fbd39562"
-      ],
-      "units": [
-        "كوب",
-        "ملعقة كبيرة"
-      ]
-    },
-    {
       "nameAr": "أراتشيرا (شريحة لحم بقري مطبوخة)",
       "nameEn": "Flank steak, cooked",
       "legacyIds": [
@@ -665,18 +570,6 @@
       ]
     },
     {
-      "nameAr": "قرفة مطحونة",
-      "nameEn": "Cinnamon, ground",
-      "legacyIds": [
-        "orc-ing-1c49cfa7e90d5918d1db",
-        "orc-ing-3ce6cd6a217525426068"
-      ],
-      "units": [
-        "piece",
-        "ملعقة صغيرة"
-      ]
-    },
-    {
       "nameAr": "شريحة لحم بقري مطبوخة قليلة الدسم",
       "nameEn": "Lean beef steak, cooked",
       "legacyIds": [
@@ -693,28 +586,6 @@
         "orc-ing-fae16964950990189561"
       ],
       "units": []
-    },
-    {
-      "nameAr": "فشار طبيعي",
-      "nameEn": "Popcorn, air-popped",
-      "legacyIds": [
-        "orc-ing-71a40a4081bb0f0cf91b"
-      ],
-      "units": [
-        "كوب"
-      ]
-    },
-    {
-      "nameAr": "ألواح الصبار المطبوخة",
-      "nameEn": "Nopal, cooked",
-      "legacyIds": [
-        "orc-ing-50fae78aee25756b71ba",
-        "orc-ing-ed7568b34bd026697c5a"
-      ],
-      "units": [
-        "piece",
-        "كوب"
-      ]
     },
     {
       "nameAr": "إدامامي بدون قرون، مطبوخ",
@@ -771,16 +642,6 @@
       ]
     },
     {
-      "nameAr": "الجيكاما",
-      "nameEn": "Jicama",
-      "legacyIds": [
-        "orc-ing-2b17199b822fb397d170"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "تاجين",
       "nameEn": "Tajin seasoning",
       "legacyIds": [
@@ -797,22 +658,6 @@
         "orc-ing-ef10f2b5a77605ea2a6c"
       ],
       "units": [
-        "ملعقة كبيرة"
-      ]
-    },
-    {
-      "nameAr": "جبن طازج",
-      "nameEn": "Queso fresco",
-      "legacyIds": [
-        "orc-ing-25e5418c9187e9ca5066",
-        "orc-ing-a112772eb1ca79b50b51",
-        "orc-ing-c5b12c355c024e61f6ae",
-        "orc-ing-e54d88e46793fd0f292f"
-      ],
-      "units": [
-        "g",
-        "piece",
-        "كوب",
         "ملعقة كبيرة"
       ]
     },
@@ -939,16 +784,6 @@
       ]
     },
     {
-      "nameAr": "صبار نوبال خام",
-      "nameEn": "Nopal, raw",
-      "legacyIds": [
-        "orc-ing-ef68e86fd9e9f20b82f7"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "صلصة ليزانو",
       "nameEn": "Salsa Lizano",
       "legacyIds": [
@@ -1040,32 +875,10 @@
       ]
     },
     {
-      "nameAr": "لب فاكهة الباشن فروت",
-      "nameEn": "Passion fruit pulp",
-      "legacyIds": [
-        "orc-ing-09f9ba1791b4b3db88a4",
-        "orc-ing-2694d996a1205ae81346"
-      ],
-      "units": [
-        "g",
-        "كوب"
-      ]
-    },
-    {
       "nameAr": "فتات الخبز بانكو",
       "nameEn": "Panko breadcrumbs",
       "legacyIds": [
         "orc-ing-b865c9bf679cff7878da"
-      ],
-      "units": [
-        "كوب"
-      ]
-    },
-    {
-      "nameAr": "أوراق خضراء مختلطة",
-      "nameEn": "Mixed greens",
-      "legacyIds": [
-        "orc-ing-fd6a7919b71481457192"
       ],
       "units": [
         "كوب"
@@ -1168,16 +981,6 @@
       ],
       "units": [
         "كوب"
-      ]
-    },
-    {
-      "nameAr": "الخبز",
-      "nameEn": "Hamburger bun, whole wheat",
-      "legacyIds": [
-        "orc-ing-84ebaa85bba515fcd971"
-      ],
-      "units": [
-        "piece"
       ]
     },
     {
@@ -1428,16 +1231,6 @@
       ]
     },
     {
-      "nameAr": "كريمة الأرز (حبوب)",
-      "nameEn": "Cream of rice",
-      "legacyIds": [
-        "orc-ing-48b5f587669f2b07a90e"
-      ],
-      "units": [
-        "ملعقة كبيرة"
-      ]
-    },
-    {
       "nameAr": "نشا الكسافا (التابيوكا)",
       "nameEn": "cup hydrated tapioca gum",
       "legacyIds": [
@@ -1589,18 +1382,6 @@
       ]
     },
     {
-      "nameAr": "هوميني مطبوخ",
-      "nameEn": "Hominy, cooked",
-      "legacyIds": [
-        "orc-ing-6950653b3c2da846b08e",
-        "orc-ing-bee0b89dab8a8d70b757"
-      ],
-      "units": [
-        "piece",
-        "كوب"
-      ]
-    },
-    {
       "nameAr": "العنب",
       "nameEn": "Grapes",
       "legacyIds": [
@@ -1636,16 +1417,6 @@
       "legacyIds": [
         "orc-ing-9bcb1b92813ceb0927a0",
         "orc-ing-9bd5c1fbbbd7f632d6c5"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
-      "nameAr": "شطيرة جوافة",
-      "nameEn": "Guava paste",
-      "legacyIds": [
-        "orc-ing-2f4358902cdf080f6206"
       ],
       "units": [
         "piece"
@@ -1872,16 +1643,6 @@
       ]
     },
     {
-      "nameAr": "سكوتش بونيه",
-      "nameEn": "Scotch bonnet",
-      "legacyIds": [
-        "orc-ing-unitools-scotchbonnet"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "الكاكاو للتزيين",
       "nameEn": "Cocoa for the icing",
       "legacyIds": [
@@ -2050,18 +1811,6 @@
       ]
     },
     {
-      "nameAr": "مكعبات مرق اللحم",
-      "nameEn": "Stock cube",
-      "legacyIds": [
-        "orc-ing-unitools-bouillon",
-        "orc-ing-unitools-maggi",
-        "orc-ing-unitools-stockcube"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "زيت للقلي",
       "nameEn": "Oil for frying",
       "legacyIds": [
@@ -2109,16 +1858,6 @@
       ],
       "units": [
         "g"
-      ]
-    },
-    {
-      "nameAr": "موز الجنة الأخضر",
-      "nameEn": "Green plantain",
-      "legacyIds": [
-        "orc-ing-unitools-greenplantain"
-      ],
-      "units": [
-        "piece"
       ]
     },
     {
@@ -2267,27 +2006,6 @@
       ]
     },
     {
-      "nameAr": "الحليب المكثف",
-      "nameEn": "Condensed milk",
-      "legacyIds": [
-        "orc-ing-unitools-condensedmilk"
-      ],
-      "units": [
-        "g",
-        "ملعقة كبيرة"
-      ]
-    },
-    {
-      "nameAr": "صلصة المشمش",
-      "nameEn": "Apricot chutney",
-      "legacyIds": [
-        "orc-ing-unitools-chutney"
-      ],
-      "units": [
-        "ملعقة كبيرة"
-      ]
-    },
-    {
       "nameAr": "أضلاع لحم بقري مدخنة",
       "nameEn": "Smoked beef ribs",
       "legacyIds": [
@@ -2326,16 +2044,6 @@
       ],
       "units": [
         "g"
-      ]
-    },
-    {
-      "nameAr": "زعفران",
-      "nameEn": "Saffron",
-      "legacyIds": [
-        "orc-ing-unitools-saffron"
-      ],
-      "units": [
-        "رشة"
       ]
     },
     {
@@ -2620,16 +2328,6 @@
       ]
     },
     {
-      "nameAr": "خميلي سونيلي",
-      "nameEn": "Khmeli suneli",
-      "legacyIds": [
-        "orc-ing-unitools-khmelisuneli"
-      ],
-      "units": [
-        "ملعقة كبيرة"
-      ]
-    },
-    {
       "nameAr": "كاتيك أو الكفير كامل الدسم",
       "nameEn": "Katyk or full-fat kefir",
       "legacyIds": [
@@ -2681,16 +2379,6 @@
       ]
     },
     {
-      "nameAr": "الثوم المعمر",
-      "nameEn": "Garlic chives",
-      "legacyIds": [
-        "orc-ing-unitools-chives"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
       "nameAr": "الهيل، القرنفل، القرفة، الغار",
       "nameEn": "Cardamom, cloves, cinnamon, bay",
       "legacyIds": [
@@ -2734,16 +2422,6 @@
       ]
     },
     {
-      "nameAr": "كاتشب الطماطم",
-      "nameEn": "Tomato ketchup",
-      "legacyIds": [
-        "orc-ing-unitools-tomatoketchup"
-      ],
-      "units": [
-        "ml"
-      ]
-    },
-    {
       "nameAr": "معجون سامبال",
       "nameEn": "Sambal paste",
       "legacyIds": [
@@ -2780,17 +2458,6 @@
         "orc-ing-unitools-bun"
       ],
       "units": [
-        "piece"
-      ]
-    },
-    {
-      "nameAr": "لحم بقري ولحم خنزير",
-      "nameEn": "beef ham",
-      "legacyIds": [
-        "orc-ing-unitools-ham"
-      ],
-      "units": [
-        "g",
         "piece"
       ]
     },
@@ -2850,16 +2517,6 @@
       "nameEn": "Hot dog buns",
       "legacyIds": [
         "orc-ing-unitools-buns"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
-      "nameAr": "الكوسا",
-      "nameEn": "Courgettes",
-      "legacyIds": [
-        "orc-ing-unitools-courgette"
       ],
       "units": [
         "piece"
@@ -2979,16 +2636,6 @@
       ]
     },
     {
-      "nameAr": "سمك القد المجفف",
-      "nameEn": "Stockfish",
-      "legacyIds": [
-        "orc-ing-unitools-stockfish"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
       "nameAr": "السمك المدخن",
       "nameEn": "Smoked fish",
       "legacyIds": [
@@ -3027,16 +2674,6 @@
       ],
       "units": [
         "piece"
-      ]
-    },
-    {
-      "nameAr": "ورقة إيرو",
-      "nameEn": "Eru leaf",
-      "legacyIds": [
-        "orc-ing-unitools-eruleaf"
-      ],
-      "units": [
-        "g"
       ]
     },
     {
@@ -3211,16 +2848,6 @@
       ]
     },
     {
-      "nameAr": "ورقة الباندان",
-      "nameEn": "Pandan leaf",
-      "legacyIds": [
-        "orc-ing-unitools-pandan"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "دقيق للحشو",
       "nameEn": "Flour for the filling",
       "legacyIds": [
@@ -3367,16 +2994,6 @@
       "nameEn": "Roe or milt",
       "legacyIds": [
         "orc-ing-unitools-roe"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
-      "nameAr": "دال تشانا",
-      "nameEn": "Chana dal",
-      "legacyIds": [
-        "orc-ing-unitools-chanadal"
       ],
       "units": [
         "g"
@@ -4091,16 +3708,6 @@
       ]
     },
     {
-      "nameAr": "لحم بقري سلامي",
-      "nameEn": "beef salami",
-      "legacyIds": [
-        "orc-ing-unitools-salami"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
       "nameAr": "جميل",
       "nameEn": "Jameed",
       "legacyIds": [
@@ -4514,16 +4121,6 @@
       ]
     },
     {
-      "nameAr": "سلطة الكولسلو",
-      "nameEn": "Coleslaw",
-      "legacyIds": [
-        "orc-ing-unitools-coleslaw"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
       "nameAr": "ثلج مجروش",
       "nameEn": "Crushed ice",
       "legacyIds": [
@@ -4598,16 +4195,6 @@
       "nameEn": "Cheddar cheese curds",
       "legacyIds": [
         "orc-ing-unitools-curds"
-      ],
-      "units": [
-        "g"
-      ]
-    },
-    {
-      "nameAr": "عصيدة الذرة",
-      "nameEn": "Hominy",
-      "legacyIds": [
-        "orc-ing-unitools-hominy"
       ],
       "units": [
         "g"
@@ -4694,16 +4281,6 @@
       ]
     },
     {
-      "nameAr": "جذر الجنسنغ",
-      "nameEn": "Ginseng root",
-      "legacyIds": [
-        "orc-ing-unitools-ginseng"
-      ],
-      "units": [
-        "piece"
-      ]
-    },
-    {
       "nameAr": "تمر العناب",
       "nameEn": "Jujube dates",
       "legacyIds": [
@@ -4773,16 +4350,6 @@
       "units": [
         "g",
         "ملعقة كبيرة"
-      ]
-    },
-    {
-      "nameAr": "نان",
-      "nameEn": "Naan",
-      "legacyIds": [
-        "orc-ing-unitools-naan"
-      ],
-      "units": [
-        "piece"
       ]
     },
     {
@@ -5136,7 +4703,36 @@
       ]
     }
   ],
-  "ambiguousRecipeIngredients": [],
+  "ambiguousRecipeIngredients": [
+    {
+      "nameAr": "الجيكاما",
+      "nameEn": "Jicama",
+      "legacyIds": [
+        "orc-ing-2b17199b822fb397d170"
+      ],
+      "units": [
+        "piece"
+      ],
+      "candidateFoodOnIds": [
+        "FOODON_00003739",
+        "FOODON_03309754"
+      ]
+    },
+    {
+      "nameAr": "زعفران",
+      "nameEn": "Saffron",
+      "legacyIds": [
+        "orc-ing-unitools-saffron"
+      ],
+      "units": [
+        "رشة"
+      ],
+      "candidateFoodOnIds": [
+        "FOODON_00003043",
+        "FOODON_00003441"
+      ]
+    }
+  ],
   "categoryConflicts": [],
   "dataAvailabilityNotes": [
     "The OFF ingredient taxonomy supplies multilingual labels, aliases and taxonomy relations, not product photographs or complete nutrient panels.",
