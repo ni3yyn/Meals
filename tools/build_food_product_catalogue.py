@@ -1157,9 +1157,19 @@ def build_catalogue(
             "products": len(products),
             "mappedRecipeIngredientIds": len(matched_ids),
             "uniqueRecipeIngredientsMapped": len(groups),
-            "offMatchedGroups": sum(matching_methods[k] for k in ("exact_en_primary", "exact_alias", "exact_ar_primary")),
+            "offMatchedGroups": sum(
+                count for method, count in matching_methods.items()
+                if method.startswith("exact_")
+            ),
             "unmatchedRecipeGroups": len(unmatched),
             "ambiguousRecipeGroups": len(ambiguous),
+        "offMatchCoveragePercent": round(
+            100.0 * sum(
+                count for method, count in matching_methods.items()
+                if method.startswith("exact_")
+            ) / max(len(groups), 1),
+            2,
+        ),
             "missingArabicNames": missing_ar,
             "missingEnglishNames": missing_en,
             "missingFrenchNames": missing_fr,
