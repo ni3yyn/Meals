@@ -946,7 +946,7 @@ class MealsRepository(context: Context) {
         return samples.map { (id, pack, price) ->
             PriceObservationEntity(
                 id = "demo-$id",
-                ingredientId = id,
+                ingredientId = foodIdentityResolver.canonicalId(id),
                 packQuantityBase = pack,
                 unit = units.getValue(id),
                 packPriceDzd = price,
