@@ -1,3 +1,4 @@
+import hashlib
 import tempfile
 import unittest
 import uuid
@@ -7,6 +8,7 @@ from tools.build_food_product_catalogue import (
     build_catalogue,
     category_for,
     normalize_label,
+    normalize_recipe_unit,
     parse_foodon_owl,
     parse_off_taxonomy,
     room_ingredient_id,
@@ -36,16 +38,37 @@ class FoodCatalogueParserTests(unittest.TestCase):
         self.assertEqual(records[0]["parents"], ["legumes"])
         self.assertEqual(records[0]["sourceProperties"]["usdaFdcCode"], "173756")
 
+    def test_off_taxonomy_reads_explicit_country_of_origin_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ingredients.txt"
+            path.write_text(
+                "en: olives\n"
+                "ar: زيتون\n"
+                "fr: olives\n"
+                "origin:en: fr: france, it: italy\n\n",
+                encoding="utf-8",
+            )
+            records = parse_off_taxonomy(path)
+
+        self.assertEqual(
+            records[0]["sourceProperties"]["countryOfOrigin"],
+            ["France", "Italy"],
+        )
+
     def test_foodon_named_class_and_synonym(self):
         owl = (
             '<?xml version="1.0"?>'
             '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" '
             'xmlns:owl="http://www.w3.org/2002/07/owl#" '
             'xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" '
-            'xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#">'
+            'xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#" '
+            'xmlns:xml="http://www.w3.org/XML/1998/namespace">'
             '<owl:Class rdf:about="http://purl.obolibrary.org/obo/FOODON_00001234">'
             '<rdfs:label>chickpea</rdfs:label>'
+            '<rdfs:label xml:lang="ar">حمص</rdfs:label>'
+            '<rdfs:label xml:lang="fr">Pois chiche</rdfs:label>'
             '<oboInOwl:hasExactSynonym>garbanzo bean</oboInOwl:hasExactSynonym>'
+            '<oboInOwl:hasExactSynonym xml:lang="ar">حبوب الحمص</oboInOwl:hasExactSynonym>'
             '</owl:Class></rdf:RDF>'
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -56,6 +79,9 @@ class FoodCatalogueParserTests(unittest.TestCase):
         self.assertIn("FOODON_00001234", records)
         self.assertEqual(records["FOODON_00001234"]["name"], "chickpea")
         self.assertIn("garbanzo bean", records["FOODON_00001234"]["aliases"])
+        self.assertEqual(records["FOODON_00001234"]["names"]["ar"], "حمص")
+        self.assertEqual(records["FOODON_00001234"]["names"]["fr"], "Pois chiche")
+        self.assertIn("حبوب الحمص", records["FOODON_00001234"]["aliasesByLanguage"]["ar"])
 
     def test_category_keeps_canned_legumes_distinct(self):
         self.assertEqual(
@@ -218,10 +244,27 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         self.assertEqual(len(mapping["recipeRows"]), 1)
         self.assertEqual(audit["catalogueCounts"]["unmatchedRecipeGroups"], 1)
 
-    def test_focus_legacy_id_is_reproducible(self):
+    def test_focus_legacy_id_matches_android_measure_normalization(self):
         item = {"name": "حمص", "quantity": 1, "unit": "kg"}
+        normalized = "حمص|g"
+        expected = "orc-ing-" + hashlib.sha256(normalized.encode("utf-8")).digest()[:10].hex()
+        self.assertEqual(room_ingredient_id(item, "focus:demo"), expected)
         self.assertEqual(room_ingredient_id(item, "focus:demo"), room_ingredient_id(item, "focus:demo"))
-        self.assertEqual(len(room_ingredient_id(item, "focus:demo")), len("orc-ing-") + 20)
+
+    def test_unit_normalization_matches_android_mapping(self):
+        self.assertEqual(normalize_recipe_unit("kg", 1), "g")
+        self.assertEqual(normalize_recipe_unit("L", 1), "L")
+        self.assertEqual(normalize_recipe_unit("liter", 1), "liter")
+        self.assertEqual(normalize_recipe_unit("bunches", 2), "ربطة")
+        self.assertEqual(normalize_recipe_unit("pinches", 1), "رشة")
+        self.assertEqual(normalize_recipe_unit("", ""), "حسب الحاجة")
+
+    def test_unitools_legacy_id_does_not_slugify_source_id(self):
+        item = {"id": "Mixed ID!?", "name": "زيت", "quantity": 1, "unit": "piece"}
+        self.assertEqual(
+            room_ingredient_id(item, "unitools:demo"),
+            "orc-ing-unitools-mixed id!?",
+        )
 
 
 if __name__ == "__main__":
