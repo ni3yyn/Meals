@@ -826,8 +826,9 @@ def build_catalogue(
             collisions.append({"type": "id", "value": product_id})
             continue
         if english_key and english_key in by_english:
-            # Exact normalized duplicates are merged only when no contradictory
-            # category exists. Incompatible categories are rejected as ambiguous.
+            # Merge exact normalized English duplicates. When the source
+            # taxonomies disagree about category, keep one identity and mark its
+            # category as needing review instead of publishing duplicate items.
             existing = by_id[by_english[english_key]]
             if (
                 existing["categoryId"] != product["categoryId"]
@@ -838,22 +839,26 @@ def build_catalogue(
                     "existingCategoryId": existing["categoryId"],
                     "incomingCategoryId": product["categoryId"],
                 })
-                # The unique food identity remains one record; when source taxonomy
-                # classes disagree, avoid asserting a potentially false category.
                 existing["categoryId"] = "other"
                 existing["subcategoryId"] = None
             for lang in ("ar", "en", "fr"):
-                    current = existing["names"].get(lang)
-                    other = product["names"].get(lang)
-                    if other and not current:
-                        existing["names"][lang] = other
-                    existing["aliases"][lang] = sorted(set(existing["aliases"][lang]) | set(product["aliases"][lang]))
-                existing["recipeIngredientIds"] = sorted(set(existing["recipeIngredientIds"]) | set(product["recipeIngredientIds"]))
-                existing["acceptedUnits"] = sorted(set(existing["acceptedUnits"]) | set(product["acceptedUnits"]))
-                existing["sourceMappings"].update(product["sourceMappings"])
-                for legacy_id in product["recipeIngredientIds"]:
-                    matched_ids[legacy_id] = existing["id"]
-                continue
+                current_name = existing["names"].get(lang)
+                other_name = product["names"].get(lang)
+                if other_name and not current_name:
+                    existing["names"][lang] = other_name
+                existing["aliases"][lang] = sorted(
+                    set(existing["aliases"][lang]) | set(product["aliases"][lang])
+                )
+            existing["recipeIngredientIds"] = sorted(
+                set(existing["recipeIngredientIds"]) | set(product["recipeIngredientIds"])
+            )
+            existing["acceptedUnits"] = sorted(
+                set(existing["acceptedUnits"]) | set(product["acceptedUnits"])
+            )
+            existing["sourceMappings"].update(product["sourceMappings"])
+            for legacy_id in product["recipeIngredientIds"]:
+                matched_ids[legacy_id] = existing["id"]
+            continue
             collisions.append({"type": "english-name", "value": english_key})
             continue
         by_id[product_id] = product
