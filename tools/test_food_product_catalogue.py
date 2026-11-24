@@ -677,3 +677,49 @@ class FoodCatalogueCuratedTranslationTests(unittest.TestCase):
         self.assertEqual(report["appliedByLanguage"]["en"], 1)
         self.assertEqual(report["englishNameConflictCount"], 0)
 
+    def test_shredded_red_cabbage_translation_keeps_existing_uuid(self):
+        food_id = "d35046b6-8ed7-4713-8f98-7ee31e25c0dd"
+        legacy_id = "orc-ing-84826868c3cb669722c1"
+        product = {
+            "id": None,
+            "identityKeys": [
+                "recipe-term:الملفوف الأحمر",
+                "recipe-term:cup shredded",
+            ],
+            "recipeIngredientIds": [legacy_id],
+            "names": {"ar": "الملفوف الأحمر", "en": None, "fr": "chou rouge"},
+        }
+        registry = {
+            "version": 2,
+            "idFormat": "UUIDv4",
+            "ids": {
+                "recipe-term:الملفوف الأحمر": food_id,
+                "recipe-term:cup shredded": food_id,
+                "legacy-room:" + legacy_id: food_id,
+            },
+            "redirects": {},
+            "splitReassignments": [],
+        }
+
+        assign_stable_product_ids([product], registry)
+        self.assertEqual(product["id"], food_id)
+
+        report = apply_machine_name_translations(
+            [product],
+            {
+                "translations": {
+                    food_id: {
+                        "en": {
+                            "text": "Shredded red cabbage",
+                            "sourceLanguage": "ar",
+                            "sourceText": "الملفوف الأحمر",
+                        }
+                    }
+                }
+            },
+        )
+
+        self.assertEqual(product["id"], food_id)
+        self.assertEqual(product["names"]["en"], "Shredded red cabbage")
+        self.assertEqual(report["appliedByLanguage"]["en"], 1)
+
