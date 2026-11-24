@@ -607,11 +607,17 @@ def collect_recipe_groups(recipes: list[dict[str, Any]]) -> list[dict[str, Any]]
             if not isinstance(ingredient, dict):
                 continue
             arabic = str(ingredient.get("name") or "").strip()
-            english = str(ingredient.get("sourceNameEn") or "").strip()
-            if not english:
-                english = _clean_english_ingredient(
-                    str(ingredient.get("sourceTextEn") or ingredient.get("sourceTextEs") or "")
-                )
+            english_source = str(
+                ingredient.get("sourceNameEn")
+                or ingredient.get("sourceTextEn")
+                or ingredient.get("sourceTextEs")
+                or ""
+            ).strip()
+            # Both upstream imports sometimes place a quantity/preparation note
+            # inside the English ingredient string. Strip that consistently,
+            # including UniTools sourceNameEn, while retaining meaningful food
+            # qualifiers such as cooked, canned, skinless or unsweetened.
+            english = _clean_english_ingredient(english_source)
             if not arabic and not english:
                 continue
             legacy_id = room_ingredient_id(ingredient, recipe_id)
@@ -771,7 +777,8 @@ def build_product(
             foodon_labels.append(item["name"])
             foodon_labels.extend(item.get("aliases", []))
         foodon_labels.extend(foodon_ancestors.get(item_id, []))
-    category_id, subcategory_id = category_for([*all_labels, *foodon_labels])
+    category_slug, subcategory_slug = category_for([*all_labels, *foodon_labels])
+    category_id, subcategory_id = canonical_category_ids(category_slug, subcategory_slug)
 
     legacy_ids = sorted({
         legacy_id
@@ -1031,7 +1038,8 @@ def build_catalogue(
                 "revision": str(recipe_data.get("revision") or "current-main-commit"),
             },
         },
-        "categories": CATEGORY_DATA,
+        "categoryCatalogue": "data/products/categories.json",
+        "categorySchemaVersion": CATEGORY_CATALOGUE.get("schemaVersion", 1),
         "products": products,
     }
     mapping = {
@@ -1042,7 +1050,21 @@ def build_catalogue(
     missing_ar = sum(1 for p in products if not p["names"].get("ar"))
     missing_en = sum(1 for p in products if not p["names"].get("en"))
     missing_fr = sum(1 for p in products if not p["names"].get("fr"))
-    missing_category = sum(1 for p in products if p["categoryId"] == "other")
+    valid_category_ids = {item.get("id") for item in CATEGORY_DATA}
+    valid_subcategory_ids = {
+        child.get("id")
+        for item in CATEGORY_DATA
+        for child in item.get("subcategories", [])
+    }
+    invalid_categories = [
+        {"id": p["id"], "categoryId": p["categoryId"], "subcategoryId": p["subcategoryId"]}
+        for p in products
+        if p["categoryId"] not in valid_category_ids
+        or (p["subcategoryId"] is not None and p["subcategoryId"] not in valid_subcategory_ids)
+    ]
+    if invalid_categories:
+        raise RuntimeError("Product references invalid Midati category IDs: " + json.dumps(invalid_categories[:10]))
+    missing_category = sum(1 for p in products if p["categoryId"] == "foodcat-other")
     report = {
         "schemaVersion": 1,
         "sourceCounts": {
