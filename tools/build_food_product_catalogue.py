@@ -645,6 +645,7 @@ def build_product(
     groups: list[dict[str, Any]],
     foodon_ids: list[str],
     foodon: dict[str, dict[str, Any]],
+    foodon_ancestors: dict[str, list[str]],
 ) -> dict[str, Any]:
     all_labels: list[str] = []
     if record:
@@ -662,6 +663,7 @@ def build_product(
         if item:
             foodon_labels.append(item["name"])
             foodon_labels.extend(item.get("aliases", []))
+        foodon_labels.extend(foodon_ancestors.get(item_id, []))
     category_id, subcategory_id = category_for([*all_labels, *foodon_labels])
 
     legacy_ids = sorted({
@@ -732,8 +734,32 @@ def build_catalogue(
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     recipes = recipe_data.get("recipes") or []
     groups = collect_recipe_groups(recipes)
-    off_index = make_indexes(off_records)
     foodon_index, foodon_ancestors = build_foodon_indexes(foodon)
+
+    # Keep only genuine food-like taxonomy terms: known grocery classes, explicit
+    # FoodOn food concepts, or exact terms already used by Midati recipes. This
+    # excludes taxonomy entries such as processing operations and non-food chemicals.
+    recipe_terms = {
+        normalize_label(value)
+        for group in groups
+        for value in group["names"].values()
+        if value
+    }
+    filtered_off: list[dict[str, Any]] = []
+    for record in off_records:
+        labels = [
+            *record["allNames"].get("en", []),
+            *record["allNames"].get("fr", []),
+            *record["allNames"].get("ar", []),
+            *record.get("parents", []),
+        ]
+        is_recipe_term = any(normalize_label(value) in recipe_terms for value in labels if value)
+        foodon_ids = foodon_matches(record, foodon, foodon_index)
+        category_id, _ = category_for(labels)
+        if category_id != "other" or foodon_ids or is_recipe_term:
+            filtered_off.append(record)
+    off_records = filtered_off
+    off_index = make_indexes(off_records)
 
     off_to_groups: dict[int, list[dict[str, Any]]] = defaultdict(list)
     matched_ids: dict[str, str] = {}
@@ -766,7 +792,7 @@ def build_catalogue(
     for index, record in enumerate(off_records):
         groups_for_record = off_to_groups.get(index, [])
         foodon_ids = foodon_matches(record, foodon, foodon_index)
-        product = build_product(record, groups_for_record, foodon_ids, foodon)
+        product = build_product(record, groups_for_record, foodon_ids, foodon, foodon_ancestors)
         products.append(product)
         for group in groups_for_record:
             consumed_groups.add(group["key"])
@@ -782,7 +808,7 @@ def build_catalogue(
         recipe_only_by_key[identity].append(group)
 
     for identity, related_groups in recipe_only_by_key.items():
-        product = build_product(None, related_groups, [], foodon)
+        product = build_product(None, related_groups, [], foodon, foodon_ancestors)
         products.append(product)
         for group in related_groups:
             for legacy_id in group["legacyIds"]:
@@ -792,6 +818,7 @@ def build_catalogue(
     by_id: dict[str, dict[str, Any]] = {}
     by_english: dict[str, str] = {}
     collisions: list[dict[str, str]] = []
+    category_conflicts: list[dict[str, str]] = []
     for product in products:
         product_id = str(product["id"])
         english_key = normalize_label(str(product["names"].get("en") or ""))
@@ -803,10 +830,19 @@ def build_catalogue(
             # category exists. Incompatible categories are rejected as ambiguous.
             existing = by_id[by_english[english_key]]
             if (
-                existing["categoryId"] == product["categoryId"]
-                and existing.get("subcategoryId") == product.get("subcategoryId")
+                existing["categoryId"] != product["categoryId"]
+                or existing.get("subcategoryId") != product.get("subcategoryId")
             ):
-                for lang in ("ar", "en", "fr"):
+                category_conflicts.append({
+                    "englishName": english_key,
+                    "existingCategoryId": existing["categoryId"],
+                    "incomingCategoryId": product["categoryId"],
+                })
+                # The unique food identity remains one record; when source taxonomy
+                # classes disagree, avoid asserting a potentially false category.
+                existing["categoryId"] = "other"
+                existing["subcategoryId"] = None
+            for lang in ("ar", "en", "fr"):
                     current = existing["names"].get(lang)
                     other = product["names"].get(lang)
                     if other and not current:
@@ -923,6 +959,7 @@ def build_catalogue(
         "recipeMatchingMethods": dict(sorted(matching_methods.items())),
         "unmatchedRecipeIngredients": unmatched[:500],
         "ambiguousRecipeIngredients": ambiguous[:500],
+        "categoryConflicts": category_conflicts[:500],
         "dataAvailabilityNotes": [
             "The OFF ingredient taxonomy supplies multilingual labels, aliases and taxonomy relations, not product photographs or complete nutrient panels.",
             "FoodOn supplies food classes, labels, synonyms and semantic hierarchy; it is not a complete image or nutrition database.",
