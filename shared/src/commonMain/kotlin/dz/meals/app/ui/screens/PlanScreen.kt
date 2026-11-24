@@ -81,7 +81,6 @@ fun PlanScreen(
     onNextWeek: () -> Unit,
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
-    var mealAwaitingCookConfirmation by rememberSaveable { mutableStateOf<String?>(null) }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
     var selectedDayIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
@@ -314,7 +313,6 @@ fun PlanScreen(
                 onClick = {
                     selectedDayIndex = day
                     editingMealSlot = null
-                    mealAwaitingCookConfirmation = null
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp)
@@ -406,19 +404,16 @@ fun PlanScreen(
             onDismissRequest = {
                 selectedDayIndex = null
                 editingMealSlot = null
-                mealAwaitingCookConfirmation = null
             },
             title = {
                 Text(
                     when {
-                        mealAwaitingCookConfirmation != null -> "تأكيد تسجيل الطهي"
                         slotTitle != null -> "اختر وصفة · $slotTitle"
                         else -> dateLabel
                     }
                 )
             },
             subtitle = when {
-                mealAwaitingCookConfirmation != null -> "راجعي أثر تسجيل الوجبة قبل التأكيد"
                 slotTitle != null -> "وصفات مناسبة لتفضيلات الأسرة"
                 else -> "$plannedCount من ${visibleMealSlots.size} وجبات محددة · $cookedCount مكتملة"
             },
@@ -426,23 +421,6 @@ fun PlanScreen(
             fillBody = true,
             text = {
                 when {
-                    mealAwaitingCookConfirmation != null -> {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(13.dp)
-                        ) {
-                            MealsIllustrationBadge(
-                                icon = MealsIconName.Check,
-                                background = dz.meals.app.ui.theme.WarmSurface,
-                                size = 58.dp
-                            )
-                            Text(
-                                "سيُخصم من المخزون فقط ما تملكه بكمية دقيقة. الكميات التقريبية لن تُخصم. يمكنك التراجع من الوجبة نفسها لاستعادة ما خُصم.",
-                                color = dz.meals.app.ui.theme.BodyInk,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    }
                     slotTitle != null -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -568,8 +546,7 @@ fun PlanScreen(
                                         onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
                                         onToggleCooked = {
                                             breakfast?.let { meal ->
-                                                if (meal.isCooked) onToggleCooked(meal.id)
-                                                else mealAwaitingCookConfirmation = meal.id
+                                                onToggleCooked(meal.id)
                                             }
                                         },
                                         onAdjustServings = { delta -> breakfast?.let { onAdjustServings(it.id, delta) } }
@@ -586,8 +563,7 @@ fun PlanScreen(
                                         onToggleLock = { lunch?.let { onToggleLock(it.id) } },
                                         onToggleCooked = {
                                             lunch?.let { meal ->
-                                                if (meal.isCooked) onToggleCooked(meal.id)
-                                                else mealAwaitingCookConfirmation = meal.id
+                                                onToggleCooked(meal.id)
                                             }
                                         },
                                         onAdjustServings = { delta -> lunch?.let { onAdjustServings(lunch.id, delta) } }
@@ -604,8 +580,7 @@ fun PlanScreen(
                                         onToggleLock = { dinner?.let { onToggleLock(it.id) } },
                                         onToggleCooked = {
                                             dinner?.let { meal ->
-                                                if (meal.isCooked) onToggleCooked(meal.id)
-                                                else mealAwaitingCookConfirmation = meal.id
+                                                onToggleCooked(meal.id)
                                             }
                                         },
                                         onAdjustServings = { delta -> dinner?.let { onAdjustServings(it.id, delta) } }
@@ -618,19 +593,6 @@ fun PlanScreen(
             },
             confirmButton = {
                 when {
-                    mealAwaitingCookConfirmation != null -> {
-                        val mealId = mealAwaitingCookConfirmation
-                        MealsPrimaryButton(
-                            label = "تأكيد الطهي",
-                            onClick = {
-                                mealId?.let(onToggleCooked)
-                                mealAwaitingCookConfirmation = null
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            icon = MealsIconName.Check,
-                            showArrow = false
-                        )
-                    }
                     slotTitle != null -> {
                         MealsSecondaryButton(
                             label = "إفراغ الوجبة",
@@ -653,13 +615,6 @@ fun PlanScreen(
                 }
             },
             dismissButton = when {
-                mealAwaitingCookConfirmation != null -> ({
-                    MealsSecondaryButton(
-                        label = "إلغاء",
-                        onClick = { mealAwaitingCookConfirmation = null },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                })
                 slotTitle != null -> ({
                     MealsSecondaryButton(
                         label = "العودة إلى اليوم",

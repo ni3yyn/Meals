@@ -448,90 +448,9 @@ class MealsRepository internal constructor(
 
     suspend fun toggleMealCooked(id: String, weekStartIso: String) {
         val current = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id } ?: return
-        val recipe = current.recipeId?.let { recipeId -> loadRecipes().firstOrNull { it.id == recipeId } } ?: return
-        database.withTransaction {
-            if (!current.isCooked) {
-                val factor = current.servings.toDouble() / recipe.baseServings.coerceAtLeast(1)
-                val required = recipe.ingredients.filterNot { it.optional }
-                    .groupBy { it.ingredientId to it.unit }
-                required.forEach { (key, parts) ->
-                    var remaining = parts.sumOf {
-                        scaleRecipeIngredientQuantity(it.quantityBase, factor, it.scalingRule)
-                    }.coerceAtLeast(0.0)
-                    if (remaining <= 0.0) return@forEach
-
-                    // A canonical food can own several preserved stock rows after
-                    // alias IDs converge. Deduct across exact rows instead of the
-                    // first row only, and remember each source row for undo.
-                    val stocks = dao.getPantryItems()
-                        .filter {
-                            it.ingredientId == key.first && it.unit == key.second &&
-                                !it.isApproximate && it.quantityBase != null
-                        }
-                        .sortedBy { it.id }
-                    for (stock in stocks) {
-                        if (remaining <= 0.0) break
-                        val available = stock.quantityBase ?: continue
-                        val deducted = exactPantryDeduction(remaining, available, false)
-                        if (deducted <= 0.0) continue
-                        dao.upsertPantryItem(
-                            stock.copy(quantityBase = (available - deducted).coerceAtLeast(0.0))
-                        )
-                        dao.upsertCookedMealDeduction(
-                            CookedMealDeductionEntity(
-                                mealId = current.id,
-                                ingredientId = key.first,
-                                unit = key.second,
-                                quantityBase = deducted,
-                                rowKey = UUID.randomUUID().toString(),
-                                pantryItemId = stock.id
-                            )
-                        )
-                        remaining = (remaining - deducted).coerceAtLeast(0.0)
-                    }
-                }
-                dao.upsertPlanMeal(current.copy(isCooked = true))
-            } else {
-                dao.getCookedMealDeductions(current.id).forEach { deduction ->
-                    val stock = if (deduction.pantryItemId != null) {
-                        dao.getPantryItem(deduction.pantryItemId)
-                    } else {
-                        dao.getPantryItems().firstOrNull {
-                            it.ingredientId == deduction.ingredientId && it.unit == deduction.unit &&
-                                !it.isApproximate && it.quantityBase != null
-                        } ?: dao.getPantryItems().firstOrNull {
-                            it.ingredientId == deduction.ingredientId && it.unit == deduction.unit
-                        }
-                    }
-
-                    if (stock == null) {
-                        dao.upsertPantryItem(
-                            PantryItemEntity(
-                                id = deduction.pantryItemId ?: UUID.randomUUID().toString(),
-                                ingredientId = deduction.ingredientId,
-                                quantityBase = deduction.quantityBase,
-                                unit = deduction.unit,
-                                isApproximate = false,
-                                note = "استُعيد بعد التراجع عن تسجيل الطهي",
-                                expiryAtEpochMillis = null
-                            )
-                        )
-                    } else if (!stock.isApproximate && stock.quantityBase != null) {
-                        dao.upsertPantryItem(stock.copy(quantityBase = stock.quantityBase + deduction.quantityBase))
-                    } else {
-                        dao.upsertPantryItem(
-                            stock.copy(
-                                quantityBase = deduction.quantityBase,
-                                isApproximate = false,
-                                note = (stock.note + " · استُعيد بعد التراجع عن تسجيل الطهي").trim(' ', '·')
-                            )
-                        )
-                    }
-                }
-                dao.deleteCookedMealDeductions(current.id)
-                dao.upsertPlanMeal(current.copy(isCooked = false))
-            }
-        }
+        // Cooking completion is a meal-planning status only. Midati no longer
+        // maintains or deducts household stock behind the shopping list.
+        dao.upsertPlanMeal(current.copy(isCooked = !current.isCooked))
     }
 
     suspend fun adjustMealServings(id: String, weekStartIso: String, delta: Int) {
