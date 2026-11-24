@@ -1,93 +1,67 @@
 # Midati generic food-item catalogue
 
-This pipeline creates a **generic food identity catalogue** for recipe ingredients and grocery planning. It does not create branded supermarket products. Barcodes, retailer SKUs, package sizes and retailer-specific images/prices belong to the separate market-product and pricing databases.
+This pipeline builds Midati's brand-independent food identity catalogue for recipes and grocery planning. It is **not** the supermarket-product catalogue: brands, barcodes, retailer SKUs, pack sizes and retailer-specific prices belong to a separate market-product layer linked to a generic food item.
 
 ## Generated files
 
-- `data/products/catalogue.json`: canonical food items, multilingual names, aliases, unit support and Midati category IDs.
-- `data/products/recipe-ingredient-map.json`: explicit map from every existing Room recipe ingredient ID to one canonical food-item ID.
-- `data/products/build-audit.json`: source counts, matching coverage, unresolved/ambiguous recipe matches, category conflicts and missing optional data.
+- \`data/products/catalogue.json\`: generic food items with an opaque UUIDv4, Arabic/English/French names where sourced, aliases, accepted units, categories and source references.
+- \`data/products/categories.json\`: Midati-owned multilingual category hierarchy.
+- \`data/products/recipe-ingredient-map.json\`: both the legacy Room ingredient-ID map and one mapping row for every recipe ingredient occurrence.
+- \`data/products/build-audit.json\`: matching coverage, missing translations/optional data, ambiguous matches, category conflicts and duplicate checks.
+- \`data/products/identity_registry.json\`: persistent source-key-to-UUID registry and retired-ID redirects. **Do not delete or regenerate this file.**
 
-The workflow commits these generated files to `main`. It runs after the combined recipe catalogue changes, when the builder/tests/workflow change, or when manually dispatched.
+The GitHub Actions workflow rebuilds this catalogue when the recipe corpus, categories, builder, tests or workflow change.
 
-## Food item shape
+## Identity and translation model
 
-Each product record is a generic food identity:
+A food identity has a stable, opaque UUIDv4. Its ID is not derived from Arabic, English, French, a translated name, a category or a slug. The persistent registry reuses the same UUID when a pinned source term or recipe identity is seen in a later build. Adding a translation therefore does not change the ID.
 
-```json
-{
-  "id": "3a4f0f2a-....-....-....-............",
-  "names": {
-    "ar": "حمص",
-    "en": "Chickpeas",
-    "fr": "Pois chiches"
-  },
-  "acceptedUnits": ["g", "kg"],
-  "imageUrl": null,
-  "categoryId": "foodcat-legumes",
-  "subcategoryId": "foodsub-legumes-chickpeas",
-  "aliases": {
-    "ar": [],
-    "en": ["chickpea"],
-    "fr": ["pois chiche"]
-  },
-  "quantity": null,
-  "countryOfOrigin": null,
-  "nutrition": null,
-  "sourceMappings": {},
-  "recipeIngredientIds": ["orc-ing-unitools-..."]
-}
-```
+Each item stores:
 
-- `id` is a persistent opaque UUIDv4, independent of display names and language. The generated identity registry remembers source-to-UUID assignments between builds.
-- `names` and `aliases` are multilingual. Missing source translations stay null/empty rather than being guessed.
-- `acceptedUnits` contains units already used by recipes when observed. Otherwise, it gets a conservative category-based default set.
-- `quantity` is reserved for a future market-product/package variant. It is not the recipe quantity.
-- `imageUrl`, `countryOfOrigin` and `nutrition` remain null unless an item-specific source supports them. The two taxonomy files used here do not provide reliable generic product images or complete per-food nutrition panels.
-- `sourceMappings` preserves source identifiers/codes without using source IDs as Midati's public identity.
+- \`names.ar/en/fr\`: preferred names; unavailable translations remain null.
+- \`aliases.ar/en/fr\`: exact alternate spellings and sourced synonyms.
+- \`categoryId\` and \`subcategoryId\`: IDs from Midati's own category file, not source taxonomy IDs.
+- \`acceptedUnits\`: observed recipe units plus conservative standard grocery units.
+- \`sourceMappings\`: external OFF term/code and FoodOn class references where an exact mapping exists.
+- \`imageUrl\`, \`countryOfOrigin\` and \`nutrition\`: optional fields; absent evidence stays null.
 
-## Matching and duplicate policy
+Algerian-curated vocabulary is kept separate when the global taxonomy collapses different local foods. In particular, milk, Lben (لبن) and Raib (رايب) are separate identities. Curated terms are matched only against preferred labels, not broad synonyms, to avoid accidental merging.
 
-1. Extract every ingredient in the current combined recipe catalogue.
-2. Recreate the exact current Room ingredient IDs. UniTools IDs use the importer's source ID; Focus IDs mirror the Android SHA-256 name/unit algorithm.
-3. Match English, French and Arabic names/aliases exactly after Unicode, punctuation and Arabic-diacritic normalization.
-4. Merge exact canonical duplicates and map all associated legacy recipe IDs to one canonical ID.
-5. Do not fuzzy-merge ambiguous terms. An ambiguous match becomes a recipe-derived item and is listed in the audit for review.
-6. Fail the build if any existing recipe ingredient ID is unmapped, or if duplicate IDs or normalized English names remain.
+## Recipe compatibility and migration
 
-This stage produces the crosswalk but does not rewrite the installed Room database or migrate pantry, shopping, price-observation or plan references. A later migration must update all related foreign-key references transactionally, then the app can start using the new UUIDs.
+The builder mirrors the current Android \`ArabicRecipeCatalogueInstaller.kt\` logic to recreate the exact legacy Room IDs:
 
-## Sources and reproducibility
+- UniTools: \`orc-ing-unitools-\` plus the source ingredient ID, without slugification.
+- Focus: the existing SHA-256 name/unit algorithm, including Android's exact unit normalization.
 
-### Open Food Facts ingredients taxonomy
+The generated \`recipe-ingredient-map.json\` contains:
 
-Pinned to commit `f5abb0a0ca8ae5702f3e192219511adf211b55ee`, file `taxonomies/food/ingredients.txt`. It provides multilingual terms, alternate names, parent relationships and selected external codes. The source format and taxonomy are documented in the [Open Food Facts ingredients taxonomy](https://github.com/openfoodfacts/openfoodfacts-server/blob/main/taxonomies/food/ingredients.txt).
+- \`legacyRoomIngredientIdToFoodItemId\`: old Room ID to canonical UUID.
+- \`recipeRows\`: one row per recipe ingredient with recipe ID, ingredient index, old Room ID and canonical UUID.
 
-### FoodOn
+The build fails if a recipe ingredient row is unmapped, a legacy ID maps to more than one food identity, a mapping points to a missing product, or duplicate canonical IDs/English names remain. A retired canonical UUID is kept as a redirect in the registry when a reviewed merge is made.
 
-Pinned to commit `8a27493346a122e86ac1748aac24199d5af69166`, file `foodon-base.owl`. The builder extracts FOODON class IDs, English labels, synonyms and subclass ancestry to enrich classification and retain semantic references. FoodOn describes raw and processed food materials/products; see the [FoodOn project](https://github.com/FoodOntology/foodon).
+**This is a generated migration crosswalk, not yet a Room database migration.** Do not switch existing database foreign keys or delete old ingredient rows until pantry, shopping, recipe, price-observation and any other references have been migrated transactionally and the app has a safe migration path for existing installs.
 
-The workflow downloads both files by immutable commit and verifies their Git blob SHA before parsing. GitHub Actions caches these source files, so subsequent runs avoid repeat downloads. The datasets are not copied into this repository.
+## Categories
 
-## Data rights
+The categories are owned by Midati and translated in Arabic, English and French. The hierarchy includes fruits, vegetables, dairy, cheese/butter, meat and offal, poultry, seafood, eggs, legumes, grains/cereals, pasta/bakery, nuts/seeds, oils/fats, spices, herbs, sauces/condiments, sweeteners, baking/dessert ingredients, beverages, frozen foods, mushrooms/fungi and other foods, with subcategories such as fish/shellfish, chicken/turkey, offal, chickpeas/lentils, cheeses, herbs and ground/whole spices.
 
-Open Food Facts documents the database under ODbL 1.0, individual contents under DbCL 1.0, and product images under CC BY-SA. FoodOn is CC BY 4.0. Because this catalogue combines and transforms data from both sources, review the ODbL share-alike and attribution requirements before distributing it as part of a public/commercial product. Source attribution and pinned revisions are retained in the generated catalogue.
+External taxonomy categories are evidence for mapping, not Midati's public category IDs. New source releases therefore cannot silently rename or renumber Midati categories.
 
-- [Open Food Facts reuse/licensing guidance](https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/tutorials/license-be-on-the-legal-side/)
-- [FoodOn repository and license](https://github.com/FoodOntology/foodon)
+## Sources, reproducibility and rights
 
-## Important scope limits
+The build downloads exact immutable source commits and verifies Git blob SHA-1 values before parsing them:
 
-The ingredient taxonomy is not a barcode catalogue. For this first catalogue, Mayonnaise, canned chickpeas, milk, raib, legumes, semolina and similar generic food identities can be represented when the source taxonomy has them. A later market-product record will reference this food-item ID and add brand, barcode (including scale barcode rules), package quantity/unit, retailer SKU and other package-specific facts. The price database will remain separate and link to the market-product ID.
+- Open Food Facts ingredient taxonomy: \`openfoodfacts/openfoodfacts-server\`, \`taxonomies/food/ingredients.txt\`, commit \`f5abb0a0ca8ae5702f3e192219511adf211b55ee\`. It contributes multilingual labels, aliases, taxonomy parents and selected external codes.
+- FoodOn: \`FoodOntology/foodon\`, \`foodon-base.owl\`, commit \`8a27493346a122e86ac1748aac24199d5af69166\`. It contributes semantic food classes, language-tagged labels/synonyms and subclass ancestry.
 
-Images, actual country of origin and nutrient values must come from a product-specific source or a verified nutrition dataset. Recipe photos, generic source descriptions and Ecobalyse default-origin assumptions are not copied into these fields.
+Open Food Facts uses ODbL 1.0 for the database and DbCL 1.0 for individual contents. FoodOn is CC BY 4.0. The combined output requires attribution and a review of ODbL share-alike obligations before redistribution or closed/commercial bundling; this documentation is not a legal clearance.
 
+## Scope limits
 
-## Algerian grocery curation
+Neither ingredient taxonomy is a dependable source of generic product photographs or complete nutrient panels. Recipe photos are not ingredient photos. Recipe text is not a verified nutrition database. The builder intentionally leaves unsupported images and nutrient data empty rather than fabricating them.
 
-`data/products/curated-food-items.json` adds reviewed generic foods that need
-local terminology or distinctions not reliably represented by global datasets:
-fresh milk (حليب), lben (لبن), raib (رايب), and canned chickpeas, beans and lentils.
-Lben and raib are separate fermented dairy identities, not aliases of fresh milk.
-Pack sizes, brands, barcodes and prices remain in the separate market-product and
-pricing databases.
+Country of origin must be supported by an explicit, item-specific origin field. A default regional cultivation assumption is not proof that a food item originated there.
+
+A future market-product record will reference the generic food UUID and add brand, barcode, package quantity/unit, country-of-origin evidence, retailer SKU, price and product-specific imagery/nutrition where licensed and available.
