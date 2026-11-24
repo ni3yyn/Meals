@@ -24,9 +24,15 @@
   "translation": {
     "provider": "Google Apps Script LanguageApp",
     "type": "machine",
-    "direction": "English and Spanish to Arabic"
+    "direction": "Polish and Spanish to Arabic",
+    "sourceLanguages": [
+      "pl",
+      "es"
+    ],
+    "taxonomySourceLanguage": "en",
+    "targetLanguage": "ar"
   },
-  "generatedAt": "2026-11-23T21:36:50.077073+00:00",
+  "generatedAt": "2026-11-24T07:07:13.367548+00:00",
   "complete": true,
   "translatedCount": 912,
   "expectedCount": 912,
@@ -325620,6 +325626,24 @@
       "attribution": "Adapted from Open Recipe Corpus (Rippy1911), licensed under CC BY-SA 4.0. See recipe-level provenance."
     },
     {
+      "name": "Meals Arabic Recipe Catalogue",
+      "sources": [
+        {
+          "name": "UniTools World Recipes",
+          "repository": "https://github.com/farcrak/unitools-recipes",
+          "revision": "2f554073f7e730b18d707fe1164d18308f6ec16c",
+          "license": "CC BY-SA 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+          "attribution": "UniTools — theunitools.com"
+        },
+        {
+          "name": "Focus Recipes v1.0",
+          "license": "CC BY 4.0",
+          "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+        }
+      ]
+    },
+    {
       "name": "Focus Recipes",
       "version": "1.0",
       "source": "https://focusathletics.app/en/recipes/dataset",
@@ -326104,6 +326128,11 @@
       "sourceLanguage": "es",
       "taxonomySourceLanguage": "en",
       "targetLanguage": "ar"
+    },
+    {
+      "provider": "Google Apps Script LanguageApp",
+      "type": "machine",
+      "direction": "English and Spanish to Arabic"
     }
   ],
   "safetyPolicy": {
