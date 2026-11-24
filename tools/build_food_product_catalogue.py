@@ -47,6 +47,7 @@ XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
 CATEGORY_PATH = ROOT / "data" / "products" / "categories.json"
 CURATED_ITEMS_PATH = ROOT / "data" / "products" / "curated-food-items.json"
+TRANSLATIONS_PATH = ROOT / "data" / "products" / "translations.json"
 CATEGORY_CATALOGUE = json.loads(CATEGORY_PATH.read_text(encoding="utf-8"))
 CATEGORY_DATA = CATEGORY_CATALOGUE.get("categories") or []
 
@@ -1288,12 +1289,76 @@ def merge_curated_food_items(
     return records
 
 
+def apply_machine_name_translations(
+    products: list[dict[str, Any]],
+    translation_data: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Apply UUID-keyed machine names only when the original source still matches."""
+    data = translation_data or {}
+    entries = data.get("translations") or {}
+    applied: Counter[str] = Counter()
+    ignored_existing: Counter[str] = Counter()
+    stale: list[dict[str, str]] = []
+    invalid: list[dict[str, str]] = []
+
+    for product in products:
+        product_id = str(product.get("id") or "")
+        names = product.setdefault("names", {})
+        language_entries = entries.get(product_id) or {}
+        if not isinstance(language_entries, dict):
+            invalid.append({"id": product_id, "language": "*"})
+            continue
+        for target_language in ("ar", "en", "fr"):
+            entry = language_entries.get(target_language)
+            if not isinstance(entry, dict):
+                continue
+            translated_text = str(entry.get("text") or "").strip()
+            source_language = str(entry.get("sourceLanguage") or "").strip().lower()
+            source_text = str(entry.get("sourceText") or "").strip()
+            if (
+                not translated_text
+                or source_language not in {"ar", "en", "fr"}
+                or source_language == target_language
+                or not source_text
+            ):
+                invalid.append({"id": product_id, "language": target_language})
+                continue
+
+            # OFF, FoodOn and locally curated labels always outrank machine output.
+            if str(names.get(target_language) or "").strip():
+                ignored_existing[target_language] += 1
+                continue
+
+            current_source = str(names.get(source_language) or "").strip()
+            if not current_source or normalize_label(current_source) != normalize_label(source_text):
+                stale.append({
+                    "id": product_id,
+                    "language": target_language,
+                    "sourceLanguage": source_language,
+                })
+                continue
+
+            names[target_language] = translated_text
+            applied[target_language] += 1
+
+    return {
+        "provider": str(data.get("provider") or "Google Apps Script LanguageApp"),
+        "appliedByLanguage": {lang: applied[lang] for lang in ("ar", "en", "fr")},
+        "totalApplied": sum(applied.values()),
+        "ignoredExistingSourceNamesByLanguage": {lang: ignored_existing[lang] for lang in ("ar", "en", "fr")},
+        "staleCount": len(stale),
+        "staleEntries": stale[:100],
+        "invalidCount": len(invalid),
+        "invalidEntries": invalid[:100],
+    }
+
 def build_catalogue(
     recipe_data: dict[str, Any],
     off_records: list[dict[str, Any]],
     foodon: dict[str, dict[str, Any]],
     identity_registry: dict[str, Any] | None = None,
     curated_items: list[dict[str, Any]] | None = None,
+    translation_data: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     identity_registry = identity_registry or {"version": 1, "ids": {}, "redirects": {}}
     recipes = recipe_data.get("recipes") or []
@@ -1471,6 +1536,7 @@ def build_catalogue(
     ))
 
     identity_registry = assign_stable_product_ids(products, identity_registry)
+    translation_report = apply_machine_name_translations(products, translation_data)
 
     matched_ids: dict[str, str] = {}
     for product in products:
@@ -1662,6 +1728,7 @@ def build_catalogue(
             "registrySplitReassignments": len(identity_registry.get("splitReassignments", [])),
         },
         "recipeMatchingMethods": dict(sorted(matching_methods.items())),
+        "machineNameTranslations": translation_report,
         "unmatchedRecipeIngredients": unmatched[:500],
         "ambiguousRecipeIngredients": ambiguous[:500],
         "categoryConflicts": category_conflicts[:500],
@@ -1685,6 +1752,7 @@ def main() -> int:
     parser.add_argument("--mapping-output", type=Path, default=ROOT / "data/products/recipe-ingredient-map.json")
     parser.add_argument("--audit-output", type=Path, default=ROOT / "data/products/build-audit.json")
     parser.add_argument("--identity-registry", type=Path, default=ROOT / "data/products/identity_registry.json")
+    parser.add_argument("--translations", type=Path, default=TRANSLATIONS_PATH)
     args = parser.parse_args()
 
     if not args.recipes.is_file():
@@ -1720,8 +1788,14 @@ def main() -> int:
             identity_registry = json.loads(args.identity_registry.read_text(encoding="utf-8"))
         else:
             identity_registry = {"version": 1, "idFormat": "UUIDv4", "ids": {}, "redirects": {}}
+        translation_data = (
+            json.loads(args.translations.read_text(encoding="utf-8"))
+            if args.translations.is_file() else {}
+        )
+        if not isinstance(translation_data, dict):
+            raise RuntimeError("Food translation sidecar must contain a JSON object.")
         catalogue, mapping, audit, identity_registry = build_catalogue(
-            recipe_data, off_records, foodon, identity_registry, curated_items
+            recipe_data, off_records, foodon, identity_registry, curated_items, translation_data
         )
     except Exception as error:
         print(f"::error::{error}", file=sys.stderr)
