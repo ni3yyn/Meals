@@ -11,6 +11,7 @@ from tools.build_food_product_catalogue import (
     build_catalogue,
     category_for,
     classify_food_category,
+    merge_curated_food_items,
     normalize_label,
     normalize_recipe_unit,
     parse_foodon_owl,
@@ -647,4 +648,34 @@ class FoodCatalogueReviewedCategoryOverrideTests(unittest.TestCase):
         self.assertEqual(applied[0]["foodItemId"], food_id)
         self.assertEqual(product["_categoryAssignment"]["confidence"], "high")
         self.assertIn("concentrated tomato sauce", product["_categoryAssignment"]["reason"])
+
+class FoodCatalogueCuratedTranslationTests(unittest.TestCase):
+    def test_red_cabbage_gets_a_reviewed_english_name_without_new_identity(self):
+        record = {
+            "name": "red cabbage",
+            "names": {"ar": "الملفوف الأحمر", "en": None, "fr": "chou rouge"},
+            "aliases": {"ar": [], "en": [], "fr": []},
+            "allNames": {"ar": ["الملفوف الأحمر"], "en": [], "fr": ["chou rouge"]},
+            "parents": ["vegetables"],
+            "sourceProperties": {},
+        }
+        curated = [{
+            "key": "red-cabbage",
+            "names": {"ar": "الملفوف الأحمر", "en": "Red cabbage", "fr": "Chou rouge"},
+            "aliases": {"ar": ["الكرنب الأحمر"], "en": ["red cabbage leaves"], "fr": []},
+            "acceptedUnits": ["g", "kg", "piece"],
+            "categoryId": "foodcat-vegetables",
+            "subcategoryId": "foodsub-vegetables-leafy",
+        }]
+
+        merged = merge_curated_food_items([record], curated)
+
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["names"]["en"], "Red cabbage")
+        self.assertIn("red cabbage leaves", merged[0]["aliases"]["en"])
+        self.assertEqual(merged[0]["sourceProperties"]["midatiCategoryId"], "foodcat-vegetables")
+        self.assertEqual(
+            merged[0]["sourceProperties"]["midatiSubcategoryId"],
+            "foodsub-vegetables-leafy",
+        )
 
