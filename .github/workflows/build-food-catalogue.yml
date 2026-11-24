@@ -1,0 +1,128 @@
+name: Build Midati food catalogue
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/build_food_catalogue.py"
+      - "tools/test_food_catalogue_builder.py"
+      - "data/recipes/ar/recipes.json"
+      - "data/food-catalogue/categories.json"
+      - "shared/src/commonMain/kotlin/dz/meals/app/data/SeedRecipes.kt"
+      - ".github/workflows/build-food-catalogue.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: midati-food-catalogue-main
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Download, match, deduplicate and publish food identities
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OFF_COMMIT: f5abb0a0ca8ae5702f3e192219511adf211b55ee
+      FOODON_COMMIT: 8a27493346a122e86ac1748aac24199d5af69166
+      OFF_BLOB_SHA: 0c54acc70878b778a38d893c877ea49c6ef87ff6
+      FOODON_BLOB_SHA: d134da045e75194fad2872e24401c893e109eb44
+      TAXONOMY_CACHE: .cache/midati-food-taxonomies
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore pinned taxonomy downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache/midati-food-taxonomies
+          key: midati-food-taxonomies-\${{ env.OFF_COMMIT }}-\${{ env.FOODON_COMMIT }}
+
+      - name: Download and verify source taxonomies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$TAXONOMY_CACHE"
+          OFF_FILE="$TAXONOMY_CACHE/off-ingredients.txt"
+          FOODON_FILE="$TAXONOMY_CACHE/foodon-synonyms.tsv"
+
+          if [[ ! -s "$OFF_FILE" ]] || [[ "$(git hash-object "$OFF_FILE")" != "$OFF_BLOB_SHA" ]]; then
+            rm -f "$OFF_FILE"
+            curl --fail --location --retry 5 --retry-all-errors --silent --show-error \
+              "https://raw.githubusercontent.com/openfoodfacts/openfoodfacts-server/$OFF_COMMIT/taxonomies/food/ingredients.txt" \
+              -o "$OFF_FILE"
+          fi
+          if [[ ! -s "$FOODON_FILE" ]] || [[ "$(git hash-object "$FOODON_FILE")" != "$FOODON_BLOB_SHA" ]]; then
+            rm -f "$FOODON_FILE"
+            curl --fail --location --retry 5 --retry-all-errors --silent --show-error \
+              "https://raw.githubusercontent.com/FoodOntology/foodon/$FOODON_COMMIT/foodon-synonyms.tsv" \
+              -o "$FOODON_FILE"
+          fi
+
+          test "$(git hash-object "$OFF_FILE")" = "$OFF_BLOB_SHA"
+          test "$(git hash-object "$FOODON_FILE")" = "$FOODON_BLOB_SHA"
+          printf 'Verified OFF taxonomy (%s bytes) and FoodOn export (%s bytes).\n' \
+            "$(wc -c < "$OFF_FILE")" "$(wc -c < "$FOODON_FILE")"
+
+      - name: Validate builder and matching rules
+        run: python -m unittest tools.test_food_catalogue_builder -v
+
+      - name: Build generic food catalogue
+        run: |
+          python tools/build_food_catalogue.py \
+            --recipes data/recipes/ar/recipes.json \
+            --off-taxonomy "$TAXONOMY_CACHE/off-ingredients.txt" \
+            --foodon-tsv "$TAXONOMY_CACHE/foodon-synonyms.tsv" \
+            --categories data/food-catalogue/categories.json \
+            --output-dir data/food-catalogue
+
+      - name: Validate generated catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("data/food-catalogue")
+          catalogue = json.loads((root / "catalogue.json").read_text(encoding="utf-8"))
+          mapping = json.loads((root / "recipe_ingredient_map.json").read_text(encoding="utf-8"))
+          report = json.loads((root / "build_report.json").read_text(encoding="utf-8"))
+          items = catalogue["items"]
+          ids = [item["id"] for item in items]
+          english = [item["names"]["en"].strip().casefold() for item in items if item["names"].get("en")]
+          assert len(ids) == len(set(ids)), "duplicate food UUID"
+          assert len(english) == len(set(english)), "duplicate English canonical name"
+          assert all(item["categoryId"] for item in items), "missing category"
+          assert len(mapping["items"]) == report["recipeIngredientOccurrences"], "recipe ingredient mapping is incomplete"
+          assert all(item.get("foodItemId") for item in mapping["items"]), "unmapped recipe ingredient"
+          assert not report["duplicateEnglishCanonicalNames"], "duplicate English canonical names detected"
+          print(f"Validated {len(items)} food items and {len(mapping['items'])} recipe ingredient links.")
+          PY
+
+      - name: Commit generated catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/food-catalogue/catalogue.json \
+            data/food-catalogue/recipe_ingredient_map.json \
+            data/food-catalogue/legacy_id_map.json \
+            data/food-catalogue/identity_registry.json \
+            data/food-catalogue/build_report.json
+          if git diff --cached --quiet; then
+            echo "Food catalogue is already up to date."
+            exit 0
+          fi
+          git commit -m "Build canonical Midati food catalogue"
+          git push origin HEAD:main

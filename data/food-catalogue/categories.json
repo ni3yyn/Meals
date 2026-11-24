@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    {
+      "id": "fruits",
+      "names": {
+        "ar": "الفواكه",
+        "en": "Fruits",
+        "fr": "Fruits"
+      }
+    },
+    {
+      "id": "vegetables",
+      "names": {
+        "ar": "الخضروات",
+        "en": "Vegetables",
+        "fr": "Légumes"
+      }
+    },
+    {
+      "id": "meat_offal",
+      "names": {
+        "ar": "اللحوم والأحشاء",
+        "en": "Meat & offal",
+        "fr": "Viandes et abats"
+      }
+    },
+    {
+      "id": "seafood",
+      "names": {
+        "ar": "المأكولات البحرية",
+        "en": "Seafood",
+        "fr": "Produits de la mer"
+      }
+    },
+    {
+      "id": "dairy",
+      "names": {
+        "ar": "الألبان ومشتقاتها",
+        "en": "Dairy",
+        "fr": "Produits laitiers"
+      }
+    },
+    {
+      "id": "eggs",
+      "names": {
+        "ar": "البيض",
+        "en": "Eggs",
+        "fr": "Œufs"
+      }
+    },
+    {
+      "id": "legumes",
+      "names": {
+        "ar": "البقوليات",
+        "en": "Legumes",
+        "fr": "Légumineuses"
+      }
+    },
+    {
+      "id": "grains_cereals",
+      "names": {
+        "ar": "الحبوب والحبوب الغذائية",
+        "en": "Grains & cereals",
+        "fr": "Céréales"
+      }
+    },
+    {
+      "id": "pasta_bakery",
+      "names": {
+        "ar": "المعكرونة والمخبوزات",
+        "en": "Pasta & bakery",
+        "fr": "Pâtes et boulangerie"
+      }
+    },
+    {
+      "id": "nuts_seeds",
+      "names": {
+        "ar": "المكسرات والبذور",
+        "en": "Nuts & seeds",
+        "fr": "Fruits à coque et graines"
+      }
+    },
+    {
+      "id": "oils_fats",
+      "names": {
+        "ar": "الزيوت والدهون",
+        "en": "Oils & fats",
+        "fr": "Huiles et matières grasses"
+      }
+    },
+    {
+      "id": "spices",
+      "names": {
+        "ar": "التوابل والبهارات",
+        "en": "Spices",
+        "fr": "Épices"
+      }
+    },
+    {
+      "id": "herbs",
+      "names": {
+        "ar": "الأعشاب العطرية",
+        "en": "Herbs",
+        "fr": "Herbes aromatiques"
+      }
+    },
+    {
+      "id": "sauces_condiments",
+      "names": {
+        "ar": "الصلصات والمنكهات",
+        "en": "Sauces & condiments",
+        "fr": "Sauces et condiments"
+      }
+    },
+    {
+      "id": "canned_preserved",
+      "names": {
+        "ar": "المعلبات والمحافظات",
+        "en": "Canned & preserved foods",
+        "fr": "Conserves et aliments préservés"
+      }
+    },
+    {
+      "id": "sweeteners",
+      "names": {
+        "ar": "المحليات",
+        "en": "Sweeteners",
+        "fr": "Édulcorants"
+      }
+    },
+    {
+      "id": "baking_dessert",
+      "names": {
+        "ar": "مكونات الخَبز والحلويات",
+        "en": "Baking & dessert",
+        "fr": "Pâtisserie et desserts"
+      }
+    },
+    {
+      "id": "beverages",
+      "names": {
+        "ar": "المشروبات",
+        "en": "Beverages",
+        "fr": "Boissons"
+      }
+    },
+    {
+      "id": "frozen_foods",
+      "names": {
+        "ar": "الأغذية المجمدة",
+        "en": "Frozen foods",
+        "fr": "Aliments surgelés"
+      }
+    },
+    {
+      "id": "mushrooms",
+      "names": {
+        "ar": "الفطريات",
+        "en": "Mushrooms & fungi",
+        "fr": "Champignons"
+      }
+    },
+    {
+      "id": "other_foods",
+      "names": {
+        "ar": "مواد غذائية أخرى",
+        "en": "Other foods",
+        "fr": "Autres aliments"
+      }
+    }
+  ]
+}
