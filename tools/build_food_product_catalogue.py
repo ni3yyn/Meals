@@ -123,7 +123,9 @@ SUBCATEGORY_IDS = {
     ("bakery_pasta", "pasta"): "foodsub-pasta-bakery-pasta",
     ("bakery_pasta", "couscous"): "foodsub-pasta-bakery-couscous",
     ("bakery_pasta", None): "foodsub-pasta-bakery-pastry",
-    ("nuts_seeds", None): "foodsub-nuts-seeds-seeds",
+    ("nuts_seeds", "tree_nuts"): "foodsub-nuts-tree",
+    ("nuts_seeds", "seeds"): "foodsub-nuts-seeds",
+    ("nuts_seeds", "peanuts"): "foodsub-nuts-peanuts",
     ("oils_fats", "olive_oil"): "foodsub-oils-olive",
     ("oils_fats", "cooking_oils"): "foodsub-oils-vegetable",
     ("oils_fats", None): "foodsub-oils-other",
@@ -486,7 +488,11 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
         return "fruits", None
 
     if nuts:
-        return "nuts_seeds", None
+        if has("peanut", "فول سوداني"):
+            return "nuts_seeds", "peanuts"
+        if has("almond", "walnut", "hazelnut", "pistachio", "لوز", "جوز"):
+            return "nuts_seeds", "tree_nuts"
+        return "nuts_seeds", "seeds"
     if spices:
         return "spices", "spice_blends" if has("blend", "mix", "seasoning", "بهارات مشكلة") else (
             "whole_spices" if has("whole", "seed", "peppercorn") else "ground_spices"
@@ -537,11 +543,11 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
 
 def default_units(category_id: str, subcategory_id: str | None, names: Iterable[str]) -> list[str]:
     text = normalize_label(" ".join(names))
-    if category_id == "eggs" or "egg" in text:
+    if category_id == "foodcat-eggs" or "egg" in text:
         return ["piece", "dozen", "g", "kg"]
-    if category_id in {"dairy", "beverages"} or any(token in text for token in ("milk", "lait", "juice", "oil", "sauce", "water")):
+    if category_id in {"foodcat-dairy", "foodcat-beverages", "foodcat-oils", "foodcat-sauces"} or any(token in text for token in ("milk", "lait", "juice", "oil", "sauce", "water")):
         return ["ml", "l", "g", "kg"]
-    if category_id in {"spices", "herbs"}:
+    if category_id in {"foodcat-spices", "foodcat-herbs"}:
         return ["g", "kg", "ملعقة صغيرة", "ملعقة كبيرة"]
     if category_id == "other":
         return ["g", "kg", "ml", "l", "piece"]
