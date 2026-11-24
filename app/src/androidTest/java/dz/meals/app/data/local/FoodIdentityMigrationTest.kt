@@ -85,7 +85,7 @@ class FoodIdentityMigrationTest {
             assertTrue(customId.matches(Regex("^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")))
             assertEquals(1, count(db, "SELECT COUNT(*) FROM ingredients WHERE id = '$customId'"))
             assertEquals(
-                "0fdd586e-27ec-46d8-abbf-bb16b2639825",
+                "0fdd586e-27ec-46c1-b407-2b5925054e42",
                 FoodIdentityResolver(context).canonicalId("chicken")
             )
         } finally {
