@@ -6,7 +6,8 @@
  *   Who has access: Anyone
  *
  * The endpoint is protected by a random token stored in Script Properties.
- * It uses one LanguageApp.translate call per recipe, not one call per field.
+ * Recipe records use one LanguageApp call per recipe; food-name requests use
+ * one call for a batch of up to 20 names.
  */
 
 const MIDATI_TARGET_LANGUAGE = "ar";
