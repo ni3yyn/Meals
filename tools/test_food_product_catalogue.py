@@ -119,6 +119,14 @@ class FoodCatalogueParserTests(unittest.TestCase):
         self.assertEqual(_clean_english_ingredient("1 small or 3 Thai eggplants"), "Thai eggplants")
         self.assertEqual(_clean_english_ingredient("1 large yuca"), "yuca")
         self.assertEqual(_clean_english_ingredient("10 olives, sliced"), "olives")
+        self.assertEqual(
+            _clean_english_ingredient("Black beans, cooked: from 350 g dry, cooked"),
+            "Black beans",
+        )
+        self.assertEqual(
+            _clean_english_ingredient("White rice, cooked: from 200 g raw"),
+            "White rice",
+        )
         self.assertEqual(_clean_english_ingredient("150 g, crumbled (queso Paraguay)"), "queso Paraguay")
         self.assertEqual(_clean_english_ingredient("1 cup shredded"), "")
 
