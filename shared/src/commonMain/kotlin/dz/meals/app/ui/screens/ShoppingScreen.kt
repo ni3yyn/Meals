@@ -727,8 +727,12 @@ private fun PriceReportDialog(
                     MealsGlassDropdown(
                         selectedOption = selectedIngredient,
                         options = ingredients,
-                        optionLabel = { it.nameAr },
-                        optionSupportingText = { it.nameFr },
+                        optionLabel = {
+                            if (appLocaleTag.startsWith("en")) it.nameEn.ifBlank { it.nameAr } else it.nameAr
+                        },
+                        optionSupportingText = {
+                            if (appLocaleTag.startsWith("en")) it.nameFr else it.nameEn
+                        },
                         placeholder = "اختيار المكوّن",
                         modifier = Modifier.fillMaxWidth(),
                         maxMenuHeight = 300.dp,
