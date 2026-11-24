@@ -177,14 +177,20 @@ interface MealsDao {
     @Query("DELETE FROM plan_meals WHERE weekStartIso = :weekStartIso AND mealSlot IN (:mealSlots)")
     suspend fun deletePlanSlots(weekStartIso: String, mealSlots: List<String>)
 
-    @Query("SELECT * FROM pantry_items ORDER BY ingredientId")
+    @Query("SELECT * FROM pantry_items ORDER BY ingredientId, unit, id")
     suspend fun getPantryItems(): List<PantryItemEntity>
+
+    @Query("SELECT * FROM pantry_items WHERE id = :id LIMIT 1")
+    suspend fun getPantryItem(id: String): PantryItemEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPantryItem(item: PantryItemEntity)
 
     @Query("DELETE FROM pantry_items WHERE id = :id")
     suspend fun deletePantryItem(id: String)
+
+    @Query("DELETE FROM pantry_items WHERE ingredientId = :ingredientId AND unit = :unit")
+    suspend fun deletePantryItemsForIngredientUnit(ingredientId: String, unit: String)
 
     @Query("SELECT * FROM price_observations")
     suspend fun getPriceObservations(): List<PriceObservationEntity>
