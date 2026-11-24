@@ -25,6 +25,13 @@ val hasReleaseSigning = listOf(
 val generatedTajawalRes = layout.buildDirectory.dir("generated/tajawal-res")
 val localRecipeCorpusDir = rootProject.file("local-data/open-recipe-corpus")
 val generatedRecipeCorpusAssets = layout.buildDirectory.dir("generated/recipe-corpus/debug-assets")
+val generatedFoodIdentityAssets = layout.buildDirectory.dir("generated/food-identity-migration-assets")
+val prepareFoodIdentityMigrationAssets = tasks.register<Sync>("prepareFoodIdentityMigrationAssets") {
+    from(rootProject.file("data/products/recipe-ingredient-map.json")) {
+        into("migration")
+    }
+    into(generatedFoodIdentityAssets)
+}
 val prepareRecipeCorpusDebugAssets = tasks.register<Sync>("prepareRecipeCorpusDebugAssets") {
     from(localRecipeCorpusDir) {
         include(
@@ -130,6 +137,8 @@ android {
     // The same shared Tajawal assets are exposed as Android font resources
     // for a deterministic native Typeface fallback in MainActivity.
     sourceSets.getByName("main").res.srcDir(generatedTajawalRes.get().asFile)
+    // Database upgrades need the generated legacy-ID crosswalk to work offline.
+    sourceSets.getByName("main").assets.srcDir(generatedFoodIdentityAssets.get().asFile)
     // Local corpus assets are attached to Debug only, never to release APKs.
     sourceSets.getByName("debug").assets.srcDir(generatedRecipeCorpusAssets.get().asFile)
 
@@ -148,7 +157,10 @@ android {
 // Every Android resource path that can read the generated res/font folder
 // must wait for the copy task. AGP 9.5 validates these dependencies explicitly.
 tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(copyTajawalFonts)
+    dependsOn(copyTajawalFonts, prepareFoodIdentityMigrationAssets)
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(prepareFoodIdentityMigrationAssets)
 }
 tasks.configureEach {
     val isFontResourceConsumer =
