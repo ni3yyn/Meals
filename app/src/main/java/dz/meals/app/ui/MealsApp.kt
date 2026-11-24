@@ -1644,13 +1644,11 @@ private fun HouseholdPreferencesDialog(
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content)
                     )
                     ingredients.filter { ingredient ->
-                        !ingredient.id.startsWith("orc-ing-") && (
-                            searchIngredient.isBlank() ||
-                                ingredient.nameAr.contains(searchIngredient, true) ||
-                                mealsText(ingredient.nameAr, appLanguage).contains(searchIngredient, true) ||
-                                ingredient.nameFr.contains(searchIngredient, true) ||
-                                ingredient.aliases.any { it.contains(searchIngredient, true) }
-                        )
+                        searchIngredient.isBlank() ||
+                            ingredient.nameAr.contains(searchIngredient, true) ||
+                            mealsText(ingredient.nameAr, appLanguage).contains(searchIngredient, true) ||
+                            ingredient.nameFr.contains(searchIngredient, true) ||
+                            ingredient.aliases.any { it.contains(searchIngredient, true) }
                     }.take(10).forEach { ingredient ->
                         MealsCheckRow(
                             title = mealsText(ingredient.nameAr, appLanguage),
