@@ -355,7 +355,7 @@ internal class FoodIdentityMigration(
             ordered.flatMap { it.aliasesCsv.split('|') }.forEach(::add)
             ordered.map { it.nameAr }.filter { it.isNotBlank() && it != nameAr }.forEach(::add)
             ordered.map { it.nameFr }.filter { it.isNotBlank() && it != nameFr }.forEach(::add)
-        }.map(String::trim).filter(String::isNotEmpty).distinct()
+        }.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
         return IngredientRow(
             legacyId = ordered.firstOrNull()?.legacyId.orEmpty(),
