@@ -55,7 +55,9 @@ class FoodIdentityMigrationTest {
             assertEquals(2, count(db, "SELECT COUNT(*) FROM plan_price_snapshots WHERE ingredientId = '$canonicalId'"))
             assertEquals(2, count(db, "SELECT COUNT(*) FROM cooked_meal_deductions"))
             assertEquals(1, count(db, "SELECT COUNT(DISTINCT ingredientId) FROM cooked_meal_deductions"))
-            assertEquals(2, count(db, "SELECT COUNT(*) FROM cooked_meal_deductions WHERE pantryItemId IS NULL"))
+            assertEquals(2, count(db, "SELECT COUNT(*) FROM cooked_meal_deductions WHERE pantryItemId IS NOT NULL"))
+            assertEquals(1, count(db, "SELECT COUNT(*) FROM cooked_meal_deductions WHERE pantryItemId = 'pantry-row-a'"))
+            assertEquals(1, count(db, "SELECT COUNT(*) FROM cooked_meal_deductions WHERE pantryItemId = 'pantry-row-b'"))
 
             val oldShoppingId = "2025-01-06::" + legacyA + "::g"
             db.query(
