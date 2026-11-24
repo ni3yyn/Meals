@@ -7,6 +7,7 @@ on:
       - "data/recipes/ar/recipes.json"
       - "data/products/categories.json"
       - "data/products/curated-food-items.json"
+      - "data/products/translations.json"
       - "tools/build_food_product_catalogue.py"
       - "tools/test_food_product_catalogue.py"
       - ".github/workflows/build-food-product-catalogue.yml"
@@ -44,7 +45,7 @@ jobs:
           key: midati-food-sources-off-f5abb0a0ca8ae5702f3e192219511adf211b55ee-foodon-8a27493346a122e86ac1748aac24199d5af69166
 
       - name: Run catalogue parser and matching tests
-        run: python -m unittest tools.test_food_product_catalogue -v
+        run: python -m unittest tools.test_food_product_catalogue tools.test_translate_food_catalogue -v
 
       - name: Build catalogue, legacy-ID crosswalk and audit
         run: python tools/build_food_product_catalogue.py
@@ -146,6 +147,8 @@ jobs:
             "data/recipes/ar/recipes.json"
             "data/products/categories.json"
             "data/products/curated-food-items.json"
+            "data/products/translations.json"
+            ".github/apps-script/recipe_translation_api.gs"
             "tools/build_food_product_catalogue.py"
             "tools/test_food_product_catalogue.py"
             ".github/workflows/build-food-product-catalogue.yml"
