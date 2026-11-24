@@ -2362,19 +2362,17 @@ fun MealsFrostedBottomBar(
                         animationSpec = tween(durationMillis = 210),
                         label = "mealsNavLabelSize$index"
                     )
-                    val interactionSource = remember { MutableInteractionSource() }
-                    Column(
-                        modifier = Modifier.weight(1f).fillMaxHeight()
-                            .clip(RoundedCornerShape(18.dp))
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = { onItemSelected(index) },
-                                role = Role.Tab
-                            ),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    MealsPressable(
+                        onClick = { onItemSelected(index) },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        role = Role.Tab,
+                        shape = RoundedCornerShape(18.dp)
                     ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
                         MealsNavigationIcon(
                             name = item.icon,
                             selected = selected,
@@ -2391,6 +2389,7 @@ fun MealsFrostedBottomBar(
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1
                         )
+                        }
                     }
                 }
             }

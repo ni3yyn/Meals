@@ -51,7 +51,7 @@ import dz.meals.app.ui.components.MealsPressable
 import dz.meals.app.ui.components.MealsSubtabsIndicator
 import dz.meals.app.ui.components.MealsText as Text
 import dz.meals.app.ui.components.MealsTextButton
-import dz.meals.app.ui.components.MealsLiquidGlassTextField
+import dz.meals.app.ui.components.MealsSearchBar
 import dz.meals.app.ui.components.mealsSheetDismissAction
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
@@ -243,15 +243,15 @@ fun ShoppingCataloguePicker(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                MealsLiquidGlassTextField(
+                                MealsSearchBar(
                                     value = query,
                                     onValueChange = { query = it },
-                                    label = { Text("ابحثي عن مكوّن أو منتج...") },
-                                    singleLine = true
+                                    placeholder = "ابحثي عن مكوّن أو منتج...",
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                                 if (query.isBlank()) {
                                     Box(
-                                        modifier = Modifier.fillMaxSize().padding(18.dp),
+                                        modifier = Modifier.weight(1f).fillMaxWidth().padding(18.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -262,14 +262,14 @@ fun ShoppingCataloguePicker(
                                     }
                                 } else if (searchResults.isEmpty()) {
                                     Box(
-                                        modifier = Modifier.fillMaxSize().padding(18.dp),
+                                        modifier = Modifier.weight(1f).fillMaxWidth().padding(18.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text("لا توجد نتائج مطابقة.", color = MutedInk)
                                     }
                                 } else {
                                     LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
+                                        modifier = Modifier.weight(1f).fillMaxWidth(),
                                         contentPadding = PaddingValues(bottom = 12.dp),
                                         verticalArrangement = Arrangement.spacedBy(5.dp)
                                     ) {
@@ -298,7 +298,7 @@ fun ShoppingCataloguePicker(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
+                                    modifier = Modifier.weight(1f).fillMaxWidth(),
                                     contentPadding = PaddingValues(bottom = 12.dp),
                                     verticalArrangement = Arrangement.spacedBy(9.dp)
                                 ) {
@@ -371,7 +371,7 @@ fun ShoppingCataloguePicker(
 
                                 if (categoryFoods.isEmpty()) {
                                     Box(
-                                        modifier = Modifier.fillMaxSize().padding(18.dp),
+                                        modifier = Modifier.weight(1f).fillMaxWidth().padding(18.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -382,7 +382,7 @@ fun ShoppingCataloguePicker(
                                     }
                                 } else {
                                     LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
+                                        modifier = Modifier.weight(1f).fillMaxWidth(),
                                         contentPadding = PaddingValues(bottom = 12.dp),
                                         verticalArrangement = Arrangement.spacedBy(5.dp)
                                     ) {

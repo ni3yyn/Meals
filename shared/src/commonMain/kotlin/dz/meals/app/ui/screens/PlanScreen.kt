@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
+import dz.meals.app.ui.components.MealsPressable
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.ui.components.MealsCheckbox
@@ -107,24 +108,6 @@ fun PlanScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 4.dp, height = 28.dp)
-                            .clip(CircleShape)
-                            .background(TextAccent)
-                    )
-                    Text(
-                        "خطة الأسبوع",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = dz.meals.app.ui.theme.Ink
-                    )
-                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -254,17 +237,19 @@ fun PlanScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.weight(0.92f).clip(RoundedCornerShape(17.dp))
-                        .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.28f))
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                        ) { fillEmptyOnly = !fillEmptyOnly }
-                        .padding(start = 5.dp, top = 5.dp, end = 10.dp, bottom = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                MealsPressable(
+                    onClick = { fillEmptyOnly = !fillEmptyOnly },
+                    modifier = Modifier.weight(0.92f),
+                    shape = RoundedCornerShape(17.dp)
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(17.dp))
+                            .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.28f))
+                            .padding(start = 5.dp, top = 5.dp, end = 10.dp, bottom = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
                     MealsCheckbox(
                         checked = fillEmptyOnly,
                         onCheckedChange = { fillEmptyOnly = it }
@@ -277,6 +262,7 @@ fun PlanScreen(
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 2
                     )
+                    }
                 }
                 MealsPrimaryButton(
                     label = if (isGenerating) "جارٍ الإنشاء" else "أنشئ الخطة",
@@ -324,21 +310,21 @@ fun PlanScreen(
             val plannedCount = dayMeals.count { it?.recipeId != null }
             val cookedCount = dayMeals.count { it?.isCooked == true }
 
-            MealsCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                    ) {
-                        selectedDayIndex = day
-                        editingMealSlot = null
-                        mealAwaitingCookConfirmation = null
-                    },
-                containerColor = Paper,
-                borderColor = Border,
-                contentPadding = 15.dp
+            MealsPressable(
+                onClick = {
+                    selectedDayIndex = day
+                    editingMealSlot = null
+                    mealAwaitingCookConfirmation = null
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp)
             ) {
+                MealsCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    containerColor = Paper,
+                    borderColor = Border,
+                    contentPadding = 15.dp
+                ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -386,6 +372,7 @@ fun PlanScreen(
                             modifier = Modifier.size(23.dp)
                         )
                     }
+                }
                 }
             }
         }

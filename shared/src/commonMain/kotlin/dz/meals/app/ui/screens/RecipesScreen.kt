@@ -72,6 +72,7 @@ import dz.meals.app.ui.components.MealsFilterChips
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsLiquidGlassProgressBar
 import dz.meals.app.ui.components.MealsPrimaryButton
+import dz.meals.app.ui.components.MealsPressable
 import dz.meals.app.ui.components.MealsSearchBar
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsSubtabsIndicator
@@ -280,9 +281,6 @@ fun RecipesScreen(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("وصفات من مطبخنا", style = MaterialTheme.typography.headlineMedium)
-            Text("ابحث بالعربية أو الفرنسية أو بأسماء المكونات المحلية.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-
             if (catalogueProgress != null && catalogueStatusMessage != null) {
                 MealsCard(
                     containerColor = WarmSurface,
@@ -1367,14 +1365,18 @@ private fun RecipeServingsControl(
             color = MutedInk,
             style = MaterialTheme.typography.labelMedium
         )
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .background(WarmSurface, CircleShape)
-                .clickable(enabled = servings > 1) { onServingsChange((servings - 1).coerceAtLeast(1)) },
-            contentAlignment = Alignment.Center
+        MealsPressable(
+            onClick = { onServingsChange((servings - 1).coerceAtLeast(1)) },
+            enabled = servings > 1,
+            modifier = Modifier.size(34.dp),
+            shape = CircleShape
         ) {
-            Text("−", color = if (servings > 1) Ink else MutedInk, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier.fillMaxSize().background(WarmSurface, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("−", color = if (servings > 1) Ink else MutedInk, fontWeight = FontWeight.Bold)
+            }
         }
         Text(
             servings.toString(),
@@ -1382,14 +1384,18 @@ private fun RecipeServingsControl(
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.titleMedium
         )
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .background(WarmSurface, CircleShape)
-                .clickable(enabled = servings < 12) { onServingsChange((servings + 1).coerceAtMost(12)) },
-            contentAlignment = Alignment.Center
+        MealsPressable(
+            onClick = { onServingsChange((servings + 1).coerceAtMost(12)) },
+            enabled = servings < 12,
+            modifier = Modifier.size(34.dp),
+            shape = CircleShape
         ) {
-            Text("+", color = if (servings < 12) Ink else MutedInk, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier.fillMaxSize().background(WarmSurface, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("+", color = if (servings < 12) Ink else MutedInk, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
