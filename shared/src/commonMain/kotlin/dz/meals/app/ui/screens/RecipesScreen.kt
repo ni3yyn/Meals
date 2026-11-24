@@ -475,7 +475,7 @@ fun RecipesScreen(
                                 containerColor = Paper,
                                 borderColor = Border,
                                 contentPadding = 14.dp
-                            ) {              ) {
+                            ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(9.dp)
