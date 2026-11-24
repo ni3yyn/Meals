@@ -1389,6 +1389,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=ROOT / "data/products/catalogue.json")
     parser.add_argument("--mapping-output", type=Path, default=ROOT / "data/products/recipe-ingredient-map.json")
     parser.add_argument("--audit-output", type=Path, default=ROOT / "data/products/build-audit.json")
+    parser.add_argument("--identity-registry", type=Path, default=ROOT / "data/products/identity_registry.json")
     args = parser.parse_args()
 
     if not args.recipes.is_file():
@@ -1416,7 +1417,13 @@ def main() -> int:
             raise RuntimeError(f"Unexpectedly few OFF taxonomy entries parsed: {len(off_records)}")
         if len(foodon) < 1000:
             raise RuntimeError(f"Unexpectedly few FoodOn classes parsed: {len(foodon)}")
-        catalogue, mapping, audit = build_catalogue(recipe_data, off_records, foodon)
+        if args.identity_registry.is_file():
+            identity_registry = json.loads(args.identity_registry.read_text(encoding="utf-8"))
+        else:
+            identity_registry = {"version": 1, "idFormat": "UUIDv4", "ids": {}, "redirects": {}}
+        catalogue, mapping, audit, identity_registry = build_catalogue(
+            recipe_data, off_records, foodon, identity_registry
+        )
     except Exception as error:
         print(f"::error::{error}", file=sys.stderr)
         return 1
@@ -1425,6 +1432,7 @@ def main() -> int:
         (args.output, catalogue),
         (args.mapping_output, mapping),
         (args.audit_output, audit),
+        (args.identity_registry, identity_registry),
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
@@ -1440,6 +1448,8 @@ def main() -> int:
         f"{counts['offMatchedGroups']} exact OFF matches; "
         f"{counts['unmatchedRecipeGroups']} recipe-only items; "
         f"{counts['ambiguousRecipeGroups']} ambiguous matches; "
+        f"{counts['recipeRowsMapped']} recipe rows linked; "
+        f"{counts['uuidv4Ids']} UUIDv4 IDs; "
         "0 duplicate IDs/names."
     )
     print(f"Catalogue: {args.output}")
