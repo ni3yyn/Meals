@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.JsonReader
 import android.util.JsonToken
 import androidx.room.withTransaction
+import dz.meals.app.data.local.FoodCategoryEntity
 import dz.meals.app.data.local.FoodItemEntity
 import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MealsDatabase
@@ -46,6 +47,10 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         }
 
         val foodItemsById = dao.getFoodItems().associateBy { it.id }
+        val foodCategoriesById = dao.getFoodCategories().associateBy { it.id }
+        if (foodCategoriesById.size != FoodCatalogueInstaller.EXPECTED_CATEGORY_COUNT) {
+            throw IOException("يجب تثبيت تصنيفات دليل المكونات قبل استيراد الوصفات.")
+        }
         if (foodItemsById.size != FoodCatalogueInstaller.EXPECTED_ITEM_COUNT) {
             throw IOException("يجب تثبيت دليل المكونات الكامل قبل استيراد الوصفات.")
         }
@@ -100,7 +105,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                                 if (source.id.isBlank() || !uniqueIds.add(source.id)) {
                                     throw IOException("تحتوي مكتبة الوصفات على معرّف مفقود أو مكرر.")
                                 }
-                                batch += source.toBundle(foodItemsById, existingIngredientsById)
+                                batch += source.toBundle(foodItemsById, foodCategoriesById, existingIngredientsById)
                                 importedCount++
                                 if (batch.size >= BATCH_SIZE) flushBatch()
                             }
@@ -388,6 +393,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
 
     private fun SourceRecipe.toBundle(
         foodItemsById: Map<String, FoodItemEntity>,
+        foodCategoriesById: Map<String, FoodCategoryEntity>,
         existingIngredientsById: Map<String, IngredientEntity>
     ): RecipeBundle {
         val recipeId = when {
@@ -422,8 +428,9 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 nameAr = canonicalFood?.nameAr?.ifBlank { source.name } ?: source.name,
                 nameFr = canonicalFood?.nameFr?.ifBlank { source.sourceNameEn.ifBlank { source.name } }
                     ?: source.sourceNameEn.ifBlank { source.name },
-                category = canonicalFood?.categoryNameAr?.ifBlank {
-                    IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn)
+                category = canonicalFood?.let { food ->
+                    foodCategoriesById[food.categoryId]?.nameAr
+                        ?: throw IOException("Food ${food.id} references missing category ${food.categoryId}.")
                 } ?: IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn),
                 baseUnit = measure.unit,
                 allergensCsv = existingIngredient?.allergensCsv.orEmpty(),
