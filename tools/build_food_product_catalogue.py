@@ -647,7 +647,7 @@ def _clean_english_ingredient(value: str) -> str:
     units = (
         r"(?:kilograms?|kilogrammes?|kg|grams?|grammes?|g|millilit(?:er|re)s?|ml|"
         r"lit(?:er|re)s?|l|ounces?|oz|pounds?|lbs?|cups?|cup|tablespoons?|tbsp|tbs|"
-        r"teaspoons?|tsp|pieces?|pcs?|cloves?|bunches?|sprigs?|stalks?|slices?|"
+        r"teaspoons?|tsp|pieces?|pcs?|cloves?|bunch(?:es)?|sprigs?|stalks?|slices?|"
         r"handfuls?|pinches?|cans?|tins?|jars?|bottles?|packs?|packages?|dozens?)"
     )
     text = re.sub(
@@ -1203,19 +1203,20 @@ def merge_curated_food_items(
             for value in values
             if isinstance(value, str) and normalize_label(value)
         }
-        primary_matches, alias_matches = [], []
+        # Curated concepts may intentionally split a broad/incorrect external
+        # synonym (e.g. Algerian lben/raib listed under generic milk). Match only
+        # preferred labels, never aliases, so a culturally reviewed item can
+        # become a separate identity without inheriting an ambiguous synonym.
+        primary_matches = []
         for index, record in enumerate(records):
             record_terms = {
                 normalize_label(value)
-                for lang in ("ar", "en", "fr")
-                for value in record.get("allNames", {}).get(lang, [])
-                if normalize_label(value)
+                for value in (record.get("names") or {}).values()
+                if isinstance(value, str) and normalize_label(value)
             }
             if primary_terms.intersection(record_terms):
                 primary_matches.append(index)
-            elif alias_terms.intersection(record_terms):
-                alias_matches.append(index)
-        candidates = primary_matches if primary_matches else alias_matches
+        candidates = primary_matches
         if len(candidates) > 1:
             raise RuntimeError(
                 f"Curated item {key!r} matches multiple existing concepts; refusing ambiguous merge."
