@@ -629,7 +629,7 @@ def _clean_english_ingredient(value: str) -> str:
     if ":" in text:
         left, right = text.split(":", 1)
         if re.match(
-            r"^\s*(?:about\s+|approximately\s+|~\s*)?(?:\d|to\s+taste\b|as\s+needed\b)",
+            r"^\s*(?:from\s+)?(?:about\s+|approximately\s+|~\s*)?(?:\d|to\s+taste\b|as\s+needed\b)",
             right,
             flags=re.IGNORECASE,
         ):
@@ -1590,6 +1590,14 @@ def build_catalogue(
     if invalid_categories:
         raise RuntimeError("Product references invalid Midati category IDs: " + json.dumps(invalid_categories[:10]))
     missing_category = sum(1 for p in products if p["categoryId"] == "foodcat-other")
+    recipe_used_products = [
+        product for product in products
+        if product.get("recipeIngredientIds")
+    ]
+    external_matched_groups = sum(
+        count for method, count in matching_methods.items()
+        if method not in {"unmatched", "foodon_ambiguous", "foodon_ambiguous_off_link"}
+    )
     report = {
         "schemaVersion": 1,
         "sourceCounts": {
@@ -1602,7 +1610,23 @@ def build_catalogue(
         "catalogueCounts": {
             "products": len(products),
             "mappedRecipeIngredientIds": len(matched_ids),
-            "uniqueRecipeIngredientsMapped": len(groups),
+            "uniqueRecipeIngredientGroups": len(groups),
+            "uniqueRecipeIngredientsMapped": external_matched_groups,
+            "externalDatasetMatchedGroups": external_matched_groups,
+            "allDatasetMatchCoveragePercent": round(
+                100.0 * external_matched_groups / max(len(groups), 1),
+                2,
+            ),
+            "recipeUsedProducts": len(recipe_used_products),
+            "recipeUsedMissingArabicNames": sum(
+                1 for product in recipe_used_products if not product["names"].get("ar")
+            ),
+            "recipeUsedMissingEnglishNames": sum(
+                1 for product in recipe_used_products if not product["names"].get("en")
+            ),
+            "recipeUsedMissingFrenchNames": sum(
+                1 for product in recipe_used_products if not product["names"].get("fr")
+            ),
             "offMatchedGroups": sum(
                 count for method, count in matching_methods.items()
                 if method.startswith("exact_")
