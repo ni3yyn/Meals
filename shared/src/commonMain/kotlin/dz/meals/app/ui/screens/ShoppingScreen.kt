@@ -8,10 +8,6 @@ import dz.meals.app.ui.theme.logicalStartRevealSign
 
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -42,7 +39,6 @@ import dz.meals.app.ui.components.MealsGlassDropdown
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableFloatStateOf
@@ -51,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -87,7 +84,6 @@ import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.WarmSurface
-import dz.meals.app.ui.theme.SoftPink
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import dz.meals.app.shared.format.epochMillisToLocalDate
