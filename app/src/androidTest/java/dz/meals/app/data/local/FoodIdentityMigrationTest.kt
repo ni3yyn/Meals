@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlinx.coroutines.runBlocking
 
 @RunWith(AndroidJUnit4::class)
 class FoodIdentityMigrationTest {
@@ -34,15 +35,23 @@ class FoodIdentityMigrationTest {
 
             // Two recipe rows which converge on one UUID remain two rows with all
             // quantities, units, preparation notes and optional flags intact.
-            assertEquals(2, count(db, "SELECT COUNT(*) FROM recipe_ingredients"))
-            assertEquals(1, count(db, "SELECT COUNT(DISTINCT ingredientId) FROM recipe_ingredients"))
-            assertEquals(5.0, scalarDouble(db, "SELECT SUM(quantityBase) FROM recipe_ingredients"), 0.0)
+            assertEquals(4, count(db, "SELECT COUNT(*) FROM recipe_ingredients"))
+            assertEquals(2, count(db, "SELECT COUNT(DISTINCT ingredientId) FROM recipe_ingredients"))
+            assertEquals(6.5, scalarDouble(db, "SELECT SUM(quantityBase) FROM recipe_ingredients"), 0.0)
             val recipeKeys = mutableSetOf<String>()
             db.query("SELECT rowKey FROM recipe_ingredients").use { cursor ->
                 while (cursor.moveToNext()) recipeKeys += cursor.getString(0)
             }
-            assertEquals(setOf(legacyA, legacyB), recipeKeys)
-            assertEquals(canonicalId, scalarString(db, "SELECT ingredientId FROM recipe_ingredients LIMIT 1"))
+            assertEquals(setOf(legacyA, legacyB, "chicken"), recipeKeys)
+            assertEquals(canonicalId, scalarString(db, "SELECT ingredientId FROM recipe_ingredients WHERE recipeId = 'focus:test-recipe' LIMIT 1"))
+
+            val hiddenUntilCatalogueInstall = runBlocking {
+                roomDatabase.mealsDao().getUnpublishedArabicCatalogueIngredientIds().toSet()
+            }
+            assertEquals(
+                setOf("0fdd586e-27ec-46c1-b407-2b5925054e42"),
+                hiddenUntilCatalogueInstall
+            )
 
             // Pantry rows retain distinct primary keys even after their ingredient IDs merge.
             assertEquals(2, count(db, "SELECT COUNT(*) FROM pantry_items WHERE ingredientId = '$canonicalId'"))
@@ -220,6 +229,18 @@ class FoodIdentityMigrationTest {
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
                 arrayOf("focus:test-recipe", legacyB, 3.0, "g", "ملاحظة ب", 1, "linear")
+            )
+            // This same food is used by a seed recipe too, so it must remain
+            // available even while the community recipe catalogue is pending.
+            db.execSQL(
+                "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
+                arrayOf("seed:baseline", legacyA, 1.0, "g", "seed use", 0, "linear")
+            )
+            // This canonical product is used only by an imported recipe and
+            // should remain hidden until the imported catalogue is complete.
+            db.execSQL(
+                "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
+                arrayOf("unitools:chicken-demo", "chicken", 0.5, "g", "imported use", 0, "linear")
             )
             db.execSQL(
                 "INSERT INTO pantry_items VALUES (?, ?, ?, ?, ?, ?, ?)",
