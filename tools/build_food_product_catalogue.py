@@ -1234,6 +1234,25 @@ def build_catalogue(
             f"Recipe ingredient mappings incomplete: {len(unmapped_ids)} IDs have no product."
         )
 
+    recipe_rows: list[dict[str, Any]] = []
+    for recipe in recipes:
+        recipe_id = str(recipe.get("id") or "")
+        for ingredient_index, ingredient in enumerate(recipe.get("ingredients") or []):
+            if not isinstance(ingredient, dict):
+                continue
+            legacy_id = room_ingredient_id(ingredient, recipe_id)
+            food_item_id = matched_ids.get(legacy_id)
+            if not food_item_id:
+                raise RuntimeError(
+                    f"Missing canonical UUID for recipe ingredient {legacy_id}."
+                )
+            recipe_rows.append({
+                "recipeId": recipe_id,
+                "ingredientIndex": ingredient_index,
+                "legacyRoomIngredientId": legacy_id,
+                "foodItemId": food_item_id,
+            })
+
     id_counts = Counter(str(product["id"]) for product in products)
     en_counts = Counter(
         normalize_label(str(product["names"].get("en") or ""))
@@ -1250,7 +1269,8 @@ def build_catalogue(
     catalogue = {
         "schemaVersion": 1,
         "catalogueType": "generic-food-items",
-        "idStrategy": "reuse-one-existing-recipe-ingredient-id-per-item; UUIDv5 for new items",
+        "idFormat": "UUIDv4",
+        "idStrategy": "persistent UUIDv4 registry; independent of localized/display names",
         "sourceRevisions": {
             "openFoodFacts": {
                 "repository": OFF_REPOSITORY,
@@ -1278,7 +1298,9 @@ def build_catalogue(
     mapping = {
         "schemaVersion": 1,
         "description": "Maps existing Room recipe ingredient IDs to canonical food-item IDs.",
+        "legacyRoomIngredientIdToFoodItemId": dict(sorted(matched_ids.items())),
         "recipeIngredientToProductId": dict(sorted(matched_ids.items())),
+        "recipeRows": recipe_rows,
     }
     missing_ar = sum(1 for p in products if not p["names"].get("ar"))
     missing_en = sum(1 for p in products if not p["names"].get("en"))
@@ -1334,6 +1356,15 @@ def build_catalogue(
             "missingNutrition": sum(1 for p in products if not p["nutrition"]),
             "duplicateIds": 0,
             "duplicateEnglishNames": 0,
+            "uuidv4Ids": sum(
+                1 for p in products
+                if re.fullmatch(
+                    r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+                    str(p["id"]),
+                )
+            ),
+            "recipeRowsMapped": len(recipe_rows),
+            "legacyIdConflicts": 0,
         },
         "recipeMatchingMethods": dict(sorted(matching_methods.items())),
         "unmatchedRecipeIngredients": unmatched[:500],
@@ -1346,7 +1377,7 @@ def build_catalogue(
             "Quantity and barcode belong to a future market-product variant, not to this generic food-item identity.",
         ],
     }
-    return catalogue, mapping, report
+    return catalogue, mapping, report, identity_registry
 
 
 def main() -> int:
