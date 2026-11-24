@@ -27,8 +27,9 @@ class FoodIdentityResolver(context: Context) {
         val key = legacyId.trim()
         require(key.isNotEmpty()) { "Ingredient identity cannot be blank" }
 
-        legacyMappings[key]?.let { return it }
+        SEED_MAPPINGS[key]?.let { return it }
         normalizeUuid(key)?.let { return it }
+        legacyMappings[key]?.let { return it }
         return uuidV5(key)
     }
 
