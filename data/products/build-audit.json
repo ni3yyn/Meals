@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
   "sourceCounts": {
-    "offTaxonomyRecords": 4152,
+    "offTaxonomyRecords": 4160,
     "foodOnClasses": 29255,
     "recipeCount": 912,
     "uniqueRecipeIngredientGroups": 1207,
     "uniqueRecipeIngredientIds": 1261
   },
   "catalogueCounts": {
-    "products": 5016,
+    "products": 5024,
     "mappedRecipeIngredientIds": 1261,
     "uniqueRecipeIngredientsMapped": 1207,
     "offMatchedGroups": 338,
     "unmatchedRecipeGroups": 869,
     "ambiguousRecipeGroups": 0,
-    "missingArabicNames": 3454,
+    "missingArabicNames": 3462,
     "missingEnglishNames": 0,
-    "missingFrenchNames": 1992,
-    "fallbackOtherCategory": 393,
-    "missingImages": 5016,
-    "missingNutrition": 5016,
+    "missingFrenchNames": 1993,
+    "fallbackOtherCategory": 387,
+    "missingImages": 5024,
+    "missingNutrition": 5024,
     "duplicateIds": 0,
     "duplicateEnglishNames": 0
   },
