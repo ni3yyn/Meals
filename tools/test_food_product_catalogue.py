@@ -184,6 +184,50 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         self.assertEqual(report["totalApplied"], 0)
         self.assertEqual(report["ignoredExistingSourceNamesByLanguage"]["fr"], 1)
 
+    def test_machine_english_translation_cannot_duplicate_a_sourced_name(self):
+        existing_id = "66666666-6666-4666-8666-666666666666"
+        translated_id = "77777777-7777-4777-8777-777777777777"
+        products = [
+            {
+                "id": existing_id,
+                "names": {"ar": "ملفوف أحمر", "en": "red cabbage", "fr": "chou rouge"},
+            },
+            {
+                "id": translated_id,
+                "names": {"ar": "الملفوف الأحمر", "en": None, "fr": None},
+            },
+        ]
+        sidecar = {
+            "provider": "Google Apps Script LanguageApp",
+            "translations": {
+                translated_id: {
+                    "en": {
+                        "text": "red cabbage",
+                        "sourceLanguage": "ar",
+                        "sourceText": "الملفوف الأحمر",
+                    },
+                    "fr": {
+                        "text": "chou rouge",
+                        "sourceLanguage": "ar",
+                        "sourceText": "الملفوف الأحمر",
+                    },
+                }
+            },
+        }
+
+        report = apply_machine_name_translations(products, sidecar)
+
+        self.assertEqual(products[0]["names"]["en"], "red cabbage")
+        self.assertIsNone(products[1]["names"]["en"])
+        self.assertEqual(products[1]["names"]["fr"], "chou rouge")
+        self.assertEqual(report["appliedByLanguage"], {"ar": 0, "en": 0, "fr": 1})
+        self.assertEqual(report["englishNameConflictCount"], 1)
+        self.assertEqual(report["englishNameConflicts"][0]["id"], translated_id)
+        self.assertEqual(
+            report["englishNameConflicts"][0]["conflictingProductIds"],
+            [existing_id],
+        )
+
     def test_machine_translation_with_changed_source_is_reported_stale(self):
         products = [{
             "id": "33333333-3333-4333-8333-333333333333",
