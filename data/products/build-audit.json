@@ -48,6 +48,24 @@
     "foodon_exact_to_off": 6,
     "unmatched": 429
   },
+  "machineNameTranslations": {
+    "provider": "Google Apps Script LanguageApp",
+    "appliedByLanguage": {
+      "ar": 0,
+      "en": 0,
+      "fr": 0
+    },
+    "totalApplied": 0,
+    "ignoredExistingSourceNamesByLanguage": {
+      "ar": 0,
+      "en": 0,
+      "fr": 0
+    },
+    "staleCount": 0,
+    "staleEntries": [],
+    "invalidCount": 0,
+    "invalidEntries": []
+  },
   "unmatchedRecipeIngredients": [
     {
       "nameAr": "طماطم مهروسة معلبة",
