@@ -19,7 +19,9 @@ import java.io.IOException
 private val Context.mealsDataStore: DataStore<Preferences> by preferencesDataStore(name = "meals_preferences")
 
 class PreferencesStore(context: Context) {
-    private val dataStore = context.applicationContext.mealsDataStore
+    private val appContext = context.applicationContext
+    private val dataStore = appContext.mealsDataStore
+    private val foodIdentityResolver = FoodIdentityResolver(appContext)
 
     private object Keys {
         val weeklyBudget = intPreferencesKey("weekly_budget_dzd")
@@ -54,7 +56,8 @@ class PreferencesStore(context: Context) {
                 allergyIds = values[Keys.allergyIds] ?: emptySet(),
                 mealSlots = (values[Keys.mealSlots] ?: setOf("breakfast", "lunch", "dinner"))
                     .intersect(setOf("breakfast", "lunch", "dinner")),
-                dislikedIngredientIds = values[Keys.dislikedIngredientIds] ?: emptySet(),
+                dislikedIngredientIds = (values[Keys.dislikedIngredientIds] ?: emptySet())
+                    .mapTo(linkedSetOf(), foodIdentityResolver::canonicalId),
                 dietPattern = values[Keys.dietPattern] ?: "none",
                 maxCookingMinutes = (values[Keys.maxCookingMinutes] ?: 60).coerceIn(10, 240),
                 budgetBufferPercent = (values[Keys.budgetBufferPercent] ?: 5).coerceIn(0, 30),
@@ -89,6 +92,7 @@ class PreferencesStore(context: Context) {
             values[Keys.allergyIds] = allergyIds
             values[Keys.mealSlots] = mealSlots.intersect(setOf("breakfast", "lunch", "dinner"))
             values[Keys.dislikedIngredientIds] = dislikedIngredientIds
+                .mapTo(linkedSetOf(), foodIdentityResolver::canonicalId)
             values[Keys.dietPattern] = dietPattern.takeIf { it in setOf("none", "vegetarian", "vegan") } ?: "none"
             values[Keys.maxCookingMinutes] = maxCookingMinutes.coerceIn(10, 240)
             values[Keys.budgetBufferPercent] = budgetBufferPercent.coerceIn(0, 30)
