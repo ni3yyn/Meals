@@ -61,7 +61,7 @@ class FoodCatalogueParserTests(unittest.TestCase):
         )
 
     def test_normalization_handles_arabic_diacritics_and_punctuation(self):
-        self.assertEqual(normalize_label("  التَّمَاطِم! "), "الطماطم".replace("ال", "ال") if False else "الطماطم")
+        self.assertEqual(normalize_label("  الطَّمَاطِم! "), "الطماطم")
 
 
 class FoodCatalogueBuildTests(unittest.TestCase):
