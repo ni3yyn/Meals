@@ -11,6 +11,7 @@ import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsTextButton
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,7 @@ import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.data.FoodCategory
 import dz.meals.app.data.FoodSubcategory
 import dz.meals.app.data.IngredientMaster
+import dz.meals.app.data.foodMatchesSearch
 import dz.meals.app.data.PantryItem
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.MutedInk
@@ -71,32 +73,49 @@ fun PantryScreen(
     onRemove: (String) -> Unit
 ) {
     var search by rememberSaveable { mutableStateOf("") }
+    var selectedCategoryId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedSubcategoryId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingItem by rememberSaveable { mutableStateOf<PantryItem?>(null) }
     val appLocaleTag = LocalMealsLocaleTag.current
     val categoriesById = foodCategories.associateBy { it.id }
     val subcategoriesById = foodSubcategories.associateBy { it.id }
     val searchQuery = search.trim()
+    val orderedCategories = foodCategories.sortedBy { it.sortOrder }
+    val selectedCategory = selectedCategoryId?.let(categoriesById::get)
+    val selectedSubcategories = foodSubcategories
+        .filter { it.categoryId == selectedCategoryId }
+        .sortedBy { it.sortOrder }
+    val categoryFoods = ingredients
+        .filter { it.categoryId == selectedCategoryId }
+        .filter { selectedSubcategoryId == null || it.subcategoryId == selectedSubcategoryId }
+        .sortedBy { pantryIngredientDisplayName(it, appLocaleTag).lowercase() }
 
     val selectedIngredient = selectedIngredientId?.let { id -> ingredients.firstOrNull { it.id == id } }
-    val matchingIngredients = ingredients.filter { ingredient ->
-        if (searchQuery.isBlank()) return@filter false
-        val category = categoriesById[ingredient.categoryId]
-        val subcategory = subcategoriesById[ingredient.subcategoryId]
-        listOf(
-            ingredient.nameAr,
-            ingredient.nameEn,
-            ingredient.nameFr,
-            category?.nameAr.orEmpty(),
-            category?.nameEn.orEmpty(),
-            category?.nameFr.orEmpty(),
-            subcategory?.nameAr.orEmpty(),
-            subcategory?.nameEn.orEmpty(),
-            subcategory?.nameFr.orEmpty()
-        ).any { it.contains(searchQuery, ignoreCase = true) } ||
-            mealsText(ingredient.nameAr, appLocaleTag).contains(searchQuery, ignoreCase = true) ||
-            ingredient.aliases.any { it.contains(searchQuery, ignoreCase = true) }
-    }.take(12)
+    val matchingIngredients = if (searchQuery.isBlank()) {
+        emptyList()
+    } else {
+        ingredients.filter { ingredient ->
+            val category = categoriesById[ingredient.categoryId]
+            val subcategory = subcategoriesById[ingredient.subcategoryId]
+            foodMatchesSearch(
+                buildList {
+                    add(ingredient.nameAr)
+                    add(ingredient.nameEn)
+                    add(ingredient.nameFr)
+                    addAll(ingredient.aliases)
+                    add(category?.nameAr.orEmpty())
+                    add(category?.nameEn.orEmpty())
+                    add(category?.nameFr.orEmpty())
+                    add(subcategory?.nameAr.orEmpty())
+                    add(subcategory?.nameEn.orEmpty())
+                    add(subcategory?.nameFr.orEmpty())
+                    add(mealsText(ingredient.nameAr, appLocaleTag))
+                },
+                searchQuery
+            )
+        }.sortedBy { pantryIngredientDisplayName(it, appLocaleTag).lowercase() }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -114,6 +133,13 @@ fun PantryScreen(
                 singleLine = true
             )
             Text(
+                if (appLocaleTag.startsWith("en")) "${ingredients.size} searchable food identities in the catalogue."
+                else "${ingredients.size} هوية غذائية قابلة للبحث في القاموس.",
+                color = MutedInk,
+                style = MaterialTheme.typography.bodySmall,
+                translate = false
+            )
+            Text(
                 "الكمية التقريبية لا تُخصم من المشتريات. تاريخ الانتهاء تذكير فقط وليس حكماً على سلامة الطعام.",
                 color = MutedInk,
                 style = MaterialTheme.typography.bodySmall
@@ -125,43 +151,197 @@ fun PantryScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 122.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (search.isNotBlank()) {
+            if (searchQuery.isNotBlank()) {
                 item {
-                    Text("نتائج البحث", style = MaterialTheme.typography.titleMedium, color = dz.meals.app.ui.theme.TextAccent)
+                    Text(
+                        if (appLocaleTag.startsWith("en")) "Search results (${matchingIngredients.size})"
+                        else "نتائج البحث (${matchingIngredients.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = dz.meals.app.ui.theme.TextAccent,
+                        translate = false
+                    )
                 }
                 items(matchingIngredients, key = { "search-" + it.id }) { ingredient ->
-                    MealsTextButton(
+                    PantryIngredientRow(
+                        ingredient = ingredient,
+                        category = categoriesById[ingredient.categoryId],
+                        subcategory = subcategoriesById[ingredient.subcategoryId],
+                        localeTag = appLocaleTag,
                         onClick = {
                             editingItem = pantry.firstOrNull { it.ingredientId == ingredient.id }
                             selectedIngredientId = ingredient.id
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        }
+                    )
+                }
+                if (matchingIngredients.isEmpty()) {
+                    item {
+                        Text(
+                            if (appLocaleTag.startsWith("en")) "No matching foods in the catalogue."
+                            else "لا توجد مكوّنات مطابقة في القاموس الحالي.",
+                            color = MutedInk,
+                            translate = false
+                        )
+                    }
+                }
+            } else if (selectedCategory == null) {
+                item {
+                    Text(
+                        if (appLocaleTag.startsWith("en")) "Browse all ${foodCategories.size} food categories"
+                        else "تصفّح التصنيفات الغذائية (${foodCategories.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = dz.meals.app.ui.theme.TextAccent,
+                        translate = false
+                    )
+                }
+                items(orderedCategories.chunked(2), key = { row -> "category-${row.first().id}" }) { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
+                        row.forEach { category ->
+                            val count = ingredients.count { it.categoryId == category.id }
+                            MealsCard(
+                                modifier = Modifier.weight(1f).clickable {
+                                    selectedCategoryId = category.id
+                                    selectedSubcategoryId = null
+                                },
+                                containerColor = Paper,
+                                borderColor = Border,
+                                contentPadding = 12.dp,
+                                shape = RoundedCornerShape(15.dp)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        category.label(appLocaleTag),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = dz.meals.app.ui.theme.TextAccent,
+                                        translate = false
+                                    )
+                                    Text(
+                                        if (appLocaleTag.startsWith("en")) "$count foods" else "$count مكوّن",
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        translate = false
+                                    )
+                                }
+                            }
+                        }
+                        if (row.size == 1) androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                    }
+                }
+            } else {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        MealsTextButton(
+                            onClick = {
+                                selectedCategoryId = null
+                                selectedSubcategoryId = null
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                MealsIcon(MealsIconName.ChevronRight, contentDescription = null, modifier = Modifier.size(19.dp))
+                                Text(
+                                    if (appLocaleTag.startsWith("en")) "All categories" else "كل التصنيفات",
+                                    color = dz.meals.app.ui.theme.TextAccent,
+                                    translate = false
+                                )
+                            }
+                        }
+                        Text(
+                            selectedCategory.label(appLocaleTag),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = dz.meals.app.ui.theme.TextAccent,
+                            translate = false
+                        )
+                        Text(
+                            if (appLocaleTag.startsWith("en")) "${categoryFoods.size} foods in this selection"
+                            else "${categoryFoods.size} مكوّن في هذا الاختيار",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall,
+                            translate = false
+                        )
+                    }
+                }
+                item {
+                    Text(
+                        if (appLocaleTag.startsWith("en")) "Subcategories"
+                        else "التصنيفات الفرعية",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = dz.meals.app.ui.theme.TextAccent,
+                        translate = false
+                    )
+                }
+                item {
+                    MealsCard(
+                        modifier = Modifier.fillMaxWidth().clickable { selectedSubcategoryId = null },
+                        containerColor = Paper,
+                        borderColor = if (selectedSubcategoryId == null) dz.meals.app.ui.theme.TextAccent else Border,
+                        contentPadding = 11.dp,
+                        shape = RoundedCornerShape(13.dp)
                     ) {
                         Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    if (appLocaleTag.startsWith("en")) ingredient.nameEn.ifBlank { ingredient.nameAr }
-                                    else ingredient.nameAr,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                (if (appLocaleTag.startsWith("en")) ingredient.nameEn.ifBlank { mealsText(ingredient.nameAr, appLocaleTag) } else ingredient.nameAr) + " · " +
-                    mealsUnitLabel(ingredient.baseUnit, appLocaleTag),
-                color = MutedInk,
-                style = MaterialTheme.typography.bodySmall,
-                translate = false
-            )
-                            }
-                            MealsIcon(MealsIconName.Add, contentDescription = "إضافة أو تعديل", modifier = Modifier.size(28.dp))
+                            Text(
+                                if (appLocaleTag.startsWith("en")) "All in ${selectedCategory.label(appLocaleTag)}"
+                                else "كل الأغذية ضمن ${selectedCategory.label(appLocaleTag)}",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                translate = false
+                            )
+                            Text(
+                                ingredients.count { it.categoryId == selectedCategory.id }.toString(),
+                                color = MutedInk
+                            )
                         }
                     }
                 }
-                if (matchingIngredients.isEmpty()) {
-                    item { Text("لا توجد مكوّنات مطابقة في القاموس الحالي.", color = MutedInk) }
+                items(selectedSubcategories, key = { "subcategory-${it.id}" }) { subcategory ->
+                    val count = ingredients.count { it.subcategoryId == subcategory.id }
+                    MealsCard(
+                        modifier = Modifier.fillMaxWidth().clickable { selectedSubcategoryId = subcategory.id },
+                        containerColor = Paper,
+                        borderColor = if (selectedSubcategoryId == subcategory.id) dz.meals.app.ui.theme.TextAccent else Border,
+                        contentPadding = 11.dp,
+                        shape = RoundedCornerShape(13.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(subcategory.label(appLocaleTag), color = MaterialTheme.colorScheme.onSurface, translate = false)
+                            Text(count.toString(), color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                item {
+                    Text(
+                        if (appLocaleTag.startsWith("en")) "Foods"
+                        else "المكوّنات",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = dz.meals.app.ui.theme.TextAccent,
+                        translate = false
+                    )
+                }
+                items(categoryFoods, key = { "browse-" + it.id }) { ingredient ->
+                    PantryIngredientRow(
+                        ingredient = ingredient,
+                        category = categoriesById[ingredient.categoryId],
+                        subcategory = subcategoriesById[ingredient.subcategoryId],
+                        localeTag = appLocaleTag,
+                        onClick = {
+                            editingItem = pantry.firstOrNull { it.ingredientId == ingredient.id }
+                            selectedIngredientId = ingredient.id
+                        }
+                    )
+                }
+                if (categoryFoods.isEmpty()) {
+                    item {
+                        Text(
+                            if (appLocaleTag.startsWith("en")) "No foods are assigned to this selection yet."
+                            else "لا توجد مكوّنات مسندة إلى هذا التصنيف حالياً.",
+                            color = MutedInk,
+                            translate = false
+                        )
+                    }
                 }
             }
 
@@ -241,6 +421,48 @@ fun PantryScreen(
                 search = ""
             }
         )
+    }
+}
+
+private fun pantryIngredientDisplayName(ingredient: IngredientMaster, localeTag: String): String = when {
+    localeTag.startsWith("en", ignoreCase = true) -> ingredient.nameEn.ifBlank { ingredient.nameAr }
+    localeTag.startsWith("fr", ignoreCase = true) -> ingredient.nameFr.ifBlank { ingredient.nameAr }
+    else -> ingredient.nameAr
+}
+
+@Composable
+private fun PantryIngredientRow(
+    ingredient: IngredientMaster,
+    category: FoodCategory?,
+    subcategory: FoodSubcategory?,
+    localeTag: String,
+    onClick: () -> Unit
+) {
+    MealsTextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    pantryIngredientDisplayName(ingredient, localeTag),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    translate = false
+                )
+                Text(
+                    listOfNotNull(
+                        category?.label(localeTag),
+                        subcategory?.label(localeTag),
+                        mealsUnitLabel(ingredient.baseUnit, localeTag)
+                    ).joinToString(" · "),
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodySmall,
+                    translate = false
+                )
+            }
+            MealsIcon(MealsIconName.Add, contentDescription = "إضافة أو تعديل", modifier = Modifier.size(28.dp))
+        }
     }
 }
 

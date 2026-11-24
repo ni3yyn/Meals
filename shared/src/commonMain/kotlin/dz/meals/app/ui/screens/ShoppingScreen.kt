@@ -144,6 +144,7 @@ fun ShoppingScreen(
     val remainingCount = rows.size - checkedCount
     val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
     val categoriesById = snapshot.foodCategories.associateBy { it.id }
+    val subcategoriesById = snapshot.foodSubcategories.associateBy { it.id }
     val categoryIds = visibleRows.map { it.categoryId }.distinct().sortedWith(
         compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
     )
@@ -502,32 +503,45 @@ fun ShoppingScreen(
                                         fadeOut(animationSpec = androidx.compose.animation.core.tween(120))
                                 ) {
                                     Column(Modifier.animateContentSize(animationSpec = androidx.compose.animation.core.tween(220))) {
-                                        categoryRows.forEachIndexed { index, item ->
-                                            if (index > 0) {
-                                                Box(
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(horizontal = 14.dp)
-                                                        .height(1.dp)
-                                                        .background(Border.copy(alpha = 0.78f))
+                                        val subcategoryIds = categoryRows.map { it.subcategoryId }.distinct().sortedWith(
+                                            compareBy<String> { subcategoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
+                                        )
+                                        subcategoryIds.forEach { subcategoryId ->
+                                            val subcategoryRows = categoryRows.filter { it.subcategoryId == subcategoryId }
+                                            Text(
+                                                subcategoriesById[subcategoryId]?.label(appLocaleTag) ?: "أخرى",
+                                                modifier = Modifier.padding(horizontal = 15.dp, vertical = 8.dp),
+                                                color = MutedInk,
+                                                style = MaterialTheme.typography.labelLarge,
+                                                translate = false
+                                            )
+                                            subcategoryRows.forEachIndexed { index, item ->
+                                                if (index > 0) {
+                                                    Box(
+                                                        Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(horizontal = 14.dp)
+                                                            .height(1.dp)
+                                                            .background(Border.copy(alpha = 0.78f))
+                                                    )
+                                                }
+                                                ShoppingItemRow(
+                                                    item = item,
+                                                    onToggle = { onToggleItem(item.id, !item.checked) },
+                                                    onEdit = {
+                                                        editItemId = item.id
+                                                        editName = item.name
+                                                        editQuantity = item.purchaseQuantity.prettyQuantity()
+                                                        editUnit = item.unit
+                                                        editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
+                                                        editStoreNote = item.storeNote
+                                                        editActualSpent = item.actualSpentDzd?.toString().orEmpty()
+                                                        editUnavailable = item.isUnavailable
+                                                        editUserAdded = item.userAdded
+                                                    },
+                                                    onDelete = { onDeleteCustomItem(item.id) }
                                                 )
                                             }
-                                            ShoppingItemRow(
-                                                item = item,
-                                                onToggle = { onToggleItem(item.id, !item.checked) },
-                                                onEdit = {
-                                                    editItemId = item.id
-                                                    editName = item.name
-                                                    editQuantity = item.purchaseQuantity.prettyQuantity()
-                                                    editUnit = item.unit
-                                                    editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
-                                                    editStoreNote = item.storeNote
-                                                    editActualSpent = item.actualSpentDzd?.toString().orEmpty()
-                                                    editUnavailable = item.isUnavailable
-                                                    editUserAdded = item.userAdded
-                                                },
-                                                onDelete = { onDeleteCustomItem(item.id) }
-                                            )
                                         }
                                     }
                                 }
@@ -1012,28 +1026,35 @@ private fun buildShoppingShareText(
     appendLine()
 
     val categoriesById = snapshot.foodCategories.associateBy { it.id }
+    val subcategoriesById = snapshot.foodSubcategories.associateBy { it.id }
     val groupedRows: Map<String, List<ShoppingListItem>> =
         rows.groupBy { row: ShoppingListItem -> row.categoryId }
 
     groupedRows.keys
         .sortedWith(compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it })
         .forEach { categoryId ->
-        val categoryLabel = categoriesById[categoryId]?.label(localeTag) ?: "مواد غذائية أخرى"
-        appendLine(mealsText(categoryLabel, localeTag))
-        val categoryRows: List<ShoppingListItem> = groupedRows.getValue(categoryId)
-        categoryRows.forEach { item: ShoppingListItem ->
-            append(if (item.checked) "[x] " else "[ ] ")
-            append(bidiIsolate(if (item.userAdded) item.name else mealsText(item.name, localeTag)))
-            append(" — ")
-            append(mealsText(item.purchaseQuantity.formatHouseholdQuantity(item.unit), localeTag))
-            val itemCost: Double? = item.cashOutlayDzd
-            if (itemCost != null) append(" · " + mealsText(itemCost.toInt().formatDzd(), localeTag))
-            if (item.isUnavailable) append(" · " + mealsText("غير متوفر", localeTag))
-            if (item.storeNote.isNotBlank()) append(" · " + bidiIsolate(item.storeNote))
+            val categoryLabel = categoriesById[categoryId]?.label(localeTag) ?: "مواد غذائية أخرى"
+            appendLine(mealsText(categoryLabel, localeTag))
+            val categoryRows = groupedRows.getValue(categoryId)
+            categoryRows.groupBy { it.subcategoryId }.keys
+                .sortedWith(compareBy<String> { subcategoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it })
+                .forEach { subcategoryId ->
+                    val subcategoryLabel = subcategoriesById[subcategoryId]?.label(localeTag) ?: "أخرى"
+                    appendLine("  " + mealsText(subcategoryLabel, localeTag))
+                    categoryRows.filter { it.subcategoryId == subcategoryId }.forEach { item ->
+                        append(if (item.checked) "[x] " else "[ ] ")
+                        append(bidiIsolate(if (item.userAdded) item.name else mealsText(item.name, localeTag)))
+                        append(" — ")
+                        append(mealsText(item.purchaseQuantity.formatHouseholdQuantity(item.unit), localeTag))
+                        val itemCost: Double? = item.cashOutlayDzd
+                        if (itemCost != null) append(" · " + mealsText(itemCost.toInt().formatDzd(), localeTag))
+                        if (item.isUnavailable) append(" · " + mealsText("غير متوفر", localeTag))
+                        if (item.storeNote.isNotBlank()) append(" · " + bidiIsolate(item.storeNote))
+                        appendLine()
+                    }
+                }
             appendLine()
         }
-        appendLine()
-    }
     if (snapshot.basket.unknownPriceCount > 0) {
         appendLine(mealsText("تنبيه: يوجد " + snapshot.basket.unknownPriceCount + " عنصر دون سعر مؤكد.", localeTag))
     }
