@@ -17,16 +17,16 @@
     "recipeUsedProducts": 836,
     "recipeUsedMissingArabicNames": 0,
     "recipeUsedMissingEnglishNames": 1,
-    "recipeUsedMissingFrenchNames": 491,
+    "recipeUsedMissingFrenchNames": 282,
     "offMatchedGroups": 425,
     "unmatchedRecipeGroups": 429,
     "ambiguousRecipeGroups": 1,
     "foodOnMatchedGroups": 39,
     "foodOnAmbiguousGroups": 1,
     "offMatchCoveragePercent": 47.54,
-    "missingArabicNames": 615,
+    "missingArabicNames": 0,
     "missingEnglishNames": 1,
-    "missingFrenchNames": 1595,
+    "missingFrenchNames": 995,
     "fallbackOtherCategory": 319,
     "missingImages": 4649,
     "missingNutrition": 4649,
@@ -51,11 +51,11 @@
   "machineNameTranslations": {
     "provider": "Google Apps Script LanguageApp",
     "appliedByLanguage": {
-      "ar": 2820,
+      "ar": 3435,
       "en": 0,
-      "fr": 1
+      "fr": 601
     },
-    "totalApplied": 2821,
+    "totalApplied": 4036,
     "ignoredExistingSourceNamesByLanguage": {
       "ar": 0,
       "en": 0,
