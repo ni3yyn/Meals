@@ -133,7 +133,7 @@ fun findLockedAllergyConflict(
 fun calculateBasket(
     plannedMeals: List<PlannedMeal>,
     recipes: List<MealRecipe>,
-    pantry: List<PantryItemEntity>,
+    @Suppress("UNUSED_PARAMETER") pantry: List<PantryItemEntity>,
     prices: List<PriceObservationEntity>,
     checkedItemIds: Set<String> = emptySet(),
     selectedWilaya: String? = null,
@@ -155,15 +155,14 @@ fun calculateBasket(
         }
     }
 
-    val pantryByKey = pantry.groupBy { RequirementKey(it.ingredientId, it.unit) }
+    // Midati lists what the household needs to buy; it does not assume a
+    // manually maintained stock count is current. Keep the parameter for
+    // compatibility with existing snapshots and call sites.
     val priceByIngredient = prices.groupBy { it.ingredientId }
     val items = required.map { (key, amount) ->
-        val pantryRows = pantryByKey[key].orEmpty()
-        val exactStock = pantryRows.filter { !it.isApproximate && it.quantityBase != null }
-            .sumOf { it.quantityBase ?: 0.0 }
-        val approximateStock = pantryRows.any { it.isApproximate || it.quantityBase == null }
-        val pantryUsed = minOf(amount, exactStock)
-        val netRequired = (amount - pantryUsed).coerceAtLeast(0.0)
+        val pantryUsed = 0.0
+        val approximateStock = false
+        val netRequired = amount
         val compatiblePrices = priceByIngredient[key.ingredientId]
             .orEmpty()
             .filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd > 0.0 }

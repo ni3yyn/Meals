@@ -15,7 +15,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -68,6 +67,7 @@ import dz.meals.app.ui.components.MealsIconButton
 import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import dz.meals.app.ui.components.MealsPrimaryButton
+import dz.meals.app.ui.components.MealsPressable
 import dz.meals.app.ui.components.MealsProgressBar
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsSubtabsIndicator
@@ -104,6 +104,7 @@ fun ShoppingScreen(
     preferredShop: String,
     onToggleItem: (String, Boolean) -> Unit,
     onAddCustomItem: (String, Double, String, Double?) -> Unit,
+    onAddCatalogueItem: (String) -> Unit,
     onEditCustomItem: (String, String, Double, String) -> Unit,
     onUpdateItemDetails: (String, Double?, String, Boolean, Double?) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
@@ -113,13 +114,12 @@ fun ShoppingScreen(
     val appLocaleTag = LocalMealsLocaleTag.current
     val layoutDirection = LocalLayoutDirection.current
     var addDialog by rememberSaveable { mutableStateOf(false) }
+    var cataloguePicker by rememberSaveable { mutableStateOf(false) }
     var showPurchased by rememberSaveable { mutableStateOf(false) }
     var showPriceHistory by rememberSaveable { mutableStateOf(false) }
     var editItemId by rememberSaveable { mutableStateOf<String?>(null) }
     var priceDialog by rememberSaveable { mutableStateOf(false) }
     var itemName by rememberSaveable { mutableStateOf("") }
-    var itemQuantity by rememberSaveable { mutableStateOf("1") }
-    var itemUnit by rememberSaveable { mutableStateOf("حبة") }
     var itemEstimatedPrice by rememberSaveable { mutableStateOf("") }
     var editName by rememberSaveable { mutableStateOf("") }
     var editQuantity by rememberSaveable { mutableStateOf("1") }
@@ -152,23 +152,15 @@ fun ShoppingScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = 18.dp,
-            end = 18.dp,
-            top = 12.dp,
-            bottom = 122.dp
+            start = 20.dp,
+            end = 20.dp,
+            top = 14.dp,
+            bottom = 124.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item(key = "shopping-header") {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("قائمة التسوق", style = MaterialTheme.typography.headlineMedium, color = dz.meals.app.ui.theme.Ink)
-                    Text(
-                        "احتياجات الأسبوع في مكان واحد",
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -176,7 +168,7 @@ fun ShoppingScreen(
                 ) {
                     MealsPrimaryButton(
                         label = "إضافة",
-                        onClick = { addDialog = true },
+                        onClick = { cataloguePicker = true },
                         modifier = Modifier.weight(1f),
                         icon = MealsIconName.Add
                     )
@@ -194,7 +186,7 @@ fun ShoppingScreen(
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
                 tintColor = WarmSurface,
-                contentPadding = 16.dp,
+                contentPadding = 19.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {
                 Row(
@@ -418,7 +410,7 @@ fun ShoppingScreen(
                         )
                         MealsPrimaryButton(
                             label = "إضافة",
-                            onClick = { addDialog = true },
+                            onClick = { cataloguePicker = true },
                             modifier = Modifier.fillMaxWidth(),
                             icon = MealsIconName.Add
                         )
@@ -461,15 +453,17 @@ fun ShoppingScreen(
                             shadowElevation = 1.dp
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            expandedCategories[categoryId] = !(expandedCategories[categoryId] ?: true)
-                                        }
-                                        .padding(horizontal = 15.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                MealsPressable(
+                                    onClick = {
+                                        expandedCategories[categoryId] = !(expandedCategories[categoryId] ?: true)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp)
                                 ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 15.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                     Text(
                                         categoryLabel,
                                         color = dz.meals.app.ui.theme.TextAccent,
@@ -494,6 +488,7 @@ fun ShoppingScreen(
                                                 }
                                             }
                                     )
+                                    }
                                 }
                                 AnimatedVisibility(
                                     visible = expandedCategories[categoryId] != false,
@@ -537,7 +532,7 @@ fun ShoppingScreen(
                                                         editStoreNote = item.storeNote
                                                         editActualSpent = item.actualSpentDzd?.toString().orEmpty()
                                                         editUnavailable = item.isUnavailable
-                                                        editUserAdded = item.userAdded
+                                                        editUserAdded = item.userAdded && item.ingredientId == null
                                                     },
                                                     onDelete = { onDeleteCustomItem(item.id) }
                                                 )
@@ -553,21 +548,36 @@ fun ShoppingScreen(
         }
     }
 
+    if (cataloguePicker) {
+        ShoppingCataloguePicker(
+            ingredients = ingredients,
+            foodCategories = snapshot.foodCategories,
+            foodSubcategories = snapshot.foodSubcategories,
+            existingIngredientIds = rows.mapNotNull { it.ingredientId }.toSet(),
+            onAddIngredient = { id ->
+                addedFeedback = ingredients.firstOrNull { it.id == id }?.nameAr ?: id
+                onAddCatalogueItem(id)
+            },
+            onAddCustom = {
+                cataloguePicker = false
+                addDialog = true
+            },
+            onDismiss = { cataloguePicker = false }
+        )
+    }
+
     if (addDialog) {
         MealsBottomSheet(
             onDismissRequest = { addDialog = false },
             title = { Text("إضافة عنصر يدوي") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MealsLiquidGlassTextField(value = itemName, onValueChange = { itemName = it }, label = { Text("اسم العنصر") }, singleLine = true)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     MealsLiquidGlassTextField(
-                        value = itemQuantity,
-                        onValueChange = { itemQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                        label = { Text("الكمية") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        value = itemName,
+                        onValueChange = { itemName = it },
+                        label = { Text("اسم العنصر") },
                         singleLine = true
                     )
-                    MealsLiquidGlassTextField(value = itemUnit, onValueChange = { itemUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
                     MealsLiquidGlassTextField(
                         value = itemEstimatedPrice,
                         onValueChange = { itemEstimatedPrice = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
@@ -583,18 +593,15 @@ fun ShoppingScreen(
                 MealsPrimaryButton(
                     label = "إضافة",
                     onClick = {
-                        val quantity = itemQuantity.replace(',', '.').toDoubleOrNull()
                         val estimatedPrice = itemEstimatedPrice.takeIf { it.isNotBlank() }
                             ?.replace(',', '.')?.toDoubleOrNull()
-                        if (quantity != null && quantity > 0 && itemName.isNotBlank() &&
+                        if (itemName.isNotBlank() &&
                             (itemEstimatedPrice.isBlank() || (estimatedPrice != null && estimatedPrice >= 0.0))
                         ) {
                             dismissSheet {
                                 addedFeedback = itemName.trim()
-                                onAddCustomItem(itemName, quantity, itemUnit, estimatedPrice)
+                                onAddCustomItem(itemName, 1.0, "حبة", estimatedPrice)
                                 itemName = ""
-                                itemQuantity = "1"
-                                itemUnit = "حبة"
                                 itemEstimatedPrice = ""
                                 addDialog = false
                             }
@@ -602,7 +609,6 @@ fun ShoppingScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = itemName.isNotBlank() &&
-                        (itemQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0 &&
                         (itemEstimatedPrice.isBlank() || (itemEstimatedPrice.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 )
             },
@@ -642,12 +648,6 @@ fun ShoppingScreen(
                             singleLine = true
                         )
                     }
-                    MealsLiquidGlassTextField(
-                        value = editStoreNote,
-                        onValueChange = { editStoreNote = it.take(100) },
-                        label = { Text("ملاحظة للمحل") },
-                        singleLine = true
-                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MealsCheckbox(checked = editUnavailable, onCheckedChange = { editUnavailable = it })
                         Text("غير متوفر حالياً")
@@ -893,15 +893,7 @@ private fun ShoppingItemRow(
     val foregroundOffset = if (isDragging) dragOffset else settledOffset
 
     val supportingDetails = buildList {
-        if (item.pantryQuantity > 0.0) {
-            add(
-                "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
-                    " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit)
-            )
-        }
-        if (item.isApproximatePantry) add("مخزون تقريبي")
         if (item.isUnavailable) add("غير متوفر")
-        if (item.storeNote.isNotBlank()) add(item.storeNote)
         item.actualSpentDzd?.let { add("المدفوع " + it.toInt().formatDzd()) }
     }.joinToString(" · ")
 
@@ -950,8 +942,8 @@ private fun ShoppingItemRow(
                         dragOffset = 0f
                     }
                 )
-                .heightIn(min = 72.dp)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .heightIn(min = 80.dp)
+                .padding(horizontal = 18.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -959,15 +951,18 @@ private fun ShoppingItemRow(
                 checked = item.checked,
                 onCheckedChange = { onToggle() }
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(onClick = onEdit),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            MealsPressable(
+                onClick = onEdit,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
             ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                 Text(
                     item.name,
-                    translate = !item.userAdded,
+                    translate = item.ingredientId != null,
                     color = if (item.checked) MutedInk else Ink,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
@@ -985,14 +980,18 @@ private fun ShoppingItemRow(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                }
             }
-            Column(
-                modifier = Modifier
-                    .width(92.dp)
-                    .clickable(onClick = onEdit),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+            MealsPressable(
+                onClick = onEdit,
+                modifier = Modifier.width(92.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
                 Text(
                     item.purchaseQuantity.formatHouseholdQuantity(item.unit),
                     color = if (item.checked) MutedInk else dz.meals.app.ui.theme.TextAccent,
@@ -1008,6 +1007,7 @@ private fun ShoppingItemRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                }
             }
         }
     }
@@ -1043,7 +1043,7 @@ private fun buildShoppingShareText(
                     appendLine("  " + mealsText(subcategoryLabel, localeTag))
                     categoryRows.filter { it.subcategoryId == subcategoryId }.forEach { item ->
                         append(if (item.checked) "[x] " else "[ ] ")
-                        append(bidiIsolate(if (item.userAdded) item.name else mealsText(item.name, localeTag)))
+                        append(bidiIsolate(if (item.ingredientId == null) item.name else mealsText(item.name, localeTag)))
                         append(" — ")
                         append(mealsText(item.purchaseQuantity.formatHouseholdQuantity(item.unit), localeTag))
                         val itemCost: Double? = item.cashOutlayDzd

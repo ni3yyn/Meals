@@ -50,15 +50,15 @@ class BasketCalculatorTest {
     }
 
     @Test
-    fun exactPantryStockIsDeductedAndPurchaseRoundsToWholePack() {
+    fun shoppingRequirementIgnoresHomeStockAndUsesTheFullRecipeQuantity() {
         val pantry = listOf(PantryItemEntity("potato", "potato", 100.0, "g", false, "", null))
         val prices = listOf(
             PriceObservationEntity(
                 id = "demo-potato",
                 ingredientId = "potato",
-                packQuantityBase = 500.0,
+                packQuantityBase = 100.0,
                 unit = "g",
-                packPriceDzd = 100.0,
+                packPriceDzd = 20.0,
                 sourceLabel = "demo",
                 locationLabel = "غير محدد",
                 observedAtEpochMillis = null,
@@ -71,9 +71,9 @@ class BasketCalculatorTest {
         val item = result.items.single()
 
         assertEquals(400.0, item.requiredQuantity, 0.0001)
-        assertEquals(100.0, item.pantryQuantity, 0.0001)
-        assertEquals(500.0, item.purchaseQuantity, 0.0001)
-        assertEquals(100.0, item.cashOutlayDzd!!, 0.0001)
+        assertEquals(0.0, item.pantryQuantity, 0.0001)
+        assertEquals(400.0, item.purchaseQuantity, 0.0001)
+        assertEquals(80.0, item.cashOutlayDzd!!, 0.0001)
         assertEquals(80.0, result.consumedValueDzd, 0.0001)
     }
 
@@ -85,7 +85,7 @@ class BasketCalculatorTest {
 
         assertEquals(0.0, item.pantryQuantity, 0.0001)
         assertEquals(400.0, item.purchaseQuantity, 0.0001)
-        assertTrue(item.isApproximatePantry)
+        assertTrue(!item.isApproximatePantry)
         assertEquals(1, result.unknownPriceCount)
     }
 

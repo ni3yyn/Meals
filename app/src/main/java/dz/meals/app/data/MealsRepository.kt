@@ -180,7 +180,7 @@ class MealsRepository internal constructor(
         val existingShopping = dao.getShoppingItems(weekStartIso)
         val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
         val checkedItemIds = existingShopping
-            .filter { it.checked && !it.userAdded }
+            .filter { it.checked && it.ingredientId != null }
             .mapNotNull { item ->
                 item.ingredientId?.let { "$it::${item.unit}" }
                     ?: item.id.substringAfter("::").takeIf { it.isNotBlank() }
@@ -201,8 +201,7 @@ class MealsRepository internal constructor(
             // Reuse old rows by canonical ingredient and unit, not their legacy
             // embedded IDs. If aliases converge, fold their editable state together.
             val oldRows = existingShopping.filter { item ->
-                !item.userAdded && item.unit == line.unit &&
-                    (item.id == scopedId || item.ingredientId == line.ingredientId)
+                item.unit == line.unit && item.ingredientId == line.ingredientId
             }
             val old = oldRows.maxByOrNull { it.updatedAtEpochMillis }
             val overrides = oldRows.mapNotNull { it.purchaseQuantityOverride }
@@ -607,7 +606,7 @@ class MealsRepository internal constructor(
         require(packQuantityBase > 0.0) { "Pack quantity must be positive" }
         require(packPriceDzd > 0.0) { "Price must be positive" }
         val canonicalIngredientId = foodIdentityResolver.canonicalId(ingredientId)
-        val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId }
+        val ingredient = loadIngredients().firstOrNull { it.id == canonicalIngredientId }
             ?: throw IllegalArgumentException("Unknown ingredient")
         val wilaya = selectedWilaya.trim()
         require(wilaya.isNotEmpty()) { "Wilaya is required" }
@@ -795,6 +794,47 @@ class MealsRepository internal constructor(
 
     suspend fun toggleShoppingItem(id: String, checked: Boolean) {
         dao.setShoppingItemChecked(id, checked, System.currentTimeMillis())
+    }
+
+    suspend fun addCatalogueShoppingItem(
+        weekStartIso: String,
+        ingredientId: String
+    ) {
+        ensureInitialized()
+        val canonicalId = foodIdentityResolver.canonicalId(ingredientId)
+        val ingredient = loadIngredients().firstOrNull { it.id == canonicalId } ?: return
+        val unit = ingredient.baseUnit.trim().ifBlank { "piece" }
+        val existing = dao.getShoppingItems(weekStartIso).firstOrNull {
+            it.ingredientId == canonicalId && it.unit == unit
+        }
+        if (existing != null) return
+
+        // Match the generated row's stable key. If a plan later needs this food,
+        // regeneration upgrades this manual line in place instead of duplicating it.
+        val id = "$weekStartIso::$canonicalId::$unit"
+        dao.upsertShoppingItems(
+            listOf(
+                ShoppingItemEntity(
+                    id = id,
+                    ingredientId = canonicalId,
+                    customName = ingredient.nameAr,
+                    requiredQuantity = 1.0,
+                    pantryQuantity = 0.0,
+                    purchaseQuantity = 1.0,
+                    unit = unit,
+                    consumedValueDzd = null,
+                    cashOutlayDzd = null,
+                    priceLabel = null,
+                    sourceLabel = "أضيف يدوياً من قاموس Midati",
+                    isApproximatePantry = false,
+                    checked = false,
+                    userAdded = true,
+                    updatedAtEpochMillis = System.currentTimeMillis(),
+                    weekStartIso = weekStartIso,
+                    purchaseQuantityOverride = 1.0
+                )
+            )
+        )
     }
 
     suspend fun addCustomShoppingItem(

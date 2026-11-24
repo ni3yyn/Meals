@@ -106,7 +106,6 @@ import dz.meals.app.data.currentWeekStartIso
 import dz.meals.app.ui.components.*
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
-import dz.meals.app.ui.screens.PantryScreen
 import dz.meals.app.ui.screens.PlanScreen
 import dz.meals.app.ui.screens.RecipesScreen
 import dz.meals.app.ui.screens.ShoppingScreen
@@ -156,11 +155,12 @@ private fun Modifier.fadeTopEdgeMask(fadeHeight: androidx.compose.ui.unit.Dp): M
         }
     }
 
-private enum class AppTab(val title: String) {
-    Plan("الخطة"),
-    Recipes("الوصفات"),
-    Shopping("المشتريات"),
-    Pantry("المخزون")
+private enum class AppTab {
+    Plan,
+    Recipes,
+    Shopping,
+    // Retained only to restore saved state from older installs; it now opens Shopping.
+    Pantry
 }
 
 private enum class RecipeCataloguePhase {
@@ -335,6 +335,10 @@ private fun MealsAppContent(
     }
 
     LaunchedEffect(selectedTab) {
+        if (selectedTab == AppTab.Pantry) {
+            selectedTab = AppTab.Shopping
+            return@LaunchedEffect
+        }
         if (selectedTab == AppTab.Recipes) ensureArabicRecipeCatalogue()
     }
 
@@ -421,8 +425,7 @@ private fun MealsAppContent(
             listOf(
                 MealsNavigationItem("الخطة", MealsIconName.Plan),
                 MealsNavigationItem("الوصفات", MealsIconName.Cookbook),
-                MealsNavigationItem("المشتريات", MealsIconName.Basket),
-                MealsNavigationItem("المخزون", MealsIconName.Pantry)
+                MealsNavigationItem("المشتريات", MealsIconName.Basket)
             )
         }
         AnimatedVisibility(
@@ -463,15 +466,7 @@ private fun MealsAppContent(
             topBar = {
                 TopAppBar(
                     title = {
-                        Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(1.dp)) {
-                            Text("صباح الخير", style = MaterialTheme.typography.titleLarge)
-                            Text(
-                    "Midati · " + mealsText(selectedTab.title, appLanguage),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    translate = false
-                )
-                        }
+                        MidatiBrandLogo(iconSize = 34.dp, showWordmark = true)
                     },
                     actions = {
                         MealsIconButton(
@@ -501,9 +496,14 @@ private fun MealsAppContent(
             bottomBar = {
                 MealsFrostedBottomBar(
                     items = navigationItems,
-                    selectedIndex = selectedTab.ordinal,
+                    selectedIndex = when (selectedTab) {
+                        AppTab.Plan -> 0
+                        AppTab.Recipes -> 1
+                        AppTab.Shopping, AppTab.Pantry -> 2
+                    },
                     onItemSelected = { index ->
-                        selectedTab = AppTab.entries.getOrElse(index) { AppTab.Plan }
+                        selectedTab = listOf(AppTab.Plan, AppTab.Recipes, AppTab.Shopping)
+                            .getOrElse(index) { AppTab.Shopping }
                     },
                     hazeState = hazeState
                 )
@@ -628,7 +628,7 @@ private fun MealsAppContent(
                             }
                         } else null
                     )
-                    AppTab.Shopping -> ShoppingScreen(
+                    AppTab.Shopping, AppTab.Pantry -> ShoppingScreen(
                         snapshot = snapshot,
                         ingredients = snapshot.ingredients,
                         wilaya = preferences.wilaya,
@@ -652,6 +652,9 @@ private fun MealsAppContent(
                         onAddCustomItem = { name, quantity, unit, estimatedPrice ->
                             perform { repository.addCustomShoppingItem(weekStartIso, name, quantity, unit, estimatedPrice) }
                         },
+                        onAddCatalogueItem = { ingredientId ->
+                            perform { repository.addCatalogueShoppingItem(weekStartIso, ingredientId) }
+                        },
                         onEditCustomItem = { id, name, quantity, unit ->
                             perform { repository.updateCustomShoppingItem(id, name, quantity, unit) }
                         },
@@ -662,16 +665,6 @@ private fun MealsAppContent(
                         onRecordPrice = { id, pack, amount, context ->
                             perform { repository.recordPriceObservation(id, pack, amount, preferences.wilaya, context) }
                         }
-                    )
-                    AppTab.Pantry -> PantryScreen(
-                        ingredients = snapshot.ingredients,
-                        pantry = snapshot.pantry,
-                        foodCategories = snapshot.foodCategories,
-                        foodSubcategories = snapshot.foodSubcategories,
-                        onSave = { id, quantity, approximate, note, expiry ->
-                            perform { repository.updatePantry(id, quantity, approximate, note, expiry) }
-                        },
-                        onRemove = { id -> perform { repository.updatePantry(id, null, false) } }
                     )
                     }
                 }
