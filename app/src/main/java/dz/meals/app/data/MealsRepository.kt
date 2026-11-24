@@ -527,21 +527,24 @@ class MealsRepository(context: Context) {
         expiryAtEpochMillis: Long? = null
     ) {
         val ingredient = dao.getIngredients().firstOrNull { it.id == ingredientId } ?: return
-        // Replace all preserved alias rows for this editable ingredient/unit with
-        // the single value the user just entered in the pantry screen.
-        dao.deletePantryItemsForIngredientUnit(ingredientId, ingredient.baseUnit)
-        if (quantityBase == null && !isApproximate) return
-        dao.upsertPantryItem(
-            PantryItemEntity(
-                id = ingredientId,
-                ingredientId = ingredientId,
-                quantityBase = if (isApproximate) null else quantityBase?.coerceAtLeast(0.0),
-                unit = ingredient.baseUnit,
-                isApproximate = isApproximate,
-                note = note,
-                expiryAtEpochMillis = expiryAtEpochMillis
-            )
-        )
+        // Replace all preserved alias rows atomically so a process interruption
+        // cannot erase stock between the delete and canonical-row insert.
+        database.withTransaction {
+            dao.deletePantryItemsForIngredientUnit(ingredientId, ingredient.baseUnit)
+            if (quantityBase != null || isApproximate) {
+                dao.upsertPantryItem(
+                    PantryItemEntity(
+                        id = ingredientId,
+                        ingredientId = ingredientId,
+                        quantityBase = if (isApproximate) null else quantityBase?.coerceAtLeast(0.0),
+                        unit = ingredient.baseUnit,
+                        isApproximate = isApproximate,
+                        note = note,
+                        expiryAtEpochMillis = expiryAtEpochMillis
+                    )
+                )
+            }
+        }
     }
 
     suspend fun recordPriceObservation(
