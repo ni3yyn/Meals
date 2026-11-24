@@ -114,6 +114,12 @@ jobs:
           git commit -m "Translate food names with Google Apps Script"
 
           git fetch origin main
+          # Ensure the translation sidecar has not been edited on main since
+          # this run checked it out; the committed sidecar is a generated output.
+          if [[ "$(git rev-parse "HEAD^:data/products/translations.json")" != "$(git rev-parse "origin/main:data/products/translations.json")" ]]; then
+            echo "::error::The food translation sidecar changed during this run. Re-run against the newest main revision."
+            exit 1
+          fi
           input_paths=(
             "data/recipes/ar/recipes.json"
             "data/products/categories.json"
