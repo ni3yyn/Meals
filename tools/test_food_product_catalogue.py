@@ -125,7 +125,62 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         self.assertEqual(product["categoryId"], "foodcat-legumes")
         self.assertEqual(product["subcategoryId"], "foodsub-legumes-chickpeas")
         self.assertIn("g", product["acceptedUnits"])
+        self.assertIn("kg", product["acceptedUnits"])
+        self.assertIn("piece", product["acceptedUnits"])
         self.assertEqual(audit["catalogueCounts"]["duplicateIds"], 0)
+
+    def test_recipe_ingredient_matches_foodon_product_when_off_has_no_term(self):
+        root = "FOODON_00001002"
+        child = "FOODON_00001234"
+        owl = (
+            '<?xml version="1.0"?>'
+            '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" '
+            'xmlns:owl="http://www.w3.org/2002/07/owl#" '
+            'xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" '
+            'xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#">'
+            f'<owl:Class rdf:about="http://purl.obolibrary.org/obo/{root}">'
+            '<rdfs:label>food product</rdfs:label>'
+            '</owl:Class>'
+            f'<owl:Class rdf:about="http://purl.obolibrary.org/obo/{child}">'
+            '<rdfs:label>chickpea</rdfs:label>'
+            '<oboInOwl:hasExactSynonym>garbanzo bean</oboInOwl:hasExactSynonym>'
+            f'<rdfs:subClassOf rdf:resource="http://purl.obolibrary.org/obo/{root}"/>'
+            '</owl:Class></rdf:RDF>'
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            owl_path = Path(directory) / "foodon.owl"
+            owl_path.write_text(owl, encoding="utf-8")
+            foodon = parse_foodon_owl(owl_path)
+
+        recipe_data = {
+            "recipes": [{
+                "id": "unitools:recipe-foodon-only",
+                "ingredients": [{
+                    "id": "garbanzo-bean",
+                    "name": "حمص",
+                    "sourceNameEn": "garbanzo bean",
+                    "quantity": 1,
+                    "unit": "cup",
+                }],
+            }]
+        }
+        catalogue, mapping, audit = build_catalogue(recipe_data, [], foodon)
+        self.assertEqual(len(catalogue["products"]), 1)
+        product = catalogue["products"][0]
+        self.assertEqual(product["categoryId"], "foodcat-legumes")
+        self.assertIn("kg", product["acceptedUnits"])
+        self.assertIn("g", product["acceptedUnits"])
+        self.assertIn("chickpea", product["aliases"]["en"])
+        self.assertIn(
+            "FOODON_00001234",
+            product["sourceMappings"]["foodOnIds"],
+        )
+        self.assertEqual(audit["catalogueCounts"]["foodOnMatchedGroups"], 1)
+        self.assertEqual(audit["catalogueCounts"]["unmatchedRecipeGroups"], 0)
+        self.assertEqual(
+            mapping["recipeIngredientToProductId"]["orc-ing-unitools-garbanzo-bean"],
+            product["id"],
+        )
 
     def test_recipe_only_product_is_not_lost(self):
         recipe_data = {
