@@ -165,7 +165,7 @@ jobs:
           # Rebase only the generated data changes. A normal git rebase can
           # conflict when another serialized build has already published these
           # JSON outputs, even when all source inputs are identical.
-          git reset --soft origin/main
+          git reset --mixed origin/main
           git add data/products/catalogue.json \
                   data/products/recipe-ingredient-map.json \
                   data/products/build-audit.json \
