@@ -578,13 +578,28 @@ def _clean_english_ingredient(value: str) -> str:
     text = str(value or "").strip()
     if not text:
         return ""
-    # Reuse the source Focus parser so its supported units/fractions remain aligned.
+    # The source imports may carry "ingredient: amount" even when quantity is
+    # already stored separately. Strip only when the right side begins like a
+    # quantity, not for ordinary descriptive colons.
+    if ":" in text:
+        left, right = text.split(":", 1)
+        if re.match(
+            r"^\s*(?:about\s+|approximately\s+|~\s*)?(?:\d|to\s+taste\b|as\s+needed\b)",
+            right,
+            flags=re.IGNORECASE,
+        ):
+            text = left.strip()
+    # Prefer the canonical parser used by the Focus importer for fractions,
+    # units and leading quantities. Keep a local fallback so the catalogue
+    # builder never depends on a soft import failure.
     try:
         from tools.translate_focus_recipe_corpus import parse_ingredient_line
         parsed = parse_ingredient_line(text)
         name = str(parsed.get("name") or text)
     except Exception:
         name = text
+    name = re.sub(r"^\s*(?:about|approximately)\s+", "", name, flags=re.IGNORECASE)
+    name = re.sub(r"^\s*\d+(?:[.,]\d+)?(?:\s+\d+/\d+|\s*/\s*\d+)?\s+", "", name)
     name = re.sub(r"^\s*(?:of|a|an)\s+", "", name, flags=re.IGNORECASE)
     name = re.sub(r"\s*,?\s*(?:to taste|as needed|for garnish)$", "", name, flags=re.IGNORECASE)
     return name.strip(" ,;:")
