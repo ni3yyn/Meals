@@ -583,7 +583,7 @@ def default_units(category_id: str, subcategory_id: str | None, names: Iterable[
         return ["ml", "l", "g", "kg"]
     if category_id in {"foodcat-spices", "foodcat-herbs"}:
         return ["g", "kg", "ملعقة صغيرة", "ملعقة كبيرة"]
-    if category_id == "other":
+    if category_id == "foodcat-other":
         return ["g", "kg", "ml", "l", "piece"]
     return ["g", "kg", "piece"]
 
@@ -1276,7 +1276,12 @@ def build_catalogue(
         room_ingredient_id(ingredient, str(recipe.get("id") or ""))
         for recipe in recipes
         for ingredient in (recipe.get("ingredients") or [])
-        if isinstance(ingredient, dict) and (ingredient.get("name") or ingredient.get("sourceNameEn") or ingredient.get("sourceTextEn"))
+        if isinstance(ingredient, dict) and (
+            ingredient.get("name")
+            or ingredient.get("sourceNameEn")
+            or ingredient.get("sourceTextEn")
+            or ingredient.get("sourceTextEs")
+        )
     }
     unmapped_ids = sorted(all_recipe_ids - set(matched_ids))
     if unmapped_ids:
@@ -1288,7 +1293,12 @@ def build_catalogue(
     for recipe in recipes:
         recipe_id = str(recipe.get("id") or "")
         for ingredient_index, ingredient in enumerate(recipe.get("ingredients") or []):
-            if not isinstance(ingredient, dict):
+            if not isinstance(ingredient, dict) or not (
+                ingredient.get("name")
+                or ingredient.get("sourceNameEn")
+                or ingredient.get("sourceTextEn")
+                or ingredient.get("sourceTextEs")
+            ):
                 continue
             legacy_id = room_ingredient_id(ingredient, recipe_id)
             food_item_id = matched_ids.get(legacy_id)
@@ -1317,7 +1327,7 @@ def build_catalogue(
         )
 
     catalogue = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "catalogueType": "generic-food-items",
         "idFormat": "UUIDv4",
         "idStrategy": "persistent UUIDv4 registry; independent of localized/display names",
@@ -1346,8 +1356,8 @@ def build_catalogue(
         "products": products,
     }
     mapping = {
-        "schemaVersion": 1,
-        "description": "Maps existing Room recipe ingredient IDs to canonical food-item IDs.",
+        "schemaVersion": 2,
+        "description": "Maps existing Room recipe ingredient IDs and recipe rows to canonical UUIDv4 food-item IDs.",
         "legacyRoomIngredientIdToFoodItemId": dict(sorted(matched_ids.items())),
         "recipeIngredientToProductId": dict(sorted(matched_ids.items())),
         "recipeRows": recipe_rows,
