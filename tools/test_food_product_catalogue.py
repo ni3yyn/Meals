@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from tools.build_food_product_catalogue import (
+    apply_machine_name_translations,
     assign_stable_product_ids,
     build_catalogue,
     category_for,
@@ -146,6 +147,62 @@ class FoodCatalogueParserTests(unittest.TestCase):
 
 
 class FoodCatalogueBuildTests(unittest.TestCase):
+    def test_machine_translations_fill_only_missing_names_for_matching_source(self):
+        products = [{
+            "id": "11111111-1111-4111-8111-111111111111",
+            "names": {"ar": None, "en": "chickpeas", "fr": None},
+        }]
+        sidecar = {
+            "provider": "Google Apps Script LanguageApp",
+            "translations": {
+                "11111111-1111-4111-8111-111111111111": {
+                    "ar": {"text": "حمص", "sourceLanguage": "en", "sourceText": "chickpeas"},
+                    "fr": {"text": "pois chiches", "sourceLanguage": "en", "sourceText": "chickpeas"},
+                }
+            }
+        }
+        report = apply_machine_name_translations(products, sidecar)
+        self.assertEqual(products[0]["names"]["ar"], "حمص")
+        self.assertEqual(products[0]["names"]["fr"], "pois chiches")
+        self.assertEqual(products[0]["names"]["en"], "chickpeas")
+        self.assertEqual(report["totalApplied"], 2)
+        self.assertEqual(report["appliedByLanguage"], {"ar": 1, "en": 0, "fr": 1})
+
+    def test_machine_translations_never_overwrite_existing_sourced_names(self):
+        products = [{
+            "id": "22222222-2222-4222-8222-222222222222",
+            "names": {"ar": "حمص", "en": "chickpeas", "fr": "pois chiches"},
+        }]
+        sidecar = {
+            "translations": {
+                "22222222-2222-4222-8222-222222222222": {
+                    "fr": {"text": "pois-chiches machine", "sourceLanguage": "en", "sourceText": "chickpeas"}
+                }
+            }
+        }
+        report = apply_machine_name_translations(products, sidecar)
+        self.assertEqual(products[0]["names"]["fr"], "pois chiches")
+        self.assertEqual(report["totalApplied"], 0)
+        self.assertEqual(report["ignoredExistingSourceNamesByLanguage"]["fr"], 1)
+
+    def test_machine_translation_with_changed_source_is_reported_stale(self):
+        products = [{
+            "id": "33333333-3333-4333-8333-333333333333",
+            "names": {"ar": None, "en": "green chickpeas", "fr": None},
+        }]
+        sidecar = {
+            "translations": {
+                "33333333-3333-4333-8333-333333333333": {
+                    "ar": {"text": "حمص", "sourceLanguage": "en", "sourceText": "chickpeas"}
+                }
+            }
+        }
+        report = apply_machine_name_translations(products, sidecar)
+        self.assertIsNone(products[0]["names"]["ar"])
+        self.assertEqual(report["totalApplied"], 0)
+        self.assertEqual(report["staleCount"], 1)
+
+
     def test_registry_splits_previously_shared_uuid_without_duplicate_items(self):
         shared_id = "12345678-1234-4234-8234-123456789abc"
         registry = {
