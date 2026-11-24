@@ -155,7 +155,7 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         milk = {
             "name": "milk", "names": {"ar":"حليب","en":"milk","fr":"lait"},
             "aliases": {"ar":[],"en":[],"fr":[]},
-            "allNames": {"ar":["حليب","لبن"],"en":["milk"],"fr":["lait"]},
+            "allNames": {"ar":["حليب"],"en":["milk"],"fr":["lait"]},
             "parents": ["dairy"], "sourceProperties": {},
         }
         curated = [
