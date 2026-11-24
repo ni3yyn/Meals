@@ -148,6 +148,15 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // Robolectric's default repo1.maven.org endpoint is frequently rate-limited
+            // in CI when fetching android-all-instrumented at test runtime.
+            // Use Maven Central's canonical endpoint for the runtime SDK artifacts.
+            it.systemProperty(
+                "robolectric.dependency.repo.url",
+                "https://repo.maven.apache.org/maven2"
+            )
+        }
     }
 
     packaging {
