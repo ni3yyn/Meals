@@ -133,6 +133,25 @@ class FoodCatalogueInstallerTest {
             assertEquals(600.0, editedRows.single().quantityBase!!, 0.0)
             assertEquals("updated pantry regression", editedRows.single().note)
 
+            // Catalogue additions become canonical shopping rows, default to one
+            // base unit, and stay idempotent when selected repeatedly.
+            val shoppingWeek = "2026-11-23"
+            repository.addCatalogueShoppingItem(shoppingWeek, unseededFood.id)
+            val shoppingRows = dao.getShoppingItems(shoppingWeek)
+            assertEquals(1, shoppingRows.size)
+            val manualShoppingItem = shoppingRows.single()
+            val baseUnit = unseededFood.baseUnit.trim().ifBlank { "piece" }
+            assertEquals(unseededFood.id, manualShoppingItem.ingredientId)
+            assertEquals("$shoppingWeek::${unseededFood.id}::$baseUnit", manualShoppingItem.id)
+            assertEquals(baseUnit, manualShoppingItem.unit)
+            assertEquals(1.0, manualShoppingItem.purchaseQuantity, 0.0)
+            assertEquals(0.0, manualShoppingItem.pantryQuantity, 0.0)
+            assertTrue(manualShoppingItem.userAdded)
+            assertEquals(null, manualShoppingItem.purchaseQuantityOverride)
+
+            repository.addCatalogueShoppingItem(shoppingWeek, unseededFood.id)
+            assertEquals(1, dao.getShoppingItems(shoppingWeek).size)
+
             // A second app start must be a no-op, not duplicate or recreate rows.
             assertEquals(0, installer.installIfNeeded())
             assertEquals(4_649, dao.countFoodItems())
