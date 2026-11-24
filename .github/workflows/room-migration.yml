@@ -14,11 +14,18 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: room-migration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   migration:
     name: Migrate a real v13 SQLite database on Android
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
+    # macOS provides native Hypervisor.framework acceleration. The previous
+    # Linux hosted VM exposed no /dev/kvm, so the emulator fell back to slow
+    # software virtualization and timed out before instrumentation began.
+    runs-on: macos-15
+    timeout-minutes: 60
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -50,74 +57,37 @@ jobs:
       - name: Build release and instrumentation-test variants
         run: ./gradlew :app:testReleaseUnitTest :app:assembleReleaseAndroidTest --stacktrace
 
-      # GitHub-hosted Ubuntu runners expose /dev/kvm but it is not always
-      # readable by the runner user. Apply the documented udev rule before
-      # the emulator action probes for acceleration. If KVM is unavailable,
-      # explicitly opt into the emulator's supported TCG fallback (required
-      # by recent emulator releases when -accel off is passed).
-      - name: Enable KVM or configure supported software fallback
-        shell: bash
-        run: |
-          if [[ -e /dev/kvm ]]; then
-            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-            sudo udevadm control --reload-rules
-            sudo udevadm trigger --name-match=kvm
-          fi
-
-          if [[ -r /dev/kvm && -w /dev/kvm ]]; then
-            echo "KVM is available to the runner; hardware acceleration will be used."
-            ls -l /dev/kvm
-          else
-            echo "::warning::KVM is unavailable or inaccessible. Using the Android emulator's supported TCG fallback."
-            echo "ANDROID_I_WANT_MY_TCG=yes" >> "$GITHUB_ENV"
-          fi
-
       - name: Run Room migration instrumentation test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           arch: x86_64
-          target: google_atd
-          emulator-boot-timeout: 900
-          disable-linux-hw-accel: auto
-          cores: 2
+          target: google_apis
+          profile: pixel_2
+          cores: 3
           ram-size: 4096M
           heap-size: 512M
           disk-size: 6G
+          emulator-boot-timeout: 900
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
+          disable-linux-hw-accel: false
           script: ./gradlew :app:connectedReleaseAndroidTest --stacktrace
 
-      - name: Collect emulator diagnostics
-        if: always()
+      - name: Capture emulator diagnostics on failure
+        if: failure()
         shell: bash
         run: |
-          OUT="$RUNNER_TEMP/room-migration-emulator-diagnostics"
-          mkdir -p "$OUT"
-
-          {
-            echo "=== Runner ==="
-            uname -a
-            echo "=== KVM ==="
-            ls -l /dev/kvm 2>&1 || true
-            echo "=== Emulator version ==="
-            "$ANDROID_HOME/emulator/emulator" -version 2>&1 || true
-            echo "=== ADB devices ==="
-            adb devices -l 2>&1 || true
-            echo "=== Emulator processes ==="
-            ps aux | grep -E '[e]mulator|[q]emu' || true
-            echo "=== AVD files ==="
-            find "$HOME/.android/avd" -maxdepth 3 -type f -print 2>&1 || true
-          } > "$OUT/summary.txt"
-
-          adb -s emulator-5554 logcat -d -t 4000 > "$OUT/logcat.txt" 2>&1 || true
-          find "$HOME/.android/avd" -type f \( -name '*.log' -o -name 'config.ini' \) -exec cp --parents {} "$OUT" \; 2>/dev/null || true
-
-      - name: Upload emulator diagnostics
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: room-migration-emulator-diagnostics
-          path: ${{ runner.temp }}/room-migration-emulator-diagnostics/
-          if-no-files-found: warn
-          retention-days: 7
+          echo "Runner: $(uname -a)"
+          echo "Android SDK: ${ANDROID_HOME:-unset}"
+          echo "ADB devices:"
+          adb devices -l || true
+          echo "Emulator processes:"
+          ps aux | grep -E '[e]mulator|[q]emu' || true
+          echo "AVD configuration:"
+          cat "$HOME/.android/avd/test.avd/config.ini" 2>/dev/null || true
+          echo "Disk and memory:"
+          df -h
+          vm_stat || true
+          echo "Recent emulator logs:"
+          find "$HOME/.android" -type f \( -name '*emulator*.log' -o -name 'emu-launch-params.txt' \) -print -exec tail -n 200 {} \; 2>/dev/null || true
