@@ -232,7 +232,10 @@ def validate_catalogue(
 
         names = product.get("names")
         if not isinstance(names, dict) or not isinstance(names.get("ar"), str) or not names["ar"].strip():
-            fail(f"{owner}: every food identity must have a real Arabic name.")
+            fail(
+                f"{owner} (id={product_id!r}): every food identity must have a real Arabic name; "
+                f"names={names!r}, recipeIngredientIds={product.get('recipeIngredientIds')!r}."
+            )
         for locale in EXPECTED_LOCALES:
             value = names.get(locale)
             if value is not None and (not isinstance(value, str) or not value.strip()):
