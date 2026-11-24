@@ -95,6 +95,44 @@ class FoodCatalogueInstallerTest {
             assertEquals("foodcat-sauces", tomatoPaste?.categoryId)
             assertEquals("foodsub-sauces-tomato", tomatoPaste?.subcategoryId)
 
+            // A catalogue-only food is not necessarily mirrored in the legacy
+            // ingredients table. Adding it to pantry must resolve its unit and
+            // canonical identity directly from food_items instead of silently
+            // returning without saving the pantry row.
+            val unseededFood = dao.getFoodItems().first {
+                it.id !in FoodIdentityResolver.SEED_MAPPINGS.values
+            }
+            assertTrue(dao.getIngredients().none { it.id == unseededFood.id })
+            val repository = MealsRepository(context, database)
+            repository.updatePantry(
+                ingredientId = unseededFood.id,
+                quantityBase = 425.0,
+                isApproximate = false,
+                note = "fresh catalogue pantry regression"
+            )
+            val savedRows = dao.getPantryItems().filter { it.ingredientId == unseededFood.id }
+            assertEquals(1, savedRows.size)
+            assertEquals(unseededFood.id, savedRows.single().id)
+            assertEquals(425.0, savedRows.single().quantityBase!!, 0.0)
+            assertEquals("fresh catalogue pantry regression", savedRows.single().note)
+            assertEquals(
+                unseededFood.acceptedUnitsCsv.substringBefore("|").ifBlank { "piece" },
+                savedRows.single().unit
+            )
+
+            // Editing via the persisted pantry row ID must update the same row.
+            repository.updatePantry(
+                ingredientId = savedRows.single().id,
+                quantityBase = 600.0,
+                isApproximate = false,
+                note = "updated pantry regression"
+            )
+            val editedRows = dao.getPantryItems().filter { it.ingredientId == unseededFood.id }
+            assertEquals(1, editedRows.size)
+            assertEquals(savedRows.single().id, editedRows.single().id)
+            assertEquals(600.0, editedRows.single().quantityBase!!, 0.0)
+            assertEquals("updated pantry regression", editedRows.single().note)
+
             // A second app start must be a no-op, not duplicate or recreate rows.
             assertEquals(0, installer.installIfNeeded())
             assertEquals(4_649, dao.countFoodItems())

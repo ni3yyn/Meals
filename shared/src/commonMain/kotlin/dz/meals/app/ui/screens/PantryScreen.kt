@@ -183,7 +183,86 @@ fun PantryScreen(
                         )
                     }
                 }
-            } else if (selectedCategory == null) {
+            }
+
+            item {
+                Text(
+                    "المخزون الحالي (${pantry.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = dz.meals.app.ui.theme.TextAccent
+                )
+            }
+
+            if (pantry.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MealsIllustrationBadge(icon = MealsIconName.Pantry, size = 56.dp)
+                        Text("مخزونك فارغ", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            "اختر مكوّناً من نتائج البحث أو تصفّح التصنيفات بالأسفل لإضافته.",
+                            color = MutedInk
+                        )
+                    }
+                }
+            } else {
+                items(pantry, key = { it.id }) { item ->
+                    val expiry = item.expiryAtEpochMillis?.let {
+                        formatDateDmy(epochMillisToLocalDate(it))
+                    }
+                    MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 13.dp) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(item.nameAr, style = MaterialTheme.typography.titleLarge)
+                                Text(
+                                    if (item.isApproximate) "كمية تقريبية — لم تُخصم من حساب المشتريات"
+                                    else (item.quantityBase ?: 0.0).formatHouseholdQuantity(item.unit),
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                item.note.takeIf { it.isNotBlank() }?.let {
+                                    Text("ملاحظة: " + it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                }
+                                expiry?.let {
+                                    Text("تاريخ الانتهاء المُدخل: $it", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                MealsIconAction(
+                                    onClick = {
+                                        editingItem = item
+                                        selectedIngredientId = item.ingredientId
+                                    }
+                                ) {
+                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(30.dp))
+                                }
+                                MealsIconAction(onClick = { onRemove(item.id) }) {
+                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(30.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (searchQuery.isBlank()) {
+            item {
+                Text(
+                    if (appLocaleTag.startsWith("en")) "Add foods to your pantry"
+                    else "إضافة أغذية إلى المخزون",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = dz.meals.app.ui.theme.TextAccent,
+                    translate = false
+                )
+            }
+
+                if (selectedCategory == null) {
                 item {
                     Text(
                         if (appLocaleTag.startsWith("en")) "Browse all ${foodCategories.size} food categories"
@@ -345,64 +424,8 @@ fun PantryScreen(
                 }
             }
 
-            item {
-                Text("المخزون الحالي (" + pantry.size + ")", style = MaterialTheme.typography.titleMedium, color = dz.meals.app.ui.theme.TextAccent)
             }
 
-            if (pantry.isEmpty()) {
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        MealsIllustrationBadge(icon = MealsIconName.Pantry, size = 64.dp)
-                        Text("مخزونك فارغ", style = MaterialTheme.typography.titleLarge)
-                        Text("اكتب اسم مكوّن في البحث ثم اختره لإضافته.", color = MutedInk)
-                    }
-                }
-            } else {
-                items(pantry, key = { it.id }) { item ->
-                    val expiry = item.expiryAtEpochMillis?.let {
-                        formatDateDmy(epochMillisToLocalDate(it))
-                    }
-                    MealsCard(containerColor = Paper, borderColor = Border, contentPadding = 13.dp) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text(item.nameAr, style = MaterialTheme.typography.titleLarge)
-                                Text(
-                                    if (item.isApproximate) "كمية تقريبية — لم تُخصم من حساب المشتريات"
-                                    else (item.quantityBase ?: 0.0).formatHouseholdQuantity(item.unit),
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                item.note.takeIf { it.isNotBlank() }?.let {
-                                    Text("ملاحظة: " + it, color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                                }
-                                expiry?.let {
-                                    Text("تاريخ الانتهاء المُدخل: $it", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                MealsIconAction(
-                                    onClick = {
-                                        editingItem = item
-                                        selectedIngredientId = item.ingredientId
-                                    }
-                                ) {
-                                    MealsIcon(MealsIconName.Edit, contentDescription = "تعديل المخزون", modifier = Modifier.size(30.dp))
-                                }
-                                MealsIconAction(onClick = { onRemove(item.id) }) {
-                                    MealsIcon(MealsIconName.Delete, contentDescription = "حذف", modifier = Modifier.size(30.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 

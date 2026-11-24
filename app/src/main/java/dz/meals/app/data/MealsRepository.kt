@@ -41,9 +41,12 @@ import okhttp3.Request
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.json.JSONObject
 
-class MealsRepository(context: Context) {
+class MealsRepository internal constructor(
+    context: Context,
+    databaseOverride: MealsDatabase? = null
+) {
     private val appContext = context.applicationContext
-    private val database = MealsDatabase.getInstance(appContext)
+    private val database = databaseOverride ?: MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
     private val foodIdentityResolver = FoodIdentityResolver(appContext)
     private val commonsClient = OkHttpClient.Builder()
@@ -563,7 +566,12 @@ class MealsRepository(context: Context) {
         // persisted pantry row ID (editing/removing an existing row).
         val existingRow = dao.getPantryItem(ingredientId)
         val canonicalIngredientId = existingRow?.ingredientId ?: foodIdentityResolver.canonicalId(ingredientId)
-        val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId } ?: return
+        // Most catalogue foods live in food_items, not the legacy ingredients
+        // table. Resolve that canonical master row as a fallback so every one of
+        // the 4,649 searchable foods can be added to pantry on first use.
+        val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId }
+            ?: dao.getFoodItem(canonicalIngredientId)?.toIngredientMaster()
+            ?: return
         val targetUnit = existingRow?.unit ?: ingredient.baseUnit
         val pantryRowId = existingRow?.id ?: canonicalIngredientId
 
