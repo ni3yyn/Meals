@@ -707,35 +707,93 @@ def make_indexes(records: list[dict[str, Any]]) -> dict[str, dict[str, set[int]]
     return indexes
 
 
+def ingredient_name_variants(value: str) -> list[str]:
+    """Return only safe, exact aliases after removing preparation qualifiers."""
+    text = str(value or "").strip()
+    if not text:
+        return []
+    variants = [text]
+    if "," in text:
+        parts = [part.strip() for part in text.split(",") if part.strip()]
+        if len(parts) > 1:
+            qualifier_text = " ".join(parts[1:])
+            qualifiers = {
+                "cooked", "raw", "boiled", "baked", "roasted", "steamed",
+                "grilled", "fried", "skinless", "boneless", "low sodium",
+                "reduced fat", "nonfat", "non-fat", "light", "plain",
+                "unsweetened", "fresh", "chopped", "minced", "sliced",
+                "shredded", "grated", "diced", "drained", "peeled",
+                "cubed", "lean", "large", "medium", "small", "ripe",
+                "green", "white", "yellow", "red", "whole", "halved",
+                "quartered", "crumbled", "thinly sliced", "finely chopped",
+            }
+            qualifier_tokens = {
+                normalize_label(token)
+                for token in re.split(r"[,;/]+", qualifier_text)
+                if token.strip()
+            }
+            if qualifier_tokens and all(
+                token in qualifiers
+                or any(token.startswith(qualifier + " ") for qualifier in qualifiers)
+                for token in qualifier_tokens
+            ):
+                variants.append(parts[0])
+    # Remove exact duplicate variants while preserving specificity order.
+    seen: set[str] = set()
+    output: list[str] = []
+    for value in variants:
+        key = normalize_label(value)
+        if key and key not in seen:
+            seen.add(key)
+            output.append(value)
+    return output
+
+
 def match_recipe_group(
     group: dict[str, Any],
     off_records: list[dict[str, Any]],
     indexes: dict[str, dict[str, set[int]]],
 ) -> tuple[int | None, str, list[int]]:
-    english = normalize_label(group["names"].get("en", ""))
+    english = str(group["names"].get("en", "") or "")
     arabic = normalize_label(group["names"].get("ar", ""))
     french = normalize_label(group["names"].get("fr", ""))
+
+    # Exact canonical/alias match first. Only then try safe exact base-name
+    # variants, where the comma tail consists solely of preparation qualifiers.
+    english_variants = ingredient_name_variants(english)
+    for variant_index, variant in enumerate(english_variants):
+        key = normalize_label(variant)
+        candidates = set(indexes["en"].get(key, set())) if key else set()
+        if not candidates:
+            continue
+        exact_primary = {
+            index for index in candidates
+            if key and normalize_label(off_records[index]["names"].get("en", "")) == key
+        }
+        if len(exact_primary) == 1:
+            method = "exact_en_primary" if variant_index == 0 else "exact_en_base_variant"
+            return next(iter(exact_primary)), method, sorted(candidates)
+        if len(candidates) == 1:
+            method = "exact_alias" if variant_index == 0 else "exact_en_base_alias"
+            return next(iter(candidates)), method, sorted(candidates)
+        return None, "ambiguous", sorted(candidates)
+
     candidates: set[int] = set()
-    for lang, key in (("en", english), ("ar", arabic), ("fr", french)):
-        if key:
-            candidates.update(indexes[lang].get(key, set()))
-    if not candidates:
-        return None, "unmatched", []
-    exact_primary = {
-        index for index in candidates
-        if english and normalize_label(off_records[index]["names"].get("en", "")) == english
-    }
-    if len(exact_primary) == 1:
-        return next(iter(exact_primary)), "exact_en_primary", sorted(candidates)
+    if arabic:
+        candidates.update(indexes["ar"].get(arabic, set()))
+    if french:
+        candidates.update(indexes["fr"].get(french, set()))
     if len(candidates) == 1:
-        return next(iter(candidates)), "exact_alias", sorted(candidates)
-    exact_ar = {
-        index for index in candidates
-        if arabic and normalize_label(off_records[index]["names"].get("ar", "")) == arabic
-    }
-    if len(exact_ar) == 1:
-        return next(iter(exact_ar)), "exact_ar_primary", sorted(candidates)
-    return None, "ambiguous", sorted(candidates)
+        return next(iter(candidates)), "exact_localized_alias", sorted(candidates)
+    if len(candidates) > 1:
+        exact_ar = {
+            index for index in candidates
+            if arabic and normalize_label(off_records[index]["names"].get("ar", "")) == arabic
+        }
+        if len(exact_ar) == 1:
+            return next(iter(exact_ar)), "exact_ar_primary", sorted(candidates)
+        return None, "ambiguous", sorted(candidates)
+    return None, "unmatched", []
 
 
 def foodon_matches(
