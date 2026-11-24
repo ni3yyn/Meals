@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 
 from tools.build_food_product_catalogue import (
@@ -114,14 +115,23 @@ class FoodCatalogueBuildTests(unittest.TestCase):
             "sourceProperties": {},
         }]
         foodon = {}
-        catalogue, mapping, audit = build_catalogue(recipe_data, off, foodon)
-
+        catalogue, mapping, audit, registry = build_catalogue(recipe_data, off, foodon, {})
+        
         self.assertEqual(len(catalogue["products"]), 1)
         product = catalogue["products"][0]
         existing_id = "orc-ing-unitools-food-ingredient-123"
-        self.assertEqual(product["id"], existing_id)
         self.assertEqual(product["recipeIngredientIds"], [existing_id])
-        self.assertEqual(mapping["recipeIngredientToProductId"][existing_id], existing_id)
+        uuid_value = uuid.UUID(product["id"])
+        self.assertEqual(uuid_value.version, 4)
+        self.assertEqual(mapping["recipeIngredientToProductId"][existing_id], product["id"])
+        self.assertEqual(mapping["legacyRoomIngredientIdToFoodItemId"][existing_id], product["id"])
+        self.assertEqual(mapping["recipeRows"][0]["legacyRoomIngredientId"], existing_id)
+        self.assertEqual(mapping["recipeRows"][0]["foodItemId"], product["id"])
+        self.assertEqual(registry["idFormat"], "UUIDv4")
+
+        rebuilt, rebuilt_mapping, _, registry = build_catalogue(recipe_data, off, foodon, registry)
+        self.assertEqual(rebuilt["products"][0]["id"], product["id"])
+        self.assertEqual(rebuilt_mapping["recipeIngredientToProductId"][existing_id], product["id"])
         self.assertEqual(product["categoryId"], "foodcat-legumes")
         self.assertEqual(product["subcategoryId"], "foodsub-legumes-chickpeas")
         self.assertIn("g", product["acceptedUnits"])
@@ -164,7 +174,7 @@ class FoodCatalogueBuildTests(unittest.TestCase):
                 }],
             }]
         }
-        catalogue, mapping, audit = build_catalogue(recipe_data, [], foodon)
+        catalogue, mapping, audit, registry = build_catalogue(recipe_data, [], foodon, {})
         self.assertEqual(len(catalogue["products"]), 1)
         product = catalogue["products"][0]
         self.assertEqual(product["categoryId"], "foodcat-legumes")
@@ -181,6 +191,8 @@ class FoodCatalogueBuildTests(unittest.TestCase):
             mapping["recipeIngredientToProductId"]["orc-ing-unitools-garbanzo-bean"],
             product["id"],
         )
+        self.assertEqual(registry["idFormat"], "UUIDv4")
+        self.assertEqual(mapping["recipeRows"][0]["foodItemId"], product["id"])
 
     def test_recipe_only_product_is_not_lost(self):
         recipe_data = {
@@ -194,11 +206,13 @@ class FoodCatalogueBuildTests(unittest.TestCase):
                 }],
             }]
         }
-        catalogue, mapping, audit = build_catalogue(recipe_data, [], {})
+        catalogue, mapping, audit, registry = build_catalogue(recipe_data, [], {}, {})
         self.assertEqual(len(catalogue["products"]), 1)
         product = catalogue["products"][0]
-        self.assertTrue(product["id"].startswith("orc-ing-"))
+        self.assertEqual(uuid.UUID(product["id"]).version, 4)
+        self.assertEqual(registry["idFormat"], "UUIDv4")
         self.assertEqual(len(mapping["recipeIngredientToProductId"]), 1)
+        self.assertEqual(len(mapping["recipeRows"]), 1)
         self.assertEqual(audit["catalogueCounts"]["unmatchedRecipeGroups"], 1)
 
     def test_focus_legacy_id_is_reproducible(self):
