@@ -1155,6 +1155,12 @@
       "reason": "Red cabbage is a leafy brassica vegetable."
     },
     {
+      "foodItemId": "d376b5b9-31c4-4007-bfac-309c1a7648a7",
+      "categoryId": "foodcat-sauces",
+      "subcategoryId": "foodsub-sauces-tomato",
+      "reason": "Tomato paste is a concentrated tomato sauce/condiment, not a fresh fruit vegetable."
+    },
+    {
       "foodItemId": "d4142dc1-e788-42ea-b074-5bea0decb161",
       "categoryId": "foodcat-grains",
       "subcategoryId": "foodsub-grains-other",

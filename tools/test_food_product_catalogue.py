@@ -6,6 +6,7 @@ from pathlib import Path
 
 from tools.build_food_product_catalogue import (
     apply_machine_name_translations,
+    apply_reviewed_category_overrides,
     assign_stable_product_ids,
     build_catalogue,
     category_for,
@@ -627,3 +628,23 @@ class FoodCatalogueBuildTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class FoodCatalogueReviewedCategoryOverrideTests(unittest.TestCase):
+    def test_tomato_paste_is_reviewed_as_a_tomato_condiment(self):
+        food_id = "d376b5b9-31c4-4007-bfac-309c1a7648a7"
+        product = {
+            "id": food_id,
+            "names": {"ar": "معجون الطماطم", "en": "Tomato paste", "fr": "Concentré de tomate"},
+            "categoryId": "foodcat-vegetables",
+            "subcategoryId": "foodsub-vegetables-fruit",
+        }
+
+        applied = apply_reviewed_category_overrides([product])
+
+        self.assertEqual(product["categoryId"], "foodcat-sauces")
+        self.assertEqual(product["subcategoryId"], "foodsub-sauces-tomato")
+        self.assertEqual(len(applied), 1)
+        self.assertEqual(applied[0]["foodItemId"], food_id)
+        self.assertEqual(product["_categoryAssignment"]["confidence"], "high")
+        self.assertIn("concentrated tomato sauce", product["_categoryAssignment"]["reason"])
+
