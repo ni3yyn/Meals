@@ -92,6 +92,7 @@ class FoodIdentityMigrationTest {
             assertEquals(1, count(db, "SELECT COUNT(*) FROM ingredients WHERE id = '$canonicalId'"))
             val aliases = scalarString(db, "SELECT aliasesCsv FROM ingredients WHERE id = '$canonicalId'")
             assertTrue(aliases.contains("اسم قديم ب"))
+            assertEquals("أخرى", scalarString(db, "SELECT category FROM ingredients WHERE id = '$canonicalId'"))
             val customId = FoodIdentityResolver(context).canonicalId("user-spice-legacy")
             assertTrue(customId.matches(Regex("^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")))
             assertEquals(1, count(db, "SELECT COUNT(*) FROM ingredients WHERE id = '$customId'"))
