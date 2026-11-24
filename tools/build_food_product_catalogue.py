@@ -813,6 +813,41 @@ def foodon_matches(
     return sorted(hits)
 
 
+def match_foodon_group(
+    group: dict[str, Any],
+    foodon_index: dict[str, set[str]],
+    foodon: dict[str, dict[str, Any]],
+    foodon_ancestors: dict[str, list[str]],
+) -> list[str]:
+    """Find one exact FoodOn food-product class without fuzzy merging."""
+    values: list[str] = []
+    values.extend(ingredient_name_variants(str(group["names"].get("en") or "")))
+    values.extend(
+        str(group["names"].get(language) or "")
+        for language in ("ar", "fr")
+    )
+    for language in ("ar", "en", "fr"):
+        values.extend(group["aliases"].get(language, []))
+
+    candidates: set[str] = set()
+    for value in values:
+        key = normalize_label(value)
+        if key:
+            candidates.update(foodon_index.get(key, set()))
+
+    # FoodOn also models organisms, processes and materials. Only match a
+    # named food-product class, never an organism class such as a chicken.
+    return sorted(
+        item_id
+        for item_id in candidates
+        if item_id in foodon
+        and any(
+            normalize_label(parent) == "food product"
+            for parent in foodon_ancestors.get(item_id, [])
+        )
+    )
+
+
 def uuid_for(source_key: str) -> str:
     return str(uuid.uuid5(UUID_NAMESPACE, source_key))
 
@@ -883,13 +918,22 @@ def build_product(
             if name and name != names[lang]:
                 aliases[lang].add(name)
             aliases[lang].update(group["aliases"].get(lang, []))
+    # FoodOn synonyms enrich this identity but never create duplicate items.
+    for item_id in foodon_ids:
+        foodon_item = foodon.get(item_id)
+        if foodon_item:
+            aliases["en"].add(foodon_item["name"])
+            aliases["en"].update(foodon_item.get("aliases", []))
 
     observed_units = sorted({
         unit for group in groups for unit in group["units"]
     })
-    accepted_units = observed_units or default_units(category_id, subcategory_id, [
+    # Always retain market-scale units (g/kg or ml/l) alongside units used by
+    # recipes, which may only mention cups, spoons or pieces.
+    standard_units = default_units(category_id, subcategory_id, [
         str(value or "") for value in names.values()
     ])
+    accepted_units = list(dict.fromkeys([*standard_units, *observed_units]))
     source_mappings: dict[str, Any] = {}
     if record:
         source_mappings["openFoodFactsIngredientTerm"] = record["name"]
@@ -955,6 +999,12 @@ def build_catalogue(
     off_index = make_indexes(off_records)
 
     off_to_groups: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    foodon_to_off_indices: dict[str, set[int]] = defaultdict(set)
+    for off_index_value, off_record in enumerate(off_records):
+        for foodon_id in foodon_matches(off_record, foodon, foodon_index):
+            foodon_to_off_indices[foodon_id].add(off_index_value)
+
+    foodon_only_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     matched_ids: dict[str, str] = {}
     matching_methods: Counter[str] = Counter()
     ambiguous: list[dict[str, Any]] = []
@@ -962,16 +1012,47 @@ def build_catalogue(
 
     for group in groups:
         index, method, candidates = match_recipe_group(group, off_records, off_index)
-        matching_methods[method] += 1
         if index is not None:
+            matching_methods[method] += 1
             off_to_groups[index].append(group)
             continue
+
         report = {
             "nameAr": group["names"].get("ar"),
             "nameEn": group["names"].get("en"),
             "legacyIds": group["legacyIds"],
             "units": group["units"],
         }
+        foodon_candidates = match_foodon_group(
+            group, foodon_index, foodon, foodon_ancestors
+        )
+        if len(foodon_candidates) == 1:
+            foodon_id = foodon_candidates[0]
+            matching_off_indices = foodon_to_off_indices.get(foodon_id, set())
+            if len(matching_off_indices) == 1:
+                matching_methods["foodon_exact_to_off"] += 1
+                off_to_groups[next(iter(matching_off_indices))].append(group)
+                continue
+            if len(matching_off_indices) == 0:
+                matching_methods["foodon_exact"] += 1
+                foodon_only_groups[foodon_id].append(group)
+                continue
+            matching_methods["foodon_ambiguous_off_link"] += 1
+            report["foodOnId"] = foodon_id
+            report["candidateOFFNames"] = sorted(
+                off_records[index]["names"].get("en") or ""
+                for index in matching_off_indices
+            )
+            ambiguous.append(report)
+            continue
+
+        if len(foodon_candidates) > 1:
+            matching_methods["foodon_ambiguous"] += 1
+            report["candidateFoodOnIds"] = foodon_candidates[:20]
+            ambiguous.append(report)
+            continue
+
+        matching_methods[method] += 1
         if method == "ambiguous":
             report["candidateNames"] = [
                 off_records[candidate]["names"].get("en") for candidate in candidates
@@ -988,6 +1069,16 @@ def build_catalogue(
         product = build_product(record, groups_for_record, foodon_ids, foodon, foodon_ancestors)
         products.append(product)
         for group in groups_for_record:
+            consumed_groups.add(group["key"])
+            for legacy_id in group["legacyIds"]:
+                matched_ids[legacy_id] = product["id"]
+
+    # FoodOn-only matches are grouped by exact ontology class, so alternate
+    # recipe spellings of the same verified concept share one food identity.
+    for foodon_id, related_groups in sorted(foodon_only_groups.items()):
+        product = build_product(None, related_groups, [foodon_id], foodon, foodon_ancestors)
+        products.append(product)
+        for group in related_groups:
             consumed_groups.add(group["key"])
             for legacy_id in group["legacyIds"]:
                 matched_ids[legacy_id] = product["id"]
@@ -1163,6 +1254,8 @@ def build_catalogue(
             ),
             "unmatchedRecipeGroups": len(unmatched),
             "ambiguousRecipeGroups": len(ambiguous),
+            "foodOnMatchedGroups": matching_methods["foodon_exact"] + matching_methods["foodon_exact_to_off"],
+            "foodOnAmbiguousGroups": matching_methods["foodon_ambiguous"] + matching_methods["foodon_ambiguous_off_link"],
         "offMatchCoveragePercent": round(
             100.0 * sum(
                 count for method, count in matching_methods.items()
