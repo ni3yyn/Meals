@@ -42,6 +42,7 @@ class MealsRepository(context: Context) {
     private val appContext = context.applicationContext
     private val database = MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
+    private val foodIdentityResolver = FoodIdentityResolver(appContext)
     private val commonsClient = OkHttpClient.Builder()
         .callTimeout(35, java.util.concurrent.TimeUnit.SECONDS)
         .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
@@ -60,7 +61,7 @@ class MealsRepository(context: Context) {
         database.withTransaction {
             dao.insertIngredients(SeedRecipes.ingredients.map {
                 IngredientEntity(
-                    id = it.id,
+                    id = foodIdentityResolver.canonicalId(it.id),
                     nameAr = it.nameAr,
                     nameFr = it.nameFr,
                     category = it.category,
@@ -85,14 +86,15 @@ class MealsRepository(context: Context) {
                 )
             })
             dao.insertRecipeIngredients(SeedRecipes.all.flatMap { recipe ->
-                recipe.ingredients.map { item ->
+                recipe.ingredients.mapIndexed { index, item ->
                     RecipeIngredientEntity(
                         recipeId = recipe.id,
-                        ingredientId = item.ingredientId,
+                        ingredientId = foodIdentityResolver.canonicalId(item.ingredientId),
                         quantityBase = item.quantityBase,
                         unit = item.unit,
                         prepNote = item.prepNote,
-                        optional = item.optional
+                        optional = item.optional,
+                        rowKey = "seed:$index"
                     )
                 }
             })
@@ -135,17 +137,21 @@ class MealsRepository(context: Context) {
             .filter { it.mealSlot in slotsForThisWeek }
             .map { it.toModel() }
         val pantryEntities = dao.getPantryItems()
-        val pantry = pantryEntities.map { entity ->
-            val master = ingredients.firstOrNull { it.id == entity.ingredientId }
+        // Multiple old IDs can now refer to one food UUID. Keep raw rows in Room,
+        // but show one combined pantry line per canonical food and unit.
+        val pantry = pantryEntities.groupBy { it.ingredientId to it.unit }.map { (_, rows) ->
+            val first = rows.first()
+            val exactRows = rows.filter { !it.isApproximate && it.quantityBase != null }
+            val master = ingredients.firstOrNull { it.id == first.ingredientId }
             PantryItem(
-                id = entity.id,
-                ingredientId = entity.ingredientId,
-                nameAr = master?.nameAr ?: entity.ingredientId,
-                quantityBase = entity.quantityBase,
-                unit = entity.unit,
-                isApproximate = entity.isApproximate,
-                note = entity.note,
-                expiryAtEpochMillis = entity.expiryAtEpochMillis
+                id = first.id,
+                ingredientId = first.ingredientId,
+                nameAr = master?.nameAr ?: first.ingredientId,
+                quantityBase = exactRows.sumOf { it.quantityBase ?: 0.0 }.takeIf { exactRows.isNotEmpty() },
+                unit = first.unit,
+                isApproximate = rows.any { it.isApproximate || it.quantityBase == null },
+                note = rows.map { it.note.trim() }.filter { it.isNotEmpty() }.distinct().joinToString(" · "),
+                expiryAtEpochMillis = rows.mapNotNull { it.expiryAtEpochMillis }.minOrNull()
             )
         }
         val currentPrices = dao.getPriceObservations()
@@ -158,42 +164,59 @@ class MealsRepository(context: Context) {
         val planWilaya = savedRun?.wilaya?.takeIf { it.isNotBlank() } ?: selectedWilaya
         val existingShopping = dao.getShoppingItems(weekStartIso)
         val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
+        val checkedItemIds = existingShopping
+            .filter { it.checked && !it.userAdded }
+            .mapNotNull { item ->
+                item.ingredientId?.let { "$it::${item.unit}" }
+                    ?: item.id.substringAfter("::").takeIf { it.isNotBlank() }
+            }.toSet()
         val basket = calculateBasket(
             planned,
             recipes,
             pantryEntities,
             prices,
-            existingShopping.filter { it.checked }.map { it.id.substringAfter("::") }.toSet(),
+            checkedItemIds,
             planWilaya,
             allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty()
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
             val scopedId = "$weekStartIso::${line.id}"
-            val old = existingShopping.firstOrNull { it.id == scopedId }
+            // Reuse old rows by canonical ingredient and unit, not their legacy
+            // embedded IDs. If aliases converge, fold their editable state together.
+            val oldRows = existingShopping.filter { item ->
+                !item.userAdded && item.unit == line.unit &&
+                    (item.id == scopedId || item.ingredientId == line.ingredientId)
+            }
+            val old = oldRows.maxByOrNull { it.updatedAtEpochMillis }
+            val overrides = oldRows.mapNotNull { it.purchaseQuantityOverride }
+            val purchaseOverride = overrides.takeIf { it.isNotEmpty() }?.sum()
+            val storeNotes = oldRows.map { it.storeNote.trim() }
+                .filter { it.isNotEmpty() }.distinct().joinToString(" · ")
+            val actualSpend = oldRows.mapNotNull { it.actualSpentDzd }.takeIf { it.isNotEmpty() }?.sum()
             ShoppingItemEntity(
                 id = scopedId,
                 ingredientId = line.ingredientId,
                 customName = names[line.ingredientId]?.nameAr ?: line.name,
                 requiredQuantity = line.requiredQuantity,
                 pantryQuantity = line.pantryQuantity,
-                purchaseQuantity = old?.purchaseQuantityOverride ?: line.purchaseQuantity,
+                purchaseQuantity = purchaseOverride ?: line.purchaseQuantity,
                 unit = line.unit,
                 consumedValueDzd = line.consumedValueDzd,
-                cashOutlayDzd = if (old?.purchaseQuantityOverride != null && line.purchaseQuantity > 0.0) {
-                    line.cashOutlayDzd?.times(old.purchaseQuantityOverride / line.purchaseQuantity)
+                cashOutlayDzd = if (purchaseOverride != null && line.purchaseQuantity > 0.0) {
+                    line.cashOutlayDzd?.times(purchaseOverride / line.purchaseQuantity)
                 } else line.cashOutlayDzd,
-                priceLabel = if (old?.purchaseQuantityOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
+                priceLabel = if (purchaseOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
                 sourceLabel = line.sourceLabel,
                 isApproximatePantry = line.isApproximatePantry,
-                checked = old?.checked ?: false,
+                checked = oldRows.any { it.checked },
                 userAdded = false,
-                updatedAtEpochMillis = System.currentTimeMillis(),
+                updatedAtEpochMillis = old?.updatedAtEpochMillis ?: System.currentTimeMillis(),
                 weekStartIso = weekStartIso,
-                purchaseQuantityOverride = old?.purchaseQuantityOverride,
-                storeNote = old?.storeNote.orEmpty(),
-                isUnavailable = old?.isUnavailable ?: false,
-                actualSpentDzd = old?.actualSpentDzd
+                purchaseQuantityOverride = purchaseOverride,
+                storeNote = storeNotes,
+                isUnavailable = oldRows.any { it.isUnavailable },
+                actualSpentDzd = actualSpend
             )
         }
         database.withTransaction {
@@ -252,6 +275,8 @@ class MealsRepository(context: Context) {
         fillEmptyOnly: Boolean = false
     ): GenerationResult {
         ensureInitialized()
+        val canonicalDislikedIngredientIds = dislikedIngredientIds
+            .mapTo(linkedSetOf(), foodIdentityResolver::canonicalId)
         val recipes = loadRecipes()
         // Community recipes are browseable and manually plannable. Keep automatic
         // generation on the curated, price-aware seed catalogue for now.
@@ -315,7 +340,7 @@ class MealsRepository(context: Context) {
                 val basket = calculateBasket(trial, recipes, pantry, prices, selectedWilaya = selectedWilaya)
                 val repeatPenalty = (repeats[recipe.id] ?: 0) * 420.0
                 val overBudgetPenalty = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0) * 3.0
-                val preferencePenalty = softPreferencePenalty(recipe, dislikedIngredientIds, maxCookingMinutes)
+                val preferencePenalty = softPreferencePenalty(recipe, canonicalDislikedIngredientIds, maxCookingMinutes)
                 basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty + preferencePenalty
             } ?: allowed.minBy { it.id }
 
@@ -395,33 +420,59 @@ class MealsRepository(context: Context) {
                 val required = recipe.ingredients.filterNot { it.optional }
                     .groupBy { it.ingredientId to it.unit }
                 required.forEach { (key, parts) ->
-                    val needed = parts.sumOf { scaleRecipeIngredientQuantity(it.quantityBase, factor, it.scalingRule) }
-                    val stock = dao.getPantryItems().firstOrNull {
-                        it.ingredientId == key.first && it.unit == key.second
-                    } ?: return@forEach
-                    val deducted = exactPantryDeduction(needed, stock.quantityBase, stock.isApproximate)
-                    if (deducted > 0.0) {
-                        dao.upsertPantryItem(stock.copy(quantityBase = (stock.quantityBase ?: 0.0) - deducted))
+                    var remaining = parts.sumOf {
+                        scaleRecipeIngredientQuantity(it.quantityBase, factor, it.scalingRule)
+                    }.coerceAtLeast(0.0)
+                    if (remaining <= 0.0) return@forEach
+
+                    // A canonical food can own several preserved stock rows after
+                    // alias IDs converge. Deduct across exact rows instead of the
+                    // first row only, and remember each source row for undo.
+                    val stocks = dao.getPantryItems()
+                        .filter {
+                            it.ingredientId == key.first && it.unit == key.second &&
+                                !it.isApproximate && it.quantityBase != null
+                        }
+                        .sortedBy { it.id }
+                    stocks.forEach { stock ->
+                        if (remaining <= 0.0) return@forEach
+                        val available = stock.quantityBase ?: return@forEach
+                        val deducted = exactPantryDeduction(remaining, available, false)
+                        if (deducted <= 0.0) return@forEach
+                        dao.upsertPantryItem(
+                            stock.copy(quantityBase = (available - deducted).coerceAtLeast(0.0))
+                        )
                         dao.upsertCookedMealDeduction(
                             CookedMealDeductionEntity(
                                 mealId = current.id,
                                 ingredientId = key.first,
                                 unit = key.second,
-                                quantityBase = deducted
+                                quantityBase = deducted,
+                                rowKey = UUID.randomUUID().toString(),
+                                pantryItemId = stock.id
                             )
                         )
+                        remaining = (remaining - deducted).coerceAtLeast(0.0)
                     }
                 }
                 dao.upsertPlanMeal(current.copy(isCooked = true))
             } else {
                 dao.getCookedMealDeductions(current.id).forEach { deduction ->
-                    val stock = dao.getPantryItems().firstOrNull {
-                        it.ingredientId == deduction.ingredientId && it.unit == deduction.unit
+                    val stock = if (deduction.pantryItemId != null) {
+                        dao.getPantryItem(deduction.pantryItemId)
+                    } else {
+                        dao.getPantryItems().firstOrNull {
+                            it.ingredientId == deduction.ingredientId && it.unit == deduction.unit &&
+                                !it.isApproximate && it.quantityBase != null
+                        } ?: dao.getPantryItems().firstOrNull {
+                            it.ingredientId == deduction.ingredientId && it.unit == deduction.unit
+                        }
                     }
+
                     if (stock == null) {
                         dao.upsertPantryItem(
                             PantryItemEntity(
-                                id = deduction.ingredientId,
+                                id = deduction.pantryItemId ?: UUID.randomUUID().toString(),
                                 ingredientId = deduction.ingredientId,
                                 quantityBase = deduction.quantityBase,
                                 unit = deduction.unit,
@@ -476,21 +527,21 @@ class MealsRepository(context: Context) {
         expiryAtEpochMillis: Long? = null
     ) {
         val ingredient = dao.getIngredients().firstOrNull { it.id == ingredientId } ?: return
-        if (quantityBase == null && !isApproximate) {
-            dao.deletePantryItem(ingredientId)
-        } else {
-            dao.upsertPantryItem(
-                PantryItemEntity(
-                    id = ingredientId,
-                    ingredientId = ingredientId,
-                    quantityBase = if (isApproximate) null else quantityBase?.coerceAtLeast(0.0),
-                    unit = ingredient.baseUnit,
-                    isApproximate = isApproximate,
-                    note = note,
-                    expiryAtEpochMillis = expiryAtEpochMillis
-                )
+        // Replace all preserved alias rows for this editable ingredient/unit with
+        // the single value the user just entered in the pantry screen.
+        dao.deletePantryItemsForIngredientUnit(ingredientId, ingredient.baseUnit)
+        if (quantityBase == null && !isApproximate) return
+        dao.upsertPantryItem(
+            PantryItemEntity(
+                id = ingredientId,
+                ingredientId = ingredientId,
+                quantityBase = if (isApproximate) null else quantityBase?.coerceAtLeast(0.0),
+                unit = ingredient.baseUnit,
+                isApproximate = isApproximate,
+                note = note,
+                expiryAtEpochMillis = expiryAtEpochMillis
             )
-        }
+        )
     }
 
     suspend fun recordPriceObservation(
