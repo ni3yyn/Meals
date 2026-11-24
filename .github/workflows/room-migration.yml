@@ -21,9 +21,8 @@ concurrency:
 jobs:
   migration:
     name: Migrate a real v13 SQLite database on Android
-    # macOS provides native Hypervisor.framework acceleration. The previous
-    # Linux hosted VM exposed no /dev/kvm, so the emulator fell back to slow
-    # software virtualization and timed out before instrumentation began.
+    # macOS provides native Hypervisor.framework acceleration. The hosted
+    # macos-15 image is Apple Silicon, so the emulator must use an ARM64 image.
     runs-on: macos-15
     timeout-minutes: 60
     steps:
@@ -61,7 +60,8 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          arch: x86_64
+          # macos-15 currently provisions ARM64 hosts; x86_64 here cannot boot.
+          arch: arm64-v8a
           target: google_apis
           profile: pixel_2
           cores: 3
