@@ -5,7 +5,17 @@ on:
     paths:
       - "app/src/main/java/dz/meals/app/data/**"
       - "app/src/main/java/dz/meals/app/data/local/**"
-      - "app/src/test/java/dz/meals/app/data/local/**"
+      - "app/src/test/java/dz/meals/app/data/**"
+      - "app/build.gradle.kts"
+      - "data/products/recipe-ingredient-map.json"
+      - ".github/workflows/room-migration.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app/src/main/java/dz/meals/app/data/**"
+      - "app/src/main/java/dz/meals/app/data/local/**"
+      - "app/src/test/java/dz/meals/app/data/**"
       - "app/build.gradle.kts"
       - "data/products/recipe-ingredient-map.json"
       - ".github/workflows/room-migration.yml"
