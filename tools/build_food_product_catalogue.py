@@ -369,13 +369,14 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
     def has(*terms: str) -> bool:
         return any(normalize_label(term) in compact for term in terms)
 
-    canned = has("canned", "tinned", "in conserve", "en conserve", "appertized", "preserved", "conserva", "conserve")
+    canned = has("canned", "tinned", "in conserve", "en conserve", "appertized", "preserved", "conserva", "conserve", "معلب")
     seafood = has("fish", "tuna", "sardine", "anchovy", "salmon", "shrimp", "prawn", "seafood", "shellfish", "mollusc", "mussel", "oyster", "squid", "octopus", "crab", "lobster", "سمك", "تونة", "سردين", "جمبري")
     legumes = has("chickpea", "garbanzo", "lentil", "pulse", "legume", "dried bean", "kidney bean", "white bean", "haricot", "حمص", "عدس", "فاصولياء", "لوبيا")
     vegetables = has("vegetable", "tomato", "potato", "onion", "carrot", "pepper", "courgette", "zucchini", "cabbage", "spinach", "lettuce", "eggplant", "aubergine", "green bean", "pea pod", "خضروات", "بطاطا", "طماطم", "بصل", "جزر")
     fruit = has("fruit", "apple", "banana", "orange", "lemon", "date", "grape", "berry", "mango", "pear", "peach", "apricot", "تمر", "تفاح", "موز", "برتقال")
     dairy = has("milk", "lait", "yogurt", "yoghurt", "raib", "leben", "kefir", "buttermilk", "fermented milk", "cream", "cheese", "fromage", "butter", "beurre", "حليب", "لبن", "رايب", "جبن")
     meat = has("meat", "beef", "lamb", "mutton", "veal", "chicken", "turkey", "duck", "pork", "offal", "liver", "kidney", "heart", "tripe", "tongue", "لحوم", "دجاج", "كبد", "قلب")
+    poultry = has("chicken", "turkey", "duck", "poultry", "دجاج", "ديك رومي")
     grains = has("grain", "cereal", "wheat", "semolina", "semoule", "flour", "rice", "oat", "barley", "cornmeal", "couscous", "سميد", "فرينة", "دقيق", "أرز")
     nuts = has("nut", "almond", "walnut", "hazelnut", "pistachio", "peanut", "seed", "sesame", "لوز", "جوز", "بذور")
     spices = has("spice", "peppercorn", "cumin", "coriander seed", "paprika", "turmeric", "cinnamon", "clove", "saffron", "بهارات", "كمون", "فلفل أسود", "قرفة")
@@ -389,54 +390,79 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
     baking = has("baking powder", "baking soda", "yeast", "cocoa", "chocolate", "vanilla extract", "gelatin", "خميرة", "كاكاو")
     beverages = has("beverage", "drink", "juice", "coffee", "tea", "water", "مشروب", "عصير", "قهوة", "شاي")
 
+    if frozen:
+        if has("vegetable", "vegetables"):
+            return "frozen", "frozen_vegetables"
+        if fruit:
+            return "frozen", "frozen_fruit"
+        if seafood or meat:
+            return "frozen", "frozen_meat_fish"
+        return "frozen", None
+
     if canned:
         if seafood:
             return "canned_preserved", "canned_seafood"
         if legumes:
             return "canned_preserved", "canned_legumes"
+        if fruit:
+            return "canned_preserved", "canned_fruit"
         if vegetables:
             return "canned_preserved", "canned_vegetables"
         return "canned_preserved", "pickled_preserved"
+
+    # Commercially prepared sauces/pastes must not be misfiled as raw produce.
+    if sauces:
+        if has("mayonnaise", "مايونيز"):
+            return "sauces_condiments", "mayonnaise"
+        if has("ketchup", "mustard", "خردل"):
+            return "sauces_condiments", "ketchup_mustard"
+        if has("tomato paste", "tomato sauce", "paste", "معجون الطماطم"):
+            return "sauces_condiments", "tomato_sauce"
+        return "sauces_condiments", None
+
     if dairy:
         if has("cheese", "fromage", "جبن"):
             return "dairy", "cheese"
-        if has("yogurt", "yoghurt", "raib", "leben", "kefir", "buttermilk", "fermented milk", "لبن", "رايب"):
+        if has("yogurt", "yoghurt", "لبن", "رايب", "yogurt drink"):
+            return "dairy", "yogurt"
+        if has("raib", "leben", "kefir", "buttermilk", "fermented milk", "لبن", "رايب"):
             return "dairy", "fermented_dairy"
         if has("cream", "butter", "beurre"):
             return "dairy", "cream_butter"
-        return "dairy", "milk"
+        if has("milk", "lait", "حليب"):
+            return "dairy", "milk"
+        return "dairy", None
+
     if seafood:
-        if has("shrimp", "prawn", "crab", "lobster", "mussel", "oyster", "squid", "octopus", "shellfish", "mollusc"):
-            return "seafood", "shellfish"
+        if has("shrimp", "prawn", "crab", "lobster", "shellfish", "crustacean"):
+            return "seafood", "crustaceans"
+        if has("mussel", "oyster", "squid", "octopus", "mollusc", "clam"):
+            return "seafood", "molluscs"
         return "seafood", "fish"
+
+    if poultry:
+        if has("turkey", "ديك رومي"):
+            return "poultry", "turkey"
+        if has("chicken", "دجاج"):
+            return "poultry", "chicken"
+        return "poultry", None
+
     if meat:
         if has("liver", "kidney", "heart", "tripe", "tongue", "offal", "كبد", "قلب"):
             return "meat_offal", "offal"
-        if has("chicken", "turkey", "duck", "poultry", "دجاج"):
-            return "meat_offal", "poultry"
         if has("sausage", "bacon", "ham", "processed meat"):
             return "meat_offal", "processed_meat"
         return "meat_offal", "red_meat"
+
     if legumes:
         if has("chickpea", "garbanzo", "حمص"):
             return "legumes", "chickpeas"
         if has("lentil", "عدس"):
             return "legumes", "lentils"
-        if has("pea", "بازلاء"):
+        if has("pea", "بازلاء", "fava"):
             return "legumes", "peas"
         return "legumes", "beans"
-    if fruit:
-        if has("lemon", "lime", "orange", "citrus", "grapefruit", "برتقال", "ليمون"):
-            return "fruits", "citrus"
-        if has("berry", "strawberry", "raspberry", "blueberry"):
-            return "fruits", "berries"
-        if has("date", "raisin", "dried fruit", "تمر", "زبيب"):
-            return "fruits", "dried_fruits"
-        if has("peach", "plum", "apricot", "cherry", "peach", "مشمش"):
-            return "fruits", "stone_fruits"
-        if has("mango", "pineapple", "papaya", "banana", "kiwi"):
-            return "fruits", "tropical_fruits"
-        return "fruits", None
+
     if vegetables:
         if has("potato", "carrot", "beet", "radish", "turnip", "sweet potato", "بطاطا", "جزر"):
             return "vegetables", "root_tubers"
@@ -445,24 +471,42 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
         if has("spinach", "lettuce", "cabbage", "kale", "chard", "parsley leaf", "سبانخ"):
             return "vegetables", "leafy_vegetables"
         return "vegetables", "fruit_vegetables"
+
+    if fruit:
+        if has("lemon", "lime", "orange", "citrus", "grapefruit", "برتقال", "ليمون"):
+            return "fruits", "citrus"
+        if has("berry", "strawberry", "raspberry", "blueberry"):
+            return "fruits", "berries"
+        if has("date", "raisin", "dried fruit", "تمر", "زبيب"):
+            return "fruits", "dried_fruits"
+        if has("peach", "plum", "apricot", "cherry", "مشمش"):
+            return "fruits", "stone_fruits"
+        if has("mango", "pineapple", "papaya", "banana", "kiwi"):
+            return "fruits", "tropical_fruits"
+        return "fruits", None
+
     if nuts:
         return "nuts_seeds", None
     if spices:
-        return "spices", "whole_spices" if has("whole", "seed", "peppercorn") else "ground_spices"
+        return "spices", "spice_blends" if has("blend", "mix", "seasoning", "بهارات مشكلة") else (
+            "whole_spices" if has("whole", "seed", "peppercorn") else "ground_spices"
+        )
     if herbs:
-        return "herbs", "fresh_herbs" if has("fresh", "leaf", "leaves") else "dried_herbs"
+        return "herbs", "fresh_herbs" if has("fresh", "leaf", "leaves", "طازج") else "dried_herbs"
     if oils:
-        return "oils_fats", "cooking_oils"
-    if sauces:
-        return "sauces_condiments", "sauces" if has("sauce", "mayonnaise", "ketchup", "harissa", "paste") else "condiments"
+        return "oils_fats", "olive_oil" if has("olive oil", "زيت الزيتون") else "cooking_oils"
     if sweeteners:
-        return "sweeteners", "sugar_syrups"
+        if has("honey", "عسل"):
+            return "sweeteners", "honey"
+        if has("jam", "مربى"):
+            return "sweeteners", "jam"
+        if has("syrup", "molasses"):
+            return "sweeteners", "syrup"
+        return "sweeteners", "sugar"
     if eggs:
         return "eggs", None
     if mushrooms:
         return "mushrooms", None
-    if frozen:
-        return "frozen", None
     if grains:
         if has("rice", "riz", "أرز"):
             return "grains_cereals", "rice"
@@ -478,11 +522,18 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
             return "bakery_pasta", "pasta"
         return "bakery_pasta", "bread"
     if baking:
-        return "baking", None
+        return "baking", "cocoa" if has("cocoa", "chocolate") else "yeast" if has("yeast", "baking powder", "خميرة") else None
     if beverages:
+        if has("coffee", "قهوة"):
+            return "beverages", "coffee"
+        if has("tea", "شاي"):
+            return "beverages", "tea"
+        if has("juice", "عصير"):
+            return "beverages", "juice"
+        if has("water", "ماء"):
+            return "beverages", "water"
         return "beverages", None
     return "other", None
-
 
 def default_units(category_id: str, subcategory_id: str | None, names: Iterable[str]) -> list[str]:
     text = normalize_label(" ".join(names))
