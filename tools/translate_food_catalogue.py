@@ -14,6 +14,7 @@ import pathlib
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -33,6 +34,120 @@ SOURCE_PREFERENCES = {
 
 class PipelineError(RuntimeError):
     pass
+
+
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+_TRANSIENT_HTTP_STATUSES = {408, 425, 429, 500, 502, 503, 504}
+_CONTENT_HOST_RETRY_STATUSES = {404, 500, 502, 503, 504}
+_APPS_SCRIPT_HOSTS = {"script.google.com", "script.googleusercontent.com"}
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Keep Apps Script's 302 response visible so its content URL can be fetched safely."""
+
+    def redirect_request(self, request, file_pointer, code, message, headers, new_url):
+        return None
+
+
+def _open_without_redirects(
+    request: urllib.request.Request,
+    timeout_seconds: int,
+):
+    opener = urllib.request.build_opener(_NoRedirectHandler())
+    try:
+        return opener.open(request, timeout=timeout_seconds)
+    except urllib.error.HTTPError as response:
+        # HTTPError is also a readable response object; callers inspect its status,
+        # headers and body just like a normal response.
+        return response
+
+
+def _safe_url_label(url: str) -> str:
+    """Return a response URL without the private ContentService query key."""
+    parsed = urllib.parse.urlsplit(url)
+    return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+
+def request_apps_script_response(
+    request: urllib.request.Request,
+    timeout_seconds: int = 360,
+) -> tuple[int, bytes, str]:
+    """POST once, then follow Apps Script's ContentService redirect with GET.
+
+    Google may briefly return 404 for the one-time script.googleusercontent.com
+    response URL. Retry that GET in place instead of resending the translation
+    POST, which could waste another LanguageApp call.
+    """
+    endpoint = urllib.parse.urlsplit(request.full_url)
+    current_request = request
+    visited_redirects: set[str] = set()
+    redirect_count = 0
+    content_response_retries = 0
+
+    while True:
+        response = _open_without_redirects(current_request, timeout_seconds)
+        status = response.getcode()
+        response_url = response.geturl() or current_request.full_url
+        response_host = (urllib.parse.urlsplit(response_url).hostname or "").lower()
+
+        if status in _REDIRECT_STATUSES:
+            location = response.headers.get("Location")
+            response.close()
+            if not location:
+                return status, b"", response_url
+
+            target_url = urllib.parse.urljoin(response_url, location)
+            target = urllib.parse.urlsplit(target_url)
+            target_host = (target.hostname or "").lower()
+            if target.scheme != "https" or target_host not in _APPS_SCRIPT_HOSTS:
+                raise PipelineError(
+                    "Apps Script redirected to an unexpected host "
+                    f"({target_host or 'unknown'}); refusing to send a request there."
+                )
+
+            if target_host == endpoint.hostname and target.path == endpoint.path:
+                raise PipelineError(
+                    "Apps Script redirected back to the deployed /exec URL. "
+                    "A redirect loop was detected; the POST was not replayed."
+                )
+            if target_url in visited_redirects:
+                raise PipelineError(
+                    "Apps Script returned a repeated redirect target. "
+                    "The POST was not replayed."
+                )
+            if redirect_count >= 5:
+                raise PipelineError(
+                    "Apps Script exceeded the five-hop response redirect limit. "
+                    "The POST was not replayed."
+                )
+
+            visited_redirects.add(target_url)
+            redirect_count += 1
+            current_request = urllib.request.Request(
+                target_url,
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": "Midati-Food-Name-Translation-Pipeline/1.0",
+                },
+                method="GET",
+            )
+            continue
+
+        if (
+            response_host == "script.googleusercontent.com"
+            and status in _CONTENT_HOST_RETRY_STATUSES
+            and content_response_retries < 3
+        ):
+            response.close()
+            content_response_retries += 1
+            # Google has documented/reported transient 302 -> 404 failures
+            # on this response host. Retry the same GET, never the POST.
+            time.sleep(3 * content_response_retries)
+            continue
+
+        raw = response.read()
+        response.close()
+        return status, raw, response_url
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -191,38 +306,68 @@ def post_batch(
     last_error: Exception | None = None
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-                raw = response.read().decode("utf-8", errors="replace")
-            try:
-                result = json.loads(raw)
-            except json.JSONDecodeError as error:
-                preview = raw[:300].replace("\n", " ")
+            status, raw_bytes, response_url = request_apps_script_response(
+                request, timeout_seconds
+            )
+            raw = raw_bytes.decode("utf-8", errors="replace")
+            response_host = (urllib.parse.urlsplit(response_url).hostname or "").lower()
+            safe_url = _safe_url_label(response_url)
+
+            if status == 404 and response_host == "script.google.com":
                 raise PipelineError(
-                    "Apps Script did not return JSON. Confirm that the deployed "
-                    f"web app is updated. Response: {preview}"
-                ) from error
-            if not isinstance(result, dict):
-                raise PipelineError("Apps Script returned an unexpected response.")
-            if result.get("quotaExceeded"):
-                return result
-            if result.get("error"):
-                if result.get("error") == "unauthorized":
-                    raise PipelineError(
-                        "Apps Script rejected the token. Check the existing "
-                        "GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN secrets."
-                    )
-                raise PipelineError(
-                    f"Apps Script error {result.get('error')}: "
-                    f"{str(result.get('message') or '')[:400]}"
+                    "The deployed Apps Script /exec URL itself returned HTTP 404 "
+                    f"({safe_url}). Check the existing GOOGLE_APPS_SCRIPT_URL secret "
+                    "against Deploy > Manage deployments > Web app URL. Keep the "
+                    "existing deployment ID and /exec suffix; the token is not the "
+                    "cause of an HTTP 404."
                 )
-            if not isinstance(result.get("results"), list):
-                raise PipelineError("Apps Script response is missing its results array.")
-            return result
-        except urllib.error.HTTPError as error:
-            body = error.read().decode("utf-8", errors="replace")
-            last_error = PipelineError(f"Apps Script HTTP {error.code}: {body[:500]}")
-            if error.code not in (408, 425, 429, 500, 502, 503, 504):
-                raise last_error from error
+
+            if status == 404 and response_host == "script.googleusercontent.com":
+                raise PipelineError(
+                    "Apps Script returned its ContentService response through "
+                    f"{safe_url}, but that response URL still returned HTTP 404 "
+                    "after four GET attempts. The POST was sent only once and was "
+                    "not replayed, to avoid duplicate LanguageApp calls. Wait briefly "
+                    "and rerun the workflow; check Apps Script > Executions if it "
+                    "continues."
+                )
+
+            if status in _TRANSIENT_HTTP_STATUSES:
+                last_error = PipelineError(
+                    f"Apps Script HTTP {status} from {safe_url}: {raw[:300]}"
+                )
+            elif status < 200 or status >= 300:
+                raise PipelineError(
+                    f"Apps Script HTTP {status} from {safe_url}: {raw[:500]}"
+                )
+            else:
+                try:
+                    result = json.loads(raw)
+                except json.JSONDecodeError as error:
+                    preview = raw[:300].replace("\n", " ")
+                    raise PipelineError(
+                        "Apps Script did not return JSON from "
+                        f"{safe_url}. Confirm that the deployed web app is updated. "
+                        f"Response: {preview}"
+                    ) from error
+
+                if not isinstance(result, dict):
+                    raise PipelineError("Apps Script returned an unexpected response.")
+                if result.get("quotaExceeded"):
+                    return result
+                if result.get("error"):
+                    if result.get("error") == "unauthorized":
+                        raise PipelineError(
+                            "Apps Script rejected the token. Check the existing "
+                            "GOOGLE_APPS_SCRIPT_URL and GOOGLE_APPS_SCRIPT_TOKEN secrets."
+                        )
+                    raise PipelineError(
+                        f"Apps Script error {result.get('error')}: "
+                        f"{str(result.get('message') or '')[:400]}"
+                    )
+                if not isinstance(result.get("results"), list):
+                    raise PipelineError("Apps Script response is missing its results array.")
+                return result
         except (urllib.error.URLError, TimeoutError, OSError) as error:
             last_error = error
 
