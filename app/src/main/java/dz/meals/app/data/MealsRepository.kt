@@ -852,7 +852,15 @@ class MealsRepository(context: Context) {
                 .associateBy { it.id }
                 .toMutableMap()
             dao.getFoodItems().forEach { food ->
-                merged[food.id] = food.toIngredientMaster()
+                val catalogueMaster = food.toIngredientMaster()
+                val localMaster = merged[food.id]
+                merged[food.id] = catalogueMaster.copy(
+                    // Keep curated allergen knowledge and Algerian/Darija aliases
+                    // from the existing seed/master rows while replacing heuristic
+                    // names and categories with the canonical catalogue metadata.
+                    allergens = localMaster?.allergens.orEmpty(),
+                    aliases = (catalogueMaster.aliases + localMaster?.aliases.orEmpty()).distinct()
+                )
             }
             merged.values.sortedBy { it.nameAr }
                 .also { cachedCatalogueIngredients = it }
