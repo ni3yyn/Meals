@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-24T07:46:38.165310+00:00",
+  "generatedAt": "2026-11-24T07:58:49.735310+00:00",
   "languages": [
     "ar",
     "en",
@@ -7,7 +7,7 @@
   ],
   "provider": "Google Apps Script LanguageApp",
   "schemaVersion": 1,
-  "translationCount": 2642,
+  "translationCount": 2822,
   "translations": {
     "000d45bc-1c32-464b-be27-93c8ef039efc": {
       "ar": {
@@ -23767,6 +23767,1626 @@
         "sourceLanguage": "en",
         "sourceText": "reconstituted lime juice",
         "text": "عصير الليمون المُعاد تكوينه"
+      }
+    },
+    "c58603a0-776f-4c61-bcaf-19bee14e41f1": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822131+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "yellow corn",
+        "text": "ذرة صفراء"
+      }
+    },
+    "c589934a-acdc-485f-8781-3fa744e33522": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822166+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "palm kernel oil and fat",
+        "text": "زيت ودهن نواة النخيل"
+      }
+    },
+    "c591797a-56a3-4e69-9696-3fb7c7976e3d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822172+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "organic pumpkin seed",
+        "text": "بذور اليقطين العضوية"
+      }
+    },
+    "c5a11a26-6d5a-433f-9c2c-63ef546e04ca": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822177+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "rainbow shrimp",
+        "text": "روبيان قوس قزح"
+      }
+    },
+    "c5b895a0-12ef-4571-8bad-0080044c2459": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822181+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "milled roasted peanut",
+        "text": "الفول السوداني المحمص المطحون"
+      }
+    },
+    "c5c34bb5-f372-4461-8e01-68ad68860acd": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822185+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raw peeled lemon",
+        "text": "ليمون نيء مقشر"
+      }
+    },
+    "c5d20007-83c1-40c7-b996-d02aa56ab52c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822188+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "rosemary sprig",
+        "text": "غصن إكليل الجبل"
+      }
+    },
+    "c5d40560-de03-40a6-bb0d-5fb79f95a636": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822192+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "refined rapeseed oil",
+        "text": "زيت بذور اللفت المكرر"
+      }
+    },
+    "c5d8b660-b6ad-47eb-88f9-89d4890c12c3": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822196+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "bamboo shoot",
+        "text": "براعم الخيزران"
+      }
+    },
+    "c5e99656-6b31-4411-b04e-6e340afcea33": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822199+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "gluten free oats",
+        "text": "شوفان خالٍ من الغلوتين"
+      }
+    },
+    "c5f94820-7b5b-4ceb-903f-477b70ab040f": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822203+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "invert sugar solution",
+        "text": "محلول السكر المقلوب"
+      }
+    },
+    "c608e78e-bfb3-4697-b764-99f9b1fae210": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822206+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "caramel chocolate preparation",
+        "text": "تحضير شوكولاتة الكراميل"
+      }
+    },
+    "c60b2577-70d0-48ca-8a68-825298a79e1d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822209+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "fermented milk products",
+        "text": "منتجات الألبان المخمرة"
+      }
+    },
+    "c610f987-f999-4b63-8de3-dd485ed93b0f": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822213+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "superior quality Camargue long grain rice",
+        "text": "أرز كامارغ طويل الحبة عالي الجودة"
+      }
+    },
+    "c6199496-7198-4364-8089-676e44f109b9": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822218+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Prepacked mustard sauce",
+        "text": "صلصة الخردل المعبأة مسبقاً"
+      }
+    },
+    "c61e8b24-d339-4112-8782-8305217bb1d4": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822230+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "beef bone stock powder",
+        "text": "مسحوق مرق عظام البقر"
+      }
+    },
+    "c62438e4-f7d7-4eba-8f06-ab4e120918ad": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822234+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raw goose liver",
+        "text": "كبد الأوز النيء"
+      }
+    },
+    "c6436ed7-655a-4a8b-98b6-cdcc0908618d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822237+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "wheat protein",
+        "text": "بروتين القمح"
+      }
+    },
+    "c65a1fce-2efd-408d-818a-3aeb73de46b5": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822241+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "grade a cream",
+        "text": "كريم من الدرجة الأولى"
+      }
+    },
+    "c6657172-b7d9-4987-b0d4-41ab2b82dfde": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:41.822246+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "frozen loganberry",
+        "text": "توت لوجانبيري مجمد"
+      }
+    },
+    "c66c50d5-d283-4481-939b-7798fe379a13": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727138+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "yogurt culture",
+        "text": "بادئ الزبادي"
+      }
+    },
+    "c67e476e-ef53-4787-9a73-86476f34c23a": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727157+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "caramelised sugar",
+        "text": "سكر مكرمل"
+      }
+    },
+    "c67e9d62-8e93-4b2f-a746-3bded5fb1fcb": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727161+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "English sauce",
+        "text": "صلصة إنجليزية"
+      }
+    },
+    "c6901594-1d68-4641-8dfc-0decca2b5d50": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727165+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "French fries",
+        "text": "بطاطس مقلية"
+      }
+    },
+    "c6a1e789-7d8f-49cb-bfdc-b1de6b1f7fd7": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727168+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "orange blossom honey",
+        "text": "عسل زهر البرتقال"
+      }
+    },
+    "c6d11295-fe55-42b5-99d1-544648a8e8ff": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727172+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Yacón",
+        "text": "ياكون"
+      }
+    },
+    "c6f07841-be9e-4393-95f1-d311eb755f66": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727176+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "high oleic sunflower oil",
+        "text": "زيت دوار الشمس عالي الأوليك"
+      }
+    },
+    "c6f3e432-3e4d-4e60-aa88-4dbcb4e47fbe": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727179+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "powdered preparation with palm fat",
+        "text": "مستحضر مسحوق مع دهن النخيل"
+      }
+    },
+    "c720e3b0-343e-488a-92ea-da279315f0ee": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727182+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "preserved chili pepper",
+        "text": "الفلفل الحار المحفوظ"
+      }
+    },
+    "c736ac76-9181-4d49-a762-9a06aae2b6cf": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727185+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "malted wheat flakes",
+        "text": "رقائق القمح المملح"
+      }
+    },
+    "c740ad3c-2822-4d26-adc2-c566d7998854": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727188+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "corn syrup solids",
+        "text": "مواد صلبة من شراب الذرة"
+      }
+    },
+    "c7556052-33e0-4cbe-bfe3-bd50d9cf916d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727191+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "chocolate coating",
+        "text": "طبقة شوكولاتة"
+      }
+    },
+    "c757beaa-d20d-4822-a699-5a078c01eedb": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727195+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pork protein",
+        "text": "بروتين لحم الخنزير"
+      }
+    },
+    "c75cb775-02e3-4ca1-ab0a-ab9bf2126f4b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727199+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "soya bean paste",
+        "text": "معجون فول الصويا"
+      }
+    },
+    "c79909e4-98d4-4e19-86ee-c11f6b150f69": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727202+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "natural apricot flavouring",
+        "text": "نكهة المشمش الطبيعية"
+      }
+    },
+    "c7a4e2a0-b46c-4ef9-8f4e-4919f07c91d6": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727205+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "whitecurrant",
+        "text": "الكشمش الأبيض"
+      }
+    },
+    "c7bbd7d5-bea0-4f4e-b708-5976e397a5a6": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727208+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "organic milk proteins",
+        "text": "بروتينات الحليب العضوي"
+      }
+    },
+    "c7be31fe-fc21-448c-85a9-f946e7acdf52": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727211+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pure pasteurized orange juice",
+        "text": "عصير برتقال نقي مبستر"
+      }
+    },
+    "c7eea53f-1179-436c-8a37-41ece6929077": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727214+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "breadfruit",
+        "text": "فاكهة الخبز"
+      }
+    },
+    "c801a267-f414-416b-ba58-22abc058bc16": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:42.727218+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "citrus fibre",
+        "text": "ألياف الحمضيات"
+      }
+    },
+    "c81e4626-da01-47a7-a979-c71b0a985d14": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.742992+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Volvic natural mineral water",
+        "text": "مياه فولفيك المعدنية الطبيعية"
+      }
+    },
+    "c825a21a-be91-4b34-9b2f-b98e9ff4af4a": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743008+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "beef meat",
+        "text": "لحم البقر"
+      }
+    },
+    "c829acd6-a9d8-48f0-ac63-e80430499008": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743013+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "buckwheat grit",
+        "text": "حبيبات الحنطة السوداء"
+      }
+    },
+    "c84cf4cb-2547-47d8-813f-bc82f25e6792": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743017+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "oilseed",
+        "text": "بذور زيتية"
+      }
+    },
+    "c869b99f-3fef-493c-ac61-cd27b239e1be": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743020+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "orange liqueur",
+        "text": "مشروب كحولي بنكهة البرتقال"
+      }
+    },
+    "c87eefa4-c1f7-4c4b-8418-66413fe1b09d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743024+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "chinese chestnut",
+        "text": "الكستناء الصيني"
+      }
+    },
+    "c881acf1-bc69-42ec-948f-7a3263a722b3": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743028+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "organic potatos from France",
+        "text": "بطاطس عضوية من فرنسا"
+      }
+    },
+    "c889c69e-067f-4c0f-9eec-a2b42e99066d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743031+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "mint sprig",
+        "text": "غصن نعناع"
+      }
+    },
+    "c894faca-4566-42da-8dc8-892bc92ea869": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743034+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "curly parsley",
+        "text": "بقدونس مجعد"
+      }
+    },
+    "c8a070f5-aa2d-4e55-bc9e-9a7171cd5112": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743037+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "milk chocolate chips",
+        "text": "رقائق الشوكولاتة بالحليب"
+      }
+    },
+    "c8acdd4c-9e60-48ac-9b09-1945b626dea2": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743040+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "malted wholemeal rye flakes and flour",
+        "text": "رقائق دقيق الجاودار الكامل المملح"
+      }
+    },
+    "c8aebbac-7d9d-4dea-a341-aac4bbf83263": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743043+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "wheat flour type 850 semi-white",
+        "text": "دقيق قمح شبه أبيض من النوع 850"
+      }
+    },
+    "c8c1046c-0ac1-4a39-ae58-5f0437c48c75": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743046+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "superior quality long grain Basmati rice",
+        "text": "أرز بسمتي طويل الحبة عالي الجودة"
+      }
+    },
+    "c8c39b98-c37e-48ed-8150-274b8d1d1ae2": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743049+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "turkey skin",
+        "text": "جلد الديك الرومي"
+      }
+    },
+    "c8d211c3-6751-4176-89e5-f023487f3f4f": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743053+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "American anglerfish",
+        "text": "سمكة الصياد الأمريكية"
+      }
+    },
+    "c8e802b6-5d5b-4d04-8f20-872fa4e557fe": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743056+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "tonka bean",
+        "text": "حبوب التونكا"
+      }
+    },
+    "c8ef9f83-78c8-450b-9772-098f63af06cc": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743059+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "modified potato starch",
+        "text": "نشا البطاطس المعدل"
+      }
+    },
+    "c8f32de1-4e94-4680-b9c1-cd98cbdb250c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743063+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Piedmont hazelnut paste",
+        "text": "معجون البندق من بيدمونت"
+      }
+    },
+    "c90b54ff-62d1-4665-944f-45c81c9381d2": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743066+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "mantis shrimp",
+        "text": "جراد البحر السرعوف"
+      }
+    },
+    "c90d3dc6-2060-4880-88ee-0d96daf98a50": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:43.743070+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "vegetable oil blend",
+        "text": "مزيج من الزيوت النباتية"
+      }
+    },
+    "c918bb25-5f54-4a7a-99cb-3c301d4ae62d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629827+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "partially defatted sesame meal",
+        "text": "وجبة السمسم منزوعة الدسم جزئياً"
+      }
+    },
+    "c91af1fa-f3f7-4465-8b6c-63b86405c1d8": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629842+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "concentrated whey protein",
+        "text": "بروتين مصل اللبن المركز"
+      }
+    },
+    "c922b58d-b650-43b4-9d98-fa0af380bf64": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629846+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "crunchy cereals",
+        "text": "حبوب مقرمشة"
+      }
+    },
+    "c9742370-01a9-446e-9848-bb19dc362188": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629849+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "tapioca syrup",
+        "text": "شراب التابيوكا"
+      }
+    },
+    "c97e3970-b843-41ef-ac1e-b57cb8932f09": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629874+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raw pumpkin",
+        "text": "يقطين نيء"
+      }
+    },
+    "c97f46f1-7a0a-4c89-aefd-56d6567b1be3": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629878+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "spanish peanut",
+        "text": "الفول السوداني الإسباني"
+      }
+    },
+    "c9afe56d-f0fd-45a1-a1d2-13bf13837193": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629881+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "animal",
+        "text": "حيوان"
+      }
+    },
+    "c9b2d51b-7e3b-44a4-b72e-13790037c880": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629883+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "organic orange juice from orange juice concentrate",
+        "text": "عصير برتقال عضوي من مركز عصير البرتقال"
+      }
+    },
+    "c9b33bf6-716a-4c77-81b8-bf5c873eb859": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629886+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "drizzle of olive oil",
+        "text": "رشة من زيت الزيتون"
+      }
+    },
+    "c9c18ea8-95b6-4404-b6f3-88e992dcbe9c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629890+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "wheat flour type 1",
+        "text": "دقيق القمح من النوع 1"
+      }
+    },
+    "c9ce796d-f97c-41a7-8df2-9f730bb48b0c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629892+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "double concentrated tomato",
+        "text": "طماطم مركزة مزدوجة"
+      }
+    },
+    "c9e04f10-875e-4f93-b4e7-717310f13ade": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629895+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "lamb meat",
+        "text": "لحم الضأن"
+      }
+    },
+    "c9e179ac-6356-4158-9b15-253889e0ec08": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629897+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "dried hyacinth bean",
+        "text": "فاصولياء الياقوت المجففة"
+      }
+    },
+    "c9e4eff5-753f-4e84-997a-ddb11518c6de": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629900+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Angelica",
+        "text": "أنجليكا"
+      }
+    },
+    "ca02ce06-1869-4f8a-a706-526be12ca05c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629904+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pacific oyster",
+        "text": "محار المحيط الهادئ"
+      }
+    },
+    "ca20be44-e571-49fe-8a2d-c7e3175e7b21": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629907+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Mizuna",
+        "text": "ميزونا"
+      }
+    },
+    "ca2cb2ab-0c73-437f-8517-ce22a07972c6": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629910+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pale brown amaranth seed",
+        "text": "بذور القطيفة ذات اللون البني الفاتح"
+      }
+    },
+    "ca4bb97f-8b68-4273-8703-aae3970edf80": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629913+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "milk protein concentrate",
+        "text": "مركز بروتين الحليب"
+      }
+    },
+    "ca637309-bbbc-4138-a628-ca73b447aeec": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629915+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "caramel syrup",
+        "text": "شراب الكراميل"
+      }
+    },
+    "ca6888a9-5194-437e-9eea-860b9c6f5be0": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:44.629918+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Rye flour type 85",
+        "text": "دقيق الجاودار من النوع 85"
+      }
+    },
+    "ca6f7103-e7f7-412a-84ae-adf5c3be5fd8": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636492+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "low sodium fluid milk",
+        "text": "حليب سائل قليل الصوديوم"
+      }
+    },
+    "ca799fed-6f6f-4d07-ab78-6b2dabc7c782": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636510+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "barn eggs",
+        "text": "بيض الحظيرة"
+      }
+    },
+    "ca7ed878-d0ca-4c3b-952c-0768da8016a8": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636515+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "bran flour",
+        "text": "دقيق النخالة"
+      }
+    },
+    "ca80b5a4-a6fc-4769-afdc-30e58594a272": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636518+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "hydrolyzed wheat gluten",
+        "text": "غلوتين القمح المحلل"
+      }
+    },
+    "ca8bc39d-1ce5-45ec-90a5-a28238d6e454": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636521+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "dried peach",
+        "text": "خوخ مجفف"
+      }
+    },
+    "caa177d5-d0c3-4fa4-a374-19a428f0aea6": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636524+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "kefir ferment",
+        "text": "تخمير الكفير"
+      }
+    },
+    "caa646be-54b1-47fc-9224-9cd4b3266927": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636527+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "semi-skimmed mild yogurt",
+        "text": "زبادي خفيف نصف دسم"
+      }
+    },
+    "cab9f66a-84ae-4518-a512-aba38e234eb7": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636530+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "sprouted wheat",
+        "text": "قمح منبت"
+      }
+    },
+    "cac3c488-f7fc-40dd-a979-c9d78badb5f5": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636533+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "lard and vegetable oil shortening",
+        "text": "شحم الخنزير وزيت نباتي مهدرج"
+      }
+    },
+    "cac51773-0b6e-41ed-8bb2-2ae7f7793a91": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636536+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "refined palm oil",
+        "text": "زيت النخيل المكرر"
+      }
+    },
+    "cac7ed4d-33b2-441c-80a6-0c8e71a5de7b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636581+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "goat",
+        "text": "معزة"
+      }
+    },
+    "cacbafb4-b2ec-4c23-8424-7c71b7aea838": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636585+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "wheat scalding",
+        "text": "سلق القمح"
+      }
+    },
+    "cad01159-b7be-4e64-9b7d-0f50069f6693": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636587+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "hazelnut paste with pieces of biscuits",
+        "text": "معجون البندق مع قطع البسكويت"
+      }
+    },
+    "cadd66ba-1de8-48df-b9ac-ee3789de0f52": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636590+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "vodka",
+        "text": "فودكا"
+      }
+    },
+    "cafe7c9c-4a93-4657-a464-16ba52b5d9e5": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636592+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Braised lamb kidneys",
+        "text": "كلى خروف مطهوة ببطء"
+      }
+    },
+    "cb149fe7-ea96-4b75-908c-5e9a538467a0": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636595+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "black currant cinnamon preparation",
+        "text": "تحضير القرفة والكشمش الأسود"
+      }
+    },
+    "cb48d92d-6d12-42c1-a505-98d78a211312": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636598+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "wheat gluten",
+        "text": "غلوتين القمح"
+      }
+    },
+    "cb4fb88f-da0e-4130-baee-4dca5cbf6380": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636601+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "gluten-free wheat starch",
+        "text": "نشا القمح الخالي من الغلوتين"
+      }
+    },
+    "cb6a14cd-e79d-4581-835f-69b84a9a98c7": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636604+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "American lobster",
+        "text": "جراد البحر الأمريكي"
+      }
+    },
+    "cb721619-1e4c-41e9-b12d-5634252608b0": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:45.636607+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "iberian pork",
+        "text": "لحم الخنزير الأيبيري"
+      }
+    },
+    "cb7e98ba-5886-440b-8797-7d7e78d9344b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530124+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "lamb livers",
+        "text": "كبد الضأن"
+      }
+    },
+    "cb806b50-a4f2-498c-9890-f673bae8776d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530143+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "tuna steak",
+        "text": "شريحة تونة"
+      }
+    },
+    "cba4b72d-7b4c-43fe-a4ce-e70d58982d95": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530147+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "whole powdered chicken egg",
+        "text": "بيض دجاج كامل مجفف"
+      }
+    },
+    "cbd74529-544e-417e-bf6c-e53e62e6def3": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530151+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "gomasio",
+        "text": "غوماسيو"
+      }
+    },
+    "cbe28c14-0888-401c-9e6e-2262cb4229aa": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530154+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Grilled pork chop",
+        "text": "شريحة لحم خنزير مشوية"
+      }
+    },
+    "cbf70b5d-d6b2-43d7-9f90-fa5172dbecd3": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530158+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "shrimp flavouring",
+        "text": "نكهة الروبيان"
+      }
+    },
+    "cc0914ed-1f27-41c4-bccd-8334206581b1": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530161+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Pan-fried lamb chop fillet",
+        "text": "فيليه لحم ضأن مقلي"
+      }
+    },
+    "cc0a643a-e13b-4e87-94c0-fc7965fec109": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530164+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "grade a whole milk",
+        "text": "حليب كامل الدسم من الدرجة الأولى"
+      }
+    },
+    "cc1e8a87-5a3c-410d-bfa5-04cbb449e668": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530167+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "50-63% unsalted vegetable fat high in omega 3",
+        "text": "50 63% دهون نباتية غير مملحة غنية بأوميغا 3"
+      }
+    },
+    "cc2cf20c-f4ef-4c06-877f-b7d0beb9ceb1": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530170+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "gelatin sheet",
+        "text": "ورقة جيلاتينية"
+      }
+    },
+    "cc50226f-8dc4-48d2-83b1-7935fe05c3ef": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530172+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "coconut milk light",
+        "text": "حليب جوز الهند الخفيف"
+      }
+    },
+    "cc597462-348a-439d-afe1-a65833ca8082": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530175+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "carrot and pumpkin concentrate",
+        "text": "مركز الجزر واليقطين"
+      }
+    },
+    "cc6434bb-2344-41e7-9e82-a6302566c279": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530178+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raw pear",
+        "text": "إجاص نيء"
+      }
+    },
+    "cc809628-8877-4f1f-b18d-ec87d7a1239e": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530181+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "medium fat hard cheese",
+        "text": "جبن صلب متوسط ​​الدسم"
+      }
+    },
+    "ccd28f75-789a-4f29-b76c-5b974f3997c2": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530185+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Raw striped bass",
+        "text": "سمك القاروص المخطط الخام"
+      }
+    },
+    "ccd6f799-3df9-4502-bd63-dc6d51d7686b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530187+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "black amaranth seed",
+        "text": "بذور القطيفة السوداء"
+      }
+    },
+    "ccd91b9f-767b-4d1f-8f5c-2c5b468ff85a": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530190+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "semolina blend",
+        "text": "مزيج السميد"
+      }
+    },
+    "cce1a84a-346a-432f-8078-7605a543c14a": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530193+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "concentrated orange juice",
+        "text": "عصير برتقال مركز"
+      }
+    },
+    "ccfcd5d9-9918-411e-b8ad-7b0b54851391": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530196+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "small white beans",
+        "text": "فاصوليا بيضاء صغيرة"
+      }
+    },
+    "cd280258-4732-42ce-ac67-b6e28ad8e5d1": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:46.530200+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "fractionated coconut oil",
+        "text": "زيت جوز الهند المجزأ"
+      }
+    },
+    "cd5050c9-ffeb-4184-9c54-41045b2ad822": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356720+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "concentrated grape juice",
+        "text": "عصير عنب مركز"
+      }
+    },
+    "cd76738a-6cf9-4c83-8cd9-f5064e944432": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356739+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "almond pulp",
+        "text": "لب اللوز"
+      }
+    },
+    "cd8fe755-e9d3-48b0-842a-92113091d03b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356743+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "grilled yellow bell pepper",
+        "text": "فلفل أصفر مشوي"
+      }
+    },
+    "cda4e74b-233f-40f6-bc99-ebba84a392e0": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356747+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "coriander bunch",
+        "text": "باقات الكزبرة"
+      }
+    },
+    "ce0062c1-51d1-40c9-b15d-fba009f20419": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356750+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "ground coffee",
+        "text": "قهوة مطحونة"
+      }
+    },
+    "ce271313-22b6-49ff-b637-12347dca10a8": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356753+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Split pea flour",
+        "text": "دقيق البازلاء المجروشة"
+      }
+    },
+    "ce5c717a-fca0-4d5a-a5d2-3037b0374164": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356757+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "boysenberry juice",
+        "text": "عصير التوت الأسود"
+      }
+    },
+    "ce711687-3def-4036-9a1f-27eab5ee789b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356759+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "fruit juices and purees from concentrate",
+        "text": "عصائر الفاكهة والهريس من المركزات"
+      }
+    },
+    "ce889cd6-7980-410e-9e26-dc66e6849b68": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356762+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "honey from Spain",
+        "text": "عسل من إسبانيا"
+      }
+    },
+    "ce8bc6fc-1c67-4ebe-8bd8-85b81d83c90d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356765+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "black quinoa",
+        "text": "الكينوا السوداء"
+      }
+    },
+    "ce8e3919-fc4b-4cc3-bbf3-5ed387a51902": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356768+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raw cucumber pulp and peel",
+        "text": "لب وقشر الخيار النيء"
+      }
+    },
+    "ce98eb1f-afe6-4086-9faa-bfc3a5c99553": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356771+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "cooked grape must",
+        "text": "عصير العنب المطبوخ"
+      }
+    },
+    "ced56016-286b-426a-b282-a3afa4aa444d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356774+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "tuna egg",
+        "text": "بيض التونة"
+      }
+    },
+    "cee1967f-2381-40df-90fa-e710689ac64d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356779+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "poultry extract",
+        "text": "مستخلص الدواجن"
+      }
+    },
+    "cee57559-5192-44e4-a576-e6ff7d9eb21a": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356782+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Roasted lean lamb saddle",
+        "text": "سرج لحم الضأن المشوي قليل الدهن"
+      }
+    },
+    "cef30371-75c9-45a2-91ff-9984701242de": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356785+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "king prawns",
+        "text": "جمبري ملكي"
+      }
+    },
+    "cf055099-4445-414a-a1f6-1a42dd06d0d9": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356788+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "yellow lentils",
+        "text": "العدس الأصفر"
+      }
+    },
+    "cf1523e3-0ce4-40b5-80cb-a57855259c98": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356791+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "new potato",
+        "text": "بطاطا جديدة"
+      }
+    },
+    "cf180976-85ba-499b-afe8-1f285cbf10bd": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356794+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "chokeberry juice",
+        "text": "عصير التوت البري"
+      }
+    },
+    "cf2f657a-aea2-4ec3-af76-d52bf9222b4d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:47.356798+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "black kidney bean",
+        "text": "الفاصوليا السوداء"
+      }
+    },
+    "cf4b1647-c17e-4934-a755-aa6d7521a3fe": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065440+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "bloody milk cap",
+        "text": "غطاء حليب ملطخ بالدماء"
+      }
+    },
+    "cf56e794-0fe0-4d1f-ac82-ae78966bb104": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065456+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "ground Piedmont hazelnut",
+        "text": "بندق بيدمونت المطحون"
+      }
+    },
+    "cf5da787-ef48-4088-ad79-da59a6efa845": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065461+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "lamb leg",
+        "text": "فخذ خروف"
+      }
+    },
+    "cf74d7e1-c40d-4410-a5c7-7f34f4cd7481": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065464+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "fruit vinegar",
+        "text": "خل الفاكهة"
+      }
+    },
+    "cfd1ecf8-485f-4231-a43b-597f5015495b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065467+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "natural goat cheese flavouring",
+        "text": "نكهة جبن الماعز الطبيعية"
+      }
+    },
+    "cfd5cdb3-64cb-4bff-ade9-d1ba196c064c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065470+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "elderflower",
+        "text": "زهرة البلسان"
+      }
+    },
+    "cfe54bf1-dfa1-4379-a2d0-189d0b320e83": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065472+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "honey from the Gâtinais",
+        "text": "عسل من منطقة غاتينيه"
+      }
+    },
+    "cff22fad-4ae9-4249-a10b-571c41cbb02c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065475+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Prepacked burger sauce",
+        "text": "صلصة برجر معبأة مسبقًا"
+      }
+    },
+    "d04c54e9-d5b4-4902-be87-bf24f18efdd1": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065478+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "dried pigeon pea",
+        "text": "بازلاء الحمام المجففة"
+      }
+    },
+    "d067957a-bc54-4de2-a014-16a6fe4b9988": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065481+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "dextrinated barley flour",
+        "text": "دقيق الشعير المعالج بالدكسترين"
+      }
+    },
+    "d07c3919-511e-4446-935f-4d3befb56c38": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065484+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pork breast",
+        "text": "صدر خنزير"
+      }
+    },
+    "d088ad5a-115c-4876-8d14-a75b62f27a44": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065486+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "rapeseed",
+        "text": "بذور اللفت"
+      }
+    },
+    "d0a13aa1-38f6-4a8f-a6be-637f921ea40f": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065490+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "roasted coffee beans",
+        "text": "حبوب البن المحمصة"
+      }
+    },
+    "d0b08c94-b299-4d98-a6a3-4bd03e2fd556": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065493+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "laurel extract",
+        "text": "مستخلص الغار"
+      }
+    },
+    "d0c0ce1d-f21b-4b06-bf39-0ad58ba9665e": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065495+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "category A eggs",
+        "text": "بيض الفئة أ"
+      }
+    },
+    "d0c1fd56-301b-4724-a655-ddffda9801c9": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065499+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "savoy cabbage",
+        "text": "ملفوف سافوي"
+      }
+    },
+    "d0d9d02e-7020-4939-9d13-ad11986102b5": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065501+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pepper",
+        "text": "الفلفل"
+      }
+    },
+    "d0e266af-d0e7-4b03-9f27-52cdee83778a": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065504+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "onion-family vegetable",
+        "text": "خضار من عائلة البصل"
+      }
+    },
+    "d0eafd5b-04c0-4a1c-873a-cbdbc593b646": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065507+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "red leaf lettuce",
+        "text": "الخس ذو الأوراق الحمراء"
+      }
+    },
+    "d10321f5-cf13-4a0c-9298-46b5e997496d": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.065511+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Korean ginseng",
+        "text": "الجنسنغ الكوري"
+      }
+    },
+    "d114e2ec-497e-4178-95dc-030d14ae27e2": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918091+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "full fat soft cheese",
+        "text": "جبن طري كامل الدسم"
+      }
+    },
+    "d115c0d6-f4eb-496c-89da-3a2078d5205c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918109+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "cold pressed sunflower oil",
+        "text": "زيت دوار الشمس المعصور على البارد"
+      }
+    },
+    "d14b190f-7094-4339-99e6-c27af5ea7fff": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918113+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "damson",
+        "text": "البرقوق"
+      }
+    },
+    "d157e969-0190-4c97-85b2-24cd1026eede": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918116+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "natural turmeric flavouring",
+        "text": "نكهة الكركم الطبيعية"
+      }
+    },
+    "d16ff184-69eb-4a1c-8d81-ffcaeeba7e14": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918119+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "beef collagen",
+        "text": "كولاجين لحم البقر"
+      }
+    },
+    "d1916535-9f19-4584-93bd-3d7fa553a1f8": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918122+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raw pork shoulder",
+        "text": "كتف لحم خنزير نيء"
+      }
+    },
+    "d1a99db7-ac7b-4beb-ab1f-9836f49c84cf": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918125+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Refrigerated 30% fat thick cream",
+        "text": "كريمة سميكة مبردة 30% دهون"
+      }
+    },
+    "d1b40c04-c1c4-4df6-8dce-b36dbf604938": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918127+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "malt vinegar",
+        "text": "خل الشعير"
+      }
+    },
+    "d1b5aa8a-1278-4fcc-a4ea-22cae5c519db": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918129+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "pasteurised whole milk",
+        "text": "حليب كامل الدسم مبستر"
+      }
+    },
+    "d1d07529-e226-45d5-a3ac-e48305d39439": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918132+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "filling",
+        "text": "تعبئة"
+      }
+    },
+    "d1e7ee94-3dca-43cb-95aa-b9c1ae01788c": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918134+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "European anglerfish monkfish",
+        "text": "سمكة الصياد الأوروبية، سمكة الراهب"
+      }
+    },
+    "d225ad8e-dea8-4db0-bf87-9a9521cec7cc": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918137+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "raspberry filling",
+        "text": "حشوة التوت"
+      }
+    },
+    "d2268aea-ab53-49b7-98ff-9807ea0ed572": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918140+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "red quinoa",
+        "text": "الكينوا الحمراء"
+      }
+    },
+    "d23e1390-f64f-461a-96b9-8f7f37167007": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918143+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "goose",
+        "text": "أوزة"
+      }
+    },
+    "d24d8654-f769-4ddd-8a3e-e8bf7c0ed512": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918146+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "persimmon juice",
+        "text": "عصير الكاكي"
+      }
+    },
+    "d26c985e-f369-40f2-ae1e-51599aa98f5b": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918149+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "natural star anise aroma",
+        "text": "رائحة اليانسون النجمي الطبيعي"
+      }
+    },
+    "d26e722f-40d2-4c99-9d09-b48d148d55f2": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918151+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "whole milk mozzarella",
+        "text": "جبنة موزاريلا مصنوعة من الحليب الكامل"
+      }
+    },
+    "d27a392d-62e5-4aaa-9de9-4db8b81f51b9": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918154+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "essential orange oil flavour",
+        "text": "نكهة زيت البرتقال العطري"
+      }
+    },
+    "d29c605b-c481-4f4d-be80-a56cfe833d7f": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918157+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "natural peanut flavouring",
+        "text": "نكهة الفول السوداني الطبيعية"
+      }
+    },
+    "d2adeb53-2665-4f30-9832-df2c9aafb73e": {
+      "ar": {
+        "generatedAt": "2026-11-24T07:58:48.918160+00:00",
+        "provider": "Google Apps Script LanguageApp",
+        "sourceLanguage": "en",
+        "sourceText": "Greenland halibut",
+        "text": "سمك الهلبوت في جرينلاند"
       }
     },
     "d35046b6-8ed7-4713-8f98-7ee31e25c0dd": {

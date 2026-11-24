@@ -24,7 +24,7 @@
     "foodOnMatchedGroups": 39,
     "foodOnAmbiguousGroups": 1,
     "offMatchCoveragePercent": 47.54,
-    "missingArabicNames": 795,
+    "missingArabicNames": 615,
     "missingEnglishNames": 1,
     "missingFrenchNames": 1595,
     "fallbackOtherCategory": 319,
@@ -51,11 +51,11 @@
   "machineNameTranslations": {
     "provider": "Google Apps Script LanguageApp",
     "appliedByLanguage": {
-      "ar": 2640,
+      "ar": 2820,
       "en": 0,
       "fr": 1
     },
-    "totalApplied": 2641,
+    "totalApplied": 2821,
     "ignoredExistingSourceNamesByLanguage": {
       "ar": 0,
       "en": 0,
