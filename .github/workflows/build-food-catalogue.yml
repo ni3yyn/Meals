@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache/midati-food-taxonomies
-          key: midati-food-taxonomies-\${{ env.OFF_COMMIT }}-\${{ env.FOODON_COMMIT }}
+          key: midati-food-taxonomies-${{ env.OFF_COMMIT }}-${{ env.FOODON_COMMIT }}
 
       - name: Download and verify source taxonomies
         shell: bash

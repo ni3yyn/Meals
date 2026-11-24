@@ -82,9 +82,16 @@ fr: pois chiche
             )
             categories.write_text(json.dumps({
                 "categories": [
-                    {"id": "vegetables", "names": {"ar": "الخضروات", "en": "Vegetables", "fr": "Légumes"}},
-                    {"id": "legumes", "names": {"ar": "البقوليات", "en": "Legumes", "fr": "Légumineuses"}},
-                    {"id": "other_foods", "names": {"ar": "أخرى", "en": "Other", "fr": "Autres"}},
+                    {"id":"vegetables","names":{"ar":"vegetables","en":"vegetables","fr":"vegetables"}},
+{"id":"legumes","names":{"ar":"legumes","en":"legumes","fr":"legumes"}},
+{"id":"other_foods","names":{"ar":"other_foods","en":"other_foods","fr":"other_foods"}},
+{"id":"grains_cereals","names":{"ar":"grains_cereals","en":"grains_cereals","fr":"grains_cereals"}},
+{"id":"meat_offal","names":{"ar":"meat_offal","en":"meat_offal","fr":"meat_offal"}},
+{"id":"oils_fats","names":{"ar":"oils_fats","en":"oils_fats","fr":"oils_fats"}},
+{"id":"eggs","names":{"ar":"eggs","en":"eggs","fr":"eggs"}},
+{"id":"pasta_bakery","names":{"ar":"pasta_bakery","en":"pasta_bakery","fr":"pasta_bakery"}},
+{"id":"sauces_condiments","names":{"ar":"sauces_condiments","en":"sauces_condiments","fr":"sauces_condiments"}},
+{"id":"dairy","names":{"ar":"dairy","en":"dairy","fr":"dairy"}}
                 ]
             }, ensure_ascii=False), encoding="utf-8")
             recipes.write_text(json.dumps({

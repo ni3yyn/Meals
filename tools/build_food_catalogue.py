@@ -10,7 +10,6 @@ never derived from names, slugs, translations or category labels.
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
 import json
 import re
@@ -247,18 +246,19 @@ def parse_off_taxonomy(text: str) -> list[dict[str, Any]]:
 def parse_foodon_tsv(text: str) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
     parents: dict[str, set[str]] = defaultdict(set)
     label_index: dict[str, set[str]] = defaultdict(set)
-    reader = csv.reader(text.splitlines(), delimiter="\t")
-    next(reader, None)
+    lines = text.splitlines()
     allowed_types = {
         "label", "label (alternative)", "synonym",
         "synonym (exact)", "synonym (broad)", "synonym (related)",
     }
-    for row in reader:
+    for line in lines[1:]:
+        row = line.split("\t")
         if len(row) < 4:
             continue
         subject = row[0].strip().strip("<>")
         if "FOODON_" not in subject:
             continue
+        parents[subject]
         parent = row[1].strip().strip("<>")
         if parent:
             parents[subject].add(parent)
