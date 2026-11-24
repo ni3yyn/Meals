@@ -38,6 +38,10 @@ function doPost(event) {
       return jsonResponse_({ error: "unauthorized" });
     }
 
+    if (request.kind === "food_items") {
+      return jsonResponse_(translateFoodItemsBatch_(request));
+    }
+
     const recipes = request.recipes;
     if (!Array.isArray(recipes) || recipes.length < 1 || recipes.length > MIDATI_MAX_BATCH_SIZE) {
       return jsonResponse_({
@@ -84,9 +88,13 @@ function doPost(event) {
       deferred: deferred
     });
   } catch (error) {
+    const message = String(error && error.message ? error.message : error).slice(0, 500);
+    const quotaExceeded = /too many times|quota|limit exceeded|service using too much computer time/i
+      .test(message);
     return jsonResponse_({
-      error: "request_failed",
-      message: String(error && error.message ? error.message : error).slice(0, 500)
+      error: quotaExceeded ? "translation_quota_exceeded" : "request_failed",
+      quotaExceeded: quotaExceeded,
+      message: message
     });
   }
 }
@@ -109,6 +117,72 @@ function testMidatiTranslationService() {
   const result = LanguageApp.translate("Tomate, pimiento y aceite de oliva", "es", "ar");
   Logger.log("Spanish-to-Arabic test: " + result);
   return result;
+}
+
+/**
+ * Translate up to 20 generic food-item names in one LanguageApp call.
+ * Request: {kind:'food_items', sourceLanguage:'en', targetLanguage:'ar',
+ *           items:[{id:'<stable UUID>', text:'chickpeas'}]}
+ */
+function translateFoodItemsBatch_(request) {
+  const sourceLanguage = String(request.sourceLanguage || "en").toLowerCase();
+  const targetLanguage = String(request.targetLanguage || "").toLowerCase();
+  const supportedLanguages = ["ar", "en", "fr"];
+
+  if (supportedLanguages.indexOf(sourceLanguage) < 0 ||
+      supportedLanguages.indexOf(targetLanguage) < 0 ||
+      sourceLanguage === targetLanguage) {
+    return {
+      error: "unsupported_language",
+      message: "Use different source/target language codes from ar, en, fr."
+    };
+  }
+
+  const items = request.items;
+  if (!Array.isArray(items) || items.length < 1 || items.length > MIDATI_MAX_BATCH_SIZE) {
+    return {
+      error: "invalid_batch_size",
+      message: "Send between 1 and " + MIDATI_MAX_BATCH_SIZE + " food names per request."
+    };
+  }
+
+  const validItems = items.map(function (item) {
+    item = item || {};
+    return { id: String(item.id || ""), text: String(item.text || "") };
+  });
+  if (validItems.some(function (item) { return !item.id || !item.text.trim(); })) {
+    return {
+      error: "invalid_food_item",
+      message: "Every food item requires a stable ID and a non-empty source name."
+    };
+  }
+
+  const html = validItems.map(function (item, index) {
+    return '<p id="midati-food-field-' + index + '">' +
+      protectNumbersAsHtml_(item.text) + "</p>";
+  }).join("\n");
+
+  const translatedHtml = LanguageApp.translate(
+    html, sourceLanguage, targetLanguage, { contentType: "html" }
+  );
+
+  const results = validItems.map(function (item, index) {
+    const pattern = new RegExp(
+      '<p\\b[^>]*\\bid="midati-food-field-' + index +
+      '"[^>]*>([\\s\\S]*?)<\\/p>',
+      "i"
+    );
+    const match = translatedHtml.match(pattern);
+    if (!match) throw new Error("Translation response lost food item marker " + index + ".");
+    const translatedText = htmlToText_(match[1]);
+    if (!translatedText) throw new Error("Translation returned an empty name for item " + item.id + ".");
+    return { id: item.id, translatedText: translatedText };
+  });
+
+  return {
+    ok: true, sourceLanguage: sourceLanguage, targetLanguage: targetLanguage,
+    results: results, quotaExceeded: false
+  };
 }
 
 function translateRecipe_(recipe) {
