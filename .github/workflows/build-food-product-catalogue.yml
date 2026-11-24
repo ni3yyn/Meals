@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "data/recipes/ar/recipes.json"
+      - "data/products/categories.json"
       - "tools/build_food_product_catalogue.py"
       - "tools/test_food_product_catalogue.py"
       - ".github/workflows/build-food-product-catalogue.yml"
@@ -58,7 +59,15 @@ jobs:
           catalogue = json.loads(Path("data/products/catalogue.json").read_text(encoding="utf-8"))
           mapping = json.loads(Path("data/products/recipe-ingredient-map.json").read_text(encoding="utf-8"))
           audit = json.loads(Path("data/products/build-audit.json").read_text(encoding="utf-8"))
+          category_data = json.loads(Path("data/products/categories.json").read_text(encoding="utf-8"))
           products = catalogue.get("products") or []
+          categories = category_data.get("categories") or []
+          category_ids = {item.get("id") for item in categories}
+          subcategory_parent = {
+              child.get("id"): item.get("id")
+              for item in categories
+              for child in item.get("subcategories", [])
+          }
           ids = [item.get("id") for item in products]
           english = [
               " ".join(str(item.get("names", {}).get("en") or "").casefold().split())
@@ -74,6 +83,12 @@ jobs:
               raise SystemExit("No recipe ingredient mappings were generated.")
           if any(target not in set(ids) for target in links.values()):
               raise SystemExit("A recipe ingredient mapping points to a missing product ID.")
+          for product in products:
+              if product.get("categoryId") not in category_ids:
+                  raise SystemExit(f"Invalid category ID on product {product.get('id')}.")
+              subcategory_id = product.get("subcategoryId")
+              if subcategory_id is not None and subcategory_parent.get(subcategory_id) != product.get("categoryId"):
+                  raise SystemExit(f"Invalid subcategory relationship on product {product.get('id')}.")
           counts = audit.get("catalogueCounts") or {}
           if counts.get("mappedRecipeIngredientIds") != len(links):
               raise SystemExit("Audit mapping count does not match the mapping file.")
