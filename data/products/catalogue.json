@@ -1921,24 +1921,24 @@
       ]
     },
     {
-      "id": "ceddd74d-b7a4-5791-9e77-8ddedb5311ae",
+      "id": "orc-ing-cb6ade5e713f3944caa5",
       "names": {
-        "ar": null,
+        "ar": "مشروب اللوز غير المحلى",
         "en": "almond milk",
         "fr": "lait d'amande"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
-        "g",
-        "kg"
+        "كوب",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
       "subcategoryId": "foodsub-dairy-milk",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Almond milk, unsweetened"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -1950,31 +1950,6 @@
           "FOODON_00003157"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-cb6ade5e713f3944caa5",
-      "names": {
-        "ar": "مشروب اللوز غير المحلى",
-        "en": "Almond milk, unsweetened",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-cb6ade5e713f3944caa5",
         "orc-ing-fa1788799f2bfc090ea6"
@@ -4400,23 +4375,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "ae7fe069-4799-5f93-a1ae-41aa3853ceec",
+      "id": "orc-ing-2d9c29bf9eace6367636",
       "names": {
         "ar": "شار قطبي شمالي",
         "en": "arctic char",
         "fr": "Omble chevalier"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-seafood",
       "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "سمك الشار القطبي (Arctic char) مطبوخ"
+        ],
+        "en": [
+          "Arctic char, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -4428,30 +4405,6 @@
           "FOODON_03411332"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-2d9c29bf9eace6367636",
-      "names": {
-        "ar": "سمك الشار القطبي (Arctic char) مطبوخ",
-        "en": "Arctic char, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-2d9c29bf9eace6367636"
       ]
@@ -5082,23 +5035,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "55ce385d-e31b-5db8-b291-2dd38cbbdb4d",
+      "id": "orc-ing-605ef77a3a760ac30d1e",
       "names": {
         "ar": "هليون",
         "en": "asparagus",
         "fr": "asperge"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "piece",
+        "ربطة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "الهليون المطبوخ"
+        ],
         "en": [
+          "Asparagus, cooked",
           "asparagus spears"
         ],
         "fr": [
@@ -5116,31 +5071,6 @@
           "FOODON_03311349"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-605ef77a3a760ac30d1e",
-      "names": {
-        "ar": "الهليون المطبوخ",
-        "en": "Asparagus, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "ربطة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-605ef77a3a760ac30d1e",
         "orc-ing-7de2967aa8d388ebdd5a"
@@ -6792,23 +6722,25 @@
       ]
     },
     {
-      "id": "87fba8b8-9dcd-5785-9242-7e2b33770bab",
+      "id": "orc-ing-28331859b6b509ad22b8",
       "names": {
         "ar": "شعير",
         "en": "barley",
         "fr": "orge"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-nuts-seeds",
       "subcategoryId": "foodsub-nuts-seeds",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "شعير لؤلؤي مطبوخ"
+        ],
+        "en": [
+          "Barley, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -6820,7 +6752,9 @@
           "FOODON_00003108"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-28331859b6b509ad22b8"
+      ]
     },
     {
       "id": "ec817303-74ce-5d45-b410-a8f758827e9c",
@@ -6849,32 +6783,6 @@
         "openFoodFactsIngredientTerm": "barley and wheat malt"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-28331859b6b509ad22b8",
-      "names": {
-        "ar": "شعير لؤلؤي مطبوخ",
-        "en": "Barley, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-oats",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-28331859b6b509ad22b8"
-      ]
     },
     {
       "id": "4fee6d7e-d370-5dcc-9f50-cbe6dd098a7f",
@@ -7634,24 +7542,27 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-basmati",
+      "id": "orc-ing-9eaf71e1b99705c02421",
       "names": {
         "ar": "بسمتي",
         "en": "basmati rice",
         "fr": "riz basmati"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-grains",
       "subcategoryId": "foodsub-grains-rice",
       "aliases": {
         "ar": [
-          "أرز بسمتي"
+          "أرز بسمتي",
+          "أرز بسمتي مطبوخ"
         ],
         "en": [
           "Basmati rice",
+          "Basmati rice, cooked",
           "basmati"
         ],
         "fr": []
@@ -7667,33 +7578,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-9eaf71e1b99705c02421",
         "orc-ing-unitools-basmati"
-      ]
-    },
-    {
-      "id": "orc-ing-9eaf71e1b99705c02421",
-      "names": {
-        "ar": "أرز بسمتي مطبوخ",
-        "en": "Basmati rice, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-rice",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-9eaf71e1b99705c02421"
       ]
     },
     {
@@ -8372,21 +8258,25 @@
       ]
     },
     {
-      "id": "orc-ing-unitools-beefstock",
+      "id": "orc-ing-8b5b786d36559d82216f",
       "names": {
-        "ar": "مرق لحم البقر",
+        "ar": "مرق لحم بقري قليل الصوديوم",
         "en": "beef broth",
         "fr": "bouillon de bœuf"
       },
       "acceptedUnits": [
-        "ml"
+        "ml",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-meat",
       "subcategoryId": "foodsub-meat-red",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "مرق لحم البقر"
+        ],
         "en": [
+          "Beef broth, low sodium",
           "Beef stock",
           "beef stock"
         ],
@@ -8405,34 +8295,9 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-8b5b786d36559d82216f",
         "orc-ing-unitools-beefstock",
         "orc-ing-unitools-stock"
-      ]
-    },
-    {
-      "id": "orc-ing-8b5b786d36559d82216f",
-      "names": {
-        "ar": "مرق لحم بقري قليل الصوديوم",
-        "en": "Beef broth, low sodium",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-meat",
-      "subcategoryId": "foodsub-meat-red",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-8b5b786d36559d82216f"
       ]
     },
     {
@@ -9913,7 +9778,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-pepper",
+      "id": "orc-ing-365ca8051a92d489cc4e",
       "names": {
         "ar": "فلفل حلو",
         "en": "bell pepper",
@@ -9928,10 +9793,14 @@
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [
-          "الفلفل الحلو"
+          "الفلفل الحلو",
+          "فلفل أحمر",
+          "فلفل أخضر"
         ],
         "en": [
           "Bell pepper",
+          "Bell pepper, green",
+          "Bell pepper, red",
           "mixed bell peppers",
           "mixed peppers",
           "sweet pepper"
@@ -9953,35 +9822,12 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-365ca8051a92d489cc4e",
+        "orc-ing-42192f78bcc11127e5d6",
+        "orc-ing-8a8e9968d31593cc7113",
+        "orc-ing-e0089c5b2cef7a218be7",
         "orc-ing-unitools-pepper",
         "orc-ing-unitools-sweetpepper"
-      ]
-    },
-    {
-      "id": "orc-ing-365ca8051a92d489cc4e",
-      "names": {
-        "ar": "فلفل أخضر",
-        "en": "Bell pepper, green",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-fruit",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-365ca8051a92d489cc4e",
-        "orc-ing-42192f78bcc11127e5d6"
       ]
     },
     {
@@ -11031,22 +10877,28 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-blackbeans",
+      "id": "orc-ing-45fd0e4b3536da9b03fa",
       "names": {
-        "ar": "الفاصوليا السوداء",
+        "ar": "الفاصوليا السوداء المطبوخة",
         "en": "black bean",
         "fr": "haricot noir"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-legumes",
       "subcategoryId": "foodsub-legumes-beans",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "الفاصوليا السوداء"
+        ],
         "en": [
           "Black beans",
+          "Black beans, cooked",
+          "Black beans, cooked: from 350 g dry, cooked",
           "black beans",
           "black field beans"
         ],
@@ -11064,6 +10916,9 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-45fd0e4b3536da9b03fa",
+        "orc-ing-5c73bb5ce1b538738d37",
+        "orc-ing-b1b2ffebb3a77ca6eaf2",
         "orc-ing-unitools-blackbeans"
       ]
     },
@@ -11094,62 +10949,6 @@
         "openFoodFactsIngredientTerm": "black bean flour"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-45fd0e4b3536da9b03fa",
-      "names": {
-        "ar": "الفاصوليا السوداء المطبوخة",
-        "en": "Black beans, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-45fd0e4b3536da9b03fa",
-        "orc-ing-b1b2ffebb3a77ca6eaf2"
-      ]
-    },
-    {
-      "id": "orc-ing-5c73bb5ce1b538738d37",
-      "names": {
-        "ar": "الفاصوليا السوداء المطبوخة",
-        "en": "Black beans, cooked: from 350 g dry, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-5c73bb5ce1b538738d37"
-      ]
     },
     {
       "id": "76f1e6a0-66df-5bff-8b47-5f8a8a9dfde7",
@@ -15998,7 +15797,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "f73f52ae-3011-5315-a2e4-e14547edceef",
+      "id": "orc-ing-0e91fc44449459b77aaf",
       "names": {
         "ar": "قنبيط أخضر",
         "en": "broccoli",
@@ -16006,15 +15805,18 @@
       },
       "acceptedUnits": [
         "g",
-        "kg",
-        "piece"
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "بروكلي مطهو على البخار"
+        ],
         "en": [
+          "Broccoli, steamed",
           "broccoli cuts"
         ],
         "fr": [
@@ -16034,7 +15836,11 @@
           "FOODON_03301713"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-0e91fc44449459b77aaf",
+        "orc-ing-5b3163a3eaaedb21579b",
+        "orc-ing-f32644b695284cf1054d"
+      ]
     },
     {
       "id": "cd5fdda9-8d5d-5e2e-a5bd-ecbd79c0f469",
@@ -16105,36 +15911,6 @@
         ]
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-0e91fc44449459b77aaf",
-      "names": {
-        "ar": "بروكلي مطهو على البخار",
-        "en": "Broccoli, steamed",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-beverages",
-      "subcategoryId": "foodsub-beverages-tea",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-0e91fc44449459b77aaf",
-        "orc-ing-5b3163a3eaaedb21579b",
-        "orc-ing-f32644b695284cf1054d"
-      ]
     },
     {
       "id": "orc-ing-unitools-brokenrice",
@@ -16535,23 +16311,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "e7691a83-2979-513e-a63f-ee45854ddcc5",
+      "id": "orc-ing-0f085d204f7fda6ab6ed",
       "names": {
         "ar": "أرز أسمر",
         "en": "brown rice",
         "fr": "riz brun"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-grains",
       "subcategoryId": "foodsub-grains-rice",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "أرز بني مطبوخ"
+        ],
+        "en": [
+          "Brown rice, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -16561,30 +16339,6 @@
         "openFoodFactsIngredientTerm": "brown rice",
         "ciqualFoodCode": "9102"
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-0f085d204f7fda6ab6ed",
-      "names": {
-        "ar": "أرز بني مطبوخ",
-        "en": "Brown rice, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-rice",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-0f085d204f7fda6ab6ed",
         "orc-ing-875ab6324f3daa078bd6"
@@ -17166,23 +16920,24 @@
       ]
     },
     {
-      "id": "c0322712-3221-56f5-a922-85d170f518ea",
+      "id": "orc-ing-4d78717580ed61f5459b",
       "names": {
         "ar": "برغل",
         "en": "bulgur",
         "fr": "boulghour"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-nuts-seeds",
       "subcategoryId": "foodsub-nuts-seeds",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "البرغل المطبوخ"
+        ],
         "en": [
+          "Bulgur, cooked",
           "bulgar",
           "bulgur wheat"
         ],
@@ -17201,30 +16956,6 @@
           "FOODON_00003143"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-4d78717580ed61f5459b",
-      "names": {
-        "ar": "البرغل المطبوخ",
-        "en": "Bulgur, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-4d78717580ed61f5459b"
       ]
@@ -18076,23 +17807,27 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-cabbage",
+      "id": "orc-ing-179b98f9fbaa37821b57",
       "names": {
-        "ar": "كرنب",
+        "ar": "الملفوف الأخضر",
         "en": "cabbage",
         "fr": "chou"
       },
       "acceptedUnits": [
         "g",
-        "piece"
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "كرنب"
+        ],
         "en": [
-          "Cabbage"
+          "Cabbage",
+          "Cabbage, green"
         ],
         "fr": [
           "choux"
@@ -18110,36 +17845,10 @@
         ]
       },
       "recipeIngredientIds": [
-        "orc-ing-unitools-cabbage"
-      ]
-    },
-    {
-      "id": "orc-ing-179b98f9fbaa37821b57",
-      "names": {
-        "ar": "الملفوف الأخضر",
-        "en": "Cabbage, green",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-leafy",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
         "orc-ing-179b98f9fbaa37821b57",
         "orc-ing-588fa57f7a106f0a2ae1",
-        "orc-ing-f0ba9c7c074ccbd0726c"
+        "orc-ing-f0ba9c7c074ccbd0726c",
+        "orc-ing-unitools-cabbage"
       ]
     },
     {
@@ -21458,24 +21167,27 @@
       ]
     },
     {
-      "id": "orc-ing-unitools-cassava",
+      "id": "orc-ing-c7d2f4a581e2e019b387",
       "names": {
         "ar": "بفرة",
         "en": "cassava",
         "fr": "manioc"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "piece"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [
-          "الكسافا"
+          "الكسافا",
+          "الكسافا المطبوخة"
         ],
         "en": [
           "Cassava",
+          "Yuca, boiled",
           "cassava root",
           "manioc",
           "manioc root",
@@ -21500,6 +21212,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-c7d2f4a581e2e019b387",
+        "orc-ing-c81e2d120344a7effe51",
         "orc-ing-unitools-cassava"
       ]
     },
@@ -23039,15 +22753,13 @@
       ]
     },
     {
-      "id": "15000e31-d529-5cca-89f0-2bd1e5dc9d7c",
+      "id": "orc-ing-409b6c44622fd4d30569",
       "names": {
-        "ar": null,
+        "ar": "قرع",
         "en": "chayotte",
         "fr": "chayotte"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
@@ -23056,6 +22768,7 @@
       "aliases": {
         "ar": [],
         "en": [
+          "Chayote",
           "chayote"
         ],
         "fr": [
@@ -23075,27 +22788,32 @@
           "FOODON_03411730"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-409b6c44622fd4d30569"
+      ]
     },
     {
-      "id": "caf0a5aa-30bc-5f1f-a1e9-face8fdea9fa",
+      "id": "orc-ing-1079641b7ae33d68ac15",
       "names": {
         "ar": "جبنة تشيدر",
         "en": "cheddar",
         "fr": "fromage cheddar"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
-        "g",
-        "kg"
+        "piece",
+        "شريحة",
+        "كوب",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
       "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "جبنة شيدر قليلة الدسم"
+        ],
         "en": [
+          "Cheddar, reduced fat",
           "cheddar cheese",
           "cheddar cheese from cow's milk"
         ],
@@ -23112,7 +22830,12 @@
           "FOODON_03302458"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-1079641b7ae33d68ac15",
+        "orc-ing-8fe49e03419dd1502ef8",
+        "orc-ing-d0c98a1558d66fba3304",
+        "orc-ing-f7db927ad23939f718d1"
+      ]
     },
     {
       "id": "orc-ing-unitools-curds",
@@ -23171,38 +22894,6 @@
         "openFoodFactsIngredientTerm": "cheddar flavouring"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-1079641b7ae33d68ac15",
-      "names": {
-        "ar": "جبنة شيدر قليلة الدسم",
-        "en": "Cheddar, reduced fat",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "شريحة",
-        "كوب",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-cheese",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-1079641b7ae33d68ac15",
-        "orc-ing-8fe49e03419dd1502ef8",
-        "orc-ing-d0c98a1558d66fba3304",
-        "orc-ing-f7db927ad23939f718d1"
-      ]
     },
     {
       "id": "ee039515-d95c-59a6-bd41-eeb2ee0a4d04",
@@ -24209,16 +23900,16 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "aa5d92ec-5ae8-579f-8d8c-f95902f06305",
+      "id": "orc-ing-2cf21cee44f130e71246",
       "names": {
-        "ar": null,
+        "ar": "صدر دجاج مطبوخ",
         "en": "chicken breast",
         "fr": "blanc de poulet"
       },
       "acceptedUnits": [
         "g",
-        "kg",
-        "piece"
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-poultry",
@@ -24226,6 +23917,7 @@
       "aliases": {
         "ar": [],
         "en": [
+          "Chicken breast, cooked",
           "chicken breast meat"
         ],
         "fr": [
@@ -24244,32 +23936,6 @@
           "FOODON_03303012"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-2cf21cee44f130e71246",
-      "names": {
-        "ar": "صدر دجاج مطبوخ",
-        "en": "Chicken breast, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-poultry",
-      "subcategoryId": "foodsub-poultry-chicken",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-2cf21cee44f130e71246",
         "orc-ing-396f0e4f8d06f7a8b63b",
@@ -24313,21 +23979,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-chickenstock",
+      "id": "orc-ing-bf9df614f0e7bfa0c0eb",
       "names": {
-        "ar": "مرق الدجاج",
+        "ar": "مرق دجاج قليل الصوديوم",
         "en": "chicken broth",
         "fr": "Bouillon de poulet"
       },
       "acceptedUnits": [
-        "ml"
+        "ml",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-poultry",
       "subcategoryId": "foodsub-poultry-chicken",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "مرق الدجاج"
+        ],
         "en": [
+          "Chicken broth, low sodium",
           "Chicken stock",
           "chicken bone broth",
           "chicken bone stock",
@@ -24345,33 +24015,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-bf9df614f0e7bfa0c0eb",
         "orc-ing-unitools-chickenstock"
-      ]
-    },
-    {
-      "id": "orc-ing-bf9df614f0e7bfa0c0eb",
-      "names": {
-        "ar": "مرق دجاج قليل الصوديوم",
-        "en": "Chicken broth, low sodium",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-poultry",
-      "subcategoryId": "foodsub-poultry-chicken",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-bf9df614f0e7bfa0c0eb"
       ]
     },
     {
@@ -25133,15 +24778,14 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "fbc07f5c-e2db-5dcc-914c-6cb56f9d4e6e",
+      "id": "orc-ing-11f5f999e7961a002940",
       "names": {
-        "ar": null,
+        "ar": "فخذ دجاج مطبوخ منزوع الجلد",
         "en": "chicken thigh",
         "fr": "cuisse de poulet"
       },
       "acceptedUnits": [
         "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
@@ -25150,6 +24794,7 @@
       "aliases": {
         "ar": [],
         "en": [
+          "Chicken thigh, skinless, cooked",
           "chicken drumstick"
         ],
         "fr": [
@@ -25168,7 +24813,14 @@
           "FOODON_02020219"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-11f5f999e7961a002940",
+        "orc-ing-28442d100a4159f7c347",
+        "orc-ing-7b3d75bcb857387b827c",
+        "orc-ing-b8bacc51ee24fe427c49",
+        "orc-ing-efcce5eda7019b6eaa57",
+        "orc-ing-f50439ed8a4f2b557bf4"
+      ]
     },
     {
       "id": "2c0297d3-4ee3-5759-9f9a-5f27412d352e",
@@ -25197,38 +24849,6 @@
         "openFoodFactsIngredientTerm": "chicken thigh fillet"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-11f5f999e7961a002940",
-      "names": {
-        "ar": "فخذ دجاج مطبوخ منزوع الجلد",
-        "en": "Chicken thigh, skinless, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-poultry",
-      "subcategoryId": "foodsub-poultry-chicken",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-11f5f999e7961a002940",
-        "orc-ing-28442d100a4159f7c347",
-        "orc-ing-7b3d75bcb857387b827c",
-        "orc-ing-b8bacc51ee24fe427c49",
-        "orc-ing-efcce5eda7019b6eaa57",
-        "orc-ing-f50439ed8a4f2b557bf4"
-      ]
     },
     {
       "id": "de3243c2-d16a-5232-a2a0-e3120f8aaba1",
@@ -25346,24 +24966,28 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-chickpeas",
+      "id": "orc-ing-0598ae451cb7535ac225",
       "names": {
         "ar": "حمص شائع",
         "en": "chickpea",
         "fr": "pois chiche"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-legumes",
       "subcategoryId": "foodsub-legumes-chickpeas",
       "aliases": {
         "ar": [
-          "الحمص"
+          "الحمص",
+          "حمص مطبوخ"
         ],
         "en": [
           "Chickpeas",
+          "Chickpeas, cooked",
           "chick pea",
           "chick peas",
           "chickpeas",
@@ -25386,6 +25010,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-0598ae451cb7535ac225",
+        "orc-ing-b1476a423bde7a3c4648",
         "orc-ing-unitools-chickpeas"
       ]
     },
@@ -25493,34 +25119,6 @@
         "openFoodFactsIngredientTerm": "chickpea protein"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-0598ae451cb7535ac225",
-      "names": {
-        "ar": "حمص مطبوخ",
-        "en": "Chickpeas, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-legumes",
-      "subcategoryId": "foodsub-legumes-chickpeas",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-0598ae451cb7535ac225",
-        "orc-ing-b1476a423bde7a3c4648"
-      ]
     },
     {
       "id": "a2ee848f-536c-5c09-9610-a9ad25a602e6",
@@ -28086,23 +27684,24 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "79113d8a-1503-53e0-a137-bde042d52d31",
+      "id": "orc-ing-54db5d15fc2dcf5021e2",
       "names": {
         "ar": "ملزمي",
         "en": "clam",
         "fr": "palourde"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-seafood",
       "subcategoryId": "foodsub-seafood-molluscs",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "المحار المطبوخ"
+        ],
         "en": [
+          "Clams, cooked",
           "clams"
         ],
         "fr": [
@@ -28116,7 +27715,9 @@
         "openFoodFactsIngredientTerm": "clam",
         "ciqualFoodCode": "10017"
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-54db5d15fc2dcf5021e2"
+      ]
     },
     {
       "id": "2aedb5b9-138b-5b6f-82a8-814ebac1b5b6",
@@ -28173,32 +27774,6 @@
         "openFoodFactsIngredientTerm": "clam or mussel"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-54db5d15fc2dcf5021e2",
-      "names": {
-        "ar": "المحار المطبوخ",
-        "en": "Clams, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-54db5d15fc2dcf5021e2"
-      ]
     },
     {
       "id": "2bd26aaa-b8d9-56c2-85f1-41ff38563bc0",
@@ -29213,22 +28788,27 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-cocoa",
+      "id": "orc-ing-4a45e5b197ec1f8b6538",
       "names": {
         "ar": "مسحوق الكاكاو",
         "en": "cocoa powder",
         "fr": "poudre de cacao"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-nuts-seeds",
       "subcategoryId": "foodsub-nuts-seeds",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "مسحوق الكاكاو غير المحلى"
+        ],
         "en": [
-          "Cocoa powder"
+          "Cocoa powder",
+          "Cocoa powder, unsweetened"
         ],
         "fr": [
           "cacao en poudre"
@@ -29245,6 +28825,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-4a45e5b197ec1f8b6538",
+        "orc-ing-6bc2759ebbbac1e76515",
         "orc-ing-unitools-cocoa"
       ]
     },
@@ -29277,34 +28859,6 @@
         "openFoodFactsIngredientTerm": "cocoa powder processed with alkali"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-4a45e5b197ec1f8b6538",
-      "names": {
-        "ar": "مسحوق الكاكاو غير المحلى",
-        "en": "Cocoa powder, unsweetened",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-4a45e5b197ec1f8b6538",
-        "orc-ing-6bc2759ebbbac1e76515"
-      ]
     },
     {
       "id": "82f5a4e7-02ae-55fd-9dce-6e1817def735",
@@ -29456,23 +29010,26 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "191cc4ef-5572-590b-8e36-f038736bdb13",
+      "id": "orc-ing-1f50e7918c1096e1d31f",
       "names": {
         "ar": "نارجيل",
         "en": "coconut",
         "fr": "noix de coco"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "جوز هند مبشور غير محلى"
+        ],
+        "en": [
+          "Coconut, shredded unsweetened"
+        ],
         "fr": [
           "coco"
         ]
@@ -29489,7 +29046,10 @@
           "FOODON_03411536"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-1f50e7918c1096e1d31f",
+        "orc-ing-91f6dd3d56f275ad9f91"
+      ]
     },
     {
       "id": "ac56d154-7608-5aa7-a6d5-538f9d7caf15",
@@ -29924,34 +29484,6 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-1f50e7918c1096e1d31f",
-      "names": {
-        "ar": "جوز هند مبشور غير محلى",
-        "en": "Coconut, shredded unsweetened",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-tree",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-1f50e7918c1096e1d31f",
-        "orc-ing-91f6dd3d56f275ad9f91"
-      ]
-    },
-    {
       "id": "649eb14f-e812-5711-97bd-aa60dbbd377e",
       "names": {
         "ar": null,
@@ -30084,24 +29616,27 @@
       ]
     },
     {
-      "id": "orc-ing-unitools-cod",
+      "id": "orc-ing-8f7eef3d990e8dd525eb",
       "names": {
         "ar": "قد",
         "en": "cod",
         "fr": "cabillaud"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "piece"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-canned",
       "subcategoryId": "foodsub-canned-fish",
       "aliases": {
         "ar": [
-          "سمك القد"
+          "سمك القد",
+          "سمك القد الطازج المطبوخ"
         ],
         "en": [
           "Cod",
+          "Cod, cooked",
           "codfish"
         ],
         "fr": [
@@ -30122,33 +29657,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-8f7eef3d990e8dd525eb",
         "orc-ing-unitools-cod"
-      ]
-    },
-    {
-      "id": "orc-ing-8f7eef3d990e8dd525eb",
-      "names": {
-        "ar": "سمك القد الطازج المطبوخ",
-        "en": "Cod, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-8f7eef3d990e8dd525eb"
       ]
     },
     {
@@ -35352,23 +34862,26 @@
       ]
     },
     {
-      "id": "orc-ing-unitools-couscous",
+      "id": "orc-ing-5d62c23f513f2016aa55",
       "names": {
         "ar": "كسكس",
         "en": "Couscous",
         "fr": "couscous"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-nuts-seeds",
       "subcategoryId": "foodsub-nuts-seeds",
       "aliases": {
         "ar": [
-          "الكسكس"
+          "الكسكس",
+          "الكسكس المطبوخ"
         ],
         "en": [
+          "Couscous, cooked",
           "cous cous"
         ],
         "fr": [
@@ -35387,33 +34900,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-5d62c23f513f2016aa55",
         "orc-ing-unitools-couscous"
-      ]
-    },
-    {
-      "id": "orc-ing-5d62c23f513f2016aa55",
-      "names": {
-        "ar": "الكسكس المطبوخ",
-        "en": "Couscous, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-oats",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-5d62c23f513f2016aa55"
       ]
     },
     {
@@ -36094,24 +35582,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "ece12d21-ec3c-594f-adb9-74f96c1ce96b",
+      "id": "orc-ing-2a67bde3c640f90f3291",
       "names": {
-        "ar": null,
+        "ar": "جبنة كريمية خفيفة",
         "en": "cream cheese",
         "fr": "fromage à la crème"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
         "g",
-        "kg"
+        "كوب",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
       "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Cream cheese, light"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -36124,32 +35613,6 @@
           "FOODON_03301889"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-2a67bde3c640f90f3291",
-      "names": {
-        "ar": "جبنة كريمية خفيفة",
-        "en": "Cream cheese, light",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "كوب",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-cheese",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-2a67bde3c640f90f3291",
         "orc-ing-ee44fa43abce93f12dc6",
@@ -37894,24 +37357,26 @@
       ]
     },
     {
-      "id": "60052fb2-fb7f-5623-9a6e-e5f1b7e1ebb2",
+      "id": "orc-ing-31c13b1df2938fcf84c1",
       "names": {
-        "ar": null,
+        "ar": "(نباتي، بدون معجون الروبيان)",
         "en": "curry paste",
         "fr": "pâte de curry"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
-        "g",
-        "kg"
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-sauces",
       "subcategoryId": "foodsub-sauces-tomato",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "معجون الكاري الأخضر"
+        ],
+        "en": [
+          "Curry paste, green",
+          "Curry paste, red"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -37924,57 +37389,8 @@
           "FOODON_03544122"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-31c13b1df2938fcf84c1",
-      "names": {
-        "ar": "معجون الكاري الأخضر",
-        "en": "Curry paste, green",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-sauces",
-      "subcategoryId": "foodsub-sauces-tomato",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
-        "orc-ing-31c13b1df2938fcf84c1"
-      ]
-    },
-    {
-      "id": "orc-ing-ce3626de1f9bbcd26128",
-      "names": {
-        "ar": "(نباتي، بدون معجون الروبيان)",
-        "en": "Curry paste, red",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-sauces",
-      "subcategoryId": "foodsub-sauces-tomato",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
+        "orc-ing-31c13b1df2938fcf84c1",
         "orc-ing-ce3626de1f9bbcd26128"
       ]
     },
@@ -44053,7 +43469,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-db56721b3050f39b22e6",
+      "id": "orc-ing-2b86ad1dd3de54f107c3",
       "names": {
         "ar": "بيض",
         "en": "egg",
@@ -44067,9 +43483,11 @@
       "subcategoryId": "foodsub-poultry-chicken",
       "aliases": {
         "ar": [
-          "بيضة"
+          "بيضة",
+          "بيضة كاملة"
         ],
         "en": [
+          "Egg, whole",
           "Eggs",
           "eggs"
         ],
@@ -44092,6 +43510,7 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-2b86ad1dd3de54f107c3",
         "orc-ing-db56721b3050f39b22e6",
         "orc-ing-unitools-egg",
         "orc-ing-unitools-eggs"
@@ -44360,32 +43779,6 @@
         "orc-ing-d9310c8668b054d9b1fa",
         "orc-ing-e6ddfc4aea1f30ac227a",
         "orc-ing-unitools-eggwhite"
-      ]
-    },
-    {
-      "id": "orc-ing-2b86ad1dd3de54f107c3",
-      "names": {
-        "ar": "بيضة كاملة",
-        "en": "Egg, whole",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-eggs",
-      "subcategoryId": "foodsub-eggs-hen",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-2b86ad1dd3de54f107c3"
       ]
     },
     {
@@ -57630,24 +57023,26 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "6f983504-527f-53f3-bd92-776b366a283a",
+      "id": "orc-ing-9e7e9b647f90aad8f8a8",
       "names": {
-        "ar": null,
+        "ar": "زبادي يوناني طبيعي خالي الدسم",
         "en": "greek yogurt",
         "fr": "yaourt grec"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
-        "g",
-        "kg"
+        "كوب",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
       "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "زبادي يوناني طبيعي 2%"
+        ],
         "en": [
+          "Greek yogurt, plain 2%",
+          "Greek yogurt, plain nonfat",
           "greek style yoghurt",
           "greek style yogurt"
         ],
@@ -57665,59 +57060,9 @@
           "FOODON_00004409"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-e675cd844b730fa636db",
-      "names": {
-        "ar": "زبادي يوناني طبيعي 2%",
-        "en": "Greek yogurt, plain 2%",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-yogurt",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-e675cd844b730fa636db"
-      ]
-    },
-    {
-      "id": "orc-ing-9e7e9b647f90aad8f8a8",
-      "names": {
-        "ar": "زبادي يوناني طبيعي خالي الدسم",
-        "en": "Greek yogurt, plain nonfat",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-yogurt",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-9e7e9b647f90aad8f8a8",
+        "orc-ing-e675cd844b730fa636db",
         "orc-ing-efe73297237d671ac12f"
       ]
     },
@@ -60604,15 +59949,13 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "d0172dd6-aa5d-558e-bb5f-475627a610c3",
+      "id": "orc-ing-702cd2156df58cc76367",
       "names": {
-        "ar": null,
+        "ar": "سمك الهلبوت المطبوخ",
         "en": "halibut",
         "fr": "flétan"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
@@ -60620,7 +59963,9 @@
       "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Halibut, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -60632,30 +59977,6 @@
           "FOODON_03411532"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-702cd2156df58cc76367",
-      "names": {
-        "ar": "سمك الهلبوت المطبوخ",
-        "en": "Halibut, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-702cd2156df58cc76367"
       ]
@@ -66265,32 +65586,6 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-7b4d1d3a1b45c1464410",
-      "names": {
-        "ar": "أرز الياسمين المطبوخ",
-        "en": "Jasmine rice, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-rice",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-7b4d1d3a1b45c1464410"
-      ]
-    },
-    {
       "id": "9cb96145-6dbb-52d3-bad5-5abf33ce202c",
       "names": {
         "ar": null,
@@ -71755,24 +71050,27 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-lentils",
+      "id": "orc-ing-233b52e29f76a2d35d23",
       "names": {
         "ar": "عدس",
         "en": "lentils",
         "fr": "lentilles"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-legumes",
       "subcategoryId": "foodsub-legumes-lentils",
       "aliases": {
         "ar": [
-          "العدس"
+          "العدس",
+          "العدس المطبوخ"
         ],
         "en": [
           "Lentils",
+          "Lentils, cooked",
           "Masoor dal",
           "Masur dal",
           "lentil"
@@ -71791,33 +71089,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-233b52e29f76a2d35d23",
         "orc-ing-unitools-lentils"
-      ]
-    },
-    {
-      "id": "orc-ing-233b52e29f76a2d35d23",
-      "names": {
-        "ar": "العدس المطبوخ",
-        "en": "Lentils, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-legumes",
-      "subcategoryId": "foodsub-legumes-lentils",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-233b52e29f76a2d35d23"
       ]
     },
     {
@@ -73488,7 +72761,7 @@
       ]
     },
     {
-      "id": "6021eed9-ee8e-5bb6-a1bf-c64b726ab3c5",
+      "id": "orc-ing-22eed6c0d07818259e0f",
       "names": {
         "ar": "همار",
         "en": "lobster",
@@ -73504,9 +72777,11 @@
       "subcategoryId": "foodsub-seafood-crustaceans",
       "aliases": {
         "ar": [
-          "كركند"
+          "كركند",
+          "لحم الكركند المطبوخ"
         ],
         "en": [
+          "Lobster meat, cooked",
           "lobster meat"
         ],
         "fr": [
@@ -73526,7 +72801,9 @@
           "FOODON_03411505"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-22eed6c0d07818259e0f"
+      ]
     },
     {
       "id": "5bc3fd9d-9968-5e57-ac0a-598ef286e0f9",
@@ -73555,34 +72832,6 @@
         "openFoodFactsIngredientTerm": "lobster flavour"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-22eed6c0d07818259e0f",
-      "names": {
-        "ar": "لحم الكركند المطبوخ",
-        "en": "Lobster meat, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-crustaceans",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-22eed6c0d07818259e0f"
-      ]
     },
     {
       "id": "orc-ing-unitools-locoto",
@@ -82983,16 +82232,14 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "f42a9a7c-d519-5357-91d7-e90981cc79d3",
+      "id": "orc-ing-785e72610c935e6e838d",
       "names": {
-        "ar": null,
+        "ar": "بلح البحر المطبوخ",
         "en": "mussel",
         "fr": "moule"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "g"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-seafood",
@@ -83000,6 +82247,7 @@
       "aliases": {
         "ar": [],
         "en": [
+          "Mussels, cooked",
           "mussels"
         ],
         "fr": [
@@ -83016,30 +82264,6 @@
           "FOODON_03411223"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-785e72610c935e6e838d",
-      "names": {
-        "ar": "بلح البحر المطبوخ",
-        "en": "Mussels, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-molluscs",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-785e72610c935e6e838d"
       ]
@@ -88084,24 +87308,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "6e8440b3-6670-535f-95cc-bcf17cd5ddc7",
+      "id": "orc-ing-6d8df709f247f6f930a9",
       "names": {
         "ar": "حليب الشوفان",
         "en": "oat milk",
         "fr": "boisson à l'avoine"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
-        "g",
-        "kg"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
       "subcategoryId": "foodsub-dairy-milk",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "مشروب الشوفان غير المحلى"
+        ],
+        "en": [
+          "Oat milk, unsweetened"
+        ],
         "fr": [
           "Lait d'avoine"
         ]
@@ -88115,30 +87340,6 @@
           "FOODON_00004515"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-6d8df709f247f6f930a9",
-      "names": {
-        "ar": "مشروب الشوفان غير المحلى",
-        "en": "Oat milk, unsweetened",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-6d8df709f247f6f930a9"
       ]
@@ -88766,7 +87967,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-ccc14e1e736a6bc4e187",
+      "id": "orc-ing-486a54c06f8aaa3e5b13",
       "names": {
         "ar": "الزيتون",
         "en": "olive",
@@ -88781,11 +87982,15 @@
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [
-          "زيتون"
+          "زيتون",
+          "زيتون مقطع إلى شرائح",
+          "زيتون، مقطع إلى نصفين"
         ],
         "en": [
           "Olives",
-          "olives"
+          "olives",
+          "olives, halved",
+          "olives, sliced"
         ],
         "fr": [
           "olive"
@@ -88803,6 +88008,9 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-486a54c06f8aaa3e5b13",
+        "orc-ing-b08a8d6609c06844cff7",
+        "orc-ing-b7c22113e6baeca3c4fb",
         "orc-ing-ccc14e1e736a6bc4e187",
         "orc-ing-unitools-olives"
       ]
@@ -88909,59 +88117,6 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-b7c22113e6baeca3c4fb",
-      "names": {
-        "ar": "زيتون، مقطع إلى نصفين",
-        "en": "olives, halved",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-b7c22113e6baeca3c4fb"
-      ]
-    },
-    {
-      "id": "orc-ing-486a54c06f8aaa3e5b13",
-      "names": {
-        "ar": "زيتون مقطع إلى شرائح",
-        "en": "olives, sliced",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-486a54c06f8aaa3e5b13",
-        "orc-ing-b08a8d6609c06844cff7"
-      ]
-    },
-    {
       "id": "4414d764-4ec7-5457-9fa5-1ba93d21153c",
       "names": {
         "ar": "العجة",
@@ -88995,7 +88150,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-onion",
+      "id": "orc-ing-4737e548a27dca14d742",
       "names": {
         "ar": "بصل",
         "en": "onion",
@@ -89003,17 +88158,20 @@
       },
       "acceptedUnits": [
         "g",
-        "piece"
+        "piece",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-bulbs",
       "aliases": {
         "ar": [
-          "البصل"
+          "البصل",
+          "البصل الأبيض"
         ],
         "en": [
           "Onion",
+          "Onion, white",
           "Onions",
           "onions"
         ],
@@ -89035,6 +88193,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-4737e548a27dca14d742",
+        "orc-ing-ab552d49793f59f16f1a",
         "orc-ing-unitools-onion",
         "orc-ing-unitools-onions"
       ]
@@ -89250,34 +88410,6 @@
         "openFoodFactsIngredientTerm": "onion sproute"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-4737e548a27dca14d742",
-      "names": {
-        "ar": "البصل الأبيض",
-        "en": "Onion, white",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-bulbs",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-4737e548a27dca14d742",
-        "orc-ing-ab552d49793f59f16f1a"
-      ]
     },
     {
       "id": "orc-ing-f6d8cf97de8a85cd1702",
@@ -94797,23 +93929,24 @@
       ]
     },
     {
-      "id": "fe603601-e572-522c-9546-fff878ebe491",
+      "id": "orc-ing-160c7e5cf8d38d846967",
       "names": {
         "ar": "معكرونة",
         "en": "pasta",
         "fr": "pâtes alimentaires"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-grains",
       "subcategoryId": "foodsub-grains-oats",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "معكرونة مطبوخة"
+        ],
         "en": [
+          "Pasta, cooked",
           "pastas"
         ],
         "fr": [
@@ -94830,30 +93963,6 @@
           "FOODON_03400815"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-160c7e5cf8d38d846967",
-      "names": {
-        "ar": "معكرونة مطبوخة",
-        "en": "Pasta, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-pasta-bakery",
-      "subcategoryId": "foodsub-pasta-bakery-pasta",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-160c7e5cf8d38d846967"
       ]
@@ -95447,14 +94556,15 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-peas",
+      "id": "orc-ing-630c9fd3aa1e03c6ef32",
       "names": {
         "ar": "بازلاء",
         "en": "pea",
         "fr": "pois"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-legumes",
@@ -95465,6 +94575,7 @@
         ],
         "en": [
           "Peas",
+          "Peas, green",
           "peas"
         ],
         "fr": []
@@ -95480,6 +94591,7 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-630c9fd3aa1e03c6ef32",
         "orc-ing-unitools-peas"
       ]
     },
@@ -96584,32 +95696,6 @@
         "openFoodFactsIngredientTerm": "pears in cubes"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-630c9fd3aa1e03c6ef32",
-      "names": {
-        "ar": "البازلاء",
-        "en": "Peas, green",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-630c9fd3aa1e03c6ef32"
-      ]
     },
     {
       "id": "orc-ing-ff627885b3c6e77e7bfd",
@@ -99054,23 +98140,24 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "860795f4-32cb-53f1-af1c-bbd5424b7b01",
+      "id": "orc-ing-af1992b1d3b7b95a285f",
       "names": {
-        "ar": null,
+        "ar": "فاصوليا بينتو مطبوخة",
         "en": "pinto beans",
         "fr": "Haricots pinto"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-legumes",
       "subcategoryId": "foodsub-legumes-beans",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Pinto beans, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -99079,31 +98166,6 @@
       "sourceMappings": {
         "openFoodFactsIngredientTerm": "pinto beans"
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-af1992b1d3b7b95a285f",
-      "names": {
-        "ar": "فاصوليا بينتو مطبوخة",
-        "en": "Pinto beans, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-af1992b1d3b7b95a285f",
         "orc-ing-dccfc140c2ce784b6fc7"
@@ -99792,9 +98854,9 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-plantain",
+      "id": "orc-ing-f9e11973a0fa4b527287",
       "names": {
-        "ar": "موز الجنة",
+        "ar": "موز الجنة الناضج المخبوز",
         "en": "plantain",
         "fr": "plantain"
       },
@@ -99805,9 +98867,12 @@
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "موز الجنة"
+        ],
         "en": [
-          "Plantain"
+          "Plantain",
+          "Plantain, ripe, baked"
         ],
         "fr": []
       },
@@ -99823,6 +98888,7 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-f9e11973a0fa4b527287",
         "orc-ing-unitools-plantain"
       ]
     },
@@ -99882,32 +98948,6 @@
       "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-unitools-plantainchips"
-      ]
-    },
-    {
-      "id": "orc-ing-f9e11973a0fa4b527287",
-      "names": {
-        "ar": "موز الجنة الناضج المخبوز",
-        "en": "Plantain, ripe, baked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-fruits",
-      "subcategoryId": "foodsub-fruits-other",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-f9e11973a0fa4b527287"
       ]
     },
     {
@@ -102033,7 +101073,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-potato",
+      "id": "orc-ing-67a18d4e3b9566407049",
       "names": {
         "ar": "بطاطس",
         "en": "potato",
@@ -102048,9 +101088,13 @@
       "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [
-          "البطاطس"
+          "البطاطس",
+          "بطاطا مشوية بقشرها",
+          "بطاطس مسلوقة"
         ],
         "en": [
+          "Potato, baked",
+          "Potato, boiled",
           "Potatoes",
           "potatoes"
         ],
@@ -102071,59 +101115,9 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-67a18d4e3b9566407049",
+        "orc-ing-e4281bc45a05fa16a046",
         "orc-ing-unitools-potato"
-      ]
-    },
-    {
-      "id": "orc-ing-67a18d4e3b9566407049",
-      "names": {
-        "ar": "بطاطا مشوية بقشرها",
-        "en": "Potato, baked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-roots",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-67a18d4e3b9566407049"
-      ]
-    },
-    {
-      "id": "orc-ing-e4281bc45a05fa16a046",
-      "names": {
-        "ar": "بطاطس مسلوقة",
-        "en": "Potato, boiled",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-roots",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-e4281bc45a05fa16a046"
       ]
     },
     {
@@ -104224,7 +103218,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-409b6c44622fd4d30569",
+      "id": "orc-ing-8f713e7c516f30c0442e",
       "names": {
         "ar": "قرع",
         "en": "pumpkin",
@@ -104232,18 +103226,19 @@
       },
       "acceptedUnits": [
         "g",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [
+          "اليقطين (الكوسا) المطبوخ",
           "يقطين"
         ],
         "en": [
-          "Chayote",
           "Pumpkin",
+          "Pumpkin, cooked",
           "Squash"
         ],
         "fr": [
@@ -104260,35 +103255,9 @@
         ]
       },
       "recipeIngredientIds": [
-        "orc-ing-409b6c44622fd4d30569",
+        "orc-ing-8f713e7c516f30c0442e",
         "orc-ing-unitools-pumpkin",
         "orc-ing-unitools-squash"
-      ]
-    },
-    {
-      "id": "orc-ing-8f713e7c516f30c0442e",
-      "names": {
-        "ar": "اليقطين (الكوسا) المطبوخ",
-        "en": "Pumpkin, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-8f713e7c516f30c0442e"
       ]
     },
     {
@@ -105330,23 +104299,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "2e3e778c-a4f6-5e81-b779-e74bcf2dd658",
+      "id": "orc-ing-87f897c097634b50ec0a",
       "names": {
         "ar": "كينوا",
         "en": "quinoa",
         "fr": "quinoa"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-nuts-seeds",
       "subcategoryId": "foodsub-nuts-seeds",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "الكينوا المطبوخة"
+        ],
+        "en": [
+          "Quinoa, cooked"
+        ],
         "fr": [
           "quinoa royal"
         ]
@@ -105363,30 +104334,6 @@
           "FOODON_03412027"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-87f897c097634b50ec0a",
-      "names": {
-        "ar": "الكينوا المطبوخة",
-        "en": "Quinoa, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-87f897c097634b50ec0a"
       ]
@@ -105714,11 +104661,13 @@
       "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [
-          "الفجل"
+          "الفجل",
+          "الفجل المقطع إلى شرائح"
         ],
         "en": [
           "Radishes",
-          "radishes"
+          "radishes",
+          "radishes, sliced"
         ],
         "fr": []
       },
@@ -105736,33 +104685,8 @@
       },
       "recipeIngredientIds": [
         "orc-ing-30d37daf454baa6dd523",
+        "orc-ing-bcc071428c56ee407d74",
         "orc-ing-unitools-radish"
-      ]
-    },
-    {
-      "id": "orc-ing-bcc071428c56ee407d74",
-      "names": {
-        "ar": "الفجل المقطع إلى شرائح",
-        "en": "radishes, sliced",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-bcc071428c56ee407d74"
       ]
     },
     {
@@ -109612,24 +108536,27 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-beans",
+      "id": "orc-ing-9a2bbee59731b3e1147e",
       "names": {
-        "ar": "الفاصوليا الحمراء",
+        "ar": "الفاصوليا الحمراء المطبوخة",
         "en": "red bean",
         "fr": "haricot rouge"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-meat",
       "subcategoryId": "foodsub-meat-offal",
       "aliases": {
         "ar": [
+          "الفاصوليا الحمراء",
           "فاصوليا حمراء"
         ],
         "en": [
           "Red beans",
+          "Red beans, cooked",
           "Red kidney beans",
           "red beans",
           "red kidney beans",
@@ -109651,35 +108578,10 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-9a2bbee59731b3e1147e",
         "orc-ing-unitools-beans",
         "orc-ing-unitools-kidneybeans",
         "orc-ing-unitools-redbeans"
-      ]
-    },
-    {
-      "id": "orc-ing-9a2bbee59731b3e1147e",
-      "names": {
-        "ar": "الفاصوليا الحمراء المطبوخة",
-        "en": "Red beans, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-9a2bbee59731b3e1147e"
       ]
     },
     {
@@ -109772,13 +108674,15 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-8a8e9968d31593cc7113",
+      "id": "7a65e3f5-029a-5c5a-afe3-239ff3138cbe",
       "names": {
         "ar": "فلفل أحمر",
         "en": "red bell pepper",
         "fr": "poivron rouge"
       },
       "acceptedUnits": [
+        "g",
+        "kg",
         "piece"
       ],
       "imageUrl": null,
@@ -109787,7 +108691,6 @@
       "aliases": {
         "ar": [],
         "en": [
-          "Bell pepper, red",
           "red capsicum",
           "red pepper"
         ],
@@ -109807,10 +108710,7 @@
           "FOODON_03541405"
         ]
       },
-      "recipeIngredientIds": [
-        "orc-ing-8a8e9968d31593cc7113",
-        "orc-ing-e0089c5b2cef7a218be7"
-      ]
+      "recipeIngredientIds": []
     },
     {
       "id": "c1f52f61-b1de-5c2f-903d-76be49011366",
@@ -112622,22 +111522,26 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-noodles",
+      "id": "orc-ing-2ca12dd0634527aefc33",
       "names": {
-        "ar": "نودلز الأرز",
+        "ar": "نودلز الأرز المطبوخة",
         "en": "rice noodles",
         "fr": "nouilles de riz"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-grains",
       "subcategoryId": "foodsub-grains-rice",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "نودلز الأرز"
+        ],
         "en": [
-          "Rice noodles"
+          "Rice noodles",
+          "Rice noodles, cooked"
         ],
         "fr": []
       },
@@ -112648,37 +111552,11 @@
         "openFoodFactsIngredientTerm": "rice noodles"
       },
       "recipeIngredientIds": [
-        "orc-ing-unitools-noodles"
-      ]
-    },
-    {
-      "id": "orc-ing-2ca12dd0634527aefc33",
-      "names": {
-        "ar": "نودلز الأرز المطبوخة",
-        "en": "Rice noodles, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-rice",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
         "orc-ing-2ca12dd0634527aefc33",
         "orc-ing-738927cfce2ac290e739",
         "orc-ing-89aa65fb86ac54d9c793",
-        "orc-ing-f97e8adacdc751338168"
+        "orc-ing-f97e8adacdc751338168",
+        "orc-ing-unitools-noodles"
       ]
     },
     {
@@ -116496,7 +115374,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "af6bdf7e-0594-5770-be36-e72ff4f205d2",
+      "id": "orc-ing-ee5abbc34d0228176829",
       "names": {
         "ar": "سلمون",
         "en": "salmon",
@@ -116504,15 +115382,20 @@
       },
       "acceptedUnits": [
         "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-seafood",
       "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "سمك السلمون المطبوخ",
+          "سمك السلمون النيء (مناسب للسوشي)"
+        ],
+        "en": [
+          "Salmon, cooked",
+          "Salmon, raw"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -116525,31 +115408,8 @@
           "FOODON_00003473"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-f0eb912ed0a86ea58cba",
-      "names": {
-        "ar": "سمك السلمون المطبوخ",
-        "en": "Salmon, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
+        "orc-ing-ee5abbc34d0228176829",
         "orc-ing-f0eb912ed0a86ea58cba"
       ]
     },
@@ -116645,32 +115505,6 @@
       "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-unitools-salmonbones"
-      ]
-    },
-    {
-      "id": "orc-ing-ee5abbc34d0228176829",
-      "names": {
-        "ar": "سمك السلمون النيء (مناسب للسوشي)",
-        "en": "Salmon, raw",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-ee5abbc34d0228176829"
       ]
     },
     {
@@ -120637,15 +119471,14 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "d13c985e-d0b1-5039-8283-18de81e42554",
+      "id": "orc-ing-3f1ef723d26fb85a5202",
       "names": {
-        "ar": null,
+        "ar": "روبيان مطبوخ",
         "en": "shrimp",
         "fr": "crevette"
       },
       "acceptedUnits": [
         "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
@@ -120654,6 +119487,7 @@
       "aliases": {
         "ar": [],
         "en": [
+          "Shrimp, cooked",
           "prawn"
         ],
         "fr": [
@@ -120672,31 +119506,6 @@
           "FOODON_03411237"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-3f1ef723d26fb85a5202",
-      "names": {
-        "ar": "روبيان مطبوخ",
-        "en": "Shrimp, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-crustaceans",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-3f1ef723d26fb85a5202",
         "orc-ing-78f5ea6d31637623a37c",
@@ -124009,24 +122818,24 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "d4967506-530e-51be-8c51-98b866f664d4",
+      "id": "orc-ing-bde0aa958e44e80ea012",
       "names": {
         "ar": "حليب الصويا",
         "en": "soy milk",
         "fr": "boisson au soja"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
-        "g",
-        "kg"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
       "subcategoryId": "foodsub-dairy-milk",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "مشروب الصويا غير المحلى"
+        ],
         "en": [
+          "Soy milk, unsweetened",
           "soy drink"
         ],
         "fr": [
@@ -124044,30 +122853,6 @@
           "FOODON_03305289"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-bde0aa958e44e80ea012",
-      "names": {
-        "ar": "مشروب الصويا غير المحلى",
-        "en": "Soy milk, unsweetened",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-bde0aa958e44e80ea012"
       ]
@@ -124145,7 +122930,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-soy",
+      "id": "orc-ing-8267ebd156e857e5c0fc",
       "names": {
         "ar": "صلصة الصويا",
         "en": "soy sauce",
@@ -124153,6 +122938,7 @@
       },
       "acceptedUnits": [
         "ml",
+        "كوب",
         "ملعقة صغيرة",
         "ملعقة كبيرة"
       ],
@@ -124160,9 +122946,12 @@
       "categoryId": "foodcat-sauces",
       "subcategoryId": "foodsub-sauces-other",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "صلصة الصويا قليلة الصوديوم"
+        ],
         "en": [
           "Soy sauce",
+          "Soy sauce, low sodium",
           "Soy sauces",
           "soya sauce"
         ],
@@ -124183,38 +122972,11 @@
         ]
       },
       "recipeIngredientIds": [
-        "orc-ing-unitools-soy",
-        "orc-ing-unitools-soysauce"
-      ]
-    },
-    {
-      "id": "orc-ing-8267ebd156e857e5c0fc",
-      "names": {
-        "ar": "صلصة الصويا قليلة الصوديوم",
-        "en": "Soy sauce, low sodium",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب",
-        "ملعقة صغيرة",
-        "ملعقة كبيرة"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-sauces",
-      "subcategoryId": "foodsub-sauces-other",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
         "orc-ing-8267ebd156e857e5c0fc",
         "orc-ing-b666dc666e8ed6e0e499",
-        "orc-ing-cc22a071d7d6dfc3f971"
+        "orc-ing-cc22a071d7d6dfc3f971",
+        "orc-ing-unitools-soy",
+        "orc-ing-unitools-soysauce"
       ]
     },
     {
@@ -124504,15 +123266,13 @@
       ]
     },
     {
-      "id": "8b1f516f-b6e6-5199-8784-3a3eb6871015",
+      "id": "orc-ing-9783d8687513988efa50",
       "names": {
-        "ar": null,
+        "ar": "يقطينة كبيرة",
         "en": "spaghetti squash",
         "fr": "courge spaghetti"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "piece"
       ],
       "imageUrl": null,
@@ -124520,7 +123280,9 @@
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Spaghetti squash, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -124532,30 +123294,6 @@
           "FOODON_03000077"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-9783d8687513988efa50",
-      "names": {
-        "ar": "يقطينة كبيرة",
-        "en": "Spaghetti squash, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-9783d8687513988efa50"
       ]
@@ -125064,22 +123802,28 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-spinach",
+      "id": "orc-ing-31476b62453be570f043",
       "names": {
         "ar": "سبانخ",
         "en": "spinach",
         "fr": "épinard"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "piece",
+        "ربطة",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "سبانخ نيئة"
+        ],
         "en": [
-          "Spinach"
+          "Spinach",
+          "Spinach, raw"
         ],
         "fr": [
           "épinards"
@@ -125099,6 +123843,9 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-31476b62453be570f043",
+        "orc-ing-48c3e9415cbfeb6843f7",
+        "orc-ing-771f23199f4bb584c9e0",
         "orc-ing-unitools-spinach"
       ]
     },
@@ -125223,36 +123970,6 @@
         "ciqualFoodCode": "20285"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-31476b62453be570f043",
-      "names": {
-        "ar": "سبانخ نيئة",
-        "en": "Spinach, raw",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "ربطة",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-leafy",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-31476b62453be570f043",
-        "orc-ing-48c3e9415cbfeb6843f7",
-        "orc-ing-771f23199f4bb584c9e0"
-      ]
     },
     {
       "id": "df2bb214-515f-5238-962a-9d9a669166a2",
@@ -125483,9 +124200,9 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-splitpeas",
+      "id": "orc-ing-c7ad276d8885b63a8443",
       "names": {
-        "ar": "بازلاء مجروشة",
+        "ar": "بازلاء مجففة مطبوخة",
         "en": "split pea",
         "fr": "pois cassé"
       },
@@ -125496,9 +124213,12 @@
       "categoryId": "foodcat-legumes",
       "subcategoryId": "foodsub-legumes-peas-fava",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "بازلاء مجروشة"
+        ],
         "en": [
           "Split peas",
+          "Split peas, cooked",
           "split peas"
         ],
         "fr": [
@@ -125515,6 +124235,7 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-c7ad276d8885b63a8443",
         "orc-ing-unitools-splitpeas"
       ]
     },
@@ -125545,34 +124266,6 @@
         "openFoodFactsIngredientTerm": "Split pea flour"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-c7ad276d8885b63a8443",
-      "names": {
-        "ar": "بازلاء مجففة مطبوخة",
-        "en": "Split peas, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-c7ad276d8885b63a8443"
-      ]
     },
     {
       "id": "461a8d5d-bdfc-5787-9ece-2685074ef820",
@@ -126158,7 +124851,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "efab5ba6-198e-5656-985b-253365bafb7c",
+      "id": "orc-ing-05e8a344d431ab6bc9bd",
       "names": {
         "ar": "سبيدج",
         "en": "squid",
@@ -126166,15 +124859,18 @@
       },
       "acceptedUnits": [
         "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-seafood",
       "subcategoryId": "foodsub-seafood-molluscs",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "حبار مطبوخ"
+        ],
+        "en": [
+          "Squid, cooked"
+        ],
         "fr": [
           "calamars",
           "calmar",
@@ -126193,31 +124889,6 @@
           "FOODON_00003956"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-05e8a344d431ab6bc9bd",
-      "names": {
-        "ar": "حبار مطبوخ",
-        "en": "Squid, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-molluscs",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-05e8a344d431ab6bc9bd",
         "orc-ing-b63fd1da78c7c6fd4cc8"
@@ -129624,34 +128295,6 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-077e0a18429d3090a113",
-      "names": {
-        "ar": "ذرة حلوة مطبوخة",
-        "en": "Sweet corn, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-077e0a18429d3090a113",
-        "orc-ing-956cfa1685d66649eb6f"
-      ]
-    },
-    {
       "id": "13ae22d1-f68c-55c8-b123-8770c898f705",
       "names": {
         "ar": null,
@@ -129742,7 +128385,7 @@
       ]
     },
     {
-      "id": "orc-ing-unitools-kumara",
+      "id": "orc-ing-422da279c2ffc9dfb5de",
       "names": {
         "ar": "بطاطا حلوة",
         "en": "sweet potato",
@@ -129757,10 +128400,12 @@
       "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [
-          "البطاطا الحلوة"
+          "البطاطا الحلوة",
+          "بطاطا حلوة مشوية"
         ],
         "en": [
-          "Sweet potato"
+          "Sweet potato",
+          "Sweet potato, baked"
         ],
         "fr": [
           "patates douces"
@@ -129780,35 +128425,10 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-422da279c2ffc9dfb5de",
+        "orc-ing-d2bbe1e0506a5996f783",
         "orc-ing-unitools-kumara",
         "orc-ing-unitools-sweetpotato"
-      ]
-    },
-    {
-      "id": "orc-ing-422da279c2ffc9dfb5de",
-      "names": {
-        "ar": "بطاطا حلوة مشوية",
-        "en": "Sweet potato, baked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-roots",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-422da279c2ffc9dfb5de",
-        "orc-ing-d2bbe1e0506a5996f783"
       ]
     },
     {
@@ -130173,22 +128793,26 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-corn",
+      "id": "orc-ing-077e0a18429d3090a113",
       "names": {
-        "ar": "الذرة الحلوة",
+        "ar": "ذرة حلوة مطبوخة",
         "en": "sweetcorn",
         "fr": "maïs doux"
       },
       "acceptedUnits": [
         "g",
-        "piece"
+        "piece",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "الذرة الحلوة"
+        ],
         "en": [
+          "Sweet corn, cooked",
           "Sweetcorn",
           "sweet corn",
           "sweet corn in kernels",
@@ -130210,6 +128834,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-077e0a18429d3090a113",
+        "orc-ing-956cfa1685d66649eb6f",
         "orc-ing-unitools-corn"
       ]
     },
@@ -131231,23 +129857,25 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "ed2d9763-1dfb-5f82-b710-ec31a0cb09cb",
+      "id": "orc-ing-e0c0da4c97e275414070",
       "names": {
         "ar": "قلقاس مأكول",
         "en": "taro",
         "fr": "Colocasia esculenta"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "g"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "مالانغا مطبوخة"
+        ],
+        "en": [
+          "Taro, cooked"
+        ],
         "fr": [
           "taro"
         ]
@@ -131266,30 +129894,6 @@
           "FOODON_03540970"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-e0c0da4c97e275414070",
-      "names": {
-        "ar": "مالانغا مطبوخة",
-        "en": "Taro, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-e0c0da4c97e275414070"
       ]
@@ -132307,16 +130911,14 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "a60e03b9-6b18-5228-b931-f07a40301738",
+      "id": "orc-ing-7b4d1d3a1b45c1464410",
       "names": {
-        "ar": null,
+        "ar": "أرز الياسمين المطبوخ",
         "en": "Thai rice",
         "fr": "riz thaï"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-grains",
@@ -132324,6 +130926,7 @@
       "aliases": {
         "ar": [],
         "en": [
+          "Jasmine rice, cooked",
           "jasmine rice"
         ],
         "fr": [
@@ -132345,7 +130948,9 @@
           "FOODON_03540040"
         ]
       },
-      "recipeIngredientIds": []
+      "recipeIngredientIds": [
+        "orc-ing-7b4d1d3a1b45c1464410"
+      ]
     },
     {
       "id": "ea07042b-d3d2-58e9-9f18-a1d932be3dab",
@@ -132753,9 +131358,9 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-tilapia",
+      "id": "orc-ing-fe3c57d2c49415752bd3",
       "names": {
-        "ar": "سمك البلطي",
+        "ar": "سمك البلطي المطبوخ",
         "en": "tilapia",
         "fr": null
       },
@@ -132766,9 +131371,12 @@
       "categoryId": "foodcat-seafood",
       "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "سمك البلطي"
+        ],
         "en": [
-          "Tilapia"
+          "Tilapia",
+          "Tilapia, cooked"
         ],
         "fr": []
       },
@@ -132783,33 +131391,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-fe3c57d2c49415752bd3",
         "orc-ing-unitools-tilapia"
-      ]
-    },
-    {
-      "id": "orc-ing-fe3c57d2c49415752bd3",
-      "names": {
-        "ar": "سمك البلطي المطبوخ",
-        "en": "Tilapia, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-fe3c57d2c49415752bd3"
       ]
     },
     {
@@ -133410,22 +131993,26 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-tomatojuice",
+      "id": "orc-ing-fa08d8c3ddeba3662078",
       "names": {
-        "ar": "عصير طماطم",
+        "ar": "عصير طماطم قليل الصوديوم",
         "en": "tomato juice",
         "fr": "jus de tomate"
       },
       "acceptedUnits": [
-        "ml"
+        "ml",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "عصير طماطم"
+        ],
         "en": [
-          "Tomato juice"
+          "Tomato juice",
+          "Tomato juice, low sodium"
         ],
         "fr": [
           "Jus de tomates"
@@ -133442,33 +132029,8 @@
         ]
       },
       "recipeIngredientIds": [
+        "orc-ing-fa08d8c3ddeba3662078",
         "orc-ing-unitools-tomatojuice"
-      ]
-    },
-    {
-      "id": "orc-ing-fa08d8c3ddeba3662078",
-      "names": {
-        "ar": "عصير طماطم قليل الصوديوم",
-        "en": "Tomato juice, low sodium",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-fruit",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-fa08d8c3ddeba3662078"
       ]
     },
     {
@@ -136654,23 +135216,23 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "89a8e384-68b7-50f8-8f54-c9a5b144c937",
+      "id": "orc-ing-9c035ba9226341b96035",
       "names": {
-        "ar": null,
+        "ar": "مرق خضار قليل الصوديوم",
         "en": "vegetable broth",
         "fr": "bouillon végétal"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Vegetable broth, low sodium"
+        ],
         "fr": [
           "bouillon de légume"
         ]
@@ -136681,30 +135243,6 @@
       "sourceMappings": {
         "openFoodFactsIngredientTerm": "vegetable broth"
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-9c035ba9226341b96035",
-      "names": {
-        "ar": "مرق خضار قليل الصوديوم",
-        "en": "Vegetable broth, low sodium",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-fruit",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-9c035ba9226341b96035"
       ]
@@ -141163,22 +139701,26 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-whitebeans",
+      "id": "orc-ing-a6d0e2758c5b3581dd5f",
       "names": {
-        "ar": "الفاصوليا البيضاء",
+        "ar": "الفاصوليا البيضاء المطبوخة",
         "en": "white beans",
         "fr": "haricots blancs"
       },
       "acceptedUnits": [
-        "g"
+        "g",
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-legumes",
       "subcategoryId": "foodsub-legumes-beans",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "الفاصوليا البيضاء"
+        ],
         "en": [
           "White beans",
+          "White beans, cooked",
           "great northern beans",
           "haricot beans",
           "navy beans"
@@ -141201,33 +139743,8 @@
         "openFoodFactsIngredientTerm": "white beans"
       },
       "recipeIngredientIds": [
+        "orc-ing-a6d0e2758c5b3581dd5f",
         "orc-ing-unitools-whitebeans"
-      ]
-    },
-    {
-      "id": "orc-ing-a6d0e2758c5b3581dd5f",
-      "names": {
-        "ar": "الفاصوليا البيضاء المطبوخة",
-        "en": "White beans, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-legumes",
-      "subcategoryId": "foodsub-legumes-beans",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-a6d0e2758c5b3581dd5f"
       ]
     },
     {
@@ -141666,9 +140183,9 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "orc-ing-unitools-fish",
+      "id": "orc-ing-0064c48b3d53a0363f6f",
       "names": {
-        "ar": "السمك الأبيض",
+        "ar": "سمك أبيض نيء",
         "en": "white fish",
         "fr": "poisson blanc"
       },
@@ -141680,9 +140197,14 @@
       "categoryId": "foodcat-seafood",
       "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
-        "ar": [],
+        "ar": [
+          "السمك الأبيض",
+          "سمك أبيض مطبوخ"
+        ],
         "en": [
-          "White fish"
+          "White fish",
+          "White fish, cooked",
+          "White fish, raw"
         ],
         "fr": [
           "poissons blancs"
@@ -141700,37 +140222,12 @@
         ]
       },
       "recipeIngredientIds": [
-        "orc-ing-unitools-fish"
-      ]
-    },
-    {
-      "id": "orc-ing-0064c48b3d53a0363f6f",
-      "names": {
-        "ar": "سمك أبيض مطبوخ",
-        "en": "White fish, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
         "orc-ing-0064c48b3d53a0363f6f",
         "orc-ing-14739ecd63bdcf8560fa",
         "orc-ing-17f612308c8869763495",
-        "orc-ing-6dafacaf436eb3821c4b"
+        "orc-ing-1bb1f9f2ab5a2cb3b71b",
+        "orc-ing-6dafacaf436eb3821c4b",
+        "orc-ing-unitools-fish"
       ]
     },
     {
@@ -141788,32 +140285,6 @@
         "openFoodFactsIngredientTerm": "white fish meat"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-1bb1f9f2ab5a2cb3b71b",
-      "names": {
-        "ar": "سمك أبيض نيء",
-        "en": "White fish, raw",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-seafood",
-      "subcategoryId": "foodsub-seafood-fish",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-1bb1f9f2ab5a2cb3b71b"
-      ]
     },
     {
       "id": "3c3ab067-2ddf-590a-aea1-c179693e67df",
@@ -142210,7 +140681,7 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "6fc2d3a9-d54b-588b-892f-6187fbb2b48a",
+      "id": "orc-ing-0eb712bc31c3b3fcea1f",
       "names": {
         "ar": "أرز أبيض",
         "en": "white rice",
@@ -142218,15 +140689,19 @@
       },
       "acceptedUnits": [
         "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
-        "ar": [],
-        "en": [],
+        "ar": [
+          "أرز أبيض مطبوخ"
+        ],
+        "en": [
+          "White rice, cooked",
+          "White rice, cooked: from 200 g raw"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -142239,64 +140714,11 @@
           "FOODON_00003787"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-37b78b6e38129707ca61",
-      "names": {
-        "ar": "أرز أبيض مطبوخ",
-        "en": "White rice, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-eggs",
-      "subcategoryId": "foodsub-eggs-hen",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
+        "orc-ing-0eb712bc31c3b3fcea1f",
         "orc-ing-37b78b6e38129707ca61",
         "orc-ing-8141a83ecc73bc9267c7",
         "orc-ing-f1699747019d5186e1f5"
-      ]
-    },
-    {
-      "id": "orc-ing-0eb712bc31c3b3fcea1f",
-      "names": {
-        "ar": "أرز أبيض مطبوخ",
-        "en": "White rice, cooked: from 200 g raw",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "piece",
-        "dozen",
-        "g",
-        "kg"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-eggs",
-      "subcategoryId": "foodsub-eggs-hen",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-0eb712bc31c3b3fcea1f"
       ]
     },
     {
@@ -145743,23 +144165,23 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "b8188183-6f3b-5638-8f14-f6866e2a765d",
+      "id": "orc-ing-da3f89d9608d0545f4a0",
       "names": {
-        "ar": null,
+        "ar": "أرز بري مطبوخ",
         "en": "wild rice",
         "fr": "riz sauvage"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "كوب"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-grains",
       "subcategoryId": "foodsub-grains-rice",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Wild rice, cooked"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -145770,30 +144192,6 @@
         "usdaFdcCode": "169726",
         "ciqualFoodCode": "9108"
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-da3f89d9608d0545f4a0",
-      "names": {
-        "ar": "أرز بري مطبوخ",
-        "en": "Wild rice, cooked",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "كوب"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-rice",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-da3f89d9608d0545f4a0"
       ]
@@ -146210,23 +144608,23 @@
       "recipeIngredientIds": []
     },
     {
-      "id": "37caf6e3-5946-5417-9d14-97a920eace90",
+      "id": "orc-ing-1ac1c1646bbc8a758147",
       "names": {
-        "ar": null,
+        "ar": "يام مطبوخ",
         "en": "yam",
         "fr": "igname"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
-        "piece"
+        "g"
       ],
       "imageUrl": null,
       "categoryId": "foodcat-vegetables",
       "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [],
-        "en": [],
+        "en": [
+          "Yam, boiled"
+        ],
         "fr": []
       },
       "quantity": null,
@@ -146239,30 +144637,6 @@
           "FOODON_03307043"
         ]
       },
-      "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-1ac1c1646bbc8a758147",
-      "names": {
-        "ar": "يام مطبوخ",
-        "en": "Yam, boiled",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
       "recipeIngredientIds": [
         "orc-ing-1ac1c1646bbc8a758147",
         "orc-ing-76049b1f819406becad9",
@@ -147536,34 +145910,6 @@
         "ciqualFoodCode": "12735"
       },
       "recipeIngredientIds": []
-    },
-    {
-      "id": "orc-ing-c7d2f4a581e2e019b387",
-      "names": {
-        "ar": "الكسافا المطبوخة",
-        "en": "Yuca, boiled",
-        "fr": null
-      },
-      "acceptedUnits": [
-        "g",
-        "piece"
-      ],
-      "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
-      "aliases": {
-        "ar": [],
-        "en": [],
-        "fr": []
-      },
-      "quantity": null,
-      "countryOfOrigin": null,
-      "nutrition": null,
-      "sourceMappings": {},
-      "recipeIngredientIds": [
-        "orc-ing-c7d2f4a581e2e019b387",
-        "orc-ing-c81e2d120344a7effe51"
-      ]
     },
     {
       "id": "orc-ing-unitools-yufka",
