@@ -1029,7 +1029,9 @@ def build_catalogue(
     recipe_data: dict[str, Any],
     off_records: list[dict[str, Any]],
     foodon: dict[str, dict[str, Any]],
-) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    identity_registry: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    identity_registry = identity_registry or {"version": 1, "ids": {}, "redirects": {}}
     recipes = recipe_data.get("recipes") or []
     groups = collect_recipe_groups(recipes)
     foodon_index, foodon_ancestors = build_foodon_indexes(foodon)
@@ -1132,7 +1134,6 @@ def build_catalogue(
         for group in groups_for_record:
             consumed_groups.add(group["key"])
             for legacy_id in group["legacyIds"]:
-                matched_ids[legacy_id] = product["id"]
 
     # FoodOn-only matches are grouped by exact ontology class, so alternate
     # recipe spellings of the same verified concept share one food identity.
@@ -1159,65 +1160,68 @@ def build_catalogue(
             for legacy_id in group["legacyIds"]:
                 matched_ids[legacy_id] = product["id"]
 
-    # Final uniqueness guard: an ID or canonical English name may appear only once.
-    by_id: dict[str, dict[str, Any]] = {}
-    by_english: dict[str, str] = {}
-    collisions: list[dict[str, str]] = []
+    # Merge exact normalized English duplicates before assigning UUIDs.
+    by_english: dict[str, dict[str, Any]] = {}
+    unique_products: list[dict[str, Any]] = []
     category_conflicts: list[dict[str, str]] = []
     for product in products:
-        product_id = str(product["id"])
         english_key = normalize_label(str(product["names"].get("en") or ""))
-        if product_id in by_id:
-            collisions.append({"type": "id", "value": product_id})
+        existing = by_english.get(english_key) if english_key else None
+        if existing is None:
+            unique_products.append(product)
+            if english_key:
+                by_english[english_key] = product
             continue
-        if english_key and english_key in by_english:
-            # Merge exact normalized English duplicates. When the source
-            # taxonomies disagree about category, keep one identity and mark its
-            # category as needing review instead of publishing duplicate items.
-            existing = by_id[by_english[english_key]]
-            if (
-                existing["categoryId"] != product["categoryId"]
-                or existing.get("subcategoryId") != product.get("subcategoryId")
-            ):
-                category_conflicts.append({
-                    "englishName": english_key,
-                    "existingCategoryId": existing["categoryId"],
-                    "incomingCategoryId": product["categoryId"],
-                })
-                existing["categoryId"] = "foodcat-other"
-                existing["subcategoryId"] = "foodsub-other-general"
-            for lang in ("ar", "en", "fr"):
-                current_name = existing["names"].get(lang)
-                other_name = product["names"].get(lang)
-                if other_name and not current_name:
-                    existing["names"][lang] = other_name
-                existing["aliases"][lang] = sorted(
-                    set(existing["aliases"][lang]) | set(product["aliases"][lang])
-                )
-            existing["recipeIngredientIds"] = sorted(
-                set(existing["recipeIngredientIds"]) | set(product["recipeIngredientIds"])
-            )
-            existing["acceptedUnits"] = sorted(
-                set(existing["acceptedUnits"]) | set(product["acceptedUnits"])
-            )
-            existing["sourceMappings"].update(product["sourceMappings"])
-            for legacy_id in product["recipeIngredientIds"]:
-                matched_ids[legacy_id] = existing["id"]
-            continue
-        by_id[product_id] = product
-        if english_key:
-            by_english[english_key] = product_id
 
-    if collisions:
-        raise RuntimeError(
-            "Duplicate product identities remain after deterministic merging: "
-            + json.dumps(collisions[:20], ensure_ascii=False)
+        if (
+            existing["categoryId"] != product["categoryId"]
+            or existing.get("subcategoryId") != product.get("subcategoryId")
+        ):
+            category_conflicts.append({
+                "englishName": english_key,
+                "existingCategoryId": existing["categoryId"],
+                "incomingCategoryId": product["categoryId"],
+            })
+            existing["categoryId"] = "foodcat-other"
+            existing["subcategoryId"] = None
+
+        for lang in ("ar", "en", "fr"):
+            if product["names"].get(lang) and not existing["names"].get(lang):
+                existing["names"][lang] = product["names"][lang]
+            existing["aliases"][lang] = sorted(
+                set(existing["aliases"][lang]) | set(product["aliases"][lang])
+            )
+        existing["recipeIngredientIds"] = sorted(
+            set(existing["recipeIngredientIds"]) | set(product["recipeIngredientIds"])
         )
+        existing["acceptedUnits"] = sorted(
+            set(existing["acceptedUnits"]) | set(product["acceptedUnits"])
+        )
+        existing["identityKeys"] = sorted(
+            set(existing["identityKeys"]) | set(product["identityKeys"])
+        )
+        existing["sourceMappings"].update(product["sourceMappings"])
+        existing["imageUrl"] = existing["imageUrl"] or product["imageUrl"]
+        existing["countryOfOrigin"] = existing["countryOfOrigin"] or product["countryOfOrigin"]
+        existing["nutrition"] = existing["nutrition"] or product["nutrition"]
 
-    products = sorted(by_id.values(), key=lambda item: (
+    products = sorted(unique_products, key=lambda item: (
         normalize_label(str(item["names"].get("en") or "")),
-        str(item["id"]),
+        min(item["identityKeys"]) if item["identityKeys"] else "",
     ))
+
+    identity_registry = assign_stable_product_ids(products, identity_registry)
+
+    matched_ids: dict[str, str] = {}
+    for product in products:
+        for legacy_id in product["recipeIngredientIds"]:
+            existing_id = matched_ids.get(legacy_id)
+            if existing_id and existing_id != product["id"]:
+                raise RuntimeError(
+                    f"Legacy Room ingredient ID {legacy_id} resolves to multiple food items."
+                )
+            matched_ids[legacy_id] = product["id"]
+
     all_recipe_ids = {
         room_ingredient_id(ingredient, str(recipe.get("id") or ""))
         for recipe in recipes
