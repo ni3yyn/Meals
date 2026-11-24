@@ -1,0 +1,106 @@
+name: Build unified food product catalogue
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/recipes/ar/recipes.json"
+      - "tools/build_food_product_catalogue.py"
+      - "tools/test_food_product_catalogue.py"
+      - ".github/workflows/build-food-product-catalogue.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-food-product-catalogue
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Match recipes and build canonical food items
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MIDATI_DATA_CACHE: .cache/product-catalogue
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pinned source datasets
+        uses: actions/cache@v4
+        with:
+          path: .cache/product-catalogue
+          key: midati-food-sources-off-f5abb0a0ca8ae5702f3e192219511adf211b55ee-foodon-8a27493346a122e86ac1748aac24199d5af69166
+
+      - name: Run catalogue parser and matching tests
+        run: python -m unittest tools.test_food_product_catalogue -v
+
+      - name: Build catalogue, legacy-ID crosswalk and audit
+        run: python tools/build_food_product_catalogue.py
+
+      - name: Validate generated catalogue and complete recipe links
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          catalogue = json.loads(Path("data/products/catalogue.json").read_text(encoding="utf-8"))
+          mapping = json.loads(Path("data/products/recipe-ingredient-map.json").read_text(encoding="utf-8"))
+          audit = json.loads(Path("data/products/build-audit.json").read_text(encoding="utf-8"))
+          products = catalogue.get("products") or []
+          ids = [item.get("id") for item in products]
+          english = [
+              " ".join(str(item.get("names", {}).get("en") or "").casefold().split())
+              for item in products
+              if item.get("names", {}).get("en")
+          ]
+          links = mapping.get("recipeIngredientToProductId") or {}
+          if not products or len(ids) != len(set(ids)):
+              raise SystemExit("Product catalogue is empty or contains duplicate IDs.")
+          if len(english) != len(set(english)):
+              raise SystemExit("Product catalogue contains duplicate normalized English names.")
+          if not links:
+              raise SystemExit("No recipe ingredient mappings were generated.")
+          if any(target not in set(ids) for target in links.values()):
+              raise SystemExit("A recipe ingredient mapping points to a missing product ID.")
+          counts = audit.get("catalogueCounts") or {}
+          if counts.get("mappedRecipeIngredientIds") != len(links):
+              raise SystemExit("Audit mapping count does not match the mapping file.")
+          if counts.get("duplicateIds") != 0 or counts.get("duplicateEnglishNames") != 0:
+              raise SystemExit("Duplicate validation failed.")
+          print(f"Validated {len(products)} unique food items and {len(links)} recipe ingredient links.")
+          PY
+
+      - name: Commit generated catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+users.noreply.github.com"
+          git add data/products/catalogue.json \
+                  data/products/recipe-ingredient-map.json \
+                  data/products/build-audit.json
+          if git diff --cached --quiet; then
+            echo "Generated catalogue is already up to date."
+            exit 0
+          fi
+          git commit -m "Build unified food product catalogue"
+
+          git fetch origin main
+          if [[ "$(git rev-parse HEAD:data/recipes/ar/recipes.json)" != "$(git rev-parse origin/main:data/recipes/ar/recipes.json)" ]]; then
+            echo "::error::The recipe catalogue changed during this build. Rerun the workflow against the newest recipe revision."
+            exit 1
+          fi
+          git rebase origin/main
+          git push origin HEAD:main
