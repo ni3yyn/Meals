@@ -295,7 +295,7 @@ def _local_name(tag: str) -> str:
 
 
 def parse_foodon_owl(path: Path) -> dict[str, dict[str, Any]]:
-    """Extract FoodOn classes, labels, synonyms and named subclass links."""
+    """Extract FoodOn classes, language-tagged labels, synonyms and parents."""
     records: dict[str, dict[str, Any]] = {}
     for _, element in ET.iterparse(path, events=("end",)):
         if element.tag != OWL_CLASS:
@@ -303,26 +303,44 @@ def parse_foodon_owl(path: Path) -> dict[str, dict[str, Any]]:
         iri = element.attrib.get(RDF + "about", "")
         match = re.search(r"(FOODON_[0-9]+)", iri)
         if match:
-            label = ""
-            synonyms: list[str] = []
+            names: dict[str, list[str]] = defaultdict(list)
+            aliases: dict[str, list[str]] = defaultdict(list)
             parents: list[str] = []
             for child in list(element):
                 local = _local_name(child.tag)
                 value = (child.text or "").strip()
-                if local == "label" and value and not label:
-                    label = value
-                elif "synonym" in local.lower() and value:
-                    synonyms.append(value)
+                language = (child.attrib.get(XML_LANG) or "en").lower().split("-", 1)[0]
+                if local == "label" and value and language in {"ar", "en", "fr"}:
+                    if value not in names[language]:
+                        names[language].append(value)
+                elif "synonym" in local.lower() and value and language in {"ar", "en", "fr"}:
+                    if value not in aliases[language]:
+                        aliases[language].append(value)
                 elif local == "subClassOf":
                     parent_iri = child.attrib.get(RDF + "resource", "")
                     parent_match = re.search(r"(FOODON_[0-9]+)", parent_iri)
                     if parent_match:
                         parents.append(parent_match.group(1))
-            if label:
+            primary_name = (
+                (names.get("en") or names.get("fr") or names.get("ar") or [""])[0]
+            )
+            if primary_name:
                 records[match.group(1)] = {
                     "id": match.group(1),
-                    "name": label,
-                    "aliases": list(dict.fromkeys(synonyms)),
+                    "name": primary_name,
+                    "names": {
+                        language: values[0]
+                        for language, values in names.items()
+                        if values
+                    },
+                    "aliasesByLanguage": {
+                        language: values
+                        for language, values in aliases.items()
+                        if values
+                    },
+                    "aliases": list(dict.fromkeys(
+                        value for values in aliases.values() for value in values
+                    )),
                     "parents": list(dict.fromkeys(parents)),
                 }
         element.clear()
@@ -332,7 +350,13 @@ def parse_foodon_owl(path: Path) -> dict[str, dict[str, Any]]:
 def build_foodon_indexes(foodon: dict[str, dict[str, Any]]) -> tuple[dict[str, set[str]], dict[str, list[str]]]:
     label_index: dict[str, set[str]] = defaultdict(set)
     for item_id, item in foodon.items():
-        for name in [item["name"], *item["aliases"]]:
+        names = list(item.get("names", {}).values())
+        language_aliases = [
+            value
+            for values in item.get("aliasesByLanguage", {}).values()
+            for value in values
+        ]
+        for name in [item["name"], *names, *item["aliases"], *language_aliases]:
             key = normalize_label(name)
             if key:
                 label_index[key].add(item_id)
