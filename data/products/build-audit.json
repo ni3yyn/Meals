@@ -4,30 +4,38 @@
     "offTaxonomyRecords": 4190,
     "foodOnClasses": 29255,
     "recipeCount": 912,
-    "uniqueRecipeIngredientGroups": 896,
+    "uniqueRecipeIngredientGroups": 894,
     "uniqueRecipeIngredientIds": 1261
   },
   "catalogueCounts": {
-    "products": 4651,
+    "products": 4649,
     "mappedRecipeIngredientIds": 1261,
-    "uniqueRecipeIngredientsMapped": 896,
+    "uniqueRecipeIngredientGroups": 894,
+    "uniqueRecipeIngredientsMapped": 464,
+    "externalDatasetMatchedGroups": 464,
+    "allDatasetMatchCoveragePercent": 51.9,
+    "recipeUsedProducts": 836,
+    "recipeUsedMissingArabicNames": 0,
+    "recipeUsedMissingEnglishNames": 1,
+    "recipeUsedMissingFrenchNames": 492,
     "offMatchedGroups": 425,
-    "unmatchedRecipeGroups": 431,
+    "unmatchedRecipeGroups": 429,
     "ambiguousRecipeGroups": 1,
     "foodOnMatchedGroups": 39,
     "foodOnAmbiguousGroups": 1,
-    "offMatchCoveragePercent": 47.43,
+    "offMatchCoveragePercent": 47.54,
     "missingArabicNames": 3435,
     "missingEnglishNames": 1,
-    "missingFrenchNames": 1598,
-    "fallbackOtherCategory": 320,
-    "missingImages": 4651,
-    "missingNutrition": 4651,
+    "missingFrenchNames": 1596,
+    "fallbackOtherCategory": 319,
+    "missingImages": 4649,
+    "missingNutrition": 4649,
     "duplicateIds": 0,
     "duplicateEnglishNames": 0,
-    "uuidv4Ids": 4651,
+    "uuidv4Ids": 4649,
     "recipeRowsMapped": 8623,
-    "legacyIdConflicts": 0
+    "legacyIdConflicts": 0,
+    "registrySplitReassignments": 0
   },
   "recipeMatchingMethods": {
     "exact_alias": 117,
@@ -38,7 +46,7 @@
     "foodon_ambiguous": 1,
     "foodon_exact": 33,
     "foodon_exact_to_off": 6,
-    "unmatched": 431
+    "unmatched": 429
   },
   "unmatchedRecipeIngredients": [
     {
@@ -89,14 +97,6 @@
       ]
     },
     {
-      "nameAr": "الفاصوليا السوداء المطبوخة",
-      "nameEn": "Black beans, : from 350 g dry",
-      "legacyIds": [
-        "orc-ing-5c73bb5ce1b538738d37"
-      ],
-      "units": []
-    },
-    {
       "nameAr": "كتف لحم بقري قليل الدهن، مطبوخ",
       "nameEn": "Beef chuck, lean",
       "legacyIds": [
@@ -116,14 +116,6 @@
       "units": [
         "g"
       ]
-    },
-    {
-      "nameAr": "أرز أبيض مطبوخ",
-      "nameEn": "White rice, : from 200 g",
-      "legacyIds": [
-        "orc-ing-0eb712bc31c3b3fcea1f"
-      ],
-      "units": []
     },
     {
       "nameAr": "شاي أسود مُخمر",

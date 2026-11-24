@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "idFormat": "UUIDv4",
   "ids": {
     "openfoodfacts:3 fat reduced cocoa powder": "315cc5e3-9140-4741-a265-0582ba81b106",
@@ -522,7 +522,7 @@
     "recipe-term:black beans cooked from 350 g dry cooked": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
     "recipe-term:black beans cooked": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
     "openfoodfacts:black bean": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
-    "legacy-room:orc-ing-5c73bb5ce1b538738d37": "dc22f2f1-5b33-4db2-b41e-4665b0c54c59",
+    "legacy-room:orc-ing-5c73bb5ce1b538738d37": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
     "legacy-room:orc-ing-unitools-blackbeans": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
     "legacy-room:orc-ing-45fd0e4b3536da9b03fa": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
     "openfoodfacts:black bean flour": "42ed3a39-b452-40a9-9422-acf95d8fa102",
@@ -6161,13 +6161,13 @@
     "legacy-room:orc-ing-unitools-whitepepper": "ec550704-2d81-4b67-8629-f0e3562b1473",
     "openfoodfacts:white pepper": "ec550704-2d81-4b67-8629-f0e3562b1473",
     "openfoodfacts:white quinoa flour": "811ea119-2464-4f34-9fc4-5cba8691b07d",
-    "legacy-room:orc-ing-8141a83ecc73bc9267c7": "c7947290-7150-48d2-bb8e-fb69afb6723d",
+    "legacy-room:orc-ing-8141a83ecc73bc9267c7": "0767c516-74d3-432d-b097-380baf446b3c",
     "legacy-room:orc-ing-0eb712bc31c3b3fcea1f": "0767c516-74d3-432d-b097-380baf446b3c",
-    "legacy-room:orc-ing-37b78b6e38129707ca61": "c7947290-7150-48d2-bb8e-fb69afb6723d",
+    "legacy-room:orc-ing-37b78b6e38129707ca61": "0767c516-74d3-432d-b097-380baf446b3c",
     "recipe-term:white rice cooked from 200 g raw": "c7947290-7150-48d2-bb8e-fb69afb6723d",
     "recipe-term:white rice cooked": "c7947290-7150-48d2-bb8e-fb69afb6723d",
-    "legacy-room:orc-ing-f1699747019d5186e1f5": "c7947290-7150-48d2-bb8e-fb69afb6723d",
-    "openfoodfacts:white rice": "c7947290-7150-48d2-bb8e-fb69afb6723d",
+    "legacy-room:orc-ing-f1699747019d5186e1f5": "0767c516-74d3-432d-b097-380baf446b3c",
+    "openfoodfacts:white rice": "0767c516-74d3-432d-b097-380baf446b3c",
     "openfoodfacts:white rice flour": "0c492dcd-8400-40a1-bfff-7fe202004fd0",
     "openfoodfacts:white rice koji": "11cdf582-5eb3-4bad-b55b-9b11a744e982",
     "openfoodfacts:white round rice": "ee61a8b9-b118-4e5e-a27c-cce1af88410c",
@@ -6480,7 +6480,7 @@
     "recipe-term:turkey sausage": "93cc0411-49fa-4e4e-95c4-0fd7c8449a06",
     "openfoodfacts:violet asparagus": "2c26983e-3aa0-46c1-ab76-6b7476346fdc",
     "openfoodfacts:white quinoa": "8dcf9b64-2901-4eb1-b016-6aaee1e676e9",
-    "recipe-term:white rice": "c7947290-7150-48d2-bb8e-fb69afb6723d",
+    "recipe-term:white rice": "0767c516-74d3-432d-b097-380baf446b3c",
     "recipe-term:white rice from 200 g": "0767c516-74d3-432d-b097-380baf446b3c",
     "recipe-term:whole wheat pasta": "8118a9ff-5d8c-4cf4-a6f5-dafbccff2f41",
     "recipe-term:wild rice": "bbfbfa1e-790e-4674-995c-002100b1ddcb",
@@ -6511,7 +6511,9 @@
     "65039fd4-14c4-400c-9e87-600cb753f87b": "47639ffd-b4c5-4e11-b21a-4f44a60a106d",
     "ea951ecd-9cc0-4306-94d2-320624d6a610": "499870c1-f027-4aff-aa1e-52845c53bc39",
     "fc11ed8e-ed86-4e0e-94f3-38a612593cc4": "499870c1-f027-4aff-aa1e-52845c53bc39",
-    "35192b9d-54c9-4978-be00-02f36de912e2": "012b3fea-b97c-421e-8acb-f57b93054990"
+    "35192b9d-54c9-4978-be00-02f36de912e2": "012b3fea-b97c-421e-8acb-f57b93054990",
+    "dc22f2f1-5b33-4db2-b41e-4665b0c54c59": "8dd26f0f-ff56-40ac-958e-7f8c0e96a650",
+    "c7947290-7150-48d2-bb8e-fb69afb6723d": "0767c516-74d3-432d-b097-380baf446b3c"
   },
   "splitIdentityAssignments": [
     {
@@ -6534,5 +6536,6 @@
       "previousId": "c7947290-7150-48d2-bb8e-fb69afb6723d",
       "newId": "0767c516-74d3-432d-b097-380baf446b3c"
     }
-  ]
+  ],
+  "splitReassignments": []
 }
