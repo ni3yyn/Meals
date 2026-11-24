@@ -9,6 +9,7 @@ from tools.build_food_product_catalogue import (
     parse_foodon_owl,
     parse_off_taxonomy,
     room_ingredient_id,
+    _clean_english_ingredient,
 )
 
 
@@ -63,6 +64,13 @@ class FoodCatalogueParserTests(unittest.TestCase):
     def test_normalization_handles_arabic_diacritics_and_punctuation(self):
         self.assertEqual(normalize_label("  الطَّمَاطِم! "), "الطماطم")
 
+    def test_english_source_name_removes_embedded_quantity(self):
+        self.assertEqual(
+            _clean_english_ingredient("Canned crushed tomatoes: 1 can (400 g)"),
+            "Canned crushed tomatoes",
+        )
+        self.assertEqual(_clean_english_ingredient("2 limes"), "limes")
+
 
 class FoodCatalogueBuildTests(unittest.TestCase):
     def test_recipe_ingredient_uses_existing_room_id_and_map(self):
@@ -95,7 +103,8 @@ class FoodCatalogueBuildTests(unittest.TestCase):
         self.assertEqual(product["id"], existing_id)
         self.assertEqual(product["recipeIngredientIds"], [existing_id])
         self.assertEqual(mapping["recipeIngredientToProductId"][existing_id], existing_id)
-        self.assertEqual(product["categoryId"], "legumes")
+        self.assertEqual(product["categoryId"], "foodcat-legumes")
+        self.assertEqual(product["subcategoryId"], "foodsub-legumes-chickpeas")
         self.assertIn("g", product["acceptedUnits"])
         self.assertEqual(audit["catalogueCounts"]["duplicateIds"], 0)
 
