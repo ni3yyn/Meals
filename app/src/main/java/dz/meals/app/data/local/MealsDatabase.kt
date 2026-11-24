@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import dz.meals.app.data.FoodIdentityResolver
 
 @Database(
     entities = [
@@ -24,7 +25,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RecipeAttributionEntity::class,
         RecipeImageOverrideEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -182,11 +183,33 @@ abstract class MealsDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): MealsDatabase =
             INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    MealsDatabase::class.java,
-                    "meals_local.db"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13).build().also { INSTANCE = it }
+                INSTANCE ?: createDatabase(context, "meals_local.db").also { INSTANCE = it }
             }
+
+        /** Opens an isolated database through the production migration chain. */
+        @androidx.annotation.Keep
+        internal fun createForTesting(context: Context, databaseName: String): MealsDatabase =
+            createDatabase(context, databaseName)
+
+        private fun createDatabase(context: Context, databaseName: String): MealsDatabase =
+            Room.databaseBuilder(
+                context.applicationContext,
+                MealsDatabase::class.java,
+                databaseName
+            ).addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+                MIGRATION_9_10,
+                MIGRATION_10_11,
+                MIGRATION_11_12,
+                MIGRATION_12_13,
+                FoodIdentityMigration(FoodIdentityResolver(context.applicationContext))
+            ).build()
     }
 }

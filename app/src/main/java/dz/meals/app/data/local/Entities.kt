@@ -47,7 +47,7 @@ data class RecipeEntity(
 
 @Entity(
     tableName = "recipe_ingredients",
-    primaryKeys = ["recipeId", "ingredientId", "unit"],
+    primaryKeys = ["recipeId", "ingredientId", "unit", "rowKey"],
     indices = [Index("ingredientId")]
 )
 data class RecipeIngredientEntity(
@@ -57,7 +57,8 @@ data class RecipeIngredientEntity(
     val unit: String,
     val prepNote: String,
     val optional: Boolean,
-    @ColumnInfo(defaultValue = "'linear'") val scalingRule: String = "linear"
+    @ColumnInfo(defaultValue = "'linear'") val scalingRule: String = "linear",
+    val rowKey: String = ""
 )
 
 @Entity(tableName = "recipe_steps", primaryKeys = ["recipeId", "stepNumber"])
@@ -87,7 +88,7 @@ data class PlanMealEntity(
 
 @Entity(
     tableName = "pantry_items",
-    indices = [Index(value = ["ingredientId"], unique = true)]
+    indices = [Index("ingredientId")]
 )
 data class PantryItemEntity(
     @PrimaryKey val id: String,
@@ -165,13 +166,15 @@ data class PlanRunEntity(
 
 @Entity(
     tableName = "cooked_meal_deductions",
-    primaryKeys = ["mealId", "ingredientId"]
+    primaryKeys = ["mealId", "ingredientId", "unit", "rowKey"]
 )
 data class CookedMealDeductionEntity(
     val mealId: String,
     val ingredientId: String,
     val unit: String,
-    val quantityBase: Double
+    val quantityBase: Double,
+    val rowKey: String,
+    val pantryItemId: String? = null
 )
 
 

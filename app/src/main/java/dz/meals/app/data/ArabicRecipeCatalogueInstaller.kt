@@ -28,6 +28,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
     private val database = MealsDatabase.getInstance(appContext)
     private val dao = database.mealsDao()
     private val preferences = appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private val foodIdentityResolver = FoodIdentityResolver(appContext)
 
     suspend fun isInstalled(): Boolean = withContext(Dispatchers.IO) {
         preferences.getString(INSTALLED_REVISION_KEY, null) == ArabicRecipeCatalogueDownloader.REVISION &&
@@ -388,12 +389,15 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         val ingredientEntities = ArrayList<IngredientEntity>()
         val recipeIngredients = ArrayList<RecipeIngredientEntity>()
 
-        ingredients.forEach { source ->
+        ingredients.forEachIndexed { sourceIndex, source ->
             val measure = normalizeMeasure(source.quantity, source.unit)
-            val ingredientId = if (source.sourceId.isNotBlank()) {
+            // Preserve the exact legacy-key algorithm used by the generated
+            // crosswalk, then persist only its canonical food UUID.
+            val legacyIngredientId = if (source.sourceId.isNotBlank()) {
                 INGREDIENT_ID_PREFIX + "unitools-" + source.sourceId.trim().lowercase()
                     .replace(Regex("[^a-z0-9._-]"), "-")
             } else ingredientId(source.name, measure.unit)
+            val ingredientId = foodIdentityResolver.canonicalId(legacyIngredientId)
             ingredientEntities += IngredientEntity(
                 id = ingredientId,
                 nameAr = source.name,
@@ -420,7 +424,8 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                 unit = measure.unit,
                 prepNote = preparationNote,
                 optional = false,
-                scalingRule = source.scaling.ifBlank { "linear" }
+                scalingRule = source.scaling.ifBlank { "linear" },
+                rowKey = "catalogue:$sourceIndex"
             )
         }
 
@@ -617,7 +622,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         const val FOCUS_RECIPE_ID_PREFIX = "focus-"
         const val UNITOOLS_RECIPE_ID_PREFIX = "unitools-"
         const val INGREDIENT_ID_PREFIX = "orc-ing-"
-        const val METADATA_MAPPING_VERSION = 4
+        const val METADATA_MAPPING_VERSION = 5
         const val METADATA_MAPPING_VERSION_KEY = "metadata_mapping_version"
         private const val DEFAULT_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
         private const val BATCH_SIZE = 80

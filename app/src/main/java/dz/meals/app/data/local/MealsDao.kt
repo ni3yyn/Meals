@@ -58,6 +58,29 @@ interface MealsDao {
     @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'unitools-%'")
     suspend fun countUnitoolsRecipes(): Int
 
+    /**
+     * Imported recipe ingredients with no seed/non-catalogue recipe usage.
+     * Keep these hidden until the pinned catalogue is fully installed.
+     */
+    @Query("""
+        SELECT DISTINCT imported.ingredientId
+        FROM recipe_ingredients AS imported
+        WHERE (
+            imported.recipeId LIKE 'orc-%' OR
+            imported.recipeId LIKE 'focus-%' OR
+            imported.recipeId LIKE 'unitools-%'
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM recipe_ingredients AS seedUsage
+            WHERE seedUsage.ingredientId = imported.ingredientId
+              AND seedUsage.recipeId NOT LIKE 'orc-%'
+              AND seedUsage.recipeId NOT LIKE 'focus-%'
+              AND seedUsage.recipeId NOT LIKE 'unitools-%'
+        )
+    """)
+    suspend fun getUnpublishedArabicCatalogueIngredientIds(): List<String>
+
 
     @Query("DELETE FROM recipe_ingredients WHERE recipeId LIKE 'orc-%'")
     suspend fun deleteLegacyOpenRecipeIngredients()
@@ -79,8 +102,7 @@ interface MealsDao {
 
     @Query("""
         DELETE FROM ingredients
-        WHERE substr(id, 1, 8) = 'orc-ing-'
-          AND NOT EXISTS (
+        WHERE NOT EXISTS (
               SELECT 1 FROM recipe_ingredients
               WHERE recipe_ingredients.ingredientId = ingredients.id
           )
@@ -177,14 +199,20 @@ interface MealsDao {
     @Query("DELETE FROM plan_meals WHERE weekStartIso = :weekStartIso AND mealSlot IN (:mealSlots)")
     suspend fun deletePlanSlots(weekStartIso: String, mealSlots: List<String>)
 
-    @Query("SELECT * FROM pantry_items ORDER BY ingredientId")
+    @Query("SELECT * FROM pantry_items ORDER BY ingredientId, unit, id")
     suspend fun getPantryItems(): List<PantryItemEntity>
+
+    @Query("SELECT * FROM pantry_items WHERE id = :id LIMIT 1")
+    suspend fun getPantryItem(id: String): PantryItemEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPantryItem(item: PantryItemEntity)
 
     @Query("DELETE FROM pantry_items WHERE id = :id")
     suspend fun deletePantryItem(id: String)
+
+    @Query("DELETE FROM pantry_items WHERE ingredientId = :ingredientId AND unit = :unit")
+    suspend fun deletePantryItemsForIngredientUnit(ingredientId: String, unit: String)
 
     @Query("SELECT * FROM price_observations")
     suspend fun getPriceObservations(): List<PriceObservationEntity>

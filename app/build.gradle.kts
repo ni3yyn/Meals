@@ -25,6 +25,13 @@ val hasReleaseSigning = listOf(
 val generatedTajawalRes = layout.buildDirectory.dir("generated/tajawal-res")
 val localRecipeCorpusDir = rootProject.file("local-data/open-recipe-corpus")
 val generatedRecipeCorpusAssets = layout.buildDirectory.dir("generated/recipe-corpus/debug-assets")
+val generatedFoodIdentityAssets = layout.buildDirectory.dir("generated/food-identity-migration-assets")
+val prepareFoodIdentityMigrationAssets = tasks.register<Sync>("prepareFoodIdentityMigrationAssets") {
+    from(rootProject.file("data/products/recipe-ingredient-map.json")) {
+        into("migration")
+    }
+    into(generatedFoodIdentityAssets)
+}
 val prepareRecipeCorpusDebugAssets = tasks.register<Sync>("prepareRecipeCorpusDebugAssets") {
     from(localRecipeCorpusDir) {
         include(
@@ -130,11 +137,26 @@ android {
     // The same shared Tajawal assets are exposed as Android font resources
     // for a deterministic native Typeface fallback in MainActivity.
     sourceSets.getByName("main").res.srcDir(generatedTajawalRes.get().asFile)
+    // Database upgrades need the generated legacy-ID crosswalk to work offline.
+    sourceSets.getByName("main").assets.srcDir(generatedFoodIdentityAssets.get().asFile)
     // Local corpus assets are attached to Debug only, never to release APKs.
     sourceSets.getByName("debug").assets.srcDir(generatedRecipeCorpusAssets.get().asFile)
 
     room {
         schemaDirectory("$projectDir/schemas")
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // Robolectric's default repo1.maven.org endpoint is frequently rate-limited
+            // in CI when fetching android-all-instrumented at test runtime.
+            // Use Maven Central's canonical endpoint for the runtime SDK artifacts.
+            it.systemProperty(
+                "robolectric.dependency.repo.url",
+                "https://repo.maven.apache.org/maven2"
+            )
+        }
     }
 
     packaging {
@@ -148,7 +170,10 @@ android {
 // Every Android resource path that can read the generated res/font folder
 // must wait for the copy task. AGP 9.5 validates these dependencies explicitly.
 tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(copyTajawalFonts)
+    dependsOn(copyTajawalFonts, prepareFoodIdentityMigrationAssets)
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(prepareFoodIdentityMigrationAssets)
 }
 tasks.configureEach {
     val isFontResourceConsumer =
@@ -187,6 +212,12 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.16.1") {
+        // This migration test is pinned to API 35 (V). Robolectric uses
+        // android-all for the native runtime from V onward, so its 151 MB
+        // O-U compatibility distribution is not needed on this test classpath.
+        exclude(group = "org.robolectric", module = "nativeruntime-dist-compat")
+    }
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
