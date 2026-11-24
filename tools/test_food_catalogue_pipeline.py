@@ -30,13 +30,13 @@ fr: pois chiches
         root = "http://purl.obolibrary.org/obo/FOODON_00001002"
         child = "http://purl.obolibrary.org/obo/FOODON_00001014"
         source = (
-            "?class\\t?parent\\t?type\\t?label\\n"
-            f"<{root}>\\t\\t\\t\\n"
-            f"<{root}>\\t\\t\\"label\\"\\t\\"food product\\"@en\\n"
-            f"<{child}>\\t<{root}>\\t\\t\\n"
-            f"<{child}>\\t\\t\\"label\\"\\t\\"yogurt food product\\"@en\\n"
-            f"<{child}>\\t\\t\\"synonym (exact)\\"\\t\\"yoghurt\\"@en\\n"
-            f"<{child}>\\t\\t\\"label\\"\\t\\"yaourt\\"@fr\\n"
+            "?class\t?parent\t?type\t?label\n"
+            f"<{root}>\t\t\t\n"
+            f'<{root}>\t\t"label"\t"food product"@en\n'
+            f"<{child}>\t<{root}>\t\t\n"
+            f'<{child}>\t\t"label"\t"yogurt food product"@en\n'
+            f'<{child}>\t\t"synonym (exact)"\t"yoghurt"@en\n'
+            f'<{child}>\t\t"label"\t"yaourt"@fr\n'
         )
         nodes, parents = parse_foodon_tsv(source)
         self.assertEqual(nodes["FOODON_00001014"]["names"]["en"][0], "yogurt food product")
