@@ -1,908 +1,526 @@
 #!/usr/bin/env python3
-"""Build Midati's generic food catalogue from OFF, FoodOn and recipe usage.
+"""Build Midati's generic food catalogue from pinned Open Food Facts, FoodOn and recipes.
 
-The output contains generic food identities only. Retailer/brand/barcode records
-and pack quantities belong to the separate future market-product/pricing system.
-
-IDs are random UUIDv4 values persisted in identity_registry.json. They are
-never derived from names, slugs, translations or category labels.
+This catalogue is for generic foods. Brands, barcodes, retail pack sizes and prices
+belong to the separate market-products/pricing system.
 """
 from __future__ import annotations
-
-import argparse
-import hashlib
-import json
-import re
-import sys
-import unicodedata
-import uuid
+import argparse, csv, hashlib, json, re, sys, time, urllib.error, urllib.request, uuid, unicodedata
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-OFF_COMMIT = "f5abb0a0ca8ae5702f3e192219511adf211b55ee"
-OFF_BLOB_SHA = "0c54acc70878b778a38d893c877ea49c6ef87ff6"
-FOODON_COMMIT = "8a27493346a122e86ac1748aac24199d5af69166"
-FOODON_BLOB_SHA = "d134da045e75194fad2872e24401c893e109eb44"
-SCHEMA_VERSION = 1
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_RECIPES = ROOT / "data/recipes/ar/recipes.json"
+DEFAULT_OUTPUT = ROOT / "data/catalogues"
+SOURCE_LOCK = ROOT / "data/catalogues/source-lock.json"
+CURATED_FILE = ROOT / "data/catalogues/curated-food-items.json"
+REGISTRY_NAME = "food-item-id-registry.json"
 
-SUBCATEGORY_LABELS = {
-    "milk": ("الحليب", "Milk", "Lait"),
-    "fermented_milk": ("الألبان المخمرة", "Fermented milk", "Laits fermentés"),
-    "yogurt": ("الزبادي", "Yogurt", "Yaourt"),
-    "cheese": ("الجبن", "Cheese", "Fromage"),
-    "cream": ("القشدة والكريمة", "Cream", "Crème"),
-    "butter": ("الزبدة", "Butter", "Beurre"),
-    "beef": ("لحم البقر", "Beef", "Bœuf"),
-    "lamb": ("لحم الضأن", "Lamb", "Agneau"),
-    "poultry": ("الدواجن", "Poultry", "Volaille"),
-    "offal": ("الأحشاء", "Offal", "Abats"),
-    "fish": ("الأسماك", "Fish", "Poissons"),
-    "crustaceans": ("القشريات", "Crustaceans", "Crustacés"),
-    "molluscs": ("الرخويات", "Molluscs", "Mollusques"),
-    "citrus": ("الحمضيات", "Citrus", "Agrumes"),
-    "berries": ("التوت", "Berries", "Baies"),
-    "root_vegetables": ("الخضروات الجذرية", "Root vegetables", "Légumes-racines"),
-    "leaf_vegetables": ("الخضروات الورقية", "Leaf vegetables", "Légumes-feuilles"),
-    "tomato": ("الطماطم", "Tomato products", "Tomates"),
-    "chickpeas": ("الحمص", "Chickpeas", "Pois chiches"),
-    "lentils": ("العدس", "Lentils", "Lentilles"),
-    "beans": ("الفاصولياء", "Beans", "Haricots"),
-    "peas": ("البازلاء", "Peas", "Pois"),
-    "rice": ("الأرز", "Rice", "Riz"),
-    "wheat": ("القمح", "Wheat", "Blé"),
-    "flour": ("الدقيق والفرينة", "Flour", "Farines"),
-    "pasta": ("المعكرونة", "Pasta", "Pâtes"),
-    "bread": ("الخبز", "Bread", "Pain"),
-    "nuts": ("المكسرات", "Nuts", "Fruits à coque"),
-    "seeds": ("البذور", "Seeds", "Graines"),
-    "oils": ("الزيوت", "Oils", "Huiles"),
-    "spice_blends": ("خلطات التوابل", "Spice blends", "Mélanges d'épices"),
-    "herbs": ("الأعشاب", "Herbs", "Herbes"),
-    "sauces": ("الصلصات", "Sauces", "Sauces"),
-    "mayonnaise": ("المايونيز", "Mayonnaise", "Mayonnaise"),
-    "vinegar": ("الخل", "Vinegar", "Vinaigre"),
-    "jams_preserves": ("المربى والمحافظات", "Jams & preserves", "Confitures et conserves"),
-    "canned_legumes": ("البقوليات المعلبة", "Canned legumes", "Légumineuses en conserve"),
-    "canned_fish": ("الأسماك المعلبة", "Canned fish", "Poissons en conserve"),
-    "frozen_vegetables": ("الخضروات المجمدة", "Frozen vegetables", "Légumes surgelés"),
-    "chocolate_cocoa": ("الشوكولاتة والكاكاو", "Chocolate & cocoa", "Chocolat et cacao"),
-}
-
-CATEGORY_KEYWORDS = {
-    "canned_preserved": ("canned", "tinned", "preserved", "pickled", "conserve", "appertised"),
-    "frozen_foods": ("frozen", "deep frozen", "surgel"),
-    "beverages": ("beverage", "drink", "juice", "water", "coffee", "tea", "infusion"),
-    "seafood": ("seafood", "fish", "crustacean", "shellfish", "mollusc", "mollusk", "shrimp", "prawn", "sardine", "tuna", "salmon", "anchovy", "seaweed", "roe"),
-    "meat_offal": ("meat", "beef", "pork", "lamb", "mutton", "veal", "goat", "poultry", "chicken", "turkey", "duck", "liver", "kidney", "heart", "offal", "tripe", "sausage", "ham"),
-    "dairy": ("dairy", "milk", "yogurt", "yoghurt", "raib", "leben", "lben", "kefir", "cheese", "cream", "butter", "whey", "curd", "lact"),
-    "eggs": ("egg",),
-    "mushrooms": ("mushroom", "fungus", "fungi", "truffle"),
-    "fruits": ("fruit", "berry", "berries", "citrus", "apple", "banana", "date", "orange", "lemon", "grape", "pear", "peach", "plum", "fig"),
-    "vegetables": ("vegetable", "tomato", "potato", "onion", "carrot", "cabbage", "pepper", "lettuce", "spinach", "root vegetable", "leaf vegetable", "tuber"),
-    "legumes": ("legume", "pulse", "chickpea", "garbanzo", "lentil", "bean", "pea", "faba", "broad bean", "soybean"),
-    "grains_cereals": ("cereal", "grain", "wheat", "rice", "corn", "maize", "oat", "barley", "rye", "millet", "semolina", "flour", "starch"),
-    "pasta_bakery": ("pasta", "noodle", "bread", "bakery", "dough", "couscous", "pita"),
-    "nuts_seeds": ("nut", "almond", "walnut", "hazelnut", "pistachio", "peanut", "seed", "sesame"),
-    "oils_fats": ("oil", "fat", "margarine", "shortening", "lard"),
-    "spices": ("spice", "peppercorn", "cumin", "paprika", "curry", "cinnamon", "clove", "chili", "chilli", "seasoning"),
-    "herbs": ("herb", "parsley", "coriander leaf", "cilantro", "thyme", "mint", "basil", "rosemary", "oregano", "dill"),
-    "sauces_condiments": ("sauce", "condiment", "mayonnaise", "ketchup", "mustard", "vinegar", "dressing", "harissa", "paste"),
-    "sweeteners": ("sweetener", "sugar", "honey", "syrup", "molasses", "jam", "chocolate", "cocoa", "confection"),
-    "baking_dessert": ("baking", "baker", "yeast", "leavening", "gelatin", "pudding", "dessert", "custard", "vanilla"),
-}
-
-PREPARATION_WORDS = {
-    "cooked", "raw", "roasted", "boiled", "grilled", "fried", "baked",
-    "steamed", "chopped", "minced", "sliced", "diced", "shredded",
-    "grated", "peeled", "skinless", "boneless", "drained", "soaked",
-    "trimmed", "deseeded", "seeded", "mashed", "pureed", "puréed",
-    "thinly", "finely", "roughly",
-}
-PREPARATION_PHRASES = ("low sodium", "reduced sodium", "unsalted")
-
+UNIT_ORDER = ["g","kg","ml","l","piece","clove","slice","can","tbsp","tsp","cup","sprig","bunch","pinch","handful","to_taste"]
 UNIT_ALIASES = {
-    "g": "g", "gram": "g", "grams": "g", "kg": "g", "kilogram": "g",
-    "kilograms": "g", "mg": "g", "milligram": "g", "milligrams": "g",
-    "oz": "g", "ounce": "g", "ounces": "g", "lb": "g", "lbs": "g",
-    "pound": "g", "pounds": "g",
-    "ml": "ml", "milliliter": "ml", "milliliters": "ml",
-    "millilitre": "ml", "millilitres": "ml", "l": "ml", "liter": "ml",
-    "liters": "ml", "litre": "ml", "litres": "ml", "cl": "ml",
-    "pc": "piece", "pcs": "piece", "piece": "piece", "pieces": "piece",
-    "unit": "piece", "units": "piece", "whole": "piece",
-    "clove": "clove", "cloves": "clove", "sprig": "sprig",
-    "sprigs": "sprig", "stalk": "stalk", "stalks": "stalk",
-    "bunch": "bunch", "bunches": "bunch", "handful": "handful",
-    "handfuls": "handful", "slice": "slice", "slices": "slice",
-    "cup": "cup", "cups": "cup", "tbsp": "tbsp", "tablespoon": "tbsp",
-    "tablespoons": "tbsp", "tsp": "tsp", "teaspoon": "tsp",
-    "teaspoons": "tsp", "pinch": "pinch", "pinches": "pinch",
-    "can": "can", "cans": "can", "tin": "can", "tins": "can",
-    "pack": "pack", "package": "pack", "packages": "pack",
-    "to taste": "to_taste", "totaste": "to_taste", "to_taste": "to_taste",
-    "as needed": "to_taste",
+    "gram":"g","grams":"g","gramme":"g","grammes":"g","kilogram":"kg","kilograms":"kg",
+    "milliliter":"ml","milliliters":"ml","millilitre":"ml","millilitres":"ml",
+    "liter":"l","liters":"l","litre":"l","litres":"l","pc":"piece","pcs":"piece","pieces":"piece",
+    "unit":"piece","units":"piece","cloves":"clove","slices":"slice","cans":"can",
+    "tablespoon":"tbsp","tablespoons":"tbsp","tbs":"tbsp","tbsps":"tbsp",
+    "teaspoon":"tsp","teaspoons":"tsp","tsps":"tsp","cups":"cup","sprigs":"sprig",
+    "bunches":"bunch","handfuls":"handful","totaste":"to_taste","taste":"to_taste","to taste":"to_taste","":"piece"
 }
 
-LEGACY_SEEDS = [
-    ("semolina", "سميد متوسط", "Semolina", "Semoule moyenne", ["سميد", "semoule", "smid"]),
-    ("chicken", "دجاج", "Chicken", "Poulet", ["دجاجة", "poulet"]),
-    ("carrot", "جزر", "Carrot", "Carotte", ["زرودية", "carotte", "zrodiya"]),
-    ("zucchini", "قرعة خضراء", "Zucchini", "Courgette", ["كوسة", "courgette", "qar3a"]),
-    ("chickpeas", "حمص", "Chickpeas", "Pois chiches", ["حمص يابس", "pois chiche", "homs"]),
-    ("tomato", "طماطم", "Tomato", "Tomate", ["مطيشة", "tomate", "maticha"]),
-    ("lentils", "عدس", "Lentils", "Lentilles", ["عدس يابس", "lentille", "3dess"]),
-    ("onion", "بصل", "Onion", "Oignon", ["بصلة", "oignon", "bsal"]),
-    ("garlic", "ثوم", "Garlic", "Ail", ["ثومة", "ail", "thoum"]),
-    ("oil", "زيت", "Cooking oil", "Huile", ["زيت المائدة", "huile"]),
-    ("eggs", "بيض", "Eggs", "Œufs", ["بيضات", "oeuf", "œuf", "bayd"]),
-    ("pepper", "فلفل حلو", "Sweet pepper", "Poivron", ["فلفلة", "poivron", "felfel"]),
-    ("pasta", "معكرونة", "Pasta", "Pâtes", ["مقرونة", "pates", "pasta"]),
-    ("tomato-paste", "طماطم مصبرة", "Tomato paste", "Concentré de tomate", ["عكري", "concentré tomate"]),
-    ("potato", "بطاطا", "Potato", "Pomme de terre", ["اطاطبلا", "pomme de terre", "patate", "batata"]),
-    ("cheese", "جبن", "Cheese", "Fromage", ["فرماج", "fromage", "jben"]),
+# Application-owned categories: external taxonomy versions can change without
+# changing Midati category IDs.
+CATEGORY_TREE = [
+ {"id":"fruits","names":{"ar":"الفواكه","en":"Fruits","fr":"Fruits"},"subs":[
+  ("citrus-fruits","الحمضيات","Citrus fruits","Agrumes"),("berries","التوتيات","Berries","Baies"),
+  ("stone-fruits","الفواكه ذات النواة","Stone fruits","Fruits à noyau"),("tropical-fruits","الفواكه الاستوائية","Tropical fruits","Fruits tropicaux"),("dried-fruits","الفواكه المجففة","Dried fruits","Fruits séchés")]},
+ {"id":"vegetables","names":{"ar":"الخضروات","en":"Vegetables","fr":"Légumes"},"subs":[
+  ("leafy-vegetables","الخضروات الورقية","Leafy vegetables","Légumes-feuilles"),("roots-tubers","الجذور والدرنات","Roots and tubers","Racines et tubercules"),
+  ("bulbs-stems","الأبصال والسيقان","Bulbs and stems","Bulbes et tiges"),("fruit-vegetables","الخضروات الثمرية","Fruit vegetables","Légumes-fruits"),
+  ("canned-vegetables","الخضروات المعلبة","Canned vegetables","Légumes en conserve"),("frozen-vegetables","الخضروات المجمدة","Frozen vegetables","Légumes surgelés")]},
+ {"id":"meat-offal","names":{"ar":"اللحوم والأحشاء","en":"Meat and offal","fr":"Viandes et abats"},"subs":[
+  ("red-meat","اللحوم الحمراء","Red meat","Viande rouge"),("offal","الأحشاء","Offal","Abats"),("processed-meat","اللحوم المصنعة","Processed meat","Viandes transformées")]},
+ {"id":"poultry","names":{"ar":"الدواجن","en":"Poultry","fr":"Volailles"},"subs":[
+  ("chicken","الدجاج","Chicken","Poulet"),("turkey","الديك الرومي","Turkey","Dinde"),("other-poultry","دواجن أخرى","Other poultry","Autres volailles")]},
+ {"id":"seafood","names":{"ar":"المأكولات البحرية","en":"Seafood","fr":"Produits de la mer"},"subs":[
+  ("fish","الأسماك","Fish","Poissons"),("shellfish","القشريات والرخويات","Shellfish and molluscs","Crustacés et mollusques"),("canned-fish","الأسماك المعلبة","Canned fish","Poissons en conserve")]},
+ {"id":"dairy","names":{"ar":"الألبان ومشتقاتها","en":"Dairy and fermented products","fr":"Produits laitiers"},"subs":[
+  ("fresh-milk","الحليب","Milk","Lait"),("fermented-dairy","الألبان المخمرة","Fermented dairy","Laits fermentés"),("cream","القشدة","Cream","Crème"),("dairy-powders","مساحيق الحليب","Dairy powders","Poudres laitières")]},
+ {"id":"cheese-butter","names":{"ar":"الأجبان والزبدة","en":"Cheese and butter","fr":"Fromages et beurre"},"subs":[
+  ("soft-cheese","الأجبان الطرية","Soft cheese","Fromages frais"),("hard-cheese","الأجبان الصلبة","Hard cheese","Fromages à pâte dure"),("butter-margarine","الزبدة والمارغرين","Butter and margarine","Beurre et margarine")]},
+ {"id":"eggs","names":{"ar":"البيض","en":"Eggs","fr":"Œufs"},"subs":[("bird-eggs","بيض الطيور","Bird eggs","Œufs d’oiseaux")]},
+ {"id":"legumes","names":{"ar":"البقوليات","en":"Legumes","fr":"Légumineuses"},"subs":[
+  ("beans","الفاصولياء والفول","Beans and fava beans","Haricots et fèves"),("chickpeas","الحمص","Chickpeas","Pois chiches"),("lentils","العدس","Lentils","Lentilles"),
+  ("peas","البازلاء","Peas","Pois"),("canned-legumes","البقوليات المعلبة","Canned legumes","Légumineuses en conserve")]},
+ {"id":"grains-cereals","names":{"ar":"الحبوب والمنتجات النشوية","en":"Grains and cereals","fr":"Céréales"},"subs":[
+  ("wheat-semolina","القمح والسميد","Wheat and semolina","Blé et semoule"),("rice","الأرز","Rice","Riz"),("other-grains","حبوب أخرى","Other grains","Autres céréales")]},
+ {"id":"pasta-bakery","names":{"ar":"العجائن والخبز","en":"Pasta and bakery","fr":"Pâtes et boulangerie"},"subs":[
+  ("pasta","العجائن","Pasta","Pâtes"),("bread-bakery","الخبز والمخبوزات","Bread and bakery","Pain et produits boulangers")]},
+ {"id":"nuts-seeds","names":{"ar":"المكسرات والبذور","en":"Nuts and seeds","fr":"Noix et graines"},"subs":[
+  ("tree-nuts","المكسرات","Tree nuts","Fruits à coque"),("edible-seeds","البذور الصالحة للأكل","Edible seeds","Graines comestibles")]},
+ {"id":"oils-fats","names":{"ar":"الزيوت والدهون","en":"Oils and fats","fr":"Huiles et matières grasses"},"subs":[
+  ("vegetable-oils","الزيوت النباتية","Vegetable oils","Huiles végétales"),("animal-fats","الدهون الحيوانية","Animal fats","Graisses animales")]},
+ {"id":"spices","names":{"ar":"التوابل والبهارات","en":"Spices","fr":"Épices"},"subs":[
+  ("ground-spices","التوابل المطحونة","Ground spices","Épices moulues"),("whole-spices","التوابل الكاملة","Whole spices","Épices entières"),("spice-blends","خلطات التوابل","Spice blends","Mélanges d’épices")]},
+ {"id":"herbs","names":{"ar":"الأعشاب العطرية","en":"Herbs","fr":"Herbes aromatiques"},"subs":[
+  ("fresh-herbs","الأعشاب الطازجة","Fresh herbs","Herbes fraîches"),("dried-herbs","الأعشاب المجففة","Dried herbs","Herbes séchées")]},
+ {"id":"sauces-condiments","names":{"ar":"الصلصات والمنكهات","en":"Sauces and condiments","fr":"Sauces et condiments"},"subs":[
+  ("mayonnaise-dressings","المايونيز والتتبيلات","Mayonnaise and dressings","Mayonnaise et vinaigrettes"),("tomato-sauces","صلصات الطماطم","Tomato sauces","Sauces tomate"),("mustard-condiments","الخردل والمنكهات","Mustard and condiments","Moutardes et condiments")]},
+ {"id":"sweeteners","names":{"ar":"المحليات","en":"Sweeteners","fr":"Édulcorants"},"subs":[
+  ("sugar-syrups","السكر والشراب","Sugar and syrups","Sucres et sirops"),("honey-jam","العسل والمربى","Honey and jam","Miel et confiture")]},
+ {"id":"baking-desserts","names":{"ar":"مكونات الخَبز والحلويات","en":"Baking and dessert ingredients","fr":"Ingrédients de pâtisserie"},"subs":[
+  ("leavening","مواد الرفع والتخمير","Leavening agents","Agents levants"),("baking-chocolate","الشوكولاتة والكاكاو","Chocolate and cocoa","Chocolat et cacao"),("dessert-mixes","خلطات الحلويات","Dessert mixes","Préparations pour desserts")]},
+ {"id":"beverages","names":{"ar":"المشروبات","en":"Beverages","fr":"Boissons"},"subs":[
+  ("juices","العصائر","Juices","Jus"),("hot-beverages","المشروبات الساخنة","Hot beverages","Boissons chaudes"),("water","المياه","Water","Eaux")]},
+ {"id":"frozen-foods","names":{"ar":"الأغذية المجمدة","en":"Frozen foods","fr":"Produits surgelés"},"subs":[
+  ("frozen-meals","الوجبات المجمدة","Frozen meals","Plats surgelés"),("frozen-desserts","الحلويات المجمدة","Frozen desserts","Desserts glacés")]},
+ {"id":"mushrooms-fungi","names":{"ar":"الفطريات والفطر","en":"Mushrooms and fungi","fr":"Champignons"},"subs":[("edible-mushrooms","الفطر الصالح للأكل","Edible mushrooms","Champignons comestibles")]},
+ {"id":"other-foods","names":{"ar":"مواد غذائية أخرى","en":"Other foods","fr":"Autres aliments"},"subs":[]}
 ]
+SUBCATEGORY_PARENT = {s[0]: c["id"] for c in CATEGORY_TREE for s in c["subs"]}
+PREPARATION_WORDS = {"cooked","uncooked","raw","boiled","fried","baked","grilled","roasted","steamed","chopped","diced","sliced","minced","grated","peeled","shredded","skinless","boneless","seeded","pitted","crushed","mashed","pureed","puréed"}
+FOOD_ADDITIVE_HINTS = {"acid","starch","gum","extract","lecithin","emulsifier","stabilizer","thickener","preservative","colour","color","flavour","flavor","aroma","gelatin","pectin","carrageenan","baking soda","baking powder","raising agent","e-number"}
+LIQUID_HINTS = {"milk","lben","leben","raib","yogurt","yoghurt","kefir","juice","water","oil","vinegar","sauce","syrup","cream","beverage","drink"}
+SOLID_COUNT_HINTS = {"egg","eggs","onion","garlic","tomato","potato","pepper","fruit","apple","banana"}
 
-
-def split_values(value: str) -> list[str]:
-    return [part.strip() for part in value.split(",") if part.strip()]
-
-
-def normalize(value: str) -> str:
+def normalize_term(value: str) -> str:
     value = unicodedata.normalize("NFKD", str(value or "")).casefold()
-    value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    value = value.replace("ـ", "")
-    value = re.sub(r"[\u064b-\u065f\u0670]", "", value)
-    value = value.translate(str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي"}))
-    value = re.sub(r"[^\w]+", " ", value, flags=re.UNICODE)
-    return re.sub(r"\s+", " ", value).strip()
+    value = "".join(ch for ch in value if not unicodedata.combining(ch)).replace("ـ","")
+    value = re.sub(r"[\u064B-\u065F\u0670]","",value)
+    value = value.translate(str.maketrans({"أ":"ا","إ":"ا","آ":"ا","ٱ":"ا","ى":"ي"})).replace("&"," and ")
+    return re.sub(r"\s+"," ",re.sub(r"[^\w]+"," ",value,flags=re.UNICODE)).strip()
 
+def split_aliases(value: str) -> list[str]:
+    return [v.strip() for v in str(value or "").split(",") if v.strip()]
 
-def english_match_variants(value: str) -> list[str]:
-    original = normalize(value)
-    if not original:
-        return []
-    without_phrases = original
-    for phrase in PREPARATION_PHRASES:
-        without_phrases = re.sub(r"\b" + re.escape(phrase) + r"\b", " ", without_phrases)
-    tokens = [token for token in re.sub(r"\s+", " ", without_phrases).strip().split() if token not in PREPARATION_WORDS]
-    variants = [original]
-    reduced = " ".join(tokens)
-    if reduced and reduced != original:
-        variants.append(reduced)
-    return list(dict.fromkeys(variants))
+def country_names(raw: str) -> list[str]:
+    result=[]
+    for value in split_aliases(raw):
+        value=re.sub(r"^[a-z]{2,3}:","",value.strip(),flags=re.I)
+        value=re.sub(r"^[a-z]{2,3}:","",value.strip(),flags=re.I)
+        if value: result.append(value.replace("_"," ").replace("-"," ").title())
+    return result
 
+def parse_off_taxonomy(text: str) -> list[dict[str,Any]]:
+    entries={}
+    for block in re.split(r"\n\s*\n",text):
+        fields=defaultdict(list); parents=[]; origins=[]
+        for raw in block.splitlines():
+            line=raw.strip()
+            if not line or line.startswith("#"): continue
+            p=re.match(r"^<\s*en\s*:\s*(.+)$",line,re.I)
+            if p: parents.extend(split_aliases(p.group(1))); continue
+            o=re.match(r"^(?:origin|origins|country_of_origin):[a-z-]+:\s*(.*)$",line,re.I)
+            if o: origins.extend(country_names(o.group(1))); continue
+            m=re.match(r"^([a-z]{2,3}(?:-[a-z0-9]+)?)\s*:\s*(.*)$",line,re.I)
+            if m: fields[m.group(1).lower()].append(m.group(2).strip())
+        english=[a for part in fields.get("en",[]) for a in split_aliases(part)]
+        if not english: continue
+        canonical=english[0]; key=normalize_term(canonical)
+        if not key: continue
+        item=entries.setdefault(key,{"name_en":canonical,"names":{"ar":[],"en":[],"fr":[]},"aliases":{"ar":[],"en":[],"fr":[]},"parents":[],"image_url":None,"country_of_origin":None,"nutrition":None,"source_keys":set()})
+        for lang in ("ar","en","fr"):
+            vals=[a for part in fields.get(lang,[]) for a in split_aliases(part)]
+            for value in vals:
+                target=item["names"][lang] if not item["names"][lang] else item["aliases"][lang]
+                if value not in target: target.append(value)
+        for parent in parents:
+            if parent not in item["parents"]: item["parents"].append(parent)
+        if origins: item["country_of_origin"]=sorted(set((item["country_of_origin"] or [])+origins))
+        item["source_keys"].add("off:"+key)
+    return list(entries.values())
 
-def clean_recipe_english(value: str) -> str:
-    text = str(value or "").strip()
-    if not text:
-        return ""
-    before, separator, after = text.partition(":")
-    if separator and re.match(r"\s*(?:about\b|approximately\b|approx\.?\b|\d|one\b|half\b|a\s+\w+\b)", after, re.I):
-        text = before.strip()
-    text = re.sub(
-        r"\s+(?:about\s+)?\d+(?:[.,]\d+)?(?:\s+\d+/\d+)?\s*"
-        r"(?:g|kg|mg|ml|l|oz|lb|lbs?|cups?|cup|tbsp|tsp|tablespoons?|teaspoons?|"
-        r"pieces?|pcs?|cloves?|bunch(?:es)?|stalks?|sprigs?)\b.*$",
-        "",
-        text,
-        flags=re.I,
-    ).strip(" ,;:-")
-    return re.sub(r"\s+", " ", text)
+def _foodon_literal(raw: str) -> tuple[str,str]:
+    value=raw.strip()
+    m=re.match(r"^(.*)@([a-z0-9-]+)$",value,re.I)
+    return (m.group(1).strip(),m.group(2).lower()) if m else (value,"en")
 
+def parse_foodon_tsv(text: str) -> tuple[dict[str,dict[str,Any]],dict[str,list[str]]]:
+    nodes={}; parents=defaultdict(list)
+    for row in csv.reader(text.splitlines(),delimiter="\t",quotechar='"'):
+        if len(row)<4 or row[0]=="?class": continue
+        sm=re.search(r"/obo/([A-Z]+_\d+)>",row[0])
+        if not sm: continue
+        cid=sm.group(1); pm=re.search(r"/obo/([A-Z]+_\d+)>",row[1])
+        if pm and pm.group(1) not in parents[cid]: parents[cid].append(pm.group(1))
+        kind=row[2].strip().strip('"').lower()
+        value,lang=_foodon_literal(row[3])
+        if value.startswith('"') and value.endswith('"'): value=value[1:-1]
+        value=value.replace('\\"','"').strip()
+        if not value: continue
+        node=nodes.setdefault(cid,{"id":cid.replace("_",":",1),"names":defaultdict(list),"aliases":defaultdict(list),"parents":[]})
+        if kind in ("label","label (alternative)"):
+            target=node["names"] if not node["names"][lang] else node["aliases"]
+            if value not in target[lang]: target[lang].append(value)
+        elif kind in ("synonym (exact)","synonym"):
+            if value not in node["aliases"][lang]: node["aliases"][lang].append(value)
+    for cid,node in nodes.items(): node["parents"]=parents.get(cid,[])
+    return nodes,parents
 
-def first_property(values: dict[str, list[str]], key: str) -> str | None:
-    entries = values.get(key) or []
-    if not entries:
-        return None
-    return entries[0].split(":", 1)[-1].strip() or None
+def foodon_product_classes(nodes,parents):
+    children=defaultdict(list)
+    for child,ps in parents.items():
+        for parent in ps: children[parent].append(child)
+    root="FOODON_00001002"; reachable=set(); stack=[root]
+    while stack:
+        current=stack.pop()
+        if current in reachable: continue
+        reachable.add(current); stack.extend(children.get(current,[]))
+    return {cid for cid in reachable if cid.startswith("FOODON_") and cid in nodes and nodes[cid]["names"].get("en")}
 
+def foodon_ancestor_labels(cid,nodes,parents):
+    out=[]; seen=set(); stack=list(parents.get(cid,[]))
+    while stack:
+        current=stack.pop()
+        if current in seen: continue
+        seen.add(current)
+        if current in nodes: out.extend(nodes[current]["names"].get("en",[]))
+        stack.extend(parents.get(current,[]))
+    return out
 
-def parse_off_taxonomy(text: str) -> list[dict[str, Any]]:
-    nodes: list[dict[str, Any]] = []
-    block: list[str] = []
+def classify_food(values: list[str]) -> tuple[str,str|None]:
+    n=normalize_term(" ".join(str(v) for v in values if v)); words=set(n.split())
+    has=lambda *terms:any(t in n for t in terms)
+    word=lambda *terms:bool(words.intersection(terms))
+    canned=has("canned","tinned","in conserve","en conserve","preserved")
+    frozen=has("frozen","surgel")
+    if has("mayonnaise","ketchup","mustard","sauce","condiment","dressing","vinegar"):
+        return "sauces-condiments","mayonnaise-dressings" if has("mayonnaise","mayo","dressing") else "tomato-sauces" if has("tomato") else "mustard-condiments"
+    if word("oil","oils") or has("olive oil","sunflower oil","vegetable oil","rapeseed oil","lard","tallow"):
+        return "oils-fats","animal-fats" if has("animal","lard","tallow") else "vegetable-oils"
+    if has("mushroom","fungus","fungi","truffle"): return "mushrooms-fungi","edible-mushrooms"
+    if has("shellfish","mollusc","mollusk","crustacean","shrimp","prawn","lobster","crab","oyster","clam","mussel"):
+        return "seafood","shellfish"
+    if word("fish") or has("tuna","salmon","sardine","anchovy","cod","mackerel","herring"):
+        return "seafood","canned-fish" if canned else "fish"
+    if has("poultry","chicken","turkey","duck","goose"):
+        return "poultry","turkey" if has("turkey") else "chicken" if has("chicken") else "other-poultry"
+    if has("offal","liver","kidney","heart","tripe","tongue"):
+        return "meat-offal","offal"
+    if has("meat","beef","lamb","mutton","veal","pork","sausage","ham","bacon","frankfurter"):
+        return "meat-offal","processed-meat" if has("sausage","ham","bacon","frankfurter") else "red-meat"
+    if word("egg","eggs"): return "eggs","bird-eggs"
+    if has("cheese","fromage"):
+        return "cheese-butter","hard-cheese" if has("hard","aged","cheddar","parmesan") else "soft-cheese"
+    if has("butter","margarine"): return "cheese-butter","butter-margarine"
+    if has("chocolate","cocoa"): return "baking-desserts","baking-chocolate"
+    if has("dairy","milk","lben","leben","raib","yogurt","yoghurt","yoghourt","kefir","fermented milk","cream","lait"):
+        if has("yogurt","yoghurt","yoghourt","kefir","lben","leben","raib","fermented"): return "dairy","fermented-dairy"
+        if has("powder","formula"): return "dairy","dairy-powders"
+        if has("cream"): return "dairy","cream"
+        return "dairy","fresh-milk"
+    if has("juice","beverage","drink","coffee","tea","water"):
+        return "beverages","juices" if has("juice") else "water" if has("water") else "hot-beverages"
+    if has("citrus","orange","lemon","lime","grapefruit","mandarin"): return "fruits","citrus-fruits"
+    if has("berry","berries","strawberry","blueberry","raspberry","blackberry"): return "fruits","berries"
+    if has("dried fruit","raisin","date","fig","prune","dried apricot"): return "fruits","dried-fruits"
+    if word("fruit") or has("apple","banana","mango","pineapple","peach","pear","plum","grape","melon","watermelon"):
+        sub="tropical-fruits" if has("mango","pineapple","banana","papaya","coconut") else "stone-fruits" if has("peach","plum","apricot","cherry") else None
+        return "fruits",sub
+    if has("leafy","lettuce","spinach","cabbage","chard","kale"): return "vegetables","leafy-vegetables"
+    if has("potato","carrot","beet","turnip","radish","yam","tuber","root vegetable"): return "vegetables","roots-tubers"
+    if has("onion","garlic","leek","shallot","bulb"): return "vegetables","bulbs-stems"
+    if has("bell pepper","sweet pepper","capsicum","red pepper","green pepper","tomato","cucumber","zucchini","courgette","eggplant","aubergine","okra","squash"):
+        return "vegetables","frozen-vegetables" if frozen else "canned-vegetables" if canned else "fruit-vegetables"
+    if has("chickpea","garbanzo"): return "legumes","canned-legumes" if canned else "chickpeas"
+    if has("lentil"): return "legumes","canned-legumes" if canned else "lentils"
+    if word("pea","peas"): return "legumes","canned-legumes" if canned else "peas"
+    if has("bean","fava","pulse","legume","soybean","soya"): return "legumes","canned-legumes" if canned else "beans"
+    if has("nut","almond","walnut","hazelnut","pistachio","cashew","peanut"): return "nuts-seeds","tree-nuts"
+    if has("seed","sesame","sunflower seed","pumpkin seed","chia"): return "nuts-seeds","edible-seeds"
+    if has("spice","cumin","paprika","cinnamon","turmeric","ginger","coriander seed","clove","nutmeg","saffron","curry") or has("black pepper","white pepper","peppercorn"):
+        return "spices","spice-blends" if has("blend","curry powder","seasoning mix") else "ground-spices" if has("ground","powder") else "whole-spices"
+    if has("herb","parsley","cilantro","coriander leaf","thyme","basil","mint","oregano","rosemary","dill"):
+        return "herbs","dried-herbs" if has("dried") else "fresh-herbs"
+    if has("sugar","honey","syrup","jam","molasses","sweetener"): return "sweeteners","honey-jam" if has("honey","jam") else "sugar-syrups"
+    if has("pasta","noodle","macaroni","spaghetti"): return "pasta-bakery","pasta"
+    if has("bread","bakery","biscuit","cracker","pastry"): return "pasta-bakery","bread-bakery"
+    if has("flour","semolina","wheat","rice","cereal","grain","oat","barley","corn","maize"):
+        return "grains-cereals","rice" if word("rice") else "wheat-semolina" if has("wheat","semolina","flour") else "other-grains"
+    if frozen: return "frozen-foods","frozen-meals"
+    return "other-foods",None
 
-    def flush() -> None:
-        if not block:
-            return
-        values: dict[str, list[str]] = defaultdict(list)
-        parents: list[str] = []
-        for raw in block:
-            line = raw.strip()
-            if not line or line.startswith("#"):
-                continue
-            if line.startswith("< en:"):
-                parents.append(line[5:].strip())
-                continue
-            match = re.match(r"^([a-z][a-z0-9_-]*):\s*(.*)$", line, re.I)
-            if match:
-                key, value = match.group(1).lower(), match.group(2).strip()
-                values[key].extend(split_values(value))
-        if values.get("en"):
-            nodes.append({
-                "english": values["en"][0],
-                "languages": {
-                    language: values.get(language, [])
-                    for language in ("en", "ar", "fr")
-                    if values.get(language)
-                },
-                "parents": list(dict.fromkeys(parents)),
-                "ciqualCode": first_property(values, "ciqual_food_code"),
-                "usdaFdcCode": first_property(values, "usda_fdc_code"),
-                "wikidata": first_property(values, "wikidata"),
-            })
-        block.clear()
+def default_units(name_en: str,category_id: str) -> set[str]:
+    n=normalize_term(name_en); words=set(n.split())
+    if category_id=="eggs": return {"piece"}
+    if any(h in n for h in LIQUID_HINTS) or category_id=="beverages": return {"ml","l"}
+    if words.intersection(SOLID_COUNT_HINTS): return {"g","kg","piece"}
+    return {"g","kg"}
 
-    for line in text.splitlines():
-        if not line.strip():
-            flush()
-        else:
-            block.append(line)
-    flush()
-    return nodes
+def clean_recipe_ingredient(ingredient: dict[str,Any],recipe_id: str) -> str:
+    source=str(ingredient.get("sourceNameEn") or "").strip()
+    if recipe_id.startswith("focus:"):
+        source=str(ingredient.get("sourceTextEn") or source).strip()
+        if ":" in source: source=source.split(":",1)[0].strip()
+    if not source: source=str(ingredient.get("name") or "").strip()
+    source=re.sub(r"\([^)]*\)"," ",source); source=re.sub(r"\s+"," ",source).strip(" ,;")
+    parts=[p.strip() for p in source.split(",") if p.strip()]
+    if parts: source=", ".join([parts[0]]+[p for p in parts[1:] if normalize_term(p) not in PREPARATION_WORDS])
+    for word in PREPARATION_WORDS: source=re.sub(r"\b"+re.escape(word)+r"\b"," ",source,flags=re.I)
+    return re.sub(r"\s+"," ",source).strip(" ,;-") or str(ingredient.get("sourceNameEn") or ingredient.get("name") or "").strip()
 
+def normalize_unit(value: str) -> str:
+    raw=re.sub(r"\s+"," ",str(value or "").strip().casefold().replace("_"," ").replace("-"," "))
+    return UNIT_ALIASES.get(raw,raw.replace(" ","_") if raw else "piece")
 
-def parse_foodon_tsv(text: str) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
-    parents: dict[str, set[str]] = defaultdict(set)
-    label_index: dict[str, set[str]] = defaultdict(set)
-    lines = text.splitlines()
-    allowed_types = {
-        "label", "label (alternative)", "synonym",
-        "synonym (exact)", "synonym (broad)", "synonym (related)",
-    }
-    for line in lines[1:]:
-        row = line.split("\t")
-        if len(row) < 4:
-            continue
-        subject = row[0].strip().strip("<>")
-        if "FOODON_" not in subject:
-            continue
-        parents[subject]
-        parent = row[1].strip().strip("<>")
-        if parent:
-            parents[subject].add(parent)
-        kind = row[2].strip().strip('"').lower()
-        if kind not in allowed_types:
-            continue
-        literal = row[3].strip()
-        match = re.match(r'^"(.*)"(?:@([a-zA-Z-]+)|\^\^.*)?$', literal)
-        if not match:
-            continue
-        label = match.group(1).replace(r'\\"', '"').strip()
-        language = (match.group(2) or "").lower()
-        if label and language == "en":
-            label_index[normalize(label)].add(subject)
-    return parents, label_index
+def add_value(values: list[str],value: str|None) -> None:
+    if value and value not in values: values.append(value)
 
+def new_record(name_en: str,source_key: str,category_values: list[str]|None=None) -> dict[str,Any]:
+    category,sub=classify_food(category_values or [name_en])
+    return {"name_en":name_en,"names":{"ar":[],"en":[name_en],"fr":[]},"aliases":{"ar":[],"en":[],"fr":[]},
+            "accepted_units":set(),"image_url":None,"country_of_origin":None,"nutrition":None,
+            "category_id":category,"subcategory_id":sub,"foodon_ids":set(),"source_keys":{source_key}}
 
-def contains_term(text: str, term: str) -> bool:
-    term = normalize(term)
-    if not term:
-        return False
-    if " " in term:
-        return term in text
-    return re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", text) is not None
+def add_aliases_from_entry(record,entry):
+    for lang in ("ar","en","fr"):
+        for value in entry.get("names",{}).get(lang,[]):
+            if value not in record["names"][lang]: add_value(record["aliases"][lang],value)
+        for value in entry.get("aliases",{}).get(lang,[]): add_value(record["aliases"][lang],value)
 
-
-def classify_item(name: str, parents: list[str]) -> tuple[str, str | None]:
-    normalized_name = normalize(name)
-    parent_text = " ".join(normalize(parent) for parent in parents)
-    combined = parent_text + " " + normalized_name
-    category_id = "other_foods"
-
-    if any(contains_term(combined, word) for word in CATEGORY_KEYWORDS["canned_preserved"]):
-        category_id = "canned_preserved"
-    elif any(contains_term(combined, word) for word in CATEGORY_KEYWORDS["frozen_foods"]):
-        category_id = "frozen_foods"
+def load_source_text(local_path: Path|None,repo: str,commit: str,path: str,expected_sha: str) -> str:
+    if local_path: data=local_path.read_bytes()
     else:
-        # More specific food families are checked before generic plant/food terms.
-        for candidate in (
-            "seafood", "meat_offal", "mushrooms", "eggs", "dairy",
-            "fruits", "vegetables", "legumes", "grains_cereals",
-            "pasta_bakery", "nuts_seeds", "oils_fats", "spices",
-            "herbs", "sauces_condiments", "sweeteners", "baking_dessert",
-            "beverages",
-        ):
-            if any(contains_term(combined, word) for word in CATEGORY_KEYWORDS[candidate]):
-                category_id = candidate
+        request=urllib.request.Request(f"https://raw.githubusercontent.com/{repo}/{commit}/{path}",headers={"User-Agent":"Midati-Food-Catalogue-Builder/1.0"})
+        last=None
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(request,timeout=180) as response: data=response.read()
                 break
+            except (urllib.error.URLError,TimeoutError,OSError) as error:
+                last=error
+                if attempt<2: time.sleep(2**attempt)
+        else: raise RuntimeError(f"Could not download {repo}/{path}: {last}")
+    actual=hashlib.sha1(f"blob {len(data)}\0".encode("ascii")+data).hexdigest()
+    if expected_sha and actual.lower()!=expected_sha.lower(): raise RuntimeError(f"Source checksum mismatch for {repo}/{path}: {actual}")
+    return data.decode("utf-8-sig")
 
-    subcategory = None
-    for parent in parents:
-        parent_key = normalize(parent)
-        candidates = []
-        for key in SUBCATEGORY_LABELS:
-            candidate = key.replace("_", " ")
-            if parent_key == candidate:
-                candidates.append((0, key))
-            elif candidate in parent_key or parent_key in candidate:
-                candidates.append((1, key))
-        if candidates:
-            subcategory = sorted(candidates)[0][1]
-            break
+def build_categories():
+    result=[]
+    for cat in CATEGORY_TREE:
+        result.append({"id":cat["id"],"names":cat["names"],"parentId":None})
+        for sid,ar,en,fr in cat["subs"]: result.append({"id":sid,"names":{"ar":ar,"en":en,"fr":fr},"parentId":cat["id"]})
+    return result
 
-    if category_id == "canned_preserved" and subcategory is None:
-        if any(contains_term(combined, word) for word in ("chickpea", "garbanzo", "lentil", "bean", "pulse", "legume")):
-            subcategory = "canned_legumes"
-        elif any(contains_term(combined, word) for word in ("fish", "tuna", "sardine", "salmon")):
-            subcategory = "canned_fish"
-        elif contains_term(combined, "tomato"):
-            subcategory = "tomato"
-    if category_id == "dairy" and any(contains_term(combined, word) for word in ("fermented milk", "yogurt", "yoghurt", "kefir", "raib", "leben")):
-        subcategory = subcategory or "fermented_milk"
-    if category_id == "dairy" and contains_term(combined, "cheese"):
-        subcategory = "cheese"
-    if category_id == "sauces_condiments" and contains_term(combined, "mayonnaise"):
-        subcategory = "mayonnaise"
-    if category_id == "legumes":
-        for word, sub_id in (("chickpea", "chickpeas"), ("garbanzo", "chickpeas"), ("lentil", "lentils"), ("bean", "beans"), ("pea", "peas")):
-            if contains_term(combined, word):
-                subcategory = sub_id
-                break
-    if category_id == "grains_cereals":
-        for word, sub_id in (("rice", "rice"), ("wheat", "wheat"), ("flour", "flour"), ("semolina", "flour")):
-            if contains_term(combined, word):
-                subcategory = sub_id
-                break
-    if category_id == "seafood":
-        if any(contains_term(combined, word) for word in ("shrimp", "prawn", "crab", "lobster", "crustacean")):
-            subcategory = "crustaceans"
-        elif any(contains_term(combined, word) for word in ("mollusc", "mollusk", "oyster", "mussel", "squid", "octopus")):
-            subcategory = "molluscs"
-        else:
-            subcategory = subcategory or "fish"
-    if category_id == "meat_offal":
-        if any(contains_term(combined, word) for word in ("liver", "kidney", "heart", "tripe", "offal")):
-            subcategory = "offal"
-        elif any(contains_term(combined, word) for word in ("chicken", "turkey", "duck", "poultry")):
-            subcategory = "poultry"
-        elif contains_term(combined, "beef"):
-            subcategory = "beef"
-        elif any(contains_term(combined, word) for word in ("lamb", "mutton")):
-            subcategory = "lamb"
-    if category_id == "fruits" and any(contains_term(combined, word) for word in ("citrus", "orange", "lemon", "lime")):
-        subcategory = "citrus"
-    if category_id == "vegetables":
-        if any(contains_term(combined, word) for word in ("root vegetable", "taproot", "tuber", "carrot", "potato")):
-            subcategory = "root_vegetables"
-        elif any(contains_term(combined, word) for word in ("leaf vegetable", "leafy", "spinach", "lettuce")):
-            subcategory = "leaf_vegetables"
-        elif contains_term(combined, "tomato"):
-            subcategory = "tomato"
-    return category_id, subcategory
+def make_alias_index(records):
+    index=defaultdict(set)
+    for pos,record in enumerate(records):
+        for lang in ("ar","en","fr"):
+            for value in record["names"].get(lang,[])+record["aliases"].get(lang,[]):
+                key=normalize_term(value)
+                if key: index[key].add(pos)
+    return index
 
-
-def index_off_nodes(
-    nodes: list[dict[str, Any]],
-    foodon_names: dict[str, set[str]],
-) -> tuple[dict[str, dict[str, Any]], dict[str, set[str]]]:
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for node in nodes:
-        key = normalize(node["english"])
-        if key:
-            grouped[key].append(node)
-
-    records: dict[str, dict[str, Any]] = {}
-    match_index: dict[str, set[str]] = defaultdict(set)
-    for key, group in grouped.items():
-        group.sort(
-            key=lambda item: (
-                bool(item["languages"].get("ar")),
-                bool(item["languages"].get("fr")),
-                len(item["languages"].get("en", [])),
-            ),
-            reverse=True,
-        )
-        primary = group[0]
-        languages: dict[str, set[str]] = {code: set() for code in ("ar", "en", "fr")}
-        parents: set[str] = set()
-        off_refs: set[str] = set()
-        foodon_ids: set[str] = set()
-        for node in group:
-            parents.update(node["parents"])
-            off_refs.add("en:" + node["english"])
-            for lang, values in node["languages"].items():
-                languages[lang].update(values)
-                for value in values:
-                    norm = normalize(value)
-                    if norm:
-                        match_index[norm].add(key)
-                    if lang == "en":
-                        foodon_ids.update(foodon_names.get(norm, set()))
-            for parent in node["parents"]:
-                norm = normalize(parent)
-                if norm:
-                    match_index[norm].add(key)
-
-        names = {
-            "en": primary["english"],
-            "ar": primary["languages"].get("ar", [None])[0],
-            "fr": primary["languages"].get("fr", [None])[0],
-        }
-        category_id, subcategory_id = classify_item(names["en"], list(parents))
-        records[key] = {
-            "registryKey": "off:" + key,
-            "names": names,
-            "aliases": languages,
-            "parents": sorted(parents),
-            "categoryId": category_id,
-            "subcategoryId": subcategory_id,
-            "sourceRefs": {
-                "openFoodFacts": sorted(off_refs),
-                "foodOn": sorted(foodon_ids),
-                "ciqualCode": primary["ciqualCode"],
-                "usdaFdcCode": primary["usdaFdcCode"],
-                "wikidata": primary["wikidata"],
-            },
-            "units": Counter(),
-            "recipeUsage": 0,
-        }
-        match_index[key].add(key)
-        for value in languages["en"]:
-            foodon_ids.update(foodon_names.get(normalize(value), set()))
-        records[key]["sourceRefs"]["foodOn"] = sorted(foodon_ids)
-    return records, match_index
-
-
-def choose_match(
-    english: str,
-    arabic: str,
-    french: str,
-    match_index: dict[str, set[str]],
-) -> tuple[str | None, str, list[str]]:
-    for value, match_type in (
-        (english, "off_english"),
-        (arabic, "off_arabic"),
-        (french, "off_french"),
-    ):
-        variants = english_match_variants(value) if match_type == "off_english" else [normalize(value)]
-        for candidate in variants:
-            candidates = match_index.get(candidate, set())
-            if len(candidates) == 1:
-                return next(iter(candidates)), match_type, []
-            if len(candidates) > 1:
-                return None, "ambiguous", sorted(candidates)[:20]
-    return None, "not_found", []
-
-
-def normalize_unit(raw: str) -> str:
-    compact = re.sub(r"[\s_-]+", "", str(raw or "").strip().lower())
-    original = str(raw or "").strip().lower()
-    return UNIT_ALIASES.get(original, UNIT_ALIASES.get(compact, original))
-
-
-def choose_base_unit(units: Counter[str]) -> str | None:
-    return units.most_common(1)[0][0] if units else None
-
-
-def add_alias(record: dict[str, Any], language: str, value: str) -> None:
-    if language not in {"ar", "en", "fr"}:
-        return
-    clean = re.sub(r"\s+", " ", str(value or "").strip())
-    if not clean:
-        return
-    canonical = normalize(record["names"].get(language) or "")
-    if normalize(clean) != canonical:
-        record["aliases"].setdefault(language, set()).add(clean)
-
-
-def ensure_id(registry: dict[str, str], key: str) -> str:
-    if key not in registry:
-        registry[key] = str(uuid.uuid4())
-    value = registry[key]
-    try:
-        uuid.UUID(value)
-    except (ValueError, TypeError) as error:
-        raise ValueError(f"Invalid UUID in identity registry for {key}") from error
-    return value
-
-
-def source_recipe_ingredients(recipe: dict[str, Any]) -> list[dict[str, Any]]:
-    output = []
-    for index, item in enumerate(recipe.get("ingredients") or []):
-        if not isinstance(item, dict):
-            continue
-        english_raw = item.get("sourceNameEn") or item.get("sourceTextEn") or item.get("sourceText") or ""
-        english = clean_recipe_english(english_raw)
-        output.append({
-            "index": index,
-            "english": english,
-            "englishRaw": str(english_raw or ""),
-            "arabic": str(item.get("name") or "").strip(),
-            "french": str(item.get("sourceNameFr") or "").strip(),
-            "unit": normalize_unit(str(item.get("unit") or "")),
-            "sourceId": str(item.get("id") or "").strip(),
-        })
+def assign_stable_ids(records,registry):
+    ids=registry.setdefault("ids",{}); redirects=registry.setdefault("redirects",{}); output={}
+    for record in records:
+        keys=sorted(record["source_keys"]); previous=sorted({ids[k] for k in keys if k in ids})
+        if previous:
+            item_id=previous[0]
+            for old in previous[1:]: redirects[old]=item_id
+        else: item_id=str(uuid.uuid4())
+        for key in keys: ids[key]=item_id
+        output[record["internal_key"]]=item_id
+    for old,target in list(redirects.items()):
+        seen=set()
+        while target in redirects and target not in seen: seen.add(target); target=redirects[target]
+        redirects[old]=target
     return output
 
+def clean_output_record(record,item_id):
+    names={}; aliases={}
+    for lang in ("ar","en","fr"):
+        primary=record["names"][lang][0] if record["names"][lang] else None
+        names[lang]=primary; primary_key=normalize_term(primary or ""); unique={}
+        for value in record["names"][lang][1:]+record["aliases"][lang]:
+            key=normalize_term(value)
+            if key and key!=primary_key and key not in unique: unique[key]=value
+        aliases[lang]=[unique[k] for k in sorted(unique)]
+    units=record["accepted_units"] or default_units(record["name_en"],record["category_id"])
+    return {"id":item_id,"names":names,"acceptedUnits":sorted(units,key=lambda u:(UNIT_ORDER.index(u) if u in UNIT_ORDER else len(UNIT_ORDER),u)),
+            "imageUrl":record["image_url"],"categoryId":record["category_id"],"subcategoryId":record["subcategory_id"],
+            "aliases":aliases,"countryOfOrigin":record["country_of_origin"],"nutrition":record["nutrition"],
+            "externalIds":{"foodOn":sorted(record["foodon_ids"])}}
 
-def recipe_record_key(item: dict[str, Any]) -> str:
-    stable_name = normalize(item["english"]) or normalize(item["arabic"])
-    if not stable_name:
-        stable_name = "source-" + hashlib.sha256(item["englishRaw"].encode("utf-8")).hexdigest()
-    return "recipe:" + stable_name
+def build_catalogue(recipes_data,off_entries,foodon_nodes,foodon_parents,curated_items,registry):
+    if recipes_data.get("complete") is not True or recipes_data.get("translatedCount")!=recipes_data.get("expectedCount"):
+        raise RuntimeError("Recipe source catalogue is incomplete; refusing to build food catalogue.")
+    recipe_list=recipes_data.get("recipes") or []
+    if len(recipe_list)!=int(recipes_data.get("expectedCount") or -1): raise RuntimeError("Recipe source count does not match expectedCount.")
+    records=[]; canonical_index={}; off_excluded=0
+    for entry in off_entries:
+        name=entry["name_en"]; norm=normalize_term(name)
+        if not norm: continue
+        cat,_=classify_food([name]+entry.get("parents",[]))
+        if cat=="other-foods" and not entry.get("parents") and not any(h in norm for h in FOOD_ADDITIVE_HINTS):
+            off_excluded+=1; continue
+        if norm in canonical_index: target=records[canonical_index[norm]]
+        else:
+            target=new_record(name,"off:"+norm,[name]+entry.get("parents",[])); target["internal_key"]="off:"+norm
+            canonical_index[norm]=len(records); records.append(target)
+        add_aliases_from_entry(target,entry); target["source_keys"].update(entry.get("source_keys",[]))
+        candidate=classify_food([name]+entry.get("parents",[]))
+        if target["category_id"]=="other-foods" or candidate[0]!="other-foods": target["category_id"],target["subcategory_id"]=candidate
+        target["image_url"]=target["image_url"] or entry.get("image_url")
+        target["country_of_origin"]=target["country_of_origin"] or entry.get("country_of_origin")
+        target["nutrition"]=target["nutrition"] or entry.get("nutrition")
 
+    off_alias_index=make_alias_index(records)
+    product_classes=foodon_product_classes(foodon_nodes,foodon_parents)
+    foodon_added=foodon_matched=foodon_ambiguous=0; foodon_by_name={}
+    for cid in sorted(product_classes):
+        node=foodon_nodes[cid]; names=node["names"].get("en",[])
+        if not names: continue
+        name=names[0]; norm=normalize_term(name)
+        if not norm or norm in {"food product","foodon product type"}: continue
+        alias_norms={normalize_term(v) for lang in ("ar","en","fr") for v in node["names"].get(lang,[])+node["aliases"].get(lang,[]) if normalize_term(v)}
+        candidates=set()
+        for alias in alias_norms: candidates.update(off_alias_index.get(alias,set()))
+        if len(candidates)==1:
+            target_index=next(iter(candidates)); target=records[target_index]; foodon_matched+=1
+        elif len(candidates)>1:
+            foodon_ambiguous+=1
+            if norm not in canonical_index: continue
+            target_index=canonical_index[norm]; target=records[target_index]
+        elif norm in canonical_index:
+            target_index=canonical_index[norm]; target=records[target_index]; foodon_matched+=1
+        elif norm in foodon_by_name:
+            target_index=foodon_by_name[norm]; target=records[target_index]; foodon_matched+=1
+        else:
+            target=new_record(name,"foodon:"+cid,[name]+foodon_ancestor_labels(cid,foodon_nodes,foodon_parents))
+            target["internal_key"]="foodon:"+cid; target_index=len(records)
+            records.append(target); foodon_added+=1
+        foodon_by_name.setdefault(norm,target_index); canonical_index.setdefault(norm,target_index)
+        target["source_keys"].add("foodon:"+cid); target["foodon_ids"].add(cid.replace("_",":",1))
+        for lang in ("ar","en","fr"):
+            for value in node["names"].get(lang,[]):
+                if value not in target["names"][lang]: add_value(target["aliases"][lang],value)
+            for value in node["aliases"].get(lang,[]): add_value(target["aliases"][lang],value)
+        candidate=classify_food([name]+foodon_ancestor_labels(cid,foodon_nodes,foodon_parents))
+        if target["category_id"]=="other-foods" and candidate[0]!="other-foods": target["category_id"],target["subcategory_id"]=candidate
 
-def add_recipe_record(
-    records: dict[str, dict[str, Any]],
-    item: dict[str, Any],
-    foodon_names: dict[str, set[str]],
-) -> str:
-    key = recipe_record_key(item)
-    if key not in records:
-        category_id, subcategory_id = classify_item(item["english"], [])
-        records[key] = {
-            "registryKey": key,
-            "names": {
-                "ar": item["arabic"] or None,
-                "en": item["english"] or None,
-                "fr": item["french"] or None,
-            },
-            "aliases": {"ar": set(), "en": set(), "fr": set()},
-            "parents": [],
-            "categoryId": category_id,
-            "subcategoryId": subcategory_id,
-            "sourceRefs": {
-                "openFoodFacts": [],
-                "foodOn": sorted(foodon_names.get(normalize(item["english"]), set())),
-                "ciqualCode": None,
-                "usdaFdcCode": None,
-                "wikidata": None,
-                "recipeSourceIds": [],
-            },
-            "units": Counter(),
-            "recipeUsage": 0,
-        }
-    record = records[key]
-    add_alias(record, "ar", item["arabic"])
-    add_alias(record, "en", item["english"])
-    add_alias(record, "fr", item["french"])
-    if item["sourceId"]:
-        source_ids = record["sourceRefs"].setdefault("recipeSourceIds", [])
-        if item["sourceId"] not in source_ids:
-            source_ids.append(item["sourceId"])
-    if item["unit"] and item["unit"] != "to_taste":
-        record["units"][item["unit"]] += 1
-    record["recipeUsage"] += 1
-    return key
+    curated_added=0
+    for entry in curated_items:
+        name=str(entry.get("names",{}).get("en") or "").strip()
+        if not name: raise RuntimeError("Curated food item is missing its English name.")
+        norm=normalize_term(name); idx=canonical_index.get(norm)
+        if idx is None:
+            target=new_record(name,"curated:"+str(entry["key"]),[name]); target["internal_key"]="curated:"+str(entry["key"])
+            idx=len(records); canonical_index[norm]=idx; records.append(target); curated_added+=1
+        else: target=records[idx]
+        for lang in ("ar","en","fr"):
+            value=entry.get("names",{}).get(lang)
+            if value:
+                if not target["names"][lang]: target["names"][lang].append(value)
+                else: add_value(target["aliases"][lang],value)
+            for alias in entry.get("aliases",{}).get(lang,[]): add_value(target["aliases"][lang],str(alias))
+        target["accepted_units"].update(normalize_unit(v) for v in entry.get("acceptedUnits",[]))
+        target["source_keys"].add("curated:"+str(entry["key"]))
+        target["category_id"]=entry.get("categoryId") or target["category_id"]
+        target["subcategory_id"]=entry.get("subcategoryId") or target["subcategory_id"]
 
+    exact_index=make_alias_index(records); name_index=dict(canonical_index); by_recipe_term=defaultdict(list)
+    for recipe in recipe_list:
+        rid=str(recipe.get("id") or "")
+        for i,ingredient in enumerate(recipe.get("ingredients") or []):
+            cleaned=clean_recipe_ingredient(ingredient,rid); norm=normalize_term(cleaned)
+            if not norm: raise RuntimeError(f"Could not normalize ingredient {i} in {rid}.")
+            by_recipe_term[norm].append((rid,i,ingredient,cleaned))
+    rows=[]; recipe_off=recipe_foodon=recipe_only=ambiguous=0
+    for norm,occurrences in sorted(by_recipe_term.items()):
+        cleaned=occurrences[0][3]; candidates=set(exact_index.get(norm,set()))
+        if len(candidates)==1:
+            idx=next(iter(candidates)); target=records[idx]
+            recipe_off+=int(any(k.startswith("off:") for k in target["source_keys"]))
+            recipe_foodon+=int(not any(k.startswith("off:") for k in target["source_keys"]) and any(k.startswith("foodon:") for k in target["source_keys"]))
+        elif norm in name_index:
+            idx=name_index[norm]; target=records[idx]
+            recipe_off+=int(any(k.startswith("off:") for k in target["source_keys"]))
+            recipe_foodon+=int(any(k.startswith("foodon:") for k in target["source_keys"]))
+        else:
+            if len(candidates)>1: ambiguous+=len(occurrences)
+            target=new_record(cleaned,"recipe:"+norm,[cleaned]); target["internal_key"]="recipe:"+norm
+            idx=len(records); records.append(target); canonical_index[norm]=idx; name_index[norm]=idx; recipe_only+=1
+        target["source_keys"].add("recipe:"+norm)
+        for rid,i,ingredient,raw_cleaned in occurrences:
+            arabic=str(ingredient.get("name") or "").strip()
+            if arabic:
+                if not target["names"]["ar"]: target["names"]["ar"].append(arabic)
+                else: add_value(target["aliases"]["ar"],arabic)
+            source_en=str(ingredient.get("sourceNameEn") or "").strip()
+            if rid.startswith("focus:"):
+                source_en=str(ingredient.get("sourceTextEn") or source_en).strip()
+                if ":" in source_en: source_en=source_en.split(":",1)[0].strip()
+            if source_en: add_value(target["aliases"]["en"],source_en)
+            target["accepted_units"].add(normalize_unit(str(ingredient.get("unit") or "")))
+            rows.append({"recipeId":rid,"ingredientIndex":i,"foodItemKey":target["internal_key"],
+                         "sourceIngredientId":str(ingredient.get("id") or "") or None,"sourceName":source_en or raw_cleaned,
+                         "matchedBy":"exact-alias" if target["internal_key"].startswith(("off:","foodon:")) else "recipe-canonical"})
 
-def load_registry(path: Path) -> dict[str, str]:
-    if not path.exists():
-        return {}
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError("Identity registry must be a JSON object.")
-    return {str(key): str(value) for key, value in data.items()}
+    known_categories={c["id"] for c in CATEGORY_TREE}; name_owners={}
+    for i,record in enumerate(records):
+        norm=normalize_term(record["names"]["en"][0] if record["names"]["en"] else record["name_en"])
+        if norm in name_owners and name_owners[norm]!=i: raise RuntimeError(f"Duplicate canonical food name: {record['name_en']!r}")
+        name_owners[norm]=i
+        if record["category_id"] not in known_categories: record["category_id"],record["subcategory_id"]="other-foods",None
+        if record["subcategory_id"] and SUBCATEGORY_PARENT.get(record["subcategory_id"])!=record["category_id"]: record["subcategory_id"]=None
+        if not record["accepted_units"]: record["accepted_units"].update(default_units(record["name_en"],record["category_id"]))
+        record.setdefault("internal_key",sorted(record["source_keys"])[0])
 
-
-def load_categories(path: Path) -> list[dict[str, Any]]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    categories = data.get("categories") if isinstance(data, dict) else None
-    if not isinstance(categories, list) or not categories:
-        raise ValueError("Category taxonomy must contain a non-empty categories array.")
-    ids = [item.get("id") for item in categories]
-    if len(ids) != len(set(ids)) or any(not item for item in ids):
-        raise ValueError("Category IDs must be present and unique.")
-    return categories
-
-
-def subcategory_owner(subcategory_id: str) -> str | None:
-    owners = {
-        "milk": "dairy", "fermented_milk": "dairy", "yogurt": "dairy",
-        "cheese": "dairy", "cream": "dairy", "butter": "dairy",
-        "beef": "meat_offal", "lamb": "meat_offal", "poultry": "meat_offal", "offal": "meat_offal",
-        "fish": "seafood", "crustaceans": "seafood", "molluscs": "seafood",
-        "citrus": "fruits", "berries": "fruits",
-        "root_vegetables": "vegetables", "leaf_vegetables": "vegetables", "tomato": "vegetables",
-        "chickpeas": "legumes", "lentils": "legumes", "beans": "legumes", "peas": "legumes",
-        "rice": "grains_cereals", "wheat": "grains_cereals", "flour": "grains_cereals",
-        "pasta": "pasta_bakery", "bread": "pasta_bakery",
-        "nuts": "nuts_seeds", "seeds": "nuts_seeds", "oils": "oils_fats",
-        "spice_blends": "spices", "herbs": "herbs",
-        "sauces": "sauces_condiments", "mayonnaise": "sauces_condiments", "vinegar": "sauces_condiments",
-        "jams_preserves": "canned_preserved", "canned_legumes": "canned_preserved",
-        "canned_fish": "canned_preserved", "frozen_vegetables": "frozen_foods",
-        "chocolate_cocoa": "baking_dessert",
-    }
-    return owners.get(subcategory_id)
-
-
-def build(args: argparse.Namespace) -> dict[str, Any]:
-    off_text = args.off_taxonomy.read_text(encoding="utf-8")
-    foodon_text = args.foodon_tsv.read_text(encoding="utf-8")
-    recipes_doc = json.loads(args.recipes.read_text(encoding="utf-8"))
-    if recipes_doc.get("complete") is not True or recipes_doc.get("translatedCount") != recipes_doc.get("expectedCount"):
-        raise ValueError("Refusing to build from an incomplete recipe catalogue.")
-    recipes = recipes_doc.get("recipes") or []
-    if len(recipes) != int(recipes_doc["expectedCount"]):
-        raise ValueError("Recipe count does not match the catalogue metadata.")
-
-    categories_source = load_categories(args.categories)
-    foodon_parents, foodon_names = parse_foodon_tsv(foodon_text)
-    off_nodes = parse_off_taxonomy(off_text)
-    records, match_index = index_off_nodes(off_nodes, foodon_names)
-    registry_path = args.output_dir / "identity_registry.json"
-    registry = load_registry(registry_path)
-
-    recipe_map: list[dict[str, Any]] = []
-    ambiguous_matches: list[dict[str, Any]] = []
-    matched_off = 0
-    new_recipe_occurrences = 0
-    new_recipe_keys: set[str] = set()
-    foodon_referenced = 0
-
-    for recipe in recipes:
-        recipe_id = str(recipe.get("id") or "")
-        if not recipe_id:
-            raise ValueError("A recipe is missing its ID.")
-        for item in source_recipe_ingredients(recipe):
-            key, match_type, candidates = choose_match(
-                item["english"], item["arabic"], item["french"], match_index
-            )
-            if key is None:
-                key = recipe_record_key(item)
-                if key not in records:
-                    new_recipe_keys.add(key)
-                add_recipe_record(records, item, foodon_names)
-                new_recipe_occurrences += 1
-                if match_type == "ambiguous":
-                    ambiguous_matches.append({
-                        "recipeId": recipe_id,
-                        "ingredientIndex": item["index"],
-                        "english": item["english"],
-                        "arabic": item["arabic"],
-                        "candidateKeys": candidates,
-                    })
-                match_type = "recipe_catalogue"
-            else:
-                matched_off += 1
-                record = records[key]
-                add_alias(record, "ar", item["arabic"])
-                add_alias(record, "en", item["english"])
-                add_alias(record, "fr", item["french"])
-                if item["unit"] and item["unit"] != "to_taste":
-                    record["units"][item["unit"]] += 1
-                record["recipeUsage"] += 1
-                if item["sourceId"]:
-                    source_ids = record["sourceRefs"].setdefault("recipeSourceIds", [])
-                    if item["sourceId"] not in source_ids:
-                        source_ids.append(item["sourceId"])
-            if records[key]["sourceRefs"].get("foodOn"):
-                foodon_referenced += 1
-            recipe_map.append({
-                "recipeId": recipe_id,
-                "ingredientIndex": item["index"],
-                "foodItemId": ensure_id(registry, records[key]["registryKey"]),
-                "sourceIngredientId": item["sourceId"] or None,
-                "sourceNames": {
-                    "ar": item["arabic"] or None,
-                    "en": item["english"] or None,
-                    "fr": item["french"] or None,
-                },
-                "matchedBy": match_type,
-            })
-
-    legacy_id_map: dict[str, str] = {}
-    for legacy_id, ar, en, fr, aliases in LEGACY_SEEDS:
-        match_key, _, _ = choose_match(en, ar, fr, match_index)
-        if match_key is None:
-            candidate_keys = {
-                candidate for alias in aliases
-                for candidate in match_index.get(normalize(alias), set())
-            }
-            if len(candidate_keys) == 1:
-                match_key = next(iter(candidate_keys))
-        if match_key is None:
-            item = {"english": en, "englishRaw": en, "arabic": ar, "french": fr, "unit": "", "sourceId": legacy_id}
-            match_key = add_recipe_record(records, item, foodon_names)
-            new_recipe_keys.add(match_key)
-        legacy_id_map[legacy_id] = ensure_id(registry, records[match_key]["registryKey"])
-        record = records[match_key]
-        for alias in aliases:
-            if re.search(r"[\u0600-\u06ff]", alias):
-                language = "ar"
-            elif re.search(r"[éèêàùçœ]", alias, re.I):
-                language = "fr"
-            else:
-                language = "en"
-            add_alias(record, language, alias)
-
-    items: list[dict[str, Any]] = []
-    label_collisions: dict[str, list[str]] = defaultdict(list)
-    for key, record in records.items():
-        names = record["names"]
-        item_id = ensure_id(registry, key)
-        aliases = []
-        for language in ("ar", "en", "fr"):
-            canonical = normalize(names.get(language) or "")
-            for value in sorted(record["aliases"].get(language, set()), key=str.casefold):
-                if normalize(value) and normalize(value) != canonical:
-                    aliases.append({"language": language, "value": value})
-        item = {
-            "id": item_id,
-            "names": names,
-            "acceptedUnits": sorted(record["units"]),
-            "baseUnit": choose_base_unit(record["units"]),
-            "imageUrl": None,
-            "categoryId": record["categoryId"],
-            "subcategoryId": record["subcategoryId"],
-            "aliases": aliases,
-            "originCountry": None,
-            "nutritionPer100g": None,
-            "sourceRefs": record["sourceRefs"],
-            "recipeUsageCount": record["recipeUsage"],
-        }
-        items.append(item)
-        for language in ("ar", "en", "fr"):
-            norm = normalize(names.get(language) or "")
-            if norm:
-                label_collisions[f"{language}:{norm}"].append(item_id)
-
-    duplicate_english = [
-        {"normalizedName": key, "foodItemIds": values}
-        for key, values in label_collisions.items()
-        if key.startswith("en:") and len(values) > 1
-    ]
-    non_unique_translations = [
-        {"normalizedName": key, "foodItemIds": values}
-        for key, values in label_collisions.items()
-        if not key.startswith("en:") and len(values) > 1
-    ]
-
-    ids = [item["id"] for item in items]
-    if len(ids) != len(set(ids)):
-        raise ValueError("Duplicate food item IDs were generated.")
-    registry_values = list(registry.values())
-    if len(registry_values) != len(set(registry_values)):
-        raise ValueError("Identity registry contains duplicate UUIDs.")
-    english_keys = [normalize(item["names"].get("en") or "") for item in items]
-    nonempty_english = [key for key in english_keys if key]
-    if len(nonempty_english) != len(set(nonempty_english)):
-        raise ValueError("Duplicate canonical English food names remain after merging.")
-    if duplicate_english:
-        raise ValueError("Duplicate English labels remain in the catalogue.")
-
-    categories = []
-    for category in categories_source:
-        category_id = category["id"]
-        subcategories = []
-        for sub_id, labels in SUBCATEGORY_LABELS.items():
-            if subcategory_owner(sub_id) == category_id:
-                subcategories.append({
-                    "id": sub_id,
-                    "names": {"ar": labels[0], "en": labels[1], "fr": labels[2]},
-                })
-        categories.append({
-            "id": category_id,
-            "names": category["names"],
-            "subcategories": subcategories,
-        })
-    valid_categories = {item["id"] for item in categories}
-    if any(item["categoryId"] not in valid_categories for item in items):
-        raise ValueError("An item references a category missing from categories.json.")
-
-    items.sort(key=lambda item: (normalize(item["names"].get("en") or ""), item["id"]))
-    recipe_map.sort(key=lambda row: (row["recipeId"], row["ingredientIndex"]))
-    generated_at = datetime.now(timezone.utc).isoformat()
-    source_manifest = {
-        "openFoodFacts": {
-            "repository": "https://github.com/openfoodfacts/openfoodfacts-server",
-            "path": "taxonomies/food/ingredients.txt",
-            "commit": OFF_COMMIT,
-            "gitBlobSha": OFF_BLOB_SHA,
-            "license": "ODbL-1.0 / DbCL-1.0",
-            "attribution": "Open Food Facts",
-        },
-        "foodOn": {
-            "repository": "https://github.com/FoodOntology/foodon",
-            "path": "foodon-synonyms.tsv",
-            "commit": FOODON_COMMIT,
-            "gitBlobSha": FOODON_BLOB_SHA,
-            "license": "CC-BY-4.0",
-            "attribution": "FoodOn",
-        },
-        "recipeCatalogue": {
-            "path": "data/recipes/ar/recipes.json",
-            "revision": recipes_doc.get("generatedAt"),
-        },
-    }
-    catalogue = {
-        "schemaVersion": SCHEMA_VERSION,
-        "generatedAt": generated_at,
-        "idStrategy": "random UUIDv4 persisted in identity_registry.json; never derived from display names",
-        "scope": "Generic food identities only. Brand, barcode and package-quantity records belong to market_products.",
-        "sources": source_manifest,
-        "categories": categories,
-        "items": items,
-    }
-    report = {
-        "schemaVersion": SCHEMA_VERSION,
-        "generatedAt": generated_at,
-        "recipeCount": len(recipes),
-        "recipeIngredientOccurrences": len(recipe_map),
-        "catalogueItems": len(items),
-        "offTaxonomyNodes": len(off_nodes),
-        "offCanonicalItemsAfterDeduplication": len(records) - len(new_recipe_keys),
-        "matchedRecipeOccurrencesToOff": matched_off,
-        "recipeOnlyOccurrencesAdded": new_recipe_occurrences,
-        "distinctRecipeOnlyItemsAdded": len(new_recipe_keys),
-        "recipeOccurrencesWithFoodOnCrossReference": foodon_referenced,
-        "foodOnConceptsWithEnglishLabels": len(foodon_names),
-        "foodOnParentRelations": sum(len(parents) for parents in foodon_parents.values()),
-        "legacySeedIdsMapped": len(legacy_id_map),
-        "ambiguousMatchesRequiringReview": ambiguous_matches,
-        "duplicateEnglishCanonicalNames": duplicate_english,
-        "nonUniqueArabicOrFrenchTranslations": non_unique_translations,
-        "itemsMissingArabic": sum(not item["names"].get("ar") for item in items),
-        "itemsMissingFrench": sum(not item["names"].get("fr") for item in items),
-        "itemsWithNoObservedRecipeUnit": sum(not item["acceptedUnits"] for item in items),
-        "itemsWithRecipeUsage": sum(item["recipeUsageCount"] > 0 for item in items),
-        "imagesUnavailableFromTheseTaxonomySources": sum(not item["imageUrl"] for item in items),
-        "originUnavailableFromTheseTaxonomySources": sum(not item["originCountry"] for item in items),
-        "nutritionUnavailableFromTheseTaxonomySources": sum(not item["nutritionPer100g"] for item in items),
-        "notes": [
-            "FoodOn is used for semantic cross-references and parent concepts; non-food ontology classes are not imported as grocery items.",
-            "Open Food Facts supplies taxonomy labels and translations, not retailer stock, brand products, barcodes or price observations.",
-            "No image, production country or nutrient values are invented. Such fields remain null unless a source supplies verified values.",
-            "Recipe quantities remain on recipe_ingredients; package quantities belong to future market_products records.",
-            "Ambiguous exact aliases are not auto-merged. A recipe-only record is created and the ambiguity is reported for review.",
-            "The combined source-derived database may carry source-specific share-alike and attribution obligations; review ODbL/DbCL and CC BY terms before external redistribution.",
-        ],
-    }
-
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    (args.output_dir / "catalogue.json").write_text(
-        json.dumps(catalogue, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (args.output_dir / "recipe_ingredient_map.json").write_text(
-        json.dumps({
-            "schemaVersion": SCHEMA_VERSION,
-            "generatedAt": generated_at,
-            "recipeCatalogueRevision": recipes_doc.get("generatedAt"),
-            "items": recipe_map,
-        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    (args.output_dir / "legacy_id_map.json").write_text(
-        json.dumps({"schemaVersion": SCHEMA_VERSION, "items": legacy_id_map}, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    (args.output_dir / "build_report.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    registry_path.write_text(
-        json.dumps(dict(sorted(registry.items())), ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    return report
-
+    stable_ids=assign_stable_ids(records,registry)
+    items=[clean_output_record(r,stable_ids[r["internal_key"]]) for r in records]
+    items.sort(key=lambda x:(normalize_term(x["names"]["en"] or ""),x["id"]))
+    id_by_key={r["internal_key"]:stable_ids[r["internal_key"]] for r in records}
+    for row in rows: row["foodItemId"]=id_by_key[row.pop("foodItemKey")]
+    rows.sort(key=lambda x:(x["recipeId"],x["ingredientIndex"]))
+    ids=[x["id"] for x in items]; names=[normalize_term(x["names"]["en"] or "") for x in items]
+    if len(ids)!=len(set(ids)): raise RuntimeError("Duplicate UUIDs in generated food catalogue.")
+    if len(names)!=len(set(names)): raise RuntimeError("Duplicate canonical English names in generated food catalogue.")
+    valid=set(ids)
+    if any(r["foodItemId"] not in valid for r in rows): raise RuntimeError("Recipe mapping contains a dangling foodItemId.")
+    expected=sum(len(r.get("ingredients") or []) for r in recipe_list)
+    if len(rows)!=expected: raise RuntimeError(f"Recipe mapping incomplete: {len(rows)} of {expected} rows.")
+    coverage={lang:sum(bool(x["names"][lang]) for x in items) for lang in ("ar","en","fr")}
+    report={"schemaVersion":1,"sourceRecipeCount":len(recipe_list),"recipeIngredientRows":len(rows),
+        "uniqueRecipeIngredientTerms":len(by_recipe_term),"foodItemCount":len(items),"offTaxonomyEntriesParsed":len(off_entries),
+        "offUnclassifiedEntriesSkipped":off_excluded,"foodOnFoodProductClasses":len(product_classes),
+        "foodOnOnlyItemsAdded":foodon_added,"foodOnClassesMatchedToExisting":foodon_matched,"foodOnAmbiguousMatchesSkipped":foodon_ambiguous,
+        "recipeTermsMatchedToOff":recipe_off,"recipeTermsMatchedToFoodOnOnly":recipe_foodon,"recipeOnlyTermsAdded":recipe_only,
+        "ambiguousRecipeRowsKeptSeparate":ambiguous,"curatedAlgerianItemsAdded":curated_added,"recipeRowsFullyMapped":len(rows),
+        "translationCoverage":coverage,"imageUrlCount":sum(bool(x["imageUrl"]) for x in items),
+        "countryOfOriginCount":sum(bool(x["countryOfOrigin"]) for x in items),"nutritionCount":sum(bool(x["nutrition"]) for x in items),
+        "categoryCounts":dict(Counter(x["categoryId"] for x in items)),
+        "matchingPolicy":"Exact normalized labels and aliases only; ambiguous aliases are never auto-merged."}
+    return items,build_categories(),rows,report
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--recipes", type=Path, default=Path("data/recipes/ar/recipes.json"))
-    parser.add_argument("--off-taxonomy", type=Path, required=True)
-    parser.add_argument("--foodon-tsv", type=Path, required=True)
-    parser.add_argument("--categories", type=Path, default=Path("data/food-catalogue/categories.json"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data/food-catalogue"))
-    args = parser.parse_args()
-    report = build(args)
-    print(json.dumps({
-        "recipeCount": report["recipeCount"],
-        "recipeIngredientOccurrences": report["recipeIngredientOccurrences"],
-        "catalogueItems": report["catalogueItems"],
-        "matchedRecipeOccurrencesToOff": report["matchedRecipeOccurrencesToOff"],
-        "distinctRecipeOnlyItemsAdded": report["distinctRecipeOnlyItemsAdded"],
-        "ambiguousMatchesRequiringReview": len(report["ambiguousMatchesRequiringReview"]),
-        "duplicateEnglishCanonicalNames": len(report["duplicateEnglishCanonicalNames"]),
-        "legacySeedIdsMapped": report["legacySeedIdsMapped"],
-    }, ensure_ascii=False, indent=2))
-    return 0
+    ap=argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--recipes",type=Path,default=DEFAULT_RECIPES)
+    ap.add_argument("--output-dir",type=Path,default=DEFAULT_OUTPUT)
+    ap.add_argument("--off-taxonomy",type=Path)
+    ap.add_argument("--foodon-synonyms",type=Path)
+    args=ap.parse_args()
+    lock=json.loads(SOURCE_LOCK.read_text(encoding="utf-8")); off=lock["openFoodFactsIngredients"]; food=lock["foodOnSynonyms"]
+    off_text=load_source_text(args.off_taxonomy,off["repository"],off["commit"],off["path"],off["gitBlobSha1"])
+    food_text=load_source_text(args.foodon_synonyms,food["repository"],food["commit"],food["path"],food["gitBlobSha1"])
+    recipes=json.loads(args.recipes.read_text(encoding="utf-8"))
+    off_entries=parse_off_taxonomy(off_text); food_nodes,food_parents=parse_foodon_tsv(food_text)
+    curated=json.loads(CURATED_FILE.read_text(encoding="utf-8")) if CURATED_FILE.exists() else []
+    registry_path=args.output_dir/REGISTRY_NAME
+    registry=json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else {"version":1,"ids":{},"redirects":{}}
+    items,categories,rows,report=build_catalogue(recipes,off_entries,food_nodes,food_parents,curated,registry)
+    metadata={"schemaVersion":1,"idFormat":"UUID","catalogueType":"generic-food-items","marketProductsIncluded":False,
+        "sources":{"openFoodFacts":{"repository":off["repository"],"commit":off["commit"],"path":off["path"],"license":off["license"],"attribution":off["attribution"]},
+                   "foodOn":{"repository":food["repository"],"commit":food["commit"],"path":food["path"],"license":food["license"],"attribution":food["attribution"]}}}
+    args.output_dir.mkdir(parents=True,exist_ok=True)
+    outputs={"food-items.json":{**metadata,"items":items},"categories.json":{"schemaVersion":1,"categories":categories},
+        "recipe-ingredient-map.json":{"schemaVersion":1,"rows":rows},"food-catalogue-report.json":report,REGISTRY_NAME:registry}
+    for name,value in outputs.items():
+        path=args.output_dir/name; tmp=path.with_suffix(path.suffix+".tmp")
+        tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2,sort_keys=True)+"\n",encoding="utf-8"); tmp.replace(path)
+    print(json.dumps(report,ensure_ascii=False,indent=2,sort_keys=True)); return 0
 
-
-if __name__ == "__main__":
-    try:
-        raise SystemExit(main())
+if __name__=="__main__":
+    try: raise SystemExit(main())
     except Exception as error:
-        print("FOOD CATALOGUE BUILD FAILED: " + str(error), file=sys.stderr)
-        raise
+        print(f"FOOD CATALOGUE BUILD FAILED: {error}",file=sys.stderr); raise SystemExit(1)
