@@ -1,6 +1,13 @@
+import io
 import unittest
+from unittest.mock import patch
+from urllib.request import Request
 
-from tools.translate_food_catalogue import build_translation_tasks
+from tools.translate_food_catalogue import (
+    PipelineError,
+    build_translation_tasks,
+    request_apps_script_response,
+)
 
 
 class FoodCatalogueTranslationTaskTests(unittest.TestCase):
@@ -97,6 +104,120 @@ class FoodCatalogueTranslationTaskTests(unittest.TestCase):
         )
         self.assertEqual(tasks, [])
         self.assertEqual(without_source, ["55555555-5555-4555-8555-555555555555"])
+
+
+
+class FakeResponse:
+    def __init__(self, status, url, body=b"", headers=None):
+        self.status = status
+        self.url = url
+        self.body = io.BytesIO(body)
+        self.headers = headers or {}
+
+    def getcode(self):
+        return self.status
+
+    def geturl(self):
+        return self.url
+
+    def read(self):
+        return self.body.read()
+
+    def close(self):
+        self.body.close()
+
+
+class AppsScriptRedirectTests(unittest.TestCase):
+    endpoint = "https://script.google.com/macros/s/test-deployment/exec"
+    content_url = (
+        "https://script.googleusercontent.com/macros/echo"
+        "?user_content_key=private-response-key"
+    )
+
+    def make_post(self):
+        return Request(
+            self.endpoint,
+            data=b'{"kind":"food_items"}',
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+    @patch("tools.translate_food_catalogue.time.sleep")
+    @patch("tools.translate_food_catalogue._open_without_redirects")
+    def test_content_host_404_retries_same_get_without_reposting(
+        self, open_request, sleep
+    ):
+        open_request.side_effect = [
+            FakeResponse(302, self.endpoint, headers={"Location": self.content_url}),
+            FakeResponse(404, self.content_url, b"<html>temporary 404</html>"),
+            FakeResponse(200, self.content_url, b'{"ok":true,"results":[]}'),
+        ]
+
+        status, body, response_url = request_apps_script_response(
+            self.make_post(), timeout_seconds=10
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b'{"ok":true,"results":[]}')
+        self.assertEqual(response_url, self.content_url)
+        methods = [call.args[0].get_method() for call in open_request.call_args_list]
+        self.assertEqual(methods, ["POST", "GET", "GET"])
+        sleep.assert_called_once_with(3)
+
+    @patch("tools.translate_food_catalogue.time.sleep")
+    @patch("tools.translate_food_catalogue._open_without_redirects")
+    def test_deployment_url_404_is_not_misclassified_as_content_host_failure(
+        self, open_request, sleep
+    ):
+        open_request.return_value = FakeResponse(
+            404, self.endpoint, b"<html>deployment not found</html>"
+        )
+
+        status, body, response_url = request_apps_script_response(
+            self.make_post(), timeout_seconds=10
+        )
+
+        self.assertEqual(status, 404)
+        self.assertIn(b"deployment not found", body)
+        self.assertEqual(response_url, self.endpoint)
+        open_request.assert_called_once()
+        sleep.assert_not_called()
+
+    @patch("tools.translate_food_catalogue._open_without_redirects")
+    def test_redirect_back_to_exec_is_stopped(self, open_request):
+        open_request.return_value = FakeResponse(
+            302, self.endpoint, headers={"Location": self.endpoint}
+        )
+
+        with self.assertRaisesRegex(PipelineError, "redirected back"):
+            request_apps_script_response(self.make_post(), timeout_seconds=10)
+
+        open_request.assert_called_once()
+
+    @patch("tools.translate_food_catalogue.time.sleep")
+    @patch("tools.translate_food_catalogue._open_without_redirects")
+    def test_persistent_content_host_404_does_not_resend_post(
+        self, open_request, sleep
+    ):
+        open_request.side_effect = [
+            FakeResponse(302, self.endpoint, headers={"Location": self.content_url}),
+            FakeResponse(404, self.content_url),
+            FakeResponse(404, self.content_url),
+            FakeResponse(404, self.content_url),
+            FakeResponse(404, self.content_url),
+        ]
+
+        status, _, response_url = request_apps_script_response(
+            self.make_post(), timeout_seconds=10
+        )
+
+        methods = [call.args[0].get_method() for call in open_request.call_args_list]
+        self.assertEqual(status, 404)
+        self.assertEqual(response_url, self.content_url)
+        self.assertEqual(methods, ["POST", "GET", "GET", "GET", "GET"])
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [3, 6, 9])
+
+
 
 
 if __name__ == "__main__":
