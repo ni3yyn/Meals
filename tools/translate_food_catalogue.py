@@ -368,7 +368,9 @@ def main() -> int:
         languages,
     )
     print(f"Finished this run: {completed} new language names.")
-    return 0 if quota_reached or completed >= 0 else 1
+    if quota_reached:
+        print("Checkpointed translations are ready for the next scheduled run.")
+    return 0
 
 
 if __name__ == "__main__":
