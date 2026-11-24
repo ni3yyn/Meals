@@ -665,6 +665,16 @@ def _clean_english_ingredient(value: str) -> str:
         flags=re.IGNORECASE,
     )
 
+    # Some source rows omit the count but still put a measure word before
+    # the food name (e.g. "bunch Chinese broccoli").
+    text = re.sub(
+        r"^\s*(?:bunches?|handfuls?|pinches?|dashes?|sprigs?|stalks?|cloves?|slices?|cans?|tins?|jars?|bottles?|cups?|tablespoons?|teaspoons?)\s+(?:of\s+)?",
+        "",
+        text,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+
     # "1 small or 3 Thai eggplants" names one food with alternate quantities.
     text = re.sub(
         r"^\s*(?:extra[- ]?)?(?:small|medium|large)\s+or\s+\d+(?:[.,]\d+)?\s+",
