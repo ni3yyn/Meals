@@ -60,6 +60,7 @@ jobs:
           mapping = json.loads(Path("data/products/recipe-ingredient-map.json").read_text(encoding="utf-8"))
           audit = json.loads(Path("data/products/build-audit.json").read_text(encoding="utf-8"))
           category_data = json.loads(Path("data/products/categories.json").read_text(encoding="utf-8"))
+          identity_registry = json.loads(Path("data/products/identity_registry.json").read_text(encoding="utf-8"))
           products = catalogue.get("products") or []
           categories = category_data.get("categories") or []
           category_ids = {item.get("id") for item in categories}
@@ -77,6 +78,15 @@ jobs:
           links = mapping.get("recipeIngredientToProductId") or {}
           if not products or len(ids) != len(set(ids)):
               raise SystemExit("Product catalogue is empty or contains duplicate IDs.")
+          if catalogue.get("idFormat") != "UUIDv4" or any(
+              not isinstance(item_id, str) or len(item_id) != 36
+              or item_id[14] != "4" or item_id[19] not in "89ab"
+              for item_id in ids
+          ):
+              raise SystemExit("Every food item must have an opaque UUIDv4 ID.")
+          registry_ids = set((identity_registry.get("ids") or {}).values())
+          if not set(ids).issubset(registry_ids):
+              raise SystemExit("Persistent registry is missing one or more published food-item IDs.")
           if len(english) != len(set(english)):
               raise SystemExit("Product catalogue contains duplicate normalized English names.")
           if not links:
@@ -94,6 +104,14 @@ jobs:
               raise SystemExit("Audit mapping count does not match the mapping file.")
           if counts.get("duplicateIds") != 0 or counts.get("duplicateEnglishNames") != 0:
               raise SystemExit("Duplicate validation failed.")
+          if counts.get("uuidv4Ids") != len(products):
+              raise SystemExit("Audit confirms a missing or invalid UUIDv4 ID.")
+          recipe_rows = mapping.get("recipeRows") or []
+          if counts.get("recipeRowsMapped") != len(recipe_rows):
+              raise SystemExit("Recipe row audit does not match the crosswalk.")
+          for row in recipe_rows:
+              if links.get(row.get("legacyRoomIngredientId")) != row.get("foodItemId"):
+                  raise SystemExit("A recipe row does not resolve through the legacy-ID map.")
           print(f"Validated {len(products)} unique food items and {len(links)} recipe ingredient links.")
           PY
 
@@ -106,6 +124,7 @@ jobs:
           git add data/products/catalogue.json \
                   data/products/recipe-ingredient-map.json \
                   data/products/build-audit.json
+                  data/products/identity_registry.json
           if git diff --cached --quiet; then
             echo "Generated catalogue is already up to date."
             exit 0
