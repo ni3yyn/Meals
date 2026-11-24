@@ -140,9 +140,34 @@ jobs:
           git commit -m "Build unified food product catalogue"
 
           git fetch origin main
-          if [[ "$(git rev-parse HEAD:data/recipes/ar/recipes.json)" != "$(git rev-parse origin/main:data/recipes/ar/recipes.json)" ]]; then
-            echo "::error::The recipe catalogue changed during this build. Rerun the workflow against the newest recipe revision."
-            exit 1
+          # Do not publish output generated from stale inputs. Validate every file
+          # that affects matching, translations, categories or generated schema.
+          input_paths=(
+            "data/recipes/ar/recipes.json"
+            "data/products/categories.json"
+            "data/products/curated-food-items.json"
+            "tools/build_food_product_catalogue.py"
+            "tools/test_food_product_catalogue.py"
+            ".github/workflows/build-food-product-catalogue.yml"
+          )
+          for path in "${input_paths[@]}"; do
+            if [[ "$(git rev-parse "HEAD:$path")" != "$(git rev-parse "origin/main:$path")" ]]; then
+              echo "::error::Input '$path' changed during this build. Rerun against the newest main revision."
+              exit 1
+            fi
+          done
+
+          # Rebase only the generated data changes. A normal git rebase can
+          # conflict when another serialized build has already published these
+          # JSON outputs, even when all source inputs are identical.
+          git reset --soft origin/main
+          git add data/products/catalogue.json \
+                  data/products/recipe-ingredient-map.json \
+                  data/products/build-audit.json \
+                  data/products/identity_registry.json
+          if git diff --cached --quiet; then
+            echo "The latest main branch already contains these generated catalogue files."
+            exit 0
           fi
-          git rebase origin/main
+          git commit -m "Build unified food product catalogue"
           git push origin HEAD:main
