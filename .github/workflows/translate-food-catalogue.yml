@@ -63,12 +63,13 @@ jobs:
         run: python tools/translate_food_catalogue.py --max-translations "$MAX_TRANSLATIONS" --batch-size 20 --languages ar,fr,en
 
       - name: Rebuild catalogue with checkpointed translations
+        id: rebuild
         if: always()
         run: python tools/build_food_product_catalogue.py
 
       - name: Validate translated catalogue and UUID bindings
         id: validate
-        if: always()
+        if: always() && steps.rebuild.outcome == 'success'
         shell: bash
         run: |
           python - <<'PY'
@@ -100,7 +101,7 @@ jobs:
           PY
 
       - name: Commit saved translations and rebuilt catalogue
-        if: always() && steps.validate.outcome == 'success'
+        if: always() && steps.rebuild.outcome == 'success' && steps.validate.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
