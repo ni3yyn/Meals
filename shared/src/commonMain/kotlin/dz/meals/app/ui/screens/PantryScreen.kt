@@ -75,6 +75,7 @@ fun PantryScreen(
     val matchingIngredients = ingredients.filter { ingredient ->
         search.isNotBlank() && (
             ingredient.nameAr.contains(search.trim(), true) ||
+                ingredient.nameEn.contains(search.trim(), true) ||
                 mealsText(ingredient.nameAr, appLocaleTag).contains(search.trim(), true) ||
                 ingredient.nameFr.contains(search.trim(), true) ||
                 ingredient.aliases.any { it.contains(search.trim(), true) }
@@ -93,7 +94,7 @@ fun PantryScreen(
                 onValueChange = { search = it.take(60) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { MealsIcon(MealsIconName.Search, contentDescription = null, modifier = Modifier.size(26.dp)) },
-                label = { Text("ابحث بالعربية أو الفرنسية أو الدارجة") },
+                label = { Text("ابحث بالعربية أو الإنجليزية أو الفرنسية أو الدارجة") },
                 singleLine = true
             )
             Text(
@@ -126,9 +127,13 @@ fun PantryScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(ingredient.nameAr, color = MaterialTheme.colorScheme.onSurface)
                                 Text(
-                mealsText(ingredient.nameAr, appLocaleTag) + " · " +
+                                    if (appLocaleTag.startsWith("en")) ingredient.nameEn.ifBlank { ingredient.nameAr }
+                                    else ingredient.nameAr,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                (if (appLocaleTag.startsWith("en")) ingredient.nameEn.ifBlank { mealsText(ingredient.nameAr, appLocaleTag) } else ingredient.nameAr) + " · " +
                     mealsUnitLabel(ingredient.baseUnit, appLocaleTag),
                 color = MutedInk,
                 style = MaterialTheme.typography.bodySmall,

@@ -30,6 +30,12 @@ val prepareFoodIdentityMigrationAssets = tasks.register<Sync>("prepareFoodIdenti
     from(rootProject.file("data/products/recipe-ingredient-map.json")) {
         into("migration")
     }
+    from(rootProject.file("data/products/catalogue.json")) {
+        into("food")
+    }
+    from(rootProject.file("data/products/categories.json")) {
+        into("food")
+    }
     into(generatedFoodIdentityAssets)
 }
 val prepareRecipeCorpusDebugAssets = tasks.register<Sync>("prepareRecipeCorpusDebugAssets") {

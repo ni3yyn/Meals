@@ -12,7 +12,7 @@ Kitchen-equipment awareness and recipe filtering based on equipment are intentio
 - Full-screen first-run onboarding (`shared/.../ui/onboarding`) with Compose-drawn vector illustrations and refraction-free Liquid Glass bubbles.
 - KMP `:shared` module targeting Android, iOS devices and iOS simulators.
 - Shared Compose component library, Midati theme and color tokens in `shared/src/commonMain`.
-- Shared Kotlin data models and bundled Algerian ingredient/recipe catalogue in `commonMain`.
+- Shared Kotlin data models plus the 4,649-item multilingual generic food catalogue, installed into the local Room database on first initialization.
 - Room-backed local ingredient and recipe catalogue, weekly meal slots, pantry and shopping-list state.
 - Seven-day planner with breakfast, lunch and dinner slots and deterministic local plan generation.
 - Household serving scaling, configurable breakfast/lunch/dinner slots and previous/next week navigation.

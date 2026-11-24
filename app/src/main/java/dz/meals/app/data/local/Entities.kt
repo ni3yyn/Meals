@@ -16,6 +16,31 @@ data class IngredientEntity(
     val aliasesCsv: String
 )
 
+@Entity(tableName = "food_items")
+data class FoodItemEntity(
+    @PrimaryKey val id: String,
+    val nameAr: String,
+    val nameEn: String,
+    val nameFr: String,
+    val aliasesArCsv: String,
+    val aliasesEnCsv: String,
+    val aliasesFrCsv: String,
+    val categoryId: String,
+    val subcategoryId: String,
+    val categoryNameAr: String,
+    val categoryNameEn: String,
+    val categoryNameFr: String,
+    val subcategoryNameAr: String,
+    val acceptedUnitsCsv: String,
+    val imageUrl: String,
+    val quantity: Double?,
+    val countryOfOrigin: String,
+    val nutritionJson: String,
+    val sourceMappingsJson: String,
+    val recipeIngredientIdsCsv: String,
+    val sourceJson: String
+)
+
 @Entity(tableName = "recipes")
 data class RecipeEntity(
     @PrimaryKey val id: String,

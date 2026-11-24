@@ -42,7 +42,9 @@ The generated \`recipe-ingredient-map.json\` contains:
 
 The build fails if a recipe ingredient row is unmapped, a legacy ID maps to more than one food identity, a mapping points to a missing product, or duplicate canonical IDs/English names remain. A retired canonical UUID is kept as a redirect in the registry when a reviewed merge is made.
 
-**This is a generated migration crosswalk, not yet a Room database migration.** Do not switch existing database foreign keys or delete old ingredient rows until pantry, shopping, recipe, price-observation and any other references have been migrated transactionally and the app has a safe migration path for existing installs.
+The app now bundles the generated food catalogue and category hierarchy as verified build inputs, then installs all 4,649 generic food identities into the `food_items` Room table on first initialization. The existing `ingredients` table remains the compatibility layer for recipe, pantry, shopping and price references; the new table is the canonical multilingual metadata source keyed by the same stable UUIDs. Existing v14 databases receive the new table through a non-destructive v14-to-v15 migration. Recipe imports resolve canonical food UUIDs against this table and use the catalogue's category labels instead of heuristic name classification whenever an exact identity mapping exists.
+
+The generated recipe crosswalk remains the compatibility bridge for legacy IDs. This phase does not create branded market products, barcodes, retailer SKUs, pack variants or real market prices.
 
 ## Categories
 

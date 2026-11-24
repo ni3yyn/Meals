@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.JsonReader
 import android.util.JsonToken
 import androidx.room.withTransaction
+import dz.meals.app.data.local.FoodItemEntity
 import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.RecipeAttributionEntity
@@ -44,6 +45,10 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             throw IOException("ملف مكتبة الوصفات غير موجود أو فارغ.")
         }
 
+        val foodItemsById = dao.getFoodItems().associateBy { it.id }
+        if (foodItemsById.size != FoodCatalogueInstaller.EXPECTED_ITEM_COUNT) {
+            throw IOException("يجب تثبيت دليل المكونات الكامل قبل استيراد الوصفات.")
+        }
         val batch = ArrayList<RecipeBundle>(BATCH_SIZE)
         var rootComplete = false
         var translatedCount = 0
@@ -94,7 +99,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                                 if (source.id.isBlank() || !uniqueIds.add(source.id)) {
                                     throw IOException("تحتوي مكتبة الوصفات على معرّف مفقود أو مكرر.")
                                 }
-                                batch += source.toBundle()
+                                batch += source.toBundle(foodItemsById)
                                 importedCount++
                                 if (batch.size >= BATCH_SIZE) flushBatch()
                             }
@@ -380,7 +385,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
     private fun readNullableDouble(reader: JsonReader): Double? =
         readString(reader).replace(",", ".").toDoubleOrNull()?.takeIf { it >= 0.0 }
 
-    private fun SourceRecipe.toBundle(): RecipeBundle {
+    private fun SourceRecipe.toBundle(foodItemsById: Map<String, FoodItemEntity>): RecipeBundle {
         val recipeId = when {
             id.startsWith("focus:") -> FOCUS_RECIPE_ID_PREFIX + id.substringAfter(":")
             id.startsWith("unitools:") -> UNITOOLS_RECIPE_ID_PREFIX + id.substringAfter(":")
@@ -398,14 +403,21 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                     .replace(Regex("[^a-z0-9._-]"), "-")
             } else ingredientId(source.name, measure.unit)
             val ingredientId = foodIdentityResolver.canonicalId(legacyIngredientId)
+            val canonicalFood = foodItemsById[ingredientId]
             ingredientEntities += IngredientEntity(
                 id = ingredientId,
-                nameAr = source.name,
-                nameFr = source.sourceNameEn.ifBlank { source.name },
-                category = IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn),
+                nameAr = canonicalFood?.nameAr?.ifBlank { source.name } ?: source.name,
+                nameFr = canonicalFood?.nameFr?.ifBlank { source.sourceNameEn.ifBlank { source.name } }
+                    ?: source.sourceNameEn.ifBlank { source.name },
+                category = canonicalFood?.categoryNameAr?.ifBlank {
+                    IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn)
+                } ?: IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn),
                 baseUnit = measure.unit,
                 allergensCsv = "",
-                aliasesCsv = ""
+                aliasesCsv = canonicalFood?.let {
+                    listOf(it.nameEn, it.aliasesArCsv, it.aliasesEnCsv, it.aliasesFrCsv)
+                        .filter { value -> value.isNotBlank() }.joinToString("|")
+                }.orEmpty()
             )
 
             val preparationNote = buildList {

@@ -11,6 +11,7 @@ import dz.meals.app.data.FoodIdentityResolver
 @Database(
     entities = [
         IngredientEntity::class,
+        FoodItemEntity::class,
         RecipeEntity::class,
         RecipeIngredientEntity::class,
         RecipeStepEntity::class,
@@ -25,7 +26,7 @@ import dz.meals.app.data.FoodIdentityResolver
         RecipeAttributionEntity::class,
         RecipeImageOverrideEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -179,6 +180,35 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS food_items (" +
+                        "id TEXT NOT NULL PRIMARY KEY, " +
+                        "nameAr TEXT NOT NULL, " +
+                        "nameEn TEXT NOT NULL, " +
+                        "nameFr TEXT NOT NULL, " +
+                        "aliasesArCsv TEXT NOT NULL, " +
+                        "aliasesEnCsv TEXT NOT NULL, " +
+                        "aliasesFrCsv TEXT NOT NULL, " +
+                        "categoryId TEXT NOT NULL, " +
+                        "subcategoryId TEXT NOT NULL, " +
+                        "categoryNameAr TEXT NOT NULL, " +
+                        "categoryNameEn TEXT NOT NULL, " +
+                        "categoryNameFr TEXT NOT NULL, " +
+                        "subcategoryNameAr TEXT NOT NULL, " +
+                        "acceptedUnitsCsv TEXT NOT NULL, " +
+                        "imageUrl TEXT NOT NULL, " +
+                        "quantity REAL, " +
+                        "countryOfOrigin TEXT NOT NULL, " +
+                        "nutritionJson TEXT NOT NULL, " +
+                        "sourceMappingsJson TEXT NOT NULL, " +
+                        "recipeIngredientIdsCsv TEXT NOT NULL, " +
+                        "sourceJson TEXT NOT NULL)"
+                )
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -209,7 +239,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 MIGRATION_10_11,
                 MIGRATION_11_12,
                 MIGRATION_12_13,
-                FoodIdentityMigration(FoodIdentityResolver(context.applicationContext))
+                FoodIdentityMigration(FoodIdentityResolver(context.applicationContext)),
+                MIGRATION_14_15
             ).build()
     }
 }

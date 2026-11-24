@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.withTransaction
 import dz.meals.app.data.local.CookedMealDeductionEntity
 import dz.meals.app.data.local.FavoriteRecipeEntity
+import dz.meals.app.data.local.FoodItemEntity
 import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.MealsDao
@@ -55,6 +56,7 @@ class MealsRepository(context: Context) {
 
     suspend fun ensureInitialized() = initializationMutex.withLock {
         SeedRecipes.validateCatalogue()
+        FoodCatalogueInstaller(appContext).installIfNeeded()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
         if (dao.recipeCount() > 0) return@withLock
@@ -844,9 +846,15 @@ class MealsRepository(context: Context) {
             } else {
                 dao.getUnpublishedArabicCatalogueIngredientIds().toSet()
             }
-            dao.getIngredients()
+            val merged = dao.getIngredients()
                 .filter { ingredient -> ingredient.id !in unpublishedIngredientIds }
                 .map { it.toModel() }
+                .associateBy { it.id }
+                .toMutableMap()
+            dao.getFoodItems().forEach { food ->
+                merged[food.id] = food.toIngredientMaster()
+            }
+            merged.values.sortedBy { it.nameAr }
                 .also { cachedCatalogueIngredients = it }
         }
     }
@@ -1040,6 +1048,30 @@ data class GenerationResult(
     val purchaseOutlayDzd: Int,
     val budgetDzd: Int
 )
+
+
+private fun FoodItemEntity.toIngredientMaster(): IngredientMaster {
+    val accepted = acceptedUnitsCsv.split("|").filter { it.isNotBlank() }
+    val aliases = buildList {
+        add(nameEn)
+        addAll(aliasesArCsv.split("|"))
+        addAll(aliasesEnCsv.split("|"))
+        addAll(aliasesFrCsv.split("|"))
+    }.filter { it.isNotBlank() }.distinct()
+    return IngredientMaster(
+        id = id,
+        nameAr = nameAr.ifBlank { nameEn.ifBlank { nameFr } },
+        nameFr = nameFr.ifBlank { nameEn },
+        category = categoryNameAr.ifBlank { "أخرى" },
+        baseUnit = accepted.firstOrNull() ?: "piece",
+        allergens = emptySet(),
+        aliases = aliases,
+        nameEn = nameEn,
+        categoryId = categoryId,
+        subcategoryId = subcategoryId,
+        acceptedUnits = accepted
+    )
+}
 
 private fun IngredientEntity.toModel() = IngredientMaster(
     id = id,

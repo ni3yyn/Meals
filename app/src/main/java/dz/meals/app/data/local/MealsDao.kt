@@ -31,6 +31,21 @@ interface MealsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRecipeSteps(items: List<RecipeStepEntity>)
 
+    @Query("DELETE FROM food_items")
+    suspend fun deleteAllFoodItems()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertFoodItems(items: List<FoodItemEntity>)
+
+    @Query("SELECT COUNT(*) FROM food_items")
+    suspend fun countFoodItems(): Int
+
+    @Query("SELECT * FROM food_items ORDER BY nameAr")
+    suspend fun getFoodItems(): List<FoodItemEntity>
+
+    @Query("SELECT * FROM food_items WHERE id = :id LIMIT 1")
+    suspend fun getFoodItem(id: String): FoodItemEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertCatalogueIngredients(items: List<IngredientEntity>)
 

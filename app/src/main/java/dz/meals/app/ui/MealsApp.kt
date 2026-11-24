@@ -1646,12 +1646,13 @@ private fun HouseholdPreferencesDialog(
                     ingredients.filter { ingredient ->
                         searchIngredient.isBlank() ||
                             ingredient.nameAr.contains(searchIngredient, true) ||
+                            ingredient.nameEn.contains(searchIngredient, true) ||
                             mealsText(ingredient.nameAr, appLanguage).contains(searchIngredient, true) ||
                             ingredient.nameFr.contains(searchIngredient, true) ||
                             ingredient.aliases.any { it.contains(searchIngredient, true) }
                     }.take(10).forEach { ingredient ->
                         MealsCheckRow(
-                            title = mealsText(ingredient.nameAr, appLanguage),
+                            title = if (appLanguage == "en") ingredient.nameEn.ifBlank { mealsText(ingredient.nameAr, appLanguage) } else ingredient.nameAr,
                             supportingText = ingredient.nameFr,
                             checked = ingredient.id in dislikes,
                             onCheckedChange = { checked ->

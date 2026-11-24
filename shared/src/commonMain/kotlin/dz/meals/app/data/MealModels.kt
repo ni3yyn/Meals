@@ -9,7 +9,11 @@ data class IngredientMaster(
     val category: String,
     val baseUnit: String,
     val allergens: Set<String>,
-    val aliases: List<String>
+    val aliases: List<String>,
+    val nameEn: String = "",
+    val categoryId: String = "",
+    val subcategoryId: String = "",
+    val acceptedUnits: List<String> = emptyList()
 )
 
 data class RecipeIngredient(
