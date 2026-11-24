@@ -49,6 +49,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
         if (foodItemsById.size != FoodCatalogueInstaller.EXPECTED_ITEM_COUNT) {
             throw IOException("يجب تثبيت دليل المكونات الكامل قبل استيراد الوصفات.")
         }
+        val existingIngredientsById = dao.getIngredients().associateBy { it.id }
         val batch = ArrayList<RecipeBundle>(BATCH_SIZE)
         var rootComplete = false
         var translatedCount = 0
@@ -99,7 +100,7 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                                 if (source.id.isBlank() || !uniqueIds.add(source.id)) {
                                     throw IOException("تحتوي مكتبة الوصفات على معرّف مفقود أو مكرر.")
                                 }
-                                batch += source.toBundle(foodItemsById)
+                                batch += source.toBundle(foodItemsById, existingIngredientsById)
                                 importedCount++
                                 if (batch.size >= BATCH_SIZE) flushBatch()
                             }
@@ -385,7 +386,10 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
     private fun readNullableDouble(reader: JsonReader): Double? =
         readString(reader).replace(",", ".").toDoubleOrNull()?.takeIf { it >= 0.0 }
 
-    private fun SourceRecipe.toBundle(foodItemsById: Map<String, FoodItemEntity>): RecipeBundle {
+    private fun SourceRecipe.toBundle(
+        foodItemsById: Map<String, FoodItemEntity>,
+        existingIngredientsById: Map<String, IngredientEntity>
+    ): RecipeBundle {
         val recipeId = when {
             id.startsWith("focus:") -> FOCUS_RECIPE_ID_PREFIX + id.substringAfter(":")
             id.startsWith("unitools:") -> UNITOOLS_RECIPE_ID_PREFIX + id.substringAfter(":")
@@ -404,6 +408,15 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
             } else ingredientId(source.name, measure.unit)
             val ingredientId = foodIdentityResolver.canonicalId(legacyIngredientId)
             val canonicalFood = foodItemsById[ingredientId]
+            val existingIngredient = existingIngredientsById[ingredientId]
+            val catalogueAliases = canonicalFood?.let {
+                listOf(it.nameEn, it.aliasesArCsv, it.aliasesEnCsv, it.aliasesFrCsv)
+                    .filter { value -> value.isNotBlank() }
+            }.orEmpty()
+            val retainedAliases = existingIngredient?.aliasesCsv
+                ?.split("|")
+                ?.filter { it.isNotBlank() }
+                .orEmpty()
             ingredientEntities += IngredientEntity(
                 id = ingredientId,
                 nameAr = canonicalFood?.nameAr?.ifBlank { source.name } ?: source.name,
@@ -413,11 +426,8 @@ class ArabicRecipeCatalogueInstaller(context: Context) {
                     IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn)
                 } ?: IngredientCategoryClassifier.classify(source.sourceId, source.name, source.sourceNameEn),
                 baseUnit = measure.unit,
-                allergensCsv = "",
-                aliasesCsv = canonicalFood?.let {
-                    listOf(it.nameEn, it.aliasesArCsv, it.aliasesEnCsv, it.aliasesFrCsv)
-                        .filter { value -> value.isNotBlank() }.joinToString("|")
-                }.orEmpty()
+                allergensCsv = existingIngredient?.allergensCsv.orEmpty(),
+                aliasesCsv = (catalogueAliases + retainedAliases).distinct().joinToString("|")
             )
 
             val preparationNote = buildList {
