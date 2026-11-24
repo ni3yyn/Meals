@@ -10,6 +10,7 @@ from tools.build_food_product_catalogue import (
     parse_off_taxonomy,
     room_ingredient_id,
     _clean_english_ingredient,
+    ingredient_name_variants,
 )
 
 
@@ -70,6 +71,24 @@ class FoodCatalogueParserTests(unittest.TestCase):
             "Canned crushed tomatoes",
         )
         self.assertEqual(_clean_english_ingredient("2 limes"), "limes")
+        self.assertEqual(
+            _clean_english_ingredient("Chicken thigh, skinless, cooked: 600 g cooked"),
+            "Chicken thigh, skinless, cooked",
+        )
+
+    def test_safe_base_variant_strips_preparation_but_not_canning(self):
+        self.assertEqual(
+            ingredient_name_variants("Chicken thigh, skinless, cooked"),
+            ["Chicken thigh, skinless, cooked", "Chicken thigh"],
+        )
+        self.assertEqual(
+            ingredient_name_variants("Canned crushed tomatoes"),
+            ["Canned crushed tomatoes"],
+        )
+        self.assertEqual(
+            ingredient_name_variants("Tuna, canned in water"),
+            ["Tuna, canned in water"],
+        )
 
 
 class FoodCatalogueBuildTests(unittest.TestCase):
