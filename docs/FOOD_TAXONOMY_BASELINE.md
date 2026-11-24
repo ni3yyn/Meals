@@ -102,3 +102,18 @@ Before a release is considered complete, CI must pass:
 
 The release APK is built from the generated catalogue commit on `main`; a successful build of an earlier source revision is not evidence that the latest generated taxonomy data is in the APK.
 
+## Final generated catalogue snapshot
+
+The verified generated snapshot on `main` contains:
+
+- 4,649 stable UUIDv4 generic food identities;
+- 22 main categories and 82 subcategories, with complete Arabic, English and French taxonomy labels;
+- 0 missing Arabic, English or French food names;
+- 0 duplicate food UUIDs and 0 duplicate normalized English food names;
+- 1,261 legacy Room ingredient mappings and 8,623 recipe ingredient rows mapped to 836 recipe-used food identities;
+- 0 missing recipe rows, 0 legacy ID conflicts and 0 registry split reassignments.
+
+The recipe-linked red-cabbage identity keeps its existing UUID and is displayed as “Shredded red cabbage” so it remains distinguishable from the generic “Red cabbage” identity without breaking its recipe crosswalk. Search for “red cabbage” matches both through token-based search.
+
+This is a generic food-identity catalogue, not yet a retail SKU catalogue: product barcodes, package variants, product photography and nutrition records are not supplied for these 4,649 generic identities. Those belong to a later market-product enrichment layer and must not be represented by fabricated placeholder data.
+
