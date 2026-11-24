@@ -72,11 +72,11 @@ interface MealsDao {
         )
         AND NOT EXISTS (
             SELECT 1
-            FROM recipe_ingredients AS local
-            WHERE local.ingredientId = imported.ingredientId
-              AND local.recipeId NOT LIKE 'orc-%'
-              AND local.recipeId NOT LIKE 'focus-%'
-              AND local.recipeId NOT LIKE 'unitools-%'
+            FROM recipe_ingredients AS seedUsage
+            WHERE seedUsage.ingredientId = imported.ingredientId
+              AND seedUsage.recipeId NOT LIKE 'orc-%'
+              AND seedUsage.recipeId NOT LIKE 'focus-%'
+              AND seedUsage.recipeId NOT LIKE 'unitools-%'
         )
     """)
     suspend fun getUnpublishedArabicCatalogueIngredientIds(): List<String>
