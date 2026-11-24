@@ -148,8 +148,8 @@ class FoodCatalogueBuildTests(unittest.TestCase):
             )
             records = parse_off_taxonomy(path)
         self.assertEqual(records[0]["names"]["ar"], "حليب")
-        self.assertNotIn("لبن", records[0]["aliases"]["ar"])
-        self.assertNotIn("رايب", records[0]["aliases"]["ar"])
+        self.assertNotIn("لبن", records[0].get("aliases", {}).get("ar", []))
+        self.assertNotIn("رايب", records[0].get("aliases", {}).get("ar", []))
 
     def test_curated_algerian_products_remain_separate(self):
         milk = {
