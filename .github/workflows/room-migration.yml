@@ -5,7 +5,7 @@ on:
     paths:
       - "app/src/main/java/dz/meals/app/data/**"
       - "app/src/main/java/dz/meals/app/data/local/**"
-      - "app/src/androidTest/java/dz/meals/app/data/local/**"
+      - "app/src/test/java/dz/meals/app/data/local/**"
       - "app/build.gradle.kts"
       - "data/products/recipe-ingredient-map.json"
       - ".github/workflows/room-migration.yml"
@@ -20,11 +20,9 @@ concurrency:
 
 jobs:
   migration:
-    name: Migrate a real v13 SQLite database on Android
-    # macOS provides native Hypervisor.framework acceleration. The hosted
-    # macos-15 image is Apple Silicon, so the emulator must use an ARM64 image.
-    runs-on: macos-15
-    timeout-minutes: 60
+    name: Migrate a real v13 SQLite database (Robolectric)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -53,41 +51,5 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Build release and instrumentation-test variants
-        run: ./gradlew :app:testReleaseUnitTest :app:assembleReleaseAndroidTest --stacktrace
-
-      - name: Run Room migration instrumentation test
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          # macos-15 currently provisions ARM64 hosts; x86_64 here cannot boot.
-          arch: arm64-v8a
-          target: google_apis
-          profile: pixel_2
-          cores: 3
-          ram-size: 4096M
-          heap-size: 512M
-          disk-size: 6G
-          emulator-boot-timeout: 900
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          disable-linux-hw-accel: false
-          script: ./gradlew :app:connectedReleaseAndroidTest --stacktrace
-
-      - name: Capture emulator diagnostics on failure
-        if: failure()
-        shell: bash
-        run: |
-          echo "Runner: $(uname -a)"
-          echo "Android SDK: ${ANDROID_HOME:-unset}"
-          echo "ADB devices:"
-          adb devices -l || true
-          echo "Emulator processes:"
-          ps aux | grep -E '[e]mulator|[q]emu' || true
-          echo "AVD configuration:"
-          cat "$HOME/.android/avd/test.avd/config.ini" 2>/dev/null || true
-          echo "Disk and memory:"
-          df -h
-          vm_stat || true
-          echo "Recent emulator logs:"
-          find "$HOME/.android" -type f \( -name '*emulator*.log' -o -name 'emu-launch-params.txt' \) -print -exec tail -n 200 {} \; 2>/dev/null || true
+      - name: Run Room migration and unit tests
+        run: ./gradlew :app:testReleaseUnitTest --stacktrace --no-daemon
