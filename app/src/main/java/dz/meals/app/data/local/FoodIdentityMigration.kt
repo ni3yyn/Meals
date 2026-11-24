@@ -187,6 +187,17 @@ internal class FoodIdentityMigration(
         db: SupportSQLiteDatabase,
         canonicalByLegacyId: Map<String, String>
     ) {
+        val pantryItemIds = linkedMapOf<Pair<String, String>, String>()
+        db.query("SELECT id, ingredientId, unit FROM pantry_items").use { cursor ->
+            val idIndex = cursor.getColumnIndexOrThrow("id")
+            val ingredientIndex = cursor.getColumnIndexOrThrow("ingredientId")
+            val unitIndex = cursor.getColumnIndexOrThrow("unit")
+            while (cursor.moveToNext()) {
+                pantryItemIds[cursor.getString(ingredientIndex) to cursor.getString(unitIndex)] =
+                    cursor.getString(idIndex)
+            }
+        }
+
         val rows = mutableListOf<CookedMealDeductionRow>()
         db.query(
             "SELECT mealId, ingredientId, unit, quantityBase " +
@@ -204,7 +215,8 @@ internal class FoodIdentityMigration(
                         ?: identityResolver.canonicalId(oldIngredientId),
                     unit = cursor.getString(unitIndex),
                     quantityBase = cursor.getDouble(quantityIndex),
-                    rowKey = oldIngredientId
+                    rowKey = oldIngredientId,
+                    pantryItemId = pantryItemIds[oldIngredientId to cursor.getString(unitIndex)]
                 )
             }
         }
@@ -224,7 +236,7 @@ internal class FoodIdentityMigration(
         val insert = db.compileStatement(
             "INSERT INTO cooked_meal_deductions " +
                 "(mealId, ingredientId, unit, quantityBase, rowKey, pantryItemId) " +
-                "VALUES (?, ?, ?, ?, ?, NULL)"
+                "VALUES (?, ?, ?, ?, ?, ?)"
         )
         rows.forEach { row ->
             insert.clearBindings()
@@ -233,6 +245,7 @@ internal class FoodIdentityMigration(
             insert.bindString(3, row.unit)
             insert.bindDouble(4, row.quantityBase)
             insert.bindString(5, row.rowKey)
+            if (row.pantryItemId == null) insert.bindNull(6) else insert.bindString(6, row.pantryItemId)
             insert.executeInsert()
         }
 
@@ -372,7 +385,8 @@ internal class FoodIdentityMigration(
         val ingredientId: String,
         val unit: String,
         val quantityBase: Double,
-        val rowKey: String
+        val rowKey: String,
+        val pantryItemId: String?
     )
 
     private data class IngredientRow(
