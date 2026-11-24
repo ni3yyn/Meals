@@ -526,18 +526,25 @@ class MealsRepository(context: Context) {
         note: String = "",
         expiryAtEpochMillis: Long? = null
     ) {
-        val ingredient = dao.getIngredients().firstOrNull { it.id == ingredientId } ?: return
-        // Replace all preserved alias rows atomically so a process interruption
-        // cannot erase stock between the delete and canonical-row insert.
+        // The UI can supply either a canonical ingredient ID (new stock) or the
+        // persisted pantry row ID (editing/removing an existing row).
+        val existingRow = dao.getPantryItem(ingredientId)
+        val canonicalIngredientId = existingRow?.ingredientId ?: ingredientId
+        val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId } ?: return
+        val targetUnit = existingRow?.unit ?: ingredient.baseUnit
+        val pantryRowId = existingRow?.id ?: canonicalIngredientId
+
+        // Replace merged alias rows atomically, retaining the edited row's unit
+        // and ID so cooking deductions can still restore stock to that row.
         database.withTransaction {
-            dao.deletePantryItemsForIngredientUnit(ingredientId, ingredient.baseUnit)
+            dao.deletePantryItemsForIngredientUnit(canonicalIngredientId, targetUnit)
             if (quantityBase != null || isApproximate) {
                 dao.upsertPantryItem(
                     PantryItemEntity(
-                        id = ingredientId,
-                        ingredientId = ingredientId,
+                        id = pantryRowId,
+                        ingredientId = canonicalIngredientId,
                         quantityBase = if (isApproximate) null else quantityBase?.coerceAtLeast(0.0),
-                        unit = ingredient.baseUnit,
+                        unit = targetUnit,
                         isApproximate = isApproximate,
                         note = note,
                         expiryAtEpochMillis = expiryAtEpochMillis
