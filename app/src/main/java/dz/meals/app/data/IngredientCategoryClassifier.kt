@@ -3,10 +3,9 @@ package dz.meals.app.data
 /**
  * Assigns imported recipe ingredients to useful shopping categories.
  *
- * The source catalogue does not provide a dependable category for each
- * ingredient, so classify from its stable source key and Arabic/English name.
- * Unknown items remain in "أخرى" rather than collapsing the whole basket into
- * the meaningless "مكوّن" bucket.
+ * Canonical food-catalogue categories take precedence. This classifier is
+ * only a compatibility fallback for recipe ingredients that have no exact
+ * food-identity match. Unknown items remain in "أخرى".
  */
 internal object IngredientCategoryClassifier {
     private val seafood = setOf(

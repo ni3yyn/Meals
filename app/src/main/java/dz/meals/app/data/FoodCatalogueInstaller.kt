@@ -168,7 +168,7 @@ class FoodCatalogueInstaller(context: Context) {
 
     companion object {
         const val EXPECTED_ITEM_COUNT = 4_649
-        const val REVISION = "1f27d99c58e91f22fb8feda2a50ef196e8ac95cb"
+        const val REVISION = "catalogue-1f27d99c58e91f22fb8feda2a50ef196e8ac95cb-categories-91b5efcad131eaba0e30512c5d749827775bef40"
         private const val PREFERENCES_NAME = "generic_food_catalogue"
         private const val INSTALLED_REVISION_KEY = "installed_revision"
         private const val CATALOGUE_ASSET = "food/catalogue.json"
