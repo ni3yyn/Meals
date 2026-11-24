@@ -579,10 +579,12 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
         return "sauces_condiments", None, "chocolate_or_cocoa_sauce"
     if has("cocoa spread", "chocolate spread", "hazelnut and cocoa spread", "كريمة الكاكاو"):
         return "sweeteners", "jam", "sweet_chocolate_spread"
+    if has("vanilla extract", "vanilla essence", "vanillin"):
+        return "baking", None, "vanilla_flavouring"
     if has(
         "cocoa", "cacao", "chocolate", "cocoa powder", "cacao powder",
         "baking powder", "baking soda", "bicarbonate of soda", "bicarbonate",
-        "agar agar", "gelatin", "gelatine", "vanilla", "vanilla extract", "raising agent",
+        "agar agar", "gelatin", "gelatine", "vanilla extract", "raising agent",
         "leavening agent", "yeast", "خميرة", "كاكاو", "شوكولاتة", "أجار"
     ):
         if has("baking powder", "baking soda", "bicarbonate", "yeast", "raising agent", "خميرة"):
@@ -651,7 +653,8 @@ def _classify_food_label(label: str) -> tuple[str, str | None, str]:
     # "nut" as an arbitrary substring, and chilli powder is not fresh produce.
     if has(
         "spice", "spices", "seasoning", "peppercorn", "black pepper",
-        "white pepper", "aniseed", "anise seed", "nutmeg", "sumac", "allspice",
+        "white pepper", "vanilla", "vanilla bean", "vanilla pod",
+        "aniseed", "anise seed", "nutmeg", "sumac", "allspice",
         "garam masala", "cumin", "coriander", "coriander seed", "coriander seeds",
         "ground coriander", "coriander powder", "cardamom", "green cardamom",
         "ginger", "garlic powder", "onion powder", "paprika", "turmeric", "cinnamon",
