@@ -810,11 +810,13 @@
       "acceptedUnits": [
         "g",
         "kg",
+        "ml",
+        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "categoryId": "foodcat-other",
+      "subcategoryId": "foodsub-other-general",
       "aliases": {
         "ar": [],
         "en": [
@@ -1693,11 +1695,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-vegetables",
-      "subcategoryId": "foodsub-vegetables-fruit",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -3032,15 +3035,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece",
         "ملعقة صغيرة",
         "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -3085,13 +3085,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -3119,8 +3118,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -3148,13 +3147,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -5585,13 +5583,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [
           "افوكادو"
@@ -5715,13 +5711,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [],
@@ -5774,13 +5768,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [],
         "en": [],
@@ -8924,13 +8916,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [],
         "en": [
@@ -9048,13 +9038,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [],
         "en": [],
@@ -9793,13 +9781,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [
@@ -10982,13 +10968,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -11766,7 +11750,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-fruits",
-      "subcategoryId": "foodsub-fruits-berries",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [
           "شجر العليق - أجهزة البلاك بيري"
@@ -11806,13 +11790,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -11838,13 +11820,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -12870,14 +12850,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [
           "التوت الأزرق"
@@ -12943,13 +12921,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -12973,13 +12949,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -13674,13 +13648,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -13710,7 +13683,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "subcategoryId": "foodsub-baking-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -16453,7 +16426,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [
@@ -17584,13 +17557,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -17618,8 +17589,8 @@
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-other",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -17647,13 +17618,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -17710,11 +17679,13 @@
       "acceptedUnits": [
         "g",
         "kg",
+        "ml",
+        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "categoryId": "foodcat-other",
+      "subcategoryId": "foodsub-other-general",
       "aliases": {
         "ar": [],
         "en": [
@@ -22755,13 +22726,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [
           "الكستناء"
@@ -22805,8 +22774,8 @@
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-flour",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [],
@@ -22834,13 +22803,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [],
@@ -22869,8 +22836,8 @@
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-mushrooms",
-      "subcategoryId": "foodsub-mushrooms-edible",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [
@@ -22911,13 +22878,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [],
@@ -22941,13 +22906,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [],
@@ -24948,13 +24911,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [
@@ -30961,13 +30922,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -32849,13 +32808,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -33015,13 +32972,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -33178,13 +33133,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -34039,7 +33992,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [
@@ -34553,13 +34506,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-seafood",
+      "subcategoryId": "foodsub-seafood-crustaceans",
       "aliases": {
         "ar": [],
         "en": [
@@ -35743,13 +35694,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -36549,13 +36498,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [],
         "en": [
@@ -37056,13 +37003,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -39674,7 +39619,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-fruits",
-      "subcategoryId": "foodsub-fruits-dates",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -43010,11 +42955,13 @@
       "acceptedUnits": [
         "g",
         "kg",
+        "ml",
+        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "categoryId": "foodcat-other",
+      "subcategoryId": "foodsub-other-general",
       "aliases": {
         "ar": [],
         "en": [
@@ -43892,11 +43839,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-seeds",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -44114,11 +44062,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-seeds",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -44995,13 +44944,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -46864,13 +46811,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -50556,15 +50501,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece",
         "ملعقة صغيرة",
         "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-blends",
       "aliases": {
         "ar": [],
         "en": [
@@ -55209,13 +55151,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -55970,13 +55910,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [],
@@ -56416,13 +56354,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-ground",
       "aliases": {
         "ar": [],
         "en": [],
@@ -56510,13 +56447,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -57036,13 +56971,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [],
         "en": [
@@ -57634,13 +57567,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -63846,14 +63777,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-canned",
+      "subcategoryId": "foodsub-canned-pickles",
       "aliases": {
         "ar": [],
         "en": [
@@ -67778,14 +67707,14 @@
         "fr": "crème anglaise"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
         "g",
-        "kg"
+        "kg",
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-cream-butter",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -70080,15 +70009,14 @@
         "fr": "mozzarella à faible humidité"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -70117,7 +70045,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -70963,13 +70891,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -70996,14 +70922,13 @@
         "fr": "bière de malt"
       },
       "acceptedUnits": [
-        "ml",
-        "l",
         "g",
-        "kg"
+        "kg",
+        "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-beverages",
-      "subcategoryId": "foodsub-beverages-other",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -71034,13 +70959,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -72115,13 +72038,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -72600,13 +72521,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [
@@ -77457,15 +77376,14 @@
         "fr": "mozzarella"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [
           "موزاريلا"
@@ -78794,14 +78712,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -79032,13 +78948,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -79320,13 +79235,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -80729,13 +80642,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -80759,13 +80670,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -80992,13 +80901,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -81168,13 +81075,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -81208,7 +81114,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "subcategoryId": "foodsub-baking-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -82376,13 +82282,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [
@@ -82686,15 +82590,13 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece",
-        "رشة",
-        "ملعقة صغيرة"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة",
+        "رشة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -82736,8 +82638,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -82762,11 +82664,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-seeds",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -82794,8 +82697,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-oils",
-      "subcategoryId": "foodsub-oils-vegetable",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -83879,13 +83782,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [
           "زيتون"
@@ -85232,13 +85133,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -88186,13 +88086,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-pasta-bakery",
+      "subcategoryId": "foodsub-pasta-bakery-bread",
       "aliases": {
         "ar": [],
         "en": [],
@@ -88242,15 +88140,14 @@
         "fr": "paneer"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [
@@ -88316,13 +88213,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-pasta-bakery",
+      "subcategoryId": "foodsub-pasta-bakery-bread",
       "aliases": {
         "ar": [],
         "en": [],
@@ -89087,15 +88982,14 @@
         "fr": "mozzarella partiellement écrémée"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -91557,15 +91451,14 @@
         "fr": "pecorino"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [
@@ -99441,13 +99334,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -99475,7 +99367,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "subcategoryId": "foodsub-baking-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -100315,15 +100207,13 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب",
         "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [
           "الزبيب"
@@ -100790,13 +100680,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -100820,13 +100708,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -100943,13 +100829,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [
@@ -100975,13 +100859,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -101005,13 +100887,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -101041,8 +100921,8 @@
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-seeds",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -101700,13 +101580,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-nuts-seeds",
+      "subcategoryId": "foodsub-nuts-tree",
       "aliases": {
         "ar": [],
         "en": [],
@@ -103301,13 +103179,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [],
@@ -103540,13 +103416,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -103755,8 +103629,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -104291,13 +104165,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [],
         "en": [],
@@ -105332,13 +105204,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -105430,13 +105300,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-seafood",
+      "subcategoryId": "foodsub-seafood-crustaceans",
       "aliases": {
         "ar": [
           "Procambarus clarkii"
@@ -106620,11 +106488,13 @@
       "acceptedUnits": [
         "g",
         "kg",
+        "ml",
+        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "categoryId": "foodcat-other",
+      "subcategoryId": "foodsub-other-general",
       "aliases": {
         "ar": [],
         "en": [
@@ -108410,14 +108280,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [
           "صاروخ"
@@ -108478,13 +108346,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-seafood",
+      "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
         "ar": [],
         "en": [
@@ -110072,13 +109938,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -110110,13 +109974,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -110168,13 +110030,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-grains",
+      "subcategoryId": "foodsub-grains-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -112908,13 +112768,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -112939,13 +112797,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -113000,13 +112856,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -113036,13 +112890,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -114001,13 +113853,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-bulbs",
       "aliases": {
         "ar": [
           "الكراث"
@@ -117308,13 +117158,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [
           "حميض"
@@ -117369,13 +117217,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [],
@@ -120729,14 +120575,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [
           "الفراولة"
@@ -120808,13 +120652,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -120867,13 +120709,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -120901,7 +120741,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-fruits",
-      "subcategoryId": "foodsub-fruits-other",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -121049,13 +120889,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -121079,13 +120917,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -121109,13 +120945,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -122071,13 +121905,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -122104,15 +121936,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece",
         "ملعقة صغيرة",
         "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [
           "السماق"
@@ -123152,13 +122981,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -123732,14 +123559,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [
           "الذرة الحلوة"
@@ -124257,17 +124082,16 @@
         "fr": "crème de sésame"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece",
+        "g",
+        "kg",
         "ملعقة صغيرة",
         "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-sauces",
+      "subcategoryId": "foodsub-sauces-other",
       "aliases": {
         "ar": [
           "الطحينة"
@@ -124474,7 +124298,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-fruits",
-      "subcategoryId": "foodsub-fruits-dates",
+      "subcategoryId": "foodsub-fruits-tropical",
       "aliases": {
         "ar": [],
         "en": [
@@ -129228,7 +129052,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-frozen",
-      "subcategoryId": "foodsub-frozen-other",
+      "subcategoryId": "foodsub-frozen-fruit",
       "aliases": {
         "ar": [],
         "en": [],
@@ -129286,15 +129110,13 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece",
         "ملعقة صغيرة",
-        "ملعقة كبيرة"
+        "ملعقة كبيرة",
+        "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -129352,7 +129174,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "subcategoryId": "foodsub-baking-other",
       "aliases": {
         "ar": [
           "مستخلص الفانيليا"
@@ -129415,13 +129237,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [
@@ -129457,13 +129278,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-ground",
       "aliases": {
         "ar": [],
         "en": [],
@@ -129493,13 +129313,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -129523,11 +129342,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "piece"
+        "ملعقة صغيرة",
+        "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-seeds",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-whole",
       "aliases": {
         "ar": [],
         "en": [],
@@ -129589,7 +129409,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-baking",
-      "subcategoryId": "foodsub-baking-cocoa",
+      "subcategoryId": "foodsub-baking-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -130713,13 +130533,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [
@@ -131986,8 +131804,8 @@
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [
           "بطيخ"
@@ -132040,8 +131858,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -132070,8 +131888,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-nuts-seeds",
-      "subcategoryId": "foodsub-nuts-seeds",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-other",
       "aliases": {
         "ar": [],
         "en": [],
@@ -132522,8 +132340,8 @@
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-wheat-semolina",
+      "categoryId": "foodcat-pasta-bakery",
+      "subcategoryId": "foodsub-pasta-bakery-bread",
       "aliases": {
         "ar": [],
         "en": [],
@@ -134781,11 +134599,13 @@
       "acceptedUnits": [
         "g",
         "kg",
+        "ml",
+        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-other",
+      "categoryId": "foodcat-other",
+      "subcategoryId": "foodsub-other-general",
       "aliases": {
         "ar": [],
         "en": [
@@ -137444,7 +137264,7 @@
       ],
       "imageUrl": null,
       "categoryId": "foodcat-dairy",
-      "subcategoryId": "foodsub-dairy-milk",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -137626,13 +137446,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -138186,13 +138004,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-pasta-bakery",
+      "subcategoryId": "foodsub-pasta-bakery-bread",
       "aliases": {
         "ar": [],
         "en": [],
@@ -138564,13 +138380,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [
@@ -138855,13 +138669,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [
@@ -138920,13 +138732,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [
@@ -139352,13 +139162,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [],
         "en": [
@@ -139778,11 +139586,13 @@
       "acceptedUnits": [
         "g",
         "kg",
+        "ml",
+        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-grains",
-      "subcategoryId": "foodsub-grains-other",
+      "categoryId": "foodcat-other",
+      "subcategoryId": "foodsub-other-general",
       "aliases": {
         "ar": [],
         "en": [
@@ -140925,13 +140735,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-berries",
       "aliases": {
         "ar": [],
         "en": [],
@@ -142566,13 +142374,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-seafood",
+      "subcategoryId": "foodsub-seafood-fish",
       "aliases": {
         "ar": [],
         "en": [],
@@ -143389,13 +143195,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-fruit",
       "aliases": {
         "ar": [],
         "en": [],
@@ -144136,13 +143940,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-other",
       "aliases": {
         "ar": [],
         "en": [
@@ -146478,13 +146280,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-tropical",
       "aliases": {
         "ar": [],
         "en": [],
@@ -146626,8 +146426,8 @@
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-fruits",
-      "subcategoryId": "foodsub-fruits-tropical",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-roots",
       "aliases": {
         "ar": [],
         "en": [],
@@ -146709,13 +146509,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-tropical",
       "aliases": {
         "ar": [],
         "en": [],
@@ -146744,13 +146542,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-tropical",
       "aliases": {
         "ar": [],
         "en": [],
@@ -146806,15 +146602,13 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
-        "piece",
         "ملعقة صغيرة",
-        "ملعقة كبيرة"
+        "ملعقة كبيرة",
+        "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-spices",
+      "subcategoryId": "foodsub-spices-ground",
       "aliases": {
         "ar": [],
         "en": [],
@@ -146926,14 +146720,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "ملعقة كبيرة"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-seafood",
+      "subcategoryId": "foodsub-seafood-crustaceans",
       "aliases": {
         "ar": [],
         "en": [],
@@ -147702,15 +147494,14 @@
         "fr": "Jameed"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-fermented",
       "aliases": {
         "ar": [],
         "en": [],
@@ -149090,14 +148881,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [
@@ -149304,17 +149093,17 @@
         "fr": "Mozzarella partiellement écrémée"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
+        "g",
+        "kg",
         "piece",
         "شريحة",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -149515,13 +149304,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-pasta-bakery",
+      "subcategoryId": "foodsub-pasta-bakery-bread",
       "aliases": {
         "ar": [],
         "en": [
@@ -149873,8 +149660,6 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
@@ -150026,14 +149811,12 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece",
         "كوب"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-pasta-bakery",
+      "subcategoryId": "foodsub-pasta-bakery-bread",
       "aliases": {
         "ar": [],
         "en": [],
@@ -150478,13 +150261,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-tropical",
       "aliases": {
         "ar": [],
         "en": [],
@@ -150987,15 +150768,14 @@
         "fr": "fromage costeño, en cubes"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -151058,15 +150838,14 @@
         "fr": "fromage Paraguay"
       },
       "acceptedUnits": [
-        "g",
-        "kg",
         "ml",
         "l",
-        "piece"
+        "g",
+        "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-dairy",
+      "subcategoryId": "foodsub-dairy-cheese",
       "aliases": {
         "ar": [],
         "en": [],
@@ -151434,13 +151213,11 @@
       "acceptedUnits": [
         "g",
         "kg",
-        "ml",
-        "l",
         "piece"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-fruits",
+      "subcategoryId": "foodsub-fruits-tropical",
       "aliases": {
         "ar": [],
         "en": [],
@@ -153931,8 +153708,8 @@
         "kg"
       ],
       "imageUrl": null,
-      "categoryId": "foodcat-other",
-      "subcategoryId": "foodsub-other-general",
+      "categoryId": "foodcat-vegetables",
+      "subcategoryId": "foodsub-vegetables-leafy",
       "aliases": {
         "ar": [],
         "en": [],
