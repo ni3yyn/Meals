@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from tools.build_food_product_catalogue import (
+    assign_stable_product_ids,
     build_catalogue,
     category_for,
     normalize_label,
@@ -137,6 +138,47 @@ class FoodCatalogueParserTests(unittest.TestCase):
 
 
 class FoodCatalogueBuildTests(unittest.TestCase):
+    def test_registry_splits_previously_shared_uuid_without_duplicate_items(self):
+        shared_id = "12345678-1234-4234-8234-123456789abc"
+        registry = {
+            "version": 1,
+            "idFormat": "UUIDv4",
+            "ids": {
+                "openfoodfacts:milk": shared_id,
+                "legacy-room:orc-ing-milk": shared_id,
+                "midati-curated:algerian-lben": shared_id,
+                "legacy-room:orc-ing-lben": shared_id,
+            },
+            "redirects": {},
+        }
+        products = [
+            {
+                "id": None,
+                "identityKeys": ["openfoodfacts:milk", "legacy-room:orc-ing-milk"],
+                "recipeIngredientIds": ["orc-ing-milk"],
+                "names": {"ar": "حليب", "en": "Milk", "fr": "Lait"},
+                "sourceMappings": {"openFoodFactsIngredientTerm": "milk"},
+            },
+            {
+                "id": None,
+                "identityKeys": ["midati-curated:algerian-lben", "legacy-room:orc-ing-lben"],
+                "recipeIngredientIds": ["orc-ing-lben"],
+                "names": {"ar": "لبن", "en": "Lben", "fr": "Lben"},
+                "sourceMappings": {"midatiCuratedKey": "algerian-lben"},
+            },
+        ]
+
+        assign_stable_product_ids(products, registry)
+
+        self.assertEqual(products[0]["id"], shared_id)
+        self.assertNotEqual(products[1]["id"], shared_id)
+        self.assertEqual(uuid.UUID(products[1]["id"]).version, 4)
+        self.assertEqual(len({product["id"] for product in products}), 2)
+        self.assertEqual(registry["ids"]["legacy-room:orc-ing-milk"], shared_id)
+        self.assertEqual(registry["ids"]["legacy-room:orc-ing-lben"], products[1]["id"])
+        self.assertEqual(len(registry["splitReassignments"]), 1)
+        self.assertEqual(registry["version"], 2)
+
     def test_off_milk_does_not_keep_lben_or_raib_as_aliases(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "ingredients.txt"
