@@ -17,16 +17,16 @@
     "recipeUsedProducts": 836,
     "recipeUsedMissingArabicNames": 0,
     "recipeUsedMissingEnglishNames": 1,
-    "recipeUsedMissingFrenchNames": 492,
+    "recipeUsedMissingFrenchNames": 491,
     "offMatchedGroups": 425,
     "unmatchedRecipeGroups": 429,
     "ambiguousRecipeGroups": 1,
     "foodOnMatchedGroups": 39,
     "foodOnAmbiguousGroups": 1,
     "offMatchCoveragePercent": 47.54,
-    "missingArabicNames": 3435,
+    "missingArabicNames": 795,
     "missingEnglishNames": 1,
-    "missingFrenchNames": 1596,
+    "missingFrenchNames": 1595,
     "fallbackOtherCategory": 319,
     "missingImages": 4649,
     "missingNutrition": 4649,
@@ -51,16 +51,28 @@
   "machineNameTranslations": {
     "provider": "Google Apps Script LanguageApp",
     "appliedByLanguage": {
-      "ar": 0,
+      "ar": 2640,
       "en": 0,
-      "fr": 0
+      "fr": 1
     },
-    "totalApplied": 0,
+    "totalApplied": 2641,
     "ignoredExistingSourceNamesByLanguage": {
       "ar": 0,
       "en": 0,
       "fr": 0
     },
+    "englishNameConflictCount": 1,
+    "englishNameConflicts": [
+      {
+        "id": "d35046b6-8ed7-4713-8f98-7ee31e25c0dd",
+        "language": "en",
+        "text": "red cabbage",
+        "normalizedName": "red cabbage",
+        "conflictingProductIds": [
+          "b7d020a1-28b1-4133-aa34-237745f33a2d"
+        ]
+      }
+    ],
     "staleCount": 0,
     "staleEntries": [],
     "invalidCount": 0,
