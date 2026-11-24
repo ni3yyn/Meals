@@ -45,7 +45,7 @@ class FoodIdentityMigrationTest {
                 while (cursor.moveToNext()) recipeKeys += cursor.getString(0)
             }
             assertEquals(setOf(legacyA, legacyB, "chicken"), recipeKeys)
-            assertEquals(canonicalId, scalarString(db, "SELECT ingredientId FROM recipe_ingredients WHERE recipeId = 'focus:test-recipe' LIMIT 1"))
+            assertEquals(canonicalId, scalarString(db, "SELECT ingredientId FROM recipe_ingredients WHERE recipeId = 'focus-test-recipe' LIMIT 1"))
 
             val hiddenUntilCatalogueInstall = runBlocking {
                 roomDatabase.mealsDao().getUnpublishedArabicCatalogueIngredientIds().toSet()
@@ -226,23 +226,23 @@ class FoodIdentityMigrationTest {
 
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any?>("focus:test-recipe", legacyA, 2.0, "g", "ملاحظة أ", 0, "linear")
+                arrayOf<Any?>("focus-test-recipe", legacyA, 2.0, "g", "ملاحظة أ", 0, "linear")
             )
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any?>("focus:test-recipe", legacyB, 3.0, "g", "ملاحظة ب", 1, "linear")
+                arrayOf<Any?>("focus-test-recipe", legacyB, 3.0, "g", "ملاحظة ب", 1, "linear")
             )
             // This same food is used by a seed recipe too, so it must remain
             // available even while the community recipe catalogue is pending.
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any?>("seed:baseline", legacyA, 1.0, "g", "seed use", 0, "linear")
+                arrayOf<Any?>("seed-baseline", legacyA, 1.0, "g", "seed use", 0, "linear")
             )
             // This canonical product is used only by an imported recipe and
             // should remain hidden until the imported catalogue is complete.
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any?>("unitools:chicken-demo", "chicken", 0.5, "g", "imported use", 0, "linear")
+                arrayOf<Any?>("unitools-chicken-demo", "chicken", 0.5, "g", "imported use", 0, "linear")
             )
             db.execSQL(
                 "INSERT INTO pantry_items VALUES (?, ?, ?, ?, ?, ?, ?)",
