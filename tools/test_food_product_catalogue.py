@@ -319,7 +319,7 @@ class FoodCatalogueBuildTests(unittest.TestCase):
 
     def test_unit_normalization_matches_android_mapping(self):
         self.assertEqual(normalize_recipe_unit("kg", 1), "g")
-        self.assertEqual(normalize_recipe_unit("L", 1), "L")
+        self.assertEqual(normalize_recipe_unit("L", 1), "ml")
         self.assertEqual(normalize_recipe_unit("liter", 1), "liter")
         self.assertEqual(normalize_recipe_unit("bunches", 2), "ربطة")
         self.assertEqual(normalize_recipe_unit("pinches", 1), "رشة")
