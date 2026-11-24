@@ -956,13 +956,16 @@ def build_product(
         for group in groups
         for legacy_id in group["legacyIds"]
     })
-    if legacy_ids:
-        product_id = legacy_ids[0]
-    elif record:
-        product_id = uuid_for("openfoodfacts:en:" + normalize_label(record["name"]))
-    else:
-        first = groups[0]
-        product_id = uuid_for("recipe:" + first["key"])
+    identity_keys: set[str] = set()
+    if record:
+        identity_keys.add("openfoodfacts:" + normalize_label(record["name"]))
+    for foodon_id in foodon_ids:
+        identity_keys.add("foodon:" + str(foodon_id))
+    for group in groups:
+        group_name = normalize_label(group["names"].get("en") or group["names"].get("ar"))
+        if group_name:
+            identity_keys.add("recipe-term:" + group_name)
+        identity_keys.update("legacy-room:" + legacy_id for legacy_id in group["legacyIds"])
 
     names = choose_names(record, groups)
     aliases: dict[str, set[str]] = {"ar": set(), "en": set(), "fr": set()}
@@ -1002,7 +1005,8 @@ def build_product(
         source_mappings["foodOnIds"] = foodon_ids
 
     return {
-        "id": product_id,
+        "id": None,
+        "identityKeys": sorted(identity_keys),
         "names": names,
         "acceptedUnits": accepted_units,
         "imageUrl": None,
