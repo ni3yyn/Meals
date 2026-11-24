@@ -81,3 +81,13 @@ Open Food Facts documents the database under ODbL 1.0, individual contents under
 The ingredient taxonomy is not a barcode catalogue. For this first catalogue, Mayonnaise, canned chickpeas, milk, raib, legumes, semolina and similar generic food identities can be represented when the source taxonomy has them. A later market-product record will reference this food-item ID and add brand, barcode (including scale barcode rules), package quantity/unit, retailer SKU and other package-specific facts. The price database will remain separate and link to the market-product ID.
 
 Images, actual country of origin and nutrient values must come from a product-specific source or a verified nutrition dataset. Recipe photos, generic source descriptions and Ecobalyse default-origin assumptions are not copied into these fields.
+
+
+## Algerian grocery curation
+
+`data/products/curated-food-items.json` adds reviewed generic foods that need
+local terminology or distinctions not reliably represented by global datasets:
+fresh milk (حليب), lben (لبن), raib (رايب), and canned chickpeas, beans and lentils.
+Lben and raib are separate fermented dairy identities, not aliases of fresh milk.
+Pack sizes, brands, barcodes and prices remain in the separate market-product and
+pricing databases.

@@ -92,6 +92,13 @@ class FoodCatalogueParserTests(unittest.TestCase):
     def test_normalization_handles_arabic_diacritics_and_punctuation(self):
         self.assertEqual(normalize_label("  الطَّمَاطِم! "), "الطماطم")
 
+    def test_algerian_fermented_dairy_is_distinct_from_milk_and_yogurt(self):
+        self.assertEqual(category_for(["لبن"]), ("dairy", "fermented_dairy"))
+        self.assertEqual(category_for(["رايب"]), ("dairy", "fermented_dairy"))
+        self.assertEqual(category_for(["Lben"]), ("dairy", "fermented_dairy"))
+        self.assertEqual(category_for(["Milk", "حليب"]), ("dairy", "milk"))
+        self.assertEqual(category_for(["Yogurt", "زبادي"]), ("dairy", "yogurt"))
+
     def test_english_source_name_removes_embedded_quantity(self):
         self.assertEqual(
             _clean_english_ingredient("Canned crushed tomatoes: 1 can (400 g)"),
@@ -100,8 +107,18 @@ class FoodCatalogueParserTests(unittest.TestCase):
         self.assertEqual(_clean_english_ingredient("2 limes"), "limes")
         self.assertEqual(
             _clean_english_ingredient("Chicken thigh, skinless, cooked: 600 g cooked"),
-            "Chicken thigh, skinless, cooked",
+            "Chicken thigh",
         )
+        self.assertEqual(_clean_english_ingredient("1/2 cup hydrated tapioca gum"), "tapioca gum")
+        self.assertEqual(_clean_english_ingredient("1/2 cup Thai basil"), "Thai basil")
+        self.assertEqual(_clean_english_ingredient("1 bunch Chinese broccoli"), "Chinese broccoli")
+        self.assertEqual(_clean_english_ingredient("1 cinnamon stick plus a pinch ground"), "cinnamon stick")
+        self.assertEqual(_clean_english_ingredient("1 large English cucumber"), "English cucumber")
+        self.assertEqual(_clean_english_ingredient("1 small or 3 Thai eggplants"), "Thai eggplants")
+        self.assertEqual(_clean_english_ingredient("1 large yuca"), "yuca")
+        self.assertEqual(_clean_english_ingredient("10 olives, sliced"), "olives")
+        self.assertEqual(_clean_english_ingredient("150 g, crumbled (queso Paraguay)"), "queso Paraguay")
+        self.assertEqual(_clean_english_ingredient("1 cup shredded"), "")
 
     def test_safe_base_variant_strips_preparation_but_not_canning(self):
         self.assertEqual(
@@ -119,6 +136,55 @@ class FoodCatalogueParserTests(unittest.TestCase):
 
 
 class FoodCatalogueBuildTests(unittest.TestCase):
+    def test_off_milk_does_not_keep_lben_or_raib_as_aliases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ingredients.txt"
+            path.write_text(
+                "< en: dairy\n"
+                "en: milk\n"
+                "ar: حليب, لبن, رايب\n"
+                "fr: lait\n",
+                encoding="utf-8",
+            )
+            records = parse_off_taxonomy(path)
+        self.assertEqual(records[0]["names"]["ar"], "حليب")
+        self.assertNotIn("لبن", records[0]["aliases"]["ar"])
+        self.assertNotIn("رايب", records[0]["aliases"]["ar"])
+
+    def test_curated_algerian_products_remain_separate(self):
+        milk = {
+            "name": "milk", "names": {"ar":"حليب","en":"milk","fr":"lait"},
+            "aliases": {"ar":[],"en":[],"fr":[]},
+            "allNames": {"ar":["حليب","لبن"],"en":["milk"],"fr":["lait"]},
+            "parents": ["dairy"], "sourceProperties": {},
+        }
+        curated = [
+            {"key":"algerian-milk","names":{"ar":"حليب","en":"Milk","fr":"Lait"},
+             "aliases":{"ar":["الحليب"],"en":["fresh milk"],"fr":["lait frais"]},
+             "acceptedUnits":["ml","l"],"categoryId":"foodcat-dairy","subcategoryId":"foodsub-dairy-milk"},
+            {"key":"algerian-lben","names":{"ar":"لبن","en":"Lben","fr":"Lben"},
+             "aliases":{"ar":["اللبن"],"en":["leben"],"fr":[]},
+             "acceptedUnits":["ml","l"],"categoryId":"foodcat-dairy","subcategoryId":"foodsub-dairy-fermented"},
+            {"key":"algerian-raib","names":{"ar":"رايب","en":"Raib","fr":"Raïb"},
+             "aliases":{"ar":["الرايب"],"en":["rayeb"],"fr":[]},
+             "acceptedUnits":["ml","l"],"categoryId":"foodcat-dairy","subcategoryId":"foodsub-dairy-fermented"},
+            {"key":"canned-chickpeas","names":{"ar":"حمص معلب","en":"Canned chickpeas","fr":"Pois chiches en conserve"},
+             "aliases":{"ar":["الحمص المعلب"],"en":["canned garbanzo beans"],"fr":[]},
+             "acceptedUnits":["g","kg","can"],"categoryId":"foodcat-canned","subcategoryId":"foodsub-canned-legumes"},
+        ]
+        catalogue, mapping, audit, registry = build_catalogue({"recipes":[]}, [milk], {}, {}, curated)
+        products = catalogue["products"]
+        self.assertEqual(len(products), 4)
+        by_en = {item["names"]["en"].casefold(): item for item in products}
+        self.assertEqual(by_en["milk"]["subcategoryId"], "foodsub-dairy-milk")
+        self.assertIn("الحليب", by_en["milk"]["aliases"]["ar"])
+        self.assertEqual(by_en["lben"]["subcategoryId"], "foodsub-dairy-fermented")
+        self.assertEqual(by_en["raib"]["subcategoryId"], "foodsub-dairy-fermented")
+        self.assertEqual(by_en["canned chickpeas"]["subcategoryId"], "foodsub-canned-legumes")
+        self.assertTrue({"g","kg","can"}.issubset(set(by_en["canned chickpeas"]["acceptedUnits"])))
+        self.assertEqual(len({item["id"] for item in products}), len(products))
+        self.assertTrue(all(uuid.UUID(item["id"]).version == 4 for item in products))
+
     def test_recipe_ingredient_uses_existing_room_id_and_map(self):
         recipe_data = {
             "recipes": [{

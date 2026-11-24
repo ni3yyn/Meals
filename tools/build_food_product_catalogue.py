@@ -46,6 +46,7 @@ OWL_CLASS = "{http://www.w3.org/2002/07/owl#}Class"
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
 CATEGORY_PATH = ROOT / "data" / "products" / "categories.json"
+CURATED_ITEMS_PATH = ROOT / "data" / "products" / "curated-food-items.json"
 CATEGORY_CATALOGUE = json.loads(CATEGORY_PATH.read_text(encoding="utf-8"))
 CATEGORY_DATA = CATEGORY_CATALOGUE.get("categories") or []
 
@@ -233,23 +234,28 @@ def parse_off_taxonomy(path: Path) -> list[dict[str, Any]]:
         nonlocal fields, parents
         english = fields.get("en", [])
         if english:
+            all_names = {
+                lang: list(values)
+                for lang, values in fields.items()
+                if lang in {"ar", "en", "fr"} and values
+            }
+            # OFF sometimes places لبن/رايب under milk as an Arabic alias.
+            # In Algerian grocery usage those are separate fermented dairy foods.
+            if normalize_label(english[0]) in {"milk", "fresh milk", "cow milk", "whole milk"}:
+                not_fresh_milk = {"لبن", "اللبن", "رايب", "الرايب"}
+                arabic_values = [
+                    value for value in all_names.get("ar", [])
+                    if normalize_label(value) not in not_fresh_milk
+                ]
+                if arabic_values:
+                    all_names["ar"] = arabic_values
+                else:
+                    all_names.pop("ar", None)
             record = {
                 "name": english[0],
-                "names": {
-                    lang: values[0]
-                    for lang, values in fields.items()
-                    if lang in {"ar", "en", "fr"} and values
-                },
-                "aliases": {
-                    lang: list(values[1:])
-                    for lang, values in fields.items()
-                    if lang in {"ar", "en", "fr"} and len(values) > 1
-                },
-                "allNames": {
-                    lang: list(values)
-                    for lang, values in fields.items()
-                    if lang in {"ar", "en", "fr"} and values
-                },
+                "names": {lang: values[0] for lang, values in all_names.items() if values},
+                "aliases": {lang: list(values[1:]) for lang, values in all_names.items() if len(values) > 1},
+                "allNames": all_names,
                 "parents": list(dict.fromkeys(parents)),
                 "sourceProperties": {},
             }
@@ -410,7 +416,7 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
     legumes = has("chickpea", "garbanzo", "lentil", "pulse", "legume", "dried bean", "kidney bean", "white bean", "haricot", "حمص", "عدس", "فاصولياء", "لوبيا")
     vegetables = has("vegetable", "tomato", "potato", "onion", "carrot", "pepper", "courgette", "zucchini", "cabbage", "spinach", "lettuce", "eggplant", "aubergine", "green bean", "pea pod", "خضروات", "بطاطا", "طماطم", "بصل", "جزر")
     fruit = has("fruit", "apple", "banana", "orange", "lemon", "date", "grape", "berry", "mango", "pear", "peach", "apricot", "تمر", "تفاح", "موز", "برتقال")
-    dairy = has("milk", "lait", "yogurt", "yoghurt", "raib", "leben", "kefir", "buttermilk", "fermented milk", "cream", "cheese", "fromage", "butter", "beurre", "حليب", "لبن", "رايب", "جبن")
+    dairy = has("milk", "lait", "yogurt", "yoghurt", "yoghourt", "yaourt", "raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "cream", "cheese", "fromage", "butter", "beurre", "حليب", "لبن", "رايب", "زبادي", "جبن")
     meat = has("meat", "beef", "lamb", "mutton", "veal", "chicken", "turkey", "duck", "pork", "offal", "liver", "kidney", "heart", "tripe", "tongue", "لحوم", "دجاج", "كبد", "قلب")
     poultry = has("chicken", "turkey", "duck", "poultry", "دجاج", "ديك رومي")
     grains = has("grain", "cereal", "wheat", "semolina", "semoule", "flour", "rice", "oat", "barley", "cornmeal", "couscous", "سميد", "فرينة", "دقيق", "أرز")
@@ -459,10 +465,11 @@ def category_for(names: Iterable[str]) -> tuple[str, str | None]:
     if dairy:
         if has("cheese", "fromage", "جبن"):
             return "dairy", "cheese"
-        if has("yogurt", "yoghurt", "لبن", "رايب", "yogurt drink"):
-            return "dairy", "yogurt"
-        if has("raib", "leben", "kefir", "buttermilk", "fermented milk", "لبن", "رايب"):
+        # Lben and raib are separate Algerian fermented dairy foods.
+        if has("raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "لبن", "اللبن", "رايب", "الرايب"):
             return "dairy", "fermented_dairy"
+        if has("yogurt", "yoghurt", "yoghourt", "yaourt", "زبادي", "yogurt drink"):
+            return "dairy", "yogurt"
         if has("cream", "butter", "beurre"):
             return "dairy", "cream_butter"
         if has("milk", "lait", "حليب"):
@@ -613,12 +620,12 @@ def normalize_recipe_unit(unit: str, quantity: Any) -> str | None:
 
 
 def _clean_english_ingredient(value: str) -> str:
+    """Extract a generic food name; quantity and recipe preparation are not identity."""
     text = str(value or "").strip()
     if not text:
         return ""
-    # The source imports may carry "ingredient: amount" even when quantity is
-    # already stored separately. Strip only when the right side begins like a
-    # quantity, not for ordinary descriptive colons.
+
+    # Imported rows sometimes put the measure after a colon.
     if ":" in text:
         left, right = text.split(":", 1)
         if re.match(
@@ -627,21 +634,85 @@ def _clean_english_ingredient(value: str) -> str:
             flags=re.IGNORECASE,
         ):
             text = left.strip()
-    # Prefer the canonical parser used by the Focus importer for fractions,
-    # units and leading quantities. Keep a local fallback so the catalogue
-    # builder never depends on a soft import failure.
-    try:
-        from tools.translate_focus_recipe_corpus import parse_ingredient_line
-        parsed = parse_ingredient_line(text)
-        name = str(parsed.get("name") or text)
-    except Exception:
-        name = text
-    name = re.sub(r"^\s*(?:about|approximately)\s+", "", name, flags=re.IGNORECASE)
-    name = re.sub(r"^\s*\d+(?:[.,]\d+)?(?:\s+\d+/\d+|\s*/\s*\d+)?\s+", "", name)
-    name = re.sub(r"^\s*(?:of|a|an)\s+", "", name, flags=re.IGNORECASE)
-    name = re.sub(r"\s*,?\s*(?:to taste|as needed|for garnish)$", "", name, flags=re.IGNORECASE)
-    return name.strip(" ,;:")
 
+    # Keep useful food-name parentheses only as a fallback, e.g. queso Paraguay.
+    parenthetical_names = []
+    for match in re.finditer(r"\(([^()]*)\)", text):
+        candidate = match.group(1).strip()
+        if candidate and not re.search(r"\d|\b(?:g|kg|ml|l|oz|lb)\b", candidate, re.I):
+            parenthetical_names.append(candidate)
+    text = re.sub(r"\([^)]*\)", " ", text)
+
+    amount = r"(?:\d+\s+\d+/\d+|\d+/\d+|\d+(?:[.,]\d+)?)"
+    units = (
+        r"(?:kilograms?|kilogrammes?|kg|grams?|grammes?|g|millilit(?:er|re)s?|ml|"
+        r"lit(?:er|re)s?|l|ounces?|oz|pounds?|lbs?|cups?|cup|tablespoons?|tbsp|tbs|"
+        r"teaspoons?|tsp|pieces?|pcs?|cloves?|bunches?|sprigs?|stalks?|slices?|"
+        r"handfuls?|pinches?|cans?|tins?|jars?|bottles?|packs?|packages?|dozens?)"
+    )
+    text = re.sub(
+        rf"^\s*(?:(?:about|approximately|around)\s+)?{amount}\s*(?:{units}\b\s*)?",
+        "",
+        text,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"^\s*(?:a|an)\s+(?:bunch|handful|pinch|dash|sprig|clove|slice|can|tin|jar|bottle|cup|tablespoon|teaspoon)\s+(?:of\s+)?",
+        "",
+        text,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+
+    # "1 small or 3 Thai eggplants" names one food with alternate quantities.
+    text = re.sub(
+        r"^\s*(?:extra[- ]?)?(?:small|medium|large)\s+or\s+\d+(?:[.,]\d+)?\s+",
+        "",
+        text,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"^\s*(?:extra[- ]large|large|medium|small|ripe|unripe)\s+",
+        "",
+        text,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"\s+(?:plus|and)\s+(?:a\s+)?(?:pinch|dash|sprinkle)\b.*$",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    preparation_phrases = (
+        "cut into chunks", "cut into cubes", "cut into pieces",
+        "thinly sliced", "finely chopped", "roughly chopped",
+        "skin removed", "seeds removed", "for garnish", "as needed",
+        "to taste", "for serving",
+    )
+    for phrase in preparation_phrases:
+        text = re.sub(r"\b" + re.escape(phrase) + r"\b", " ", text, flags=re.IGNORECASE)
+    preparation_words = {
+        "cooked", "uncooked", "raw", "boiled", "baked", "roasted", "steamed",
+        "grilled", "fried", "skinless", "boneless", "chopped", "diced",
+        "sliced", "grated", "peeled", "shredded", "halved", "quartered",
+        "crumbled", "hydrated", "soaked", "drained", "rinsed", "washed",
+        "trimmed", "deseeded", "deveined", "mashed", "pureed", "puréed",
+    }
+    text = re.sub(
+        r"\b(?:" + "|".join(sorted(map(re.escape, preparation_words), key=len, reverse=True)) + r")\b",
+        " ",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"^\s*(?:of|a|an)\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip(" ,;:-")
+    if not text or normalize_label(text) in preparation_words:
+        return parenthetical_names[0] if parenthetical_names else ""
+    return text
 
 def room_ingredient_id(ingredient: dict[str, Any], recipe_id: str) -> str:
     source_id = str(ingredient.get("id") or "").strip()
@@ -993,6 +1064,9 @@ def build_product(
         foodon_labels.extend(foodon_ancestors.get(item_id, []))
     category_slug, subcategory_slug = category_for([*all_labels, *foodon_labels])
     category_id, subcategory_id = canonical_category_ids(category_slug, subcategory_slug)
+    source_properties = record.get("sourceProperties", {}) if record else {}
+    category_id = source_properties.get("midatiCategoryId") or category_id
+    subcategory_id = source_properties.get("midatiSubcategoryId") or subcategory_id
 
     legacy_ids = sorted({
         legacy_id
@@ -1001,7 +1075,15 @@ def build_product(
     })
     identity_keys: set[str] = set()
     if record:
-        identity_keys.add("openfoodfacts:" + normalize_label(record["name"]))
+        source_properties = record.get("sourceProperties", {})
+        curated_key = source_properties.get("midatiCuratedKey")
+        open_food_facts_term = source_properties.get("openFoodFactsTerm")
+        if not curated_key:
+            open_food_facts_term = open_food_facts_term or record["name"]
+        if open_food_facts_term:
+            identity_keys.add("openfoodfacts:" + normalize_label(open_food_facts_term))
+        if curated_key:
+            identity_keys.add("midati-curated:" + str(curated_key))
     # FoodOn IDs are ontology cross-references, not necessarily unique:
     # one broad FoodOn class can legitimately relate to several OFF terms.
     # Use a FoodOn identity key only for a FoodOn-only product with no OFF record.
@@ -1046,10 +1128,17 @@ def build_product(
     standard_units = default_units(category_id, subcategory_id, [
         str(value or "") for value in names.values()
     ])
-    accepted_units = list(dict.fromkeys([*standard_units, *observed_units]))
+    curated_units = source_properties.get("midatiAcceptedUnits", []) if record else []
+    accepted_units = list(dict.fromkeys([*standard_units, *observed_units, *curated_units]))
     source_mappings: dict[str, Any] = {}
     if record:
-        source_mappings["openFoodFactsIngredientTerm"] = record["name"]
+        open_food_facts_term = source_properties.get("openFoodFactsTerm")
+        if not source_properties.get("midatiCuratedKey"):
+            open_food_facts_term = open_food_facts_term or record["name"]
+        if open_food_facts_term:
+            source_mappings["openFoodFactsIngredientTerm"] = open_food_facts_term
+        if source_properties.get("midatiCuratedKey"):
+            source_mappings["midatiCuratedKey"] = source_properties["midatiCuratedKey"]
         for property_name in ("usdaFdcCode", "ciqualFoodCode"):
             value = record.get("sourceProperties", {}).get(property_name)
             if value:
@@ -1082,15 +1171,101 @@ def build_product(
     }
 
 
+
+def merge_curated_food_items(
+    off_records: list[dict[str, Any]],
+    curated_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge a reviewed local food name into one exact existing item or create it."""
+    records = list(off_records)
+    for curated in curated_items:
+        key = str(curated.get("key") or "").strip()
+        names = curated.get("names") or {}
+        aliases = curated.get("aliases") or {}
+        if not key or not str(names.get("en") or "").strip():
+            raise RuntimeError("Curated food item requires a stable key and English name.")
+        supplied = {
+            lang: [
+                value.strip()
+                for value in [names.get(lang), *(aliases.get(lang) or [])]
+                if isinstance(value, str) and value.strip()
+            ]
+            for lang in ("ar", "en", "fr")
+        }
+        primary_terms = {
+            normalize_label(value)
+            for value in names.values()
+            if isinstance(value, str) and normalize_label(value)
+        }
+        alias_terms = {
+            normalize_label(value)
+            for values in aliases.values()
+            for value in values
+            if isinstance(value, str) and normalize_label(value)
+        }
+        primary_matches, alias_matches = [], []
+        for index, record in enumerate(records):
+            record_terms = {
+                normalize_label(value)
+                for lang in ("ar", "en", "fr")
+                for value in record.get("allNames", {}).get(lang, [])
+                if normalize_label(value)
+            }
+            if primary_terms.intersection(record_terms):
+                primary_matches.append(index)
+            elif alias_terms.intersection(record_terms):
+                alias_matches.append(index)
+        candidates = primary_matches if primary_matches else alias_matches
+        if len(candidates) > 1:
+            raise RuntimeError(
+                f"Curated item {key!r} matches multiple existing concepts; refusing ambiguous merge."
+            )
+        if candidates:
+            record = records[candidates[0]]
+            record.setdefault("sourceProperties", {}).setdefault(
+                "openFoodFactsTerm", record.get("name", "")
+            )
+        else:
+            record = {
+                "name": str(names["en"]).strip(),
+                "names": {},
+                "aliases": {},
+                "allNames": {},
+                "parents": [],
+                "sourceProperties": {},
+            }
+            records.append(record)
+
+        for lang, values in supplied.items():
+            current = list(record.setdefault("allNames", {}).get(lang, []))
+            for value in values:
+                if value not in current:
+                    current.append(value)
+            record["allNames"][lang] = current
+            if current and not record.setdefault("names", {}).get(lang):
+                record["names"][lang] = current[0]
+            record.setdefault("aliases", {})[lang] = [
+                value for value in current if value != record["names"].get(lang)
+            ]
+        source_properties = record.setdefault("sourceProperties", {})
+        source_properties["midatiCuratedKey"] = key
+        source_properties["midatiCategoryId"] = curated.get("categoryId")
+        source_properties["midatiSubcategoryId"] = curated.get("subcategoryId")
+        source_properties["midatiAcceptedUnits"] = list(curated.get("acceptedUnits") or [])
+    return records
+
+
 def build_catalogue(
     recipe_data: dict[str, Any],
     off_records: list[dict[str, Any]],
     foodon: dict[str, dict[str, Any]],
     identity_registry: dict[str, Any] | None = None,
+    curated_items: list[dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     identity_registry = identity_registry or {"version": 1, "ids": {}, "redirects": {}}
     recipes = recipe_data.get("recipes") or []
     groups = collect_recipe_groups(recipes)
+    off_records = merge_curated_food_items(off_records, curated_items or [])
     foodon_index, foodon_ancestors = build_foodon_indexes(foodon)
 
     # Keep only genuine food-like taxonomy terms: known grocery classes, explicit
@@ -1471,6 +1646,10 @@ def main() -> int:
         foodon_path = args.foodon_owl or download_pinned(
             FOODON_URL, args.download_dir / "foodon-base.owl", FOODON_GIT_BLOB_SHA
         )
+        curated_items = (
+            json.loads(CURATED_ITEMS_PATH.read_text(encoding="utf-8"))
+            if CURATED_ITEMS_PATH.is_file() else []
+        )
         off_records = parse_off_taxonomy(off_path)
         foodon = parse_foodon_owl(foodon_path)
         if len(off_records) < 1000:
@@ -1482,7 +1661,7 @@ def main() -> int:
         else:
             identity_registry = {"version": 1, "idFormat": "UUIDv4", "ids": {}, "redirects": {}}
         catalogue, mapping, audit, identity_registry = build_catalogue(
-            recipe_data, off_records, foodon, identity_registry
+            recipe_data, off_records, foodon, identity_registry, curated_items
         )
     except Exception as error:
         print(f"::error::{error}", file=sys.stderr)

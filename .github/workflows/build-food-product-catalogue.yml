@@ -6,6 +6,7 @@ on:
     paths:
       - "data/recipes/ar/recipes.json"
       - "data/products/categories.json"
+      - "data/products/curated-food-items.json"
       - "tools/build_food_product_catalogue.py"
       - "tools/test_food_product_catalogue.py"
       - ".github/workflows/build-food-product-catalogue.yml"
