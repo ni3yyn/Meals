@@ -1872,9 +1872,10 @@ def build_catalogue(
             )
         )
         # Stage 3 is category-only: it must not change which source identities
-        # enter the published catalogue. Preserve every registered OFF/curated
-        # identity and every existing FoodOn/recipe-linked concept.
-        if foodon_ids or is_recipe_term or existed_in_baseline:
+        # enter the published catalogue. Preserve every registered OFF identity,
+        # every explicit Midati-curated identity (including newly curated foods),
+        # and every existing FoodOn/recipe-linked concept.
+        if foodon_ids or is_recipe_term or curated_key or existed_in_baseline:
             filtered_off.append(record)
     off_records = filtered_off
     off_index = make_indexes(off_records)
