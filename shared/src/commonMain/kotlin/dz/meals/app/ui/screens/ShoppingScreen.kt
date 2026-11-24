@@ -144,11 +144,6 @@ fun ShoppingScreen(
     }
 
     val rows = snapshot.shoppingItems
-    // Remember the prior IDs so only genuinely new rows receive the arrival motion.
-    val previousShoppingItemIds = remember { mutableStateOf(rows.map { it.id }.toSet()) }
-    val currentShoppingItemIds = rows.map { it.id }.toSet()
-    val newlyAddedItemIds = currentShoppingItemIds - previousShoppingItemIds.value
-    SideEffect { previousShoppingItemIds.value = currentShoppingItemIds }
     val checkedCount = rows.count { it.checked }
     val remainingCount = rows.size - checkedCount
     val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
@@ -517,38 +512,22 @@ fun ShoppingScreen(
                                                         .background(Border.copy(alpha = 0.78f))
                                                 )
                                             }
-                                            val isNewlyAdded = remember(item.id) { item.id in newlyAddedItemIds }
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = if (isNewlyAdded) {
-                                                    slideInHorizontally(
-                                                        initialOffsetX = { width -> width / 3 },
-                                                        animationSpec = spring(dampingRatio = 0.74f, stiffness = 430f)
-                                                    ) + fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) +
-                                                        scaleIn(
-                                                            initialScale = 0.94f,
-                                                            animationSpec = spring(dampingRatio = 0.76f, stiffness = 430f)
-                                                        )
-                                                } else EnterTransition.None,
-                                                exit = ExitTransition.None
-                                            ) {
-                                                ShoppingItemRow(
-                                                    item = item,
-                                                    onToggle = { onToggleItem(item.id, !item.checked) },
-                                                    onEdit = {
-                                                        editItemId = item.id
-                                                        editName = item.name
-                                                        editQuantity = item.purchaseQuantity.prettyQuantity()
-                                                        editUnit = item.unit
-                                                        editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
-                                                        editStoreNote = item.storeNote
-                                                        editActualSpent = item.actualSpentDzd?.toString().orEmpty()
-                                                        editUnavailable = item.isUnavailable
-                                                        editUserAdded = item.userAdded
-                                                    },
-                                                    onDelete = { onDeleteCustomItem(item.id) }
-                                                )
-                                            }
+                                            ShoppingItemRow(
+                                                item = item,
+                                                onToggle = { onToggleItem(item.id, !item.checked) },
+                                                onEdit = {
+                                                    editItemId = item.id
+                                                    editName = item.name
+                                                    editQuantity = item.purchaseQuantity.prettyQuantity()
+                                                    editUnit = item.unit
+                                                    editPurchaseQuantity = item.purchaseQuantity.prettyQuantity()
+                                                    editStoreNote = item.storeNote
+                                                    editActualSpent = item.actualSpentDzd?.toString().orEmpty()
+                                                    editUnavailable = item.isUnavailable
+                                                    editUserAdded = item.userAdded
+                                                },
+                                                onDelete = { onDeleteCustomItem(item.id) }
+                                            )
                                         }
                                     }
                                 }
@@ -895,13 +874,30 @@ private fun ShoppingItemRow(
     }
     val foregroundOffset = if (isDragging) dragOffset else settledOffset
 
-    Box(Modifier.fillMaxWidth()) {
+    val supportingDetails = buildList {
+        if (item.pantryQuantity > 0.0) {
+            add(
+                "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
+                    " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit)
+            )
+        }
+        if (item.isApproximatePantry) add("مخزون تقريبي")
+        if (item.isUnavailable) add("غير متوفر")
+        if (item.storeNote.isNotBlank()) add(item.storeNote)
+        item.actualSpentDzd?.let { add("المدفوع " + it.toInt().formatDzd()) }
+    }.joinToString(" · ")
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+    ) {
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(vertical = 7.dp)
-                .size(width = actionWidth, height = 52.dp)
-                .background(SoftPink.copy(alpha = 0.78f), RoundedCornerShape(14.dp)),
+                .size(width = actionWidth, height = 54.dp)
+                .background(WarmSurface, RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             MealsIconButton(
@@ -927,7 +923,6 @@ private fun ShoppingItemRow(
                     state = dragState,
                     orientation = Orientation.Horizontal,
                     onDragStarted = {
-                        // Begin from the settled position so a second swipe can close the action.
                         dragOffset = settledOffset
                         isDragging = true
                     },
@@ -937,84 +932,68 @@ private fun ShoppingItemRow(
                         dragOffset = 0f
                     }
                 )
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .heightIn(min = 72.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(9.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             MealsCheckbox(
                 checked = item.checked,
                 onCheckedChange = { onToggle() }
             )
             Column(
-                modifier = Modifier.weight(1f).clickable(onClick = onEdit),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onEdit),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     item.name,
                     translate = !item.userAdded,
-                    color = if (item.checked) MutedInk else dz.meals.app.ui.theme.Ink,
+                    color = if (item.checked) MutedInk else Ink,
                     fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     textDecoration = if (item.checked) TextDecoration.LineThrough else null,
                     overflow = TextOverflow.Ellipsis
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                if (supportingDetails.isNotBlank()) {
                     Text(
-                        item.purchaseQuantity.formatHouseholdQuantity(item.unit),
-                        color = if (item.checked) MutedInk else BodyInk,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1
-                    )
-                    Text("·", color = MutedInk, style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر",
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                if (item.pantryQuantity > 0.0) {
-                    Text(
-                        "المطلوب " + item.requiredQuantity.formatHouseholdQuantity(item.unit) +
-                            " · في المخزون " + item.pantryQuantity.formatHouseholdQuantity(item.unit),
-                        color = MutedInk,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                if (item.isApproximatePantry || item.isUnavailable || item.storeNote.isNotBlank()) {
-                    Text(
-                        listOfNotNull(
-                            if (item.isApproximatePantry) mealsText("مخزون تقريبي") else null,
-                            if (item.isUnavailable) mealsText("غير متوفر") else null,
-                            item.storeNote.takeIf { it.isNotBlank() }?.let(::bidiIsolate)
-                        ).joinToString(" · "),
+                        supportingDetails,
                         translate = false,
                         color = MutedInk,
                         style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                item.actualSpentDzd?.let {
-                    Text(
-                        "المدفوع " + it.toInt().formatDzd(),
-                        color = BodyInk,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
+            }
+            Column(
+                modifier = Modifier
+                    .width(92.dp)
+                    .clickable(onClick = onEdit),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    item.purchaseQuantity.formatHouseholdQuantity(item.unit),
+                    color = if (item.checked) MutedInk else dz.meals.app.ui.theme.TextAccent,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
 }
-
 
 private fun buildShoppingShareText(
     rows: List<ShoppingListItem>,
