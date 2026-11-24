@@ -1,6 +1,7 @@
 package dz.meals.app.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.room.withTransaction
 import dz.meals.app.BuildConfig
 import dz.meals.app.data.local.FoodCategoryEntity
@@ -18,11 +19,16 @@ import java.io.IOException
  * Localized category labels are persisted once in taxonomy tables; food rows
  * retain only stable category/subcategory IDs.
  */
-class FoodCatalogueInstaller(context: Context) {
+class FoodCatalogueInstaller internal constructor(
+    context: Context,
+    databaseOverride: MealsDatabase? = null,
+    preferencesOverride: SharedPreferences? = null
+) {
     private val appContext = context.applicationContext
-    private val database = MealsDatabase.getInstance(appContext)
+    private val database = databaseOverride ?: MealsDatabase.getInstance(appContext)
     private val dao = database.mealsDao()
-    private val preferences = appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private val preferences = preferencesOverride
+        ?: appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     suspend fun installIfNeeded(): Int = withContext(Dispatchers.IO) {
         if (
