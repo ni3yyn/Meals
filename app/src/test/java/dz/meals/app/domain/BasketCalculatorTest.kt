@@ -1,5 +1,6 @@
 package dz.meals.app.domain
 
+import dz.meals.app.data.FoodTaxonomyRef
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.data.RecipeIngredient
@@ -165,7 +166,9 @@ class BasketCalculatorTest {
         val chickenRecipe = recipe.copy(
             ingredients = listOf(RecipeIngredient("chicken", 300.0, "g"))
         )
-        val categories = mapOf("chicken" to "لحوم ودواجن")
+        val categories = mapOf(
+            "chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken")
+        )
         assertTrue(!isRecipeAllowed(chickenRecipe, categories, emptySet(), "vegetarian"))
         assertTrue(!isRecipeAllowed(chickenRecipe, categories, emptySet(), "vegan"))
         assertTrue(isRecipeAllowed(chickenRecipe, categories, emptySet(), "none"))
@@ -192,11 +195,11 @@ class BasketCalculatorTest {
         val pinned = plan.copy(recipeId = chicken.id, isUserEdited = true)
         assertEquals(
             chicken.id,
-            findPinnedDietConflict(listOf(pinned), listOf(chicken), mapOf("chicken" to "لحوم ودواجن"), "vegetarian")
+            findPinnedDietConflict(listOf(pinned), listOf(chicken), mapOf("chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken")), "vegetarian")
         )
         assertEquals(
             null,
-            findPinnedDietConflict(listOf(pinned), listOf(chicken), mapOf("chicken" to "لحوم ودواجن"), "none")
+            findPinnedDietConflict(listOf(pinned), listOf(chicken), mapOf("chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken")), "none")
         )
     }
 

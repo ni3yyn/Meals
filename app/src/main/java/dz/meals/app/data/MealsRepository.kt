@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.withTransaction
 import dz.meals.app.data.local.CookedMealDeductionEntity
 import dz.meals.app.data.local.FavoriteRecipeEntity
+import dz.meals.app.data.local.FoodCategoryEntity
+import dz.meals.app.data.local.FoodSubcategoryEntity
 import dz.meals.app.data.local.FoodItemEntity
 import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MealsDatabase
@@ -66,7 +68,8 @@ class MealsRepository(context: Context) {
                     id = foodIdentityResolver.canonicalId(it.id),
                     nameAr = it.nameAr,
                     nameFr = it.nameFr,
-                    category = it.category,
+                    categoryId = it.categoryId,
+                    subcategoryId = it.subcategoryId,
                     baseUnit = it.baseUnit,
                     allergensCsv = it.allergens.sorted().joinToString(","),
                     aliasesCsv = it.aliases.joinToString("|")
@@ -128,6 +131,11 @@ class MealsRepository(context: Context) {
     ): MealsSnapshot {
         ensureInitialized()
         val ingredients = loadIngredients()
+        val ingredientTaxonomyById = ingredients.associate { ingredient ->
+            ingredient.id to FoodTaxonomyRef(ingredient.categoryId, ingredient.subcategoryId)
+        }
+        val foodCategories = dao.getFoodCategories().map { it.toModel() }
+        val foodSubcategories = dao.getFoodSubcategories().map { it.toModel() }
         val recipes = loadRecipes()
         val savedRun = dao.getPlanRun(weekStartIso)
         val slotsForThisWeek = savedRun?.mealSlotsCsv
@@ -153,7 +161,9 @@ class MealsRepository(context: Context) {
                 unit = first.unit,
                 isApproximate = rows.any { it.isApproximate || it.quantityBase == null },
                 note = rows.map { it.note.trim() }.filter { it.isNotEmpty() }.distinct().joinToString(" · "),
-                expiryAtEpochMillis = rows.mapNotNull { it.expiryAtEpochMillis }.minOrNull()
+                expiryAtEpochMillis = rows.mapNotNull { it.expiryAtEpochMillis }.minOrNull(),
+                categoryId = master?.categoryId ?: FoodTaxonomyIds.OTHER_CATEGORY,
+                subcategoryId = master?.subcategoryId ?: FoodTaxonomyIds.OTHER_SUBCATEGORY
             )
         }
         val currentPrices = dao.getPriceObservations()
@@ -179,7 +189,8 @@ class MealsRepository(context: Context) {
             prices,
             checkedItemIds,
             planWilaya,
-            allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty()
+            allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty(),
+            foodTaxonomyByIngredientId = ingredientTaxonomyById
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
@@ -246,6 +257,8 @@ class MealsRepository(context: Context) {
                     observedAtEpochMillis = observation.observedAtEpochMillis,
                     priceKind = observation.priceKind,
                     confidenceLabel = observation.confidenceLabel,
+                    categoryId = master.categoryId,
+                    subcategoryId = master.subcategoryId,
                     isStale = observation.priceKind != "demo" &&
                         (observation.observedAtEpochMillis == null ||
                             System.currentTimeMillis() < observation.observedAtEpochMillis ||
@@ -259,7 +272,9 @@ class MealsRepository(context: Context) {
                 purchaseOutlayDzd = shoppingItems.sumOf { it.cashOutlayDzd ?: 0.0 },
                 unknownPriceCount = shoppingItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
                 actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 }
-            )
+            ),
+            foodCategories = foodCategories,
+            foodSubcategories = foodSubcategories
         )
     }
 
@@ -303,8 +318,10 @@ class MealsRepository(context: Context) {
             )
         }
         val ingredientsById = loadIngredients().associateBy { it.id }
-        val ingredientCategories = ingredientsById.mapValues { it.value.category }
-        val pinnedDietConflict = findPinnedDietConflict(locked, recipes, ingredientCategories, dietPattern)
+        val ingredientTaxonomyById = ingredientsById.mapValues { (_, ingredient) ->
+            FoodTaxonomyRef(ingredient.categoryId, ingredient.subcategoryId)
+        }
+        val pinnedDietConflict = findPinnedDietConflict(locked, recipes, ingredientTaxonomyById, dietPattern)
         if (pinnedDietConflict != null) {
             return GenerationResult(
                 success = false,
@@ -314,7 +331,7 @@ class MealsRepository(context: Context) {
             )
         }
         val allowed = generatorRecipes.filter { recipe ->
-            isRecipeAllowed(recipe, ingredientCategories, allergyIds, dietPattern)
+            isRecipeAllowed(recipe, ingredientTaxonomyById, allergyIds, dietPattern)
         }
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
@@ -339,7 +356,14 @@ class MealsRepository(context: Context) {
                 val trial = chosen.values.toList() + PlannedMeal(
                     id, weekStartIso, day, slot, recipe.id, householdServings.coerceIn(1, 12), false
                 )
-                val basket = calculateBasket(trial, recipes, pantry, prices, selectedWilaya = selectedWilaya)
+                val basket = calculateBasket(
+                    trial,
+                    recipes,
+                    pantry,
+                    prices,
+                    selectedWilaya = selectedWilaya,
+                    foodTaxonomyByIngredientId = ingredientTaxonomyById
+                )
                 val repeatPenalty = (repeats[recipe.id] ?: 0) * 420.0
                 val overBudgetPenalty = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0) * 3.0
                 val preferencePenalty = softPreferencePenalty(recipe, canonicalDislikedIngredientIds, maxCookingMinutes)
@@ -379,7 +403,14 @@ class MealsRepository(context: Context) {
                 )
             )
         }
-        val result = calculateBasket(chosen.values.toList(), recipes, pantry, prices, selectedWilaya = selectedWilaya)
+        val result = calculateBasket(
+            chosen.values.toList(),
+            recipes,
+            pantry,
+            prices,
+            selectedWilaya = selectedWilaya,
+            foodTaxonomyByIngredientId = ingredientTaxonomyById
+        )
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
         return GenerationResult(
             success = true,
@@ -531,7 +562,7 @@ class MealsRepository(context: Context) {
         // The UI can supply either a canonical ingredient ID (new stock) or the
         // persisted pantry row ID (editing/removing an existing row).
         val existingRow = dao.getPantryItem(ingredientId)
-        val canonicalIngredientId = existingRow?.ingredientId ?: ingredientId
+        val canonicalIngredientId = existingRow?.ingredientId ?: foodIdentityResolver.canonicalId(ingredientId)
         val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId } ?: return
         val targetUnit = existingRow?.unit ?: ingredient.baseUnit
         val pantryRowId = existingRow?.id ?: canonicalIngredientId
@@ -565,7 +596,8 @@ class MealsRepository(context: Context) {
     ) {
         require(packQuantityBase > 0.0) { "Pack quantity must be positive" }
         require(packPriceDzd > 0.0) { "Price must be positive" }
-        val ingredient = dao.getIngredients().firstOrNull { it.id == ingredientId }
+        val canonicalIngredientId = foodIdentityResolver.canonicalId(ingredientId)
+        val ingredient = dao.getIngredients().firstOrNull { it.id == canonicalIngredientId }
             ?: throw IllegalArgumentException("Unknown ingredient")
         val wilaya = selectedWilaya.trim()
         require(wilaya.isNotEmpty()) { "Wilaya is required" }
@@ -573,7 +605,7 @@ class MealsRepository(context: Context) {
         dao.upsertPriceObservation(
             PriceObservationEntity(
                 id = "user-" + UUID.randomUUID().toString(),
-                ingredientId = ingredientId,
+                ingredientId = canonicalIngredientId,
                 packQuantityBase = packQuantityBase,
                 unit = ingredient.baseUnit,
                 packPriceDzd = packPriceDzd,
@@ -852,12 +884,23 @@ class MealsRepository(context: Context) {
                 .associateBy { it.id }
                 .toMutableMap()
             val categoriesById = dao.getFoodCategories().associateBy { it.id }
+            val subcategoriesById = dao.getFoodSubcategories().associateBy { it.id }
             dao.getFoodItems().forEach { food ->
-                val category = categoriesById[food.categoryId]
-                    ?: throw IllegalStateException(
+                if (categoriesById[food.categoryId] == null) {
+                    throw IllegalStateException(
                         "Food ${food.id} references missing category ${food.categoryId}."
                     )
-                val catalogueMaster = food.toIngredientMaster(category.nameAr)
+                }
+                val subcategory = subcategoriesById[food.subcategoryId]
+                    ?: throw IllegalStateException(
+                        "Food ${food.id} references missing subcategory ${food.subcategoryId}."
+                    )
+                if (subcategory.categoryId != food.categoryId) {
+                    throw IllegalStateException(
+                        "Food ${food.id} has a mismatched category/subcategory reference."
+                    )
+                }
+                val catalogueMaster = food.toIngredientMaster()
                 val localMaster = merged[food.id]
                 merged[food.id] = catalogueMaster.copy(
                     // Keep curated allergen knowledge and Algerian/Darija aliases
@@ -1063,7 +1106,24 @@ data class GenerationResult(
 )
 
 
-private fun FoodItemEntity.toIngredientMaster(categoryNameAr: String): IngredientMaster {
+private fun FoodCategoryEntity.toModel() = FoodCategory(
+    id = id,
+    nameAr = nameAr,
+    nameEn = nameEn,
+    nameFr = nameFr,
+    sortOrder = sortOrder
+)
+
+private fun FoodSubcategoryEntity.toModel() = FoodSubcategory(
+    id = id,
+    categoryId = categoryId,
+    nameAr = nameAr,
+    nameEn = nameEn,
+    nameFr = nameFr,
+    sortOrder = sortOrder
+)
+
+private fun FoodItemEntity.toIngredientMaster(): IngredientMaster {
     val accepted = acceptedUnitsCsv.split("|").filter { it.isNotBlank() }
     val aliases = buildList {
         add(nameEn)
@@ -1075,7 +1135,6 @@ private fun FoodItemEntity.toIngredientMaster(categoryNameAr: String): Ingredien
         id = id,
         nameAr = nameAr.ifBlank { nameEn.ifBlank { nameFr } },
         nameFr = nameFr.ifBlank { nameEn },
-        category = categoryNameAr,
         baseUnit = accepted.firstOrNull() ?: "piece",
         allergens = emptySet(),
         aliases = aliases,
@@ -1090,10 +1149,11 @@ private fun IngredientEntity.toModel() = IngredientMaster(
     id = id,
     nameAr = nameAr,
     nameFr = nameFr,
-    category = category,
     baseUnit = baseUnit,
     allergens = allergensCsv.split(",").filter { it.isNotBlank() }.toSet(),
-    aliases = aliasesCsv.split("|").filter { it.isNotBlank() }
+    aliases = aliasesCsv.split("|").filter { it.isNotBlank() },
+    categoryId = categoryId,
+    subcategoryId = subcategoryId
 )
 
 private fun PlanMealEntity.toModel() = PlannedMeal(
@@ -1135,7 +1195,8 @@ private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = Shopping
     isApproximatePantry = isApproximatePantry,
     checked = checked,
     userAdded = userAdded,
-    category = ingredient?.category ?: "أخرى",
+    categoryId = ingredient?.categoryId ?: FoodTaxonomyIds.OTHER_CATEGORY,
+    subcategoryId = ingredient?.subcategoryId ?: FoodTaxonomyIds.OTHER_SUBCATEGORY,
     storeNote = storeNote,
     isUnavailable = isUnavailable,
     actualSpentDzd = actualSpentDzd

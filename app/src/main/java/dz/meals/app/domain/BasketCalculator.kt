@@ -3,6 +3,8 @@ package dz.meals.app.domain
 import dz.meals.app.data.scaleRecipeIngredientQuantity
 
 import dz.meals.app.data.BasketSummary
+import dz.meals.app.data.FoodTaxonomyIds
+import dz.meals.app.data.FoodTaxonomyRef
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.data.ShoppingListItem
@@ -33,29 +35,58 @@ fun exactPantryDeduction(requiredQuantity: Double, availableQuantity: Double?, a
     return minOf(requiredQuantity, availableQuantity)
 }
 
+private val vegetarianExcludedCategoryIds = setOf(
+    "foodcat-meat",
+    "foodcat-poultry",
+    "foodcat-seafood"
+)
+
+private val vegetarianExcludedSubcategoryIds = setOf(
+    "foodsub-canned-fish",
+    "foodsub-frozen-meat-fish",
+    "foodsub-oils-animal"
+)
+
+private val veganExcludedCategoryIds = vegetarianExcludedCategoryIds + setOf(
+    "foodcat-dairy",
+    "foodcat-eggs"
+)
+
+private val veganExcludedSubcategoryIds = vegetarianExcludedSubcategoryIds + setOf(
+    "foodsub-sweeteners-honey"
+)
+
+private fun FoodTaxonomyRef.isExcludedByVegetarianDiet(): Boolean =
+    categoryId in vegetarianExcludedCategoryIds ||
+        subcategoryId in vegetarianExcludedSubcategoryIds
+
+private fun FoodTaxonomyRef.isExcludedByVeganDiet(): Boolean =
+    categoryId in veganExcludedCategoryIds ||
+        subcategoryId in veganExcludedSubcategoryIds
+
 fun isRecipeAllowed(
     recipe: MealRecipe,
-    ingredientCategories: Map<String, String>,
+    ingredientTaxonomy: Map<String, FoodTaxonomyRef>,
     allergyIds: Set<String>,
     dietPattern: String
 ): Boolean {
     if (recipe.allergens.intersect(allergyIds).isNotEmpty()) return false
-    if (recipe.id.startsWith("orc-")) {
-        return when (dietPattern) {
-            "vegetarian" -> "نباتي" in recipe.tags
-            // The source corpus has no reliable vegan marker for most recipes;
-            // do not infer vegan suitability from "vegetarian" or dairy-free alone.
-            "vegan" -> "نباتي صرف" in recipe.tags
-            else -> true
-        }
+
+    val communityRecipe = recipe.id.startsWith("orc-")
+    val hasForbiddenForVegetarian = recipe.ingredients.any { ingredient ->
+        ingredientTaxonomy[ingredient.ingredientId]
+            ?.isExcludedByVegetarianDiet() == true
     }
+    val hasForbiddenForVegan = recipe.ingredients.any { ingredient ->
+        ingredientTaxonomy[ingredient.ingredientId]
+            ?.isExcludedByVeganDiet() == true
+    }
+
     return when (dietPattern) {
-        "vegetarian" -> recipe.ingredients.none {
-            ingredientCategories[it.ingredientId] == "لحوم ودواجن"
-        }
-        "vegan" -> recipe.ingredients.none {
-            ingredientCategories[it.ingredientId] in setOf("لحوم ودواجن", "ألبان وبيض")
-        }
+        "vegetarian" -> !hasForbiddenForVegetarian &&
+            (!communityRecipe || "نباتي" in recipe.tags)
+        "vegan" -> !hasForbiddenForVegan &&
+            (!communityRecipe || "نباتي صرف" in recipe.tags)
         else -> true
     }
 }
@@ -76,13 +107,13 @@ fun softPreferencePenalty(
 fun findPinnedDietConflict(
     pinnedMeals: List<PlannedMeal>,
     recipes: List<MealRecipe>,
-    ingredientCategories: Map<String, String>,
+    ingredientTaxonomy: Map<String, FoodTaxonomyRef>,
     dietPattern: String
 ): String? {
     val recipesById = recipes.associateBy { it.id }
     return pinnedMeals.firstNotNullOfOrNull { meal ->
         val recipe = meal.recipeId?.let(recipesById::get) ?: return@firstNotNullOfOrNull null
-        recipe.id.takeIf { !isRecipeAllowed(recipe, ingredientCategories, emptySet(), dietPattern) }
+        recipe.id.takeIf { !isRecipeAllowed(recipe, ingredientTaxonomy, emptySet(), dietPattern) }
     }
 }
 
@@ -107,7 +138,8 @@ fun calculateBasket(
     checkedItemIds: Set<String> = emptySet(),
     selectedWilaya: String? = null,
     nowEpochMillis: Long = System.currentTimeMillis(),
-    allowStaleSnapshotPrices: Boolean = false
+    allowStaleSnapshotPrices: Boolean = false,
+    foodTaxonomyByIngredientId: Map<String, FoodTaxonomyRef> = emptyMap()
 ): BasketSummary {
     val recipesById = recipes.associateBy { it.id }
     val required = linkedMapOf<RequirementKey, Double>()
@@ -181,10 +213,14 @@ fun calculateBasket(
                 .toString()
         }
 
+        val taxonomy = foodTaxonomyByIngredientId[key.ingredientId]
+            ?: FoodTaxonomyRef(FoodTaxonomyIds.OTHER_CATEGORY, FoodTaxonomyIds.OTHER_SUBCATEGORY)
         ShoppingListItem(
             id = id,
             ingredientId = key.ingredientId,
             name = key.ingredientId,
+            categoryId = taxonomy.categoryId,
+            subcategoryId = taxonomy.subcategoryId,
             requiredQuantity = amount,
             pantryQuantity = pantryUsed,
             purchaseQuantity = purchaseQuantity,

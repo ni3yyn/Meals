@@ -46,6 +46,8 @@ import dz.meals.app.ui.components.MealsCheckbox
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.components.MealsIllustrationBadge
+import dz.meals.app.data.FoodCategory
+import dz.meals.app.data.FoodSubcategory
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.PantryItem
 import dz.meals.app.ui.theme.Border
@@ -63,6 +65,8 @@ import kotlinx.datetime.LocalDate
 fun PantryScreen(
     ingredients: List<IngredientMaster>,
     pantry: List<PantryItem>,
+    foodCategories: List<FoodCategory>,
+    foodSubcategories: List<FoodSubcategory>,
     onSave: (String, Double?, Boolean, String, Long?) -> Unit,
     onRemove: (String) -> Unit
 ) {
@@ -70,16 +74,28 @@ fun PantryScreen(
     var selectedIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingItem by rememberSaveable { mutableStateOf<PantryItem?>(null) }
     val appLocaleTag = LocalMealsLocaleTag.current
+    val categoriesById = foodCategories.associateBy { it.id }
+    val subcategoriesById = foodSubcategories.associateBy { it.id }
+    val searchQuery = search.trim()
 
     val selectedIngredient = selectedIngredientId?.let { id -> ingredients.firstOrNull { it.id == id } }
     val matchingIngredients = ingredients.filter { ingredient ->
-        search.isNotBlank() && (
-            ingredient.nameAr.contains(search.trim(), true) ||
-                ingredient.nameEn.contains(search.trim(), true) ||
-                mealsText(ingredient.nameAr, appLocaleTag).contains(search.trim(), true) ||
-                ingredient.nameFr.contains(search.trim(), true) ||
-                ingredient.aliases.any { it.contains(search.trim(), true) }
-            )
+        if (searchQuery.isBlank()) return@filter false
+        val category = categoriesById[ingredient.categoryId]
+        val subcategory = subcategoriesById[ingredient.subcategoryId]
+        listOf(
+            ingredient.nameAr,
+            ingredient.nameEn,
+            ingredient.nameFr,
+            category?.nameAr.orEmpty(),
+            category?.nameEn.orEmpty(),
+            category?.nameFr.orEmpty(),
+            subcategory?.nameAr.orEmpty(),
+            subcategory?.nameEn.orEmpty(),
+            subcategory?.nameFr.orEmpty()
+        ).any { it.contains(searchQuery, ignoreCase = true) } ||
+            mealsText(ingredient.nameAr, appLocaleTag).contains(searchQuery, ignoreCase = true) ||
+            ingredient.aliases.any { it.contains(searchQuery, ignoreCase = true) }
     }.take(12)
 
     Column(modifier = Modifier.fillMaxSize()) {

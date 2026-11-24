@@ -143,7 +143,10 @@ fun ShoppingScreen(
     val checkedCount = rows.count { it.checked }
     val remainingCount = rows.size - checkedCount
     val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
-    val categoryNames = visibleRows.map { it.category }.distinct().sorted()
+    val categoriesById = snapshot.foodCategories.associateBy { it.id }
+    val categoryIds = visibleRows.map { it.categoryId }.distinct().sortedWith(
+        compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -444,9 +447,10 @@ fun ShoppingScreen(
                 }
             }
             else -> {
-                categoryNames.forEach { category ->
-                    val categoryRows = visibleRows.filter { it.category == category }
-                    item(key = "category-$category") {
+                categoryIds.forEach { categoryId ->
+                    val categoryRows = visibleRows.filter { it.categoryId == categoryId }
+                    val categoryLabel = categoriesById[categoryId]?.label(appLocaleTag) ?: "مواد غذائية أخرى"
+                    item(key = "category-$categoryId") {
                         MealsCard(
                             modifier = Modifier.fillMaxWidth(),
                             containerColor = Paper,
@@ -460,13 +464,13 @@ fun ShoppingScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            expandedCategories[category] = !(expandedCategories[category] ?: true)
+                                            expandedCategories[categoryId] = !(expandedCategories[categoryId] ?: true)
                                         }
                                         .padding(horizontal = 15.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        category,
+                                        categoryLabel,
                                         color = dz.meals.app.ui.theme.TextAccent,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
@@ -479,19 +483,19 @@ fun ShoppingScreen(
                                     )
                                     MealsIcon(
                                         MealsIconName.ChevronRight,
-                                        contentDescription = if (expandedCategories[category] == false) "توسيع القسم" else "طي القسم",
+                                        contentDescription = if (expandedCategories[categoryId] == false) "توسيع القسم" else "طي القسم",
                                         modifier = Modifier
                                             .padding(start = 7.dp)
                                             .size(21.dp)
                                             .graphicsLayer {
-                                                rotationZ = if (expandedCategories[category] == false) 0f else {
+                                                rotationZ = if (expandedCategories[categoryId] == false) 0f else {
                                                     if (layoutDirection == LayoutDirection.Rtl) 270f else 90f
                                                 }
                                             }
                                     )
                                 }
                                 AnimatedVisibility(
-                                    visible = expandedCategories[category] != false,
+                                    visible = expandedCategories[categoryId] != false,
                                     enter = expandVertically(animationSpec = androidx.compose.animation.core.tween(230)) +
                                         fadeIn(animationSpec = androidx.compose.animation.core.tween(160)),
                                     exit = shrinkVertically(animationSpec = androidx.compose.animation.core.tween(210)) +
@@ -1007,12 +1011,16 @@ private fun buildShoppingShareText(
     }
     appendLine()
 
+    val categoriesById = snapshot.foodCategories.associateBy { it.id }
     val groupedRows: Map<String, List<ShoppingListItem>> =
-        rows.groupBy { row: ShoppingListItem -> row.category }
+        rows.groupBy { row: ShoppingListItem -> row.categoryId }
 
-    groupedRows.keys.sorted().forEach { category: String ->
-        appendLine(mealsText(category, localeTag))
-        val categoryRows: List<ShoppingListItem> = groupedRows.getValue(category)
+    groupedRows.keys
+        .sortedWith(compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it })
+        .forEach { categoryId ->
+        val categoryLabel = categoriesById[categoryId]?.label(localeTag) ?: "مواد غذائية أخرى"
+        appendLine(mealsText(categoryLabel, localeTag))
+        val categoryRows: List<ShoppingListItem> = groupedRows.getValue(categoryId)
         categoryRows.forEach { item: ShoppingListItem ->
             append(if (item.checked) "[x] " else "[ ] ")
             append(bidiIsolate(if (item.userAdded) item.name else mealsText(item.name, localeTag)))

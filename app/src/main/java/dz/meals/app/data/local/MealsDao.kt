@@ -179,6 +179,19 @@ interface MealsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPriceObservation(item: PriceObservationEntity)
 
+    @Query("""
+        UPDATE ingredients
+        SET categoryId = COALESCE(
+                (SELECT food_items.categoryId FROM food_items WHERE food_items.id = ingredients.id),
+                'foodcat-other'
+            ),
+            subcategoryId = COALESCE(
+                (SELECT food_items.subcategoryId FROM food_items WHERE food_items.id = ingredients.id),
+                'foodsub-other-general'
+            )
+    """)
+    suspend fun syncIngredientTaxonomyFromFoodItems(): Int
+
     @Query("SELECT * FROM ingredients ORDER BY nameAr")
     suspend fun getIngredients(): List<IngredientEntity>
 

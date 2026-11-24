@@ -666,6 +666,8 @@ private fun MealsAppContent(
                     AppTab.Pantry -> PantryScreen(
                         ingredients = snapshot.ingredients,
                         pantry = snapshot.pantry,
+                        foodCategories = snapshot.foodCategories,
+                        foodSubcategories = snapshot.foodSubcategories,
                         onSave = { id, quantity, approximate, note, expiry ->
                             perform { repository.updatePantry(id, quantity, approximate, note, expiry) }
                         },

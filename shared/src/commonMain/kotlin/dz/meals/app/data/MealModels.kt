@@ -2,17 +2,56 @@ package dz.meals.app.data
 
 import kotlin.math.sqrt
 
+object FoodTaxonomyIds {
+    const val OTHER_CATEGORY = "foodcat-other"
+    const val OTHER_SUBCATEGORY = "foodsub-other-general"
+}
+
+data class FoodCategory(
+    val id: String,
+    val nameAr: String,
+    val nameEn: String,
+    val nameFr: String,
+    val sortOrder: Int
+) {
+    fun label(localeTag: String): String = when {
+        localeTag.startsWith("en", ignoreCase = true) -> nameEn.ifBlank { nameAr }
+        localeTag.startsWith("fr", ignoreCase = true) -> nameFr.ifBlank { nameAr }
+        else -> nameAr
+    }
+}
+
+data class FoodSubcategory(
+    val id: String,
+    val categoryId: String,
+    val nameAr: String,
+    val nameEn: String,
+    val nameFr: String,
+    val sortOrder: Int
+) {
+    fun label(localeTag: String): String = when {
+        localeTag.startsWith("en", ignoreCase = true) -> nameEn.ifBlank { nameAr }
+        localeTag.startsWith("fr", ignoreCase = true) -> nameFr.ifBlank { nameAr }
+        else -> nameAr
+    }
+}
+
+/** Stable taxonomy IDs used for rules and grouping; labels are resolved separately. */
+data class FoodTaxonomyRef(
+    val categoryId: String,
+    val subcategoryId: String
+)
+
 data class IngredientMaster(
     val id: String,
     val nameAr: String,
     val nameFr: String,
-    val category: String,
     val baseUnit: String,
     val allergens: Set<String>,
     val aliases: List<String>,
     val nameEn: String = "",
-    val categoryId: String = "",
-    val subcategoryId: String = "",
+    val categoryId: String,
+    val subcategoryId: String,
     val acceptedUnits: List<String> = emptyList()
 )
 
@@ -99,7 +138,9 @@ data class PantryItem(
     val unit: String,
     val isApproximate: Boolean,
     val note: String,
-    val expiryAtEpochMillis: Long?
+    val expiryAtEpochMillis: Long?,
+    val categoryId: String = FoodTaxonomyIds.OTHER_CATEGORY,
+    val subcategoryId: String = FoodTaxonomyIds.OTHER_SUBCATEGORY
 )
 
 data class ShoppingListItem(
@@ -120,7 +161,9 @@ data class ShoppingListItem(
     val category: String = "أخرى",
     val storeNote: String = "",
     val isUnavailable: Boolean = false,
-    val actualSpentDzd: Double? = null
+    val actualSpentDzd: Double? = null,
+    val categoryId: String = FoodTaxonomyIds.OTHER_CATEGORY,
+    val subcategoryId: String = FoodTaxonomyIds.OTHER_SUBCATEGORY
 )
 
 data class BasketSummary(
@@ -160,7 +203,9 @@ data class PriceObservationSummary(
     val observedAtEpochMillis: Long?,
     val priceKind: String,
     val confidenceLabel: String,
-    val isStale: Boolean = false
+    val isStale: Boolean = false,
+    val categoryId: String = FoodTaxonomyIds.OTHER_CATEGORY,
+    val subcategoryId: String = FoodTaxonomyIds.OTHER_SUBCATEGORY
 )
 
 data class PlanRunSummary(
@@ -181,7 +226,9 @@ data class MealsSnapshot(
     val priceObservations: List<PriceObservationSummary> = emptyList(),
     val favoriteRecipeIds: Set<String> = emptySet(),
     val planRun: PlanRunSummary? = null,
-    val basket: BasketSummary = BasketSummary()
+    val basket: BasketSummary = BasketSummary(),
+    val foodCategories: List<FoodCategory> = emptyList(),
+    val foodSubcategories: List<FoodSubcategory> = emptyList()
 )
 
 /** Applies the dataset's linear, sublinear/damped or fixed ingredient rule. */

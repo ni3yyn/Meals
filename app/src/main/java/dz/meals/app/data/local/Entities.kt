@@ -6,12 +6,24 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "ingredients")
+@Entity(
+    tableName = "ingredients",
+    foreignKeys = [
+        ForeignKey(
+            entity = FoodSubcategoryEntity::class,
+            parentColumns = ["categoryId", "id"],
+            childColumns = ["categoryId", "subcategoryId"],
+            onDelete = ForeignKey.RESTRICT
+        )
+    ],
+    indices = [Index(value = ["categoryId", "subcategoryId"])]
+)
 data class IngredientEntity(
     @PrimaryKey val id: String,
     val nameAr: String,
     val nameFr: String,
-    val category: String,
+    val categoryId: String,
+    val subcategoryId: String,
     val baseUnit: String,
     val allergensCsv: String,
     val aliasesCsv: String

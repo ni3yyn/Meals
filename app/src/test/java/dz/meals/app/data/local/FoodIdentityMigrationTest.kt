@@ -30,7 +30,7 @@ class FoodIdentityMigrationTest {
         try {
             val db = roomDatabase.openHelper.writableDatabase
 
-            assertEquals(16, db.query("PRAGMA user_version").use { cursor ->
+            assertEquals(17, db.query("PRAGMA user_version").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 cursor.getInt(0)
             })
@@ -102,7 +102,22 @@ class FoodIdentityMigrationTest {
             assertEquals(1, count(db, "SELECT COUNT(*) FROM ingredients WHERE id = '$canonicalId'"))
             val aliases = scalarString(db, "SELECT aliasesCsv FROM ingredients WHERE id = '$canonicalId'")
             assertTrue(aliases.contains("اسم قديم ب"))
-            assertEquals("أخرى", scalarString(db, "SELECT category FROM ingredients WHERE id = '$canonicalId'"))
+            assertEquals(
+                "foodcat-other",
+                scalarString(db, "SELECT categoryId FROM ingredients WHERE id = '$canonicalId'")
+            )
+            assertEquals(
+                "foodsub-other-general",
+                scalarString(db, "SELECT subcategoryId FROM ingredients WHERE id = '$canonicalId'")
+            )
+            val ingredientColumns = mutableSetOf<String>()
+            db.query("PRAGMA table_info('ingredients')").use { cursor ->
+                val nameIndex = cursor.getColumnIndexOrThrow("name")
+                while (cursor.moveToNext()) ingredientColumns += cursor.getString(nameIndex)
+            }
+            assertTrue("Normalized category ID must be persisted", "categoryId" in ingredientColumns)
+            assertTrue("Normalized subcategory ID must be persisted", "subcategoryId" in ingredientColumns)
+            assertTrue("Localized/free-form category string must be removed", "category" !in ingredientColumns)
             val customId = FoodIdentityResolver(context).canonicalId("user-spice-legacy")
             assertTrue(customId.matches(Regex("^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")))
             assertEquals(1, count(db, "SELECT COUNT(*) FROM ingredients WHERE id = '$customId'"))

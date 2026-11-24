@@ -28,7 +28,7 @@ import dz.meals.app.data.FoodIdentityResolver
         RecipeAttributionEntity::class,
         RecipeImageOverrideEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -211,6 +211,70 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val oldCount = db.query("SELECT COUNT(*) FROM ingredients").use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getInt(0) else 0
+                }
+                db.execSQL(
+                    """
+                    CREATE TABLE ingredients_normalized (
+                        id TEXT NOT NULL,
+                        nameAr TEXT NOT NULL,
+                        nameFr TEXT NOT NULL,
+                        categoryId TEXT NOT NULL,
+                        subcategoryId TEXT NOT NULL,
+                        baseUnit TEXT NOT NULL,
+                        allergensCsv TEXT NOT NULL,
+                        aliasesCsv TEXT NOT NULL,
+                        PRIMARY KEY(id),
+                        FOREIGN KEY(categoryId, subcategoryId)
+                            REFERENCES food_subcategories(categoryId, id)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent()
+                )
+                // The generic catalogue may not have been installed before this
+                // offline migration. The installer re-resolves these valid
+                // "other" IDs against the full catalogue immediately afterwards.
+                db.execSQL(
+                    """
+                    INSERT INTO ingredients_normalized (
+                        id, nameAr, nameFr, categoryId, subcategoryId,
+                        baseUnit, allergensCsv, aliasesCsv
+                    )
+                    SELECT
+                        old.id, old.nameAr, old.nameFr,
+                        COALESCE(food.categoryId, 'foodcat-other'),
+                        COALESCE(food.subcategoryId, 'foodsub-other-general'),
+                        old.baseUnit, old.allergensCsv, old.aliasesCsv
+                    FROM ingredients AS old
+                    LEFT JOIN food_items AS food ON food.id = old.id
+                    """.trimIndent()
+                )
+                val newCount = db.query("SELECT COUNT(*) FROM ingredients_normalized").use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getInt(0) else 0
+                }
+                if (newCount != oldCount) {
+                    throw IllegalStateException("Ingredient taxonomy migration copied $newCount of $oldCount rows.")
+                }
+                db.execSQL("DROP TABLE ingredients")
+                db.execSQL("ALTER TABLE ingredients_normalized RENAME TO ingredients")
+                db.execSQL(
+                    "CREATE INDEX index_ingredients_categoryId_subcategoryId " +
+                        "ON ingredients(categoryId, subcategoryId)"
+                )
+                val foreignKeyErrors = db.query("PRAGMA foreign_key_check").use { cursor ->
+                    var count = 0
+                    while (cursor.moveToNext()) count++
+                    count
+                }
+                if (foreignKeyErrors != 0) {
+                    throw IllegalStateException("Ingredient taxonomy migration created $foreignKeyErrors foreign-key violations.")
+                }
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -243,7 +307,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 MIGRATION_12_13,
                 FoodIdentityMigration(FoodIdentityResolver(context.applicationContext)),
                 MIGRATION_14_15,
-                FoodTaxonomyMigration(context.applicationContext)
+                FoodTaxonomyMigration(context.applicationContext),
+                MIGRATION_16_17
             ).build()
     }
 }

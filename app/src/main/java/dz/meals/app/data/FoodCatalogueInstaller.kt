@@ -31,6 +31,9 @@ class FoodCatalogueInstaller(context: Context) {
             dao.countFoodCategories() == EXPECTED_CATEGORY_COUNT &&
             dao.countFoodSubcategories() == EXPECTED_SUBCATEGORY_COUNT
         ) {
+            // Also repairs older/custom ingredient rows when a catalogue revision
+            // is already installed; taxonomy IDs always come from the canonical food table.
+            dao.syncIngredientTaxonomyFromFoodItems()
             return@withContext 0
         }
 
@@ -99,6 +102,7 @@ class FoodCatalogueInstaller(context: Context) {
             dao.upsertFoodCategories(taxonomy.categories)
             dao.upsertFoodSubcategories(taxonomy.subcategories)
             foodItems.chunked(BATCH_SIZE).forEach { dao.upsertFoodItems(it) }
+            dao.syncIngredientTaxonomyFromFoodItems()
 
             if (dao.countFoodItems() != EXPECTED_ITEM_COUNT ||
                 dao.countFoodCategories() != EXPECTED_CATEGORY_COUNT ||

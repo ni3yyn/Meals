@@ -2,22 +2,22 @@ package dz.meals.app.data
 
 object SeedRecipes {
     val ingredients = listOf(
-        IngredientMaster("semolina", "سميد متوسط", "Semoule moyenne", "حبوب ومخبوزات", "g", setOf("gluten"), listOf("سميد", "semoule", "smid")),
-        IngredientMaster("chicken", "دجاج", "Poulet", "لحوم ودواجن", "g", emptySet(), listOf("دجاجة", "poulet")),
-        IngredientMaster("carrot", "جزر", "Carotte", "خضروات", "piece", emptySet(), listOf("زرودية", "carotte", "zrodiya")),
-        IngredientMaster("zucchini", "قرعة خضراء", "Courgette", "خضروات", "piece", emptySet(), listOf("كوسة", "courgette", "qar3a")),
-        IngredientMaster("chickpeas", "حمص", "Pois chiches", "بقوليات", "g", emptySet(), listOf("حمص يابس", "pois chiche", "homs")),
-        IngredientMaster("tomato", "طماطم", "Tomate", "خضروات", "g", emptySet(), listOf("مطيشة", "tomate", "maticha")),
-        IngredientMaster("lentils", "عدس", "Lentilles", "بقوليات", "g", emptySet(), listOf("عدس يابس", "lentille", "3dess")),
-        IngredientMaster("onion", "بصل", "Oignon", "خضروات", "g", emptySet(), listOf("بصلة", "oignon", "bsal")),
-        IngredientMaster("garlic", "ثوم", "Ail", "خضروات", "piece", emptySet(), listOf("ثومة", "ail", "thoum")),
-        IngredientMaster("oil", "زيت", "Huile", "مواد أساسية", "ml", emptySet(), listOf("زيت المائدة", "huile")),
-        IngredientMaster("eggs", "بيض", "Œufs", "ألبان وبيض", "piece", setOf("egg"), listOf("بيضات", "oeuf", "œuf", "bayd")),
-        IngredientMaster("pepper", "فلفل حلو", "Poivron", "خضروات", "piece", emptySet(), listOf("فلفلة", "poivron", "felfel")),
-        IngredientMaster("pasta", "معكرونة", "Pâtes", "حبوب ومخبوزات", "g", setOf("gluten"), listOf("مقرونة", "pates", "pasta")),
-        IngredientMaster("tomato-paste", "طماطم مصبرة", "Concentré de tomate", "مواد أساسية", "g", emptySet(), listOf("عكري", "concentré tomate")),
-        IngredientMaster("potato", "بطاطا", "Pomme de terre", "خضروات", "g", emptySet(), listOf("اطاطبلا", "pomme de terre", "patate", "batata")),
-        IngredientMaster("cheese", "جبن", "Fromage", "ألبان وبيض", "g", setOf("milk"), listOf("فرماج", "fromage", "jben"))
+        IngredientMaster("semolina", "سميد متوسط", "Semoule moyenne", "g", setOf("gluten"), listOf("سميد", "semoule", "smid"), categoryId = "foodcat-grains", subcategoryId = "foodsub-grains-wheat-semolina"),
+        IngredientMaster("chicken", "دجاج", "Poulet", "g", emptySet(), listOf("دجاجة", "poulet"), categoryId = "foodcat-poultry", subcategoryId = "foodsub-poultry-chicken"),
+        IngredientMaster("carrot", "جزر", "Carotte", "piece", emptySet(), listOf("زرودية", "carotte", "zrodiya"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-roots"),
+        IngredientMaster("zucchini", "قرعة خضراء", "Courgette", "piece", emptySet(), listOf("كوسة", "courgette", "qar3a"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-fruit"),
+        IngredientMaster("chickpeas", "حمص", "Pois chiches", "g", emptySet(), listOf("حمص يابس", "pois chiche", "homs"), categoryId = "foodcat-legumes", subcategoryId = "foodsub-legumes-chickpeas"),
+        IngredientMaster("tomato", "طماطم", "Tomate", "g", emptySet(), listOf("مطيشة", "tomate", "maticha"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-fruit"),
+        IngredientMaster("lentils", "عدس", "Lentilles", "g", emptySet(), listOf("عدس يابس", "lentille", "3dess"), categoryId = "foodcat-legumes", subcategoryId = "foodsub-legumes-lentils"),
+        IngredientMaster("onion", "بصل", "Oignon", "g", emptySet(), listOf("بصلة", "oignon", "bsal"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-bulbs"),
+        IngredientMaster("garlic", "ثوم", "Ail", "piece", emptySet(), listOf("ثومة", "ail", "thoum"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-bulbs"),
+        IngredientMaster("oil", "زيت", "Huile", "ml", emptySet(), listOf("زيت المائدة", "huile"), categoryId = "foodcat-oils", subcategoryId = "foodsub-oils-vegetable"),
+        IngredientMaster("eggs", "بيض", "Œufs", "piece", setOf("egg"), listOf("بيضات", "oeuf", "œuf", "bayd"), categoryId = "foodcat-eggs", subcategoryId = "foodsub-eggs-hen"),
+        IngredientMaster("pepper", "فلفل حلو", "Poivron", "piece", emptySet(), listOf("فلفلة", "poivron", "felfel"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-fruit"),
+        IngredientMaster("pasta", "معكرونة", "Pâtes", "g", setOf("gluten"), listOf("مقرونة", "pates", "pasta"), categoryId = "foodcat-pasta-bakery", subcategoryId = "foodsub-pasta-bakery-pasta"),
+        IngredientMaster("tomato-paste", "طماطم مصبرة", "Concentré de tomate", "g", emptySet(), listOf("عكري", "concentré tomate"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-fruit"),
+        IngredientMaster("potato", "بطاطا", "Pomme de terre", "g", emptySet(), listOf("اطاطبلا", "pomme de terre", "patate", "batata"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-roots"),
+        IngredientMaster("cheese", "جبن", "Fromage", "g", setOf("milk"), listOf("فرماج", "fromage", "jben"), categoryId = "foodcat-dairy", subcategoryId = "foodsub-dairy-cheese")
     )
 
     fun validateCatalogue() {
