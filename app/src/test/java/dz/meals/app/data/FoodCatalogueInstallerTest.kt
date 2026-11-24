@@ -72,9 +72,26 @@ class FoodCatalogueInstallerTest {
                 }
             )
 
-            val tomatoPaste = dao.getFoodItems().firstOrNull {
-                it.id == "d376b5b9-31c4-4007-bfac-309c1a7648a7"
+            val foodById = dao.getFoodItems().associateBy { it.id }
+            val identityResolver = FoodIdentityResolver(context)
+            val seedTaxonomyMismatches = SeedRecipes.ingredients.mapNotNull { seed ->
+                val canonicalId = identityResolver.canonicalId(seed.id)
+                val canonicalFood = foodById[canonicalId]
+                when {
+                    canonicalFood == null -> "${seed.id}: missing canonical food $canonicalId"
+                    canonicalFood.categoryId != seed.categoryId ||
+                        canonicalFood.subcategoryId != seed.subcategoryId ->
+                        "${seed.id}: seed=(${seed.categoryId}, ${seed.subcategoryId}) " +
+                            "catalogue=(${canonicalFood.categoryId}, ${canonicalFood.subcategoryId})"
+                    else -> null
+                }
             }
+            assertTrue(
+                "Seed ingredient taxonomy must match canonical food UUIDs: $seedTaxonomyMismatches",
+                seedTaxonomyMismatches.isEmpty()
+            )
+
+            val tomatoPaste = foodById["d376b5b9-31c4-4007-bfac-309c1a7648a7"]
             assertEquals("foodcat-sauces", tomatoPaste?.categoryId)
             assertEquals("foodsub-sauces-tomato", tomatoPaste?.subcategoryId)
 

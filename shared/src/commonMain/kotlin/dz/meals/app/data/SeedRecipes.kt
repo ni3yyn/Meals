@@ -15,7 +15,7 @@ object SeedRecipes {
         IngredientMaster("eggs", "بيض", "Œufs", "piece", setOf("egg"), listOf("بيضات", "oeuf", "œuf", "bayd"), categoryId = "foodcat-eggs", subcategoryId = "foodsub-eggs-hen"),
         IngredientMaster("pepper", "فلفل حلو", "Poivron", "piece", emptySet(), listOf("فلفلة", "poivron", "felfel"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-fruit"),
         IngredientMaster("pasta", "معكرونة", "Pâtes", "g", setOf("gluten"), listOf("مقرونة", "pates", "pasta"), categoryId = "foodcat-pasta-bakery", subcategoryId = "foodsub-pasta-bakery-pasta"),
-        IngredientMaster("tomato-paste", "طماطم مصبرة", "Concentré de tomate", "g", emptySet(), listOf("عكري", "concentré tomate"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-fruit"),
+        IngredientMaster("tomato-paste", "طماطم مصبرة", "Concentré de tomate", "g", emptySet(), listOf("عكري", "concentré tomate"), categoryId = "foodcat-sauces", subcategoryId = "foodsub-sauces-tomato"),
         IngredientMaster("potato", "بطاطا", "Pomme de terre", "g", emptySet(), listOf("اطاطبلا", "pomme de terre", "patate", "batata"), categoryId = "foodcat-vegetables", subcategoryId = "foodsub-vegetables-roots"),
         IngredientMaster("cheese", "جبن", "Fromage", "g", setOf("milk"), listOf("فرماج", "fromage", "jben"), categoryId = "foodcat-dairy", subcategoryId = "foodsub-dairy-cheese")
     )
