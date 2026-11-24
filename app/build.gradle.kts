@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Sync
+import java.security.MessageDigest
 
 plugins {
     alias(libs.plugins.android.application)
@@ -11,8 +12,8 @@ plugins {
 val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(3)
 val appVersionName = providers.gradleProperty("appVersionName").orElse("0.2.1")
 
-val foodCatalogueRevision = providers.provider {
-    val digest = java.security.MessageDigest.getInstance("SHA-256")
+val foodCatalogueRevision = providers.provider<String> {
+    val digest = MessageDigest.getInstance("SHA-256")
     listOf(
         rootProject.file("data/products/catalogue.json"),
         rootProject.file("data/products/categories.json")
@@ -23,7 +24,7 @@ val foodCatalogueRevision = providers.provider {
         digest.update(file.readBytes())
         digest.update(0.toByte())
     }
-    digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+    digest.digest().joinToString("") { byte: Byte -> "%02x".format(byte.toInt() and 0xff) }
 }
 
 val releaseKeystorePath = providers.gradleProperty("releaseKeystorePath").orNull
