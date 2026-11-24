@@ -11,6 +11,8 @@ import dz.meals.app.data.FoodIdentityResolver
 @Database(
     entities = [
         IngredientEntity::class,
+        FoodCategoryEntity::class,
+        FoodSubcategoryEntity::class,
         FoodItemEntity::class,
         RecipeEntity::class,
         RecipeIngredientEntity::class,
