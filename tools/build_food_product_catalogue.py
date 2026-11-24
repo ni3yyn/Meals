@@ -559,15 +559,19 @@ def normalize_recipe_unit(unit: str, quantity: Any) -> str | None:
     key = re.sub(r"[\s_-]+", "", raw.lower())
     mapping = {
         "kg": "g", "mg": "g", "oz": "g", "lb": "g", "lbs": "g",
-        "l": "ml", "liter": "ml", "litre": "ml",
+        "l": "ml",
         "pcs": "piece", "pc": "piece", "piece": "piece", "pieces": "piece",
         "tbsp": "ملعقة كبيرة", "tbs": "ملعقة كبيرة", "tablespoon": "ملعقة كبيرة", "tablespoons": "ملعقة كبيرة",
         "tsp": "ملعقة صغيرة", "teaspoon": "ملعقة صغيرة", "teaspoons": "ملعقة صغيرة",
         "cup": "كوب", "cups": "كوب",
         "taste": "حسب الحاجة", "totaste": "حسب الحاجة",
-        "pinch": "رشة", "clove": "فص", "cloves": "فص",
-        "bunch": "ربطة", "slice": "شريحة", "handful": "حفنة",
-        "sprig": "sprig", "stalk": "stalk",
+        "pinch": "رشة", "pinches": "رشة",
+        "clove": "فص", "cloves": "فص",
+        "bunch": "ربطة", "bunches": "ربطة",
+        "slice": "شريحة", "slices": "شريحة",
+        "handful": "حفنة", "handfuls": "حفنة",
+        "sprig": "sprig", "sprigs": "sprig",
+        "stalk": "stalk", "stalks": "stalk",
     }
     if not key:
         return "حسب الحاجة" if str(quantity or "").strip() == "" else "piece"
@@ -608,8 +612,8 @@ def _clean_english_ingredient(value: str) -> str:
 def room_ingredient_id(ingredient: dict[str, Any], recipe_id: str) -> str:
     source_id = str(ingredient.get("id") or "").strip()
     if source_id:
-        safe = re.sub(r"[^a-z0-9._-]", "-", source_id.lower())
-        return "orc-ing-unitools-" + safe
+        # Exact mirror of ArabicRecipeCatalogueInstaller.kt: no slugification.
+        return "orc-ing-unitools-" + source_id.lower()
     arabic_name = str(ingredient.get("name") or "").strip()
     unit = normalize_recipe_unit(str(ingredient.get("unit") or ""), ingredient.get("quantity"))
     # The exact legacy Focus ID algorithm is intentionally mirrored until the
