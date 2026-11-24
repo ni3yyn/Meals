@@ -11,7 +11,6 @@ from tools.build_food_product_catalogue import (
     build_catalogue,
     category_for,
     classify_food_category,
-    merge_curated_food_items,
     normalize_label,
     normalize_recipe_unit,
     parse_foodon_owl,
@@ -649,33 +648,32 @@ class FoodCatalogueReviewedCategoryOverrideTests(unittest.TestCase):
         self.assertEqual(product["_categoryAssignment"]["confidence"], "high")
         self.assertIn("concentrated tomato sauce", product["_categoryAssignment"]["reason"])
 
+
 class FoodCatalogueCuratedTranslationTests(unittest.TestCase):
-    def test_red_cabbage_gets_a_reviewed_english_name_without_new_identity(self):
-        record = {
-            "name": "red cabbage",
+    def test_red_cabbage_translation_fills_english_label_without_rekeying_identity(self):
+        food_id = "d35046b6-8ed7-4713-8f98-7ee31e25c0dd"
+        product = {
+            "id": food_id,
             "names": {"ar": "الملفوف الأحمر", "en": None, "fr": "chou rouge"},
-            "aliases": {"ar": [], "en": [], "fr": []},
-            "allNames": {"ar": ["الملفوف الأحمر"], "en": [], "fr": ["chou rouge"]},
-            "parents": ["vegetables"],
-            "sourceProperties": {},
         }
-        curated = [{
-            "key": "red-cabbage",
-            "names": {"ar": "الملفوف الأحمر", "en": "Red cabbage", "fr": "Chou rouge"},
-            "aliases": {"ar": ["الكرنب الأحمر"], "en": ["red cabbage leaves"], "fr": []},
-            "acceptedUnits": ["g", "kg", "piece"],
-            "categoryId": "foodcat-vegetables",
-            "subcategoryId": "foodsub-vegetables-leafy",
-        }]
+        sidecar = {
+            "provider": "Midati reviewed translation",
+            "translations": {
+                food_id: {
+                    "en": {
+                        "text": "Red cabbage",
+                        "sourceLanguage": "ar",
+                        "sourceText": "الملفوف الأحمر",
+                        "provider": "Midati reviewed translation",
+                    }
+                }
+            },
+        }
 
-        merged = merge_curated_food_items([record], curated)
+        report = apply_machine_name_translations([product], sidecar)
 
-        self.assertEqual(len(merged), 1)
-        self.assertEqual(merged[0]["names"]["en"], "Red cabbage")
-        self.assertIn("red cabbage leaves", merged[0]["aliases"]["en"])
-        self.assertEqual(merged[0]["sourceProperties"]["midatiCategoryId"], "foodcat-vegetables")
-        self.assertEqual(
-            merged[0]["sourceProperties"]["midatiSubcategoryId"],
-            "foodsub-vegetables-leafy",
-        )
+        self.assertEqual(product["id"], food_id)
+        self.assertEqual(product["names"]["en"], "Red cabbage")
+        self.assertEqual(report["appliedByLanguage"]["en"], 1)
+        self.assertEqual(report["englishNameConflictCount"], 0)
 

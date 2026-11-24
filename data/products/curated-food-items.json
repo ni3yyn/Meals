@@ -161,29 +161,5 @@
     ],
     "categoryId": "foodcat-canned",
     "subcategoryId": "foodsub-canned-legumes"
-  },
-  {
-    "key": "red-cabbage",
-    "names": {
-      "ar": "الملفوف الأحمر",
-      "en": "Red cabbage",
-      "fr": "Chou rouge"
-    },
-    "aliases": {
-      "ar": [
-        "الكرنب الأحمر"
-      ],
-      "en": [
-        "red cabbage leaves"
-      ],
-      "fr": []
-    },
-    "acceptedUnits": [
-      "g",
-      "kg",
-      "piece"
-    ],
-    "categoryId": "foodcat-vegetables",
-    "subcategoryId": "foodsub-vegetables-leafy"
   }
 ]
