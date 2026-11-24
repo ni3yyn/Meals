@@ -983,8 +983,12 @@ def build_product(
     identity_keys: set[str] = set()
     if record:
         identity_keys.add("openfoodfacts:" + normalize_label(record["name"]))
-    for foodon_id in foodon_ids:
-        identity_keys.add("foodon:" + str(foodon_id))
+    # FoodOn IDs are ontology cross-references, not necessarily unique:
+    # one broad FoodOn class can legitimately relate to several OFF terms.
+    # Use a FoodOn identity key only for a FoodOn-only product with no OFF record.
+    if not record:
+        for foodon_id in foodon_ids:
+            identity_keys.add("foodon:" + str(foodon_id))
     for group in groups:
         group_name = normalize_label(group["names"].get("en") or group["names"].get("ar"))
         if group_name:
