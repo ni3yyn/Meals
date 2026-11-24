@@ -852,8 +852,61 @@ def match_foodon_group(
     )
 
 
-def uuid_for(source_key: str) -> str:
-    return str(uuid.uuid5(UUID_NAMESPACE, source_key))
+def assign_stable_product_ids(
+    products: list[dict[str, Any]],
+    registry: dict[str, Any],
+) -> dict[str, Any]:
+    """Assign persistent opaque UUIDv4 IDs, never IDs derived from display names."""
+    ids: dict[str, str] = registry.setdefault("ids", {})
+    redirects: dict[str, str] = registry.setdefault("redirects", {})
+    key_owners: dict[str, int] = {}
+
+    def resolve(value: str) -> str:
+        seen: set[str] = set()
+        while value in redirects and value not in seen:
+            seen.add(value)
+            value = redirects[value]
+        return value
+
+    for product_index, product in enumerate(products):
+        source_keys = set(str(key) for key in product.pop("identityKeys", []) if str(key))
+        source_keys.update(
+            "legacy-room:" + str(legacy_id)
+            for legacy_id in product.get("recipeIngredientIds", [])
+            if legacy_id
+        )
+        if not source_keys:
+            raise RuntimeError("Food item has no stable source identity key.")
+
+        for key in source_keys:
+            previous_owner = key_owners.get(key)
+            if previous_owner is not None and previous_owner != product_index:
+                raise RuntimeError("A source identity key was assigned to multiple food items: " + key)
+            key_owners[key] = product_index
+
+        existing_ids = sorted({resolve(ids[key]) for key in source_keys if key in ids})
+        if existing_ids:
+            product_id = existing_ids[0]
+            for retired_id in existing_ids[1:]:
+                if retired_id != product_id:
+                    redirects[retired_id] = product_id
+        else:
+            product_id = str(uuid.uuid4())
+
+        for key in source_keys:
+            ids[key] = product_id
+        product["id"] = product_id
+
+    for old_id in list(redirects):
+        redirects[old_id] = resolve(redirects[old_id])
+
+    assigned = [str(product["id"]) for product in products]
+    if len(assigned) != len(set(assigned)):
+        raise RuntimeError("Persistent UUID registry assigned duplicate food-item IDs.")
+
+    registry["version"] = 1
+    registry["idFormat"] = "UUIDv4"
+    return registry
 
 
 def choose_names(record: dict[str, Any], groups: list[dict[str, Any]]) -> dict[str, str | None]:
