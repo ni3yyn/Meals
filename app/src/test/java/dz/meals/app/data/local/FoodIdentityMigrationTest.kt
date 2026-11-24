@@ -30,13 +30,20 @@ class FoodIdentityMigrationTest {
         try {
             val db = roomDatabase.openHelper.writableDatabase
 
-            assertEquals(15, db.query("PRAGMA user_version").use { cursor ->
+            assertEquals(16, db.query("PRAGMA user_version").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 cursor.getInt(0)
             })
             // The v14-to-v15 migration creates the generic food master table
             // without deleting or inventing catalogue rows during migration.
             assertEquals(0, count(db, "SELECT COUNT(*) FROM food_items"))
+            assertEquals(22, count(db, "SELECT COUNT(*) FROM food_categories"))
+            assertEquals(82, count(db, "SELECT COUNT(*) FROM food_subcategories"))
+            assertEquals(
+                "الألبان والأجبان",
+                scalarString(db, "SELECT nameAr FROM food_categories WHERE id = 'foodcat-dairy'")
+            )
+            assertEquals(0, count(db, "SELECT COUNT(*) FROM pragma_foreign_key_check"))
 
             // Two recipe rows which converge on one UUID remain two rows with all
             // quantities, units, preparation notes and optional flags intact.

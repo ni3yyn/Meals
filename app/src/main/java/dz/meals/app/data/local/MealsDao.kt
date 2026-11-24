@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 
 @Dao
 interface MealsDao {
@@ -31,8 +32,23 @@ interface MealsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRecipeSteps(items: List<RecipeStepEntity>)
 
-    @Query("DELETE FROM food_items")
-    suspend fun deleteAllFoodItems()
+    @Upsert
+    suspend fun upsertFoodCategories(items: List<FoodCategoryEntity>)
+
+    @Upsert
+    suspend fun upsertFoodSubcategories(items: List<FoodSubcategoryEntity>)
+
+    @Query("SELECT COUNT(*) FROM food_categories")
+    suspend fun countFoodCategories(): Int
+
+    @Query("SELECT COUNT(*) FROM food_subcategories")
+    suspend fun countFoodSubcategories(): Int
+
+    @Query("SELECT * FROM food_categories ORDER BY sortOrder, id")
+    suspend fun getFoodCategories(): List<FoodCategoryEntity>
+
+    @Query("SELECT * FROM food_subcategories ORDER BY categoryId, sortOrder, id")
+    suspend fun getFoodSubcategories(): List<FoodSubcategoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertFoodItems(items: List<FoodItemEntity>)

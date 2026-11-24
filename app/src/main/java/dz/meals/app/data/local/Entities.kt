@@ -2,6 +2,7 @@ package dz.meals.app.data.local
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -16,7 +17,50 @@ data class IngredientEntity(
     val aliasesCsv: String
 )
 
-@Entity(tableName = "food_items")
+@Entity(
+    tableName = "food_categories",
+    indices = [Index("sortOrder")]
+)
+data class FoodCategoryEntity(
+    @PrimaryKey val id: String,
+    val nameAr: String,
+    val nameEn: String,
+    val nameFr: String,
+    val sortOrder: Int
+)
+
+@Entity(
+    tableName = "food_subcategories",
+    foreignKeys = [
+        ForeignKey(entity = FoodCategoryEntity::class, parentColumns = ["id"], childColumns = ["categoryId"], onDelete = ForeignKey.CASCADE)
+    ],
+    indices = [
+        Index("categoryId"),
+        Index(value = ["categoryId", "id"], unique = true),
+        Index("sortOrder")
+    ]
+)
+data class FoodSubcategoryEntity(
+    @PrimaryKey val id: String,
+    val categoryId: String,
+    val nameAr: String,
+    val nameEn: String,
+    val nameFr: String,
+    val sortOrder: Int
+)
+
+@Entity(
+    tableName = "food_items",
+    foreignKeys = [
+        ForeignKey(
+            entity = FoodSubcategoryEntity::class,
+            parentColumns = ["categoryId", "id"],
+            childColumns = ["categoryId", "subcategoryId"],
+            onDelete = ForeignKey.RESTRICT
+        )
+    ],
+    indices = [Index(value = ["categoryId", "subcategoryId"])]
+)
 data class FoodItemEntity(
     @PrimaryKey val id: String,
     val nameAr: String,
@@ -27,10 +71,6 @@ data class FoodItemEntity(
     val aliasesFrCsv: String,
     val categoryId: String,
     val subcategoryId: String,
-    val categoryNameAr: String,
-    val categoryNameEn: String,
-    val categoryNameFr: String,
-    val subcategoryNameAr: String,
     val acceptedUnitsCsv: String,
     val imageUrl: String,
     val quantity: Double?,

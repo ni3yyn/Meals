@@ -26,7 +26,7 @@ import dz.meals.app.data.FoodIdentityResolver
         RecipeAttributionEntity::class,
         RecipeImageOverrideEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -240,7 +240,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 MIGRATION_11_12,
                 MIGRATION_12_13,
                 FoodIdentityMigration(FoodIdentityResolver(context.applicationContext)),
-                MIGRATION_14_15
+                MIGRATION_14_15,
+                FoodTaxonomyMigration(context.applicationContext)
             ).build()
     }
 }

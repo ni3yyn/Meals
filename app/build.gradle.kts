@@ -11,6 +11,21 @@ plugins {
 val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(3)
 val appVersionName = providers.gradleProperty("appVersionName").orElse("0.2.1")
 
+val foodCatalogueRevision = providers.provider {
+    val digest = java.security.MessageDigest.getInstance("SHA-256")
+    listOf(
+        rootProject.file("data/products/catalogue.json"),
+        rootProject.file("data/products/categories.json")
+    ).forEachIndexed { index, file ->
+        require(file.isFile) { "Missing canonical food data file: ${file.path}" }
+        digest.update(index.toString().toByteArray(Charsets.UTF_8))
+        digest.update(0.toByte())
+        digest.update(file.readBytes())
+        digest.update(0.toByte())
+    }
+    digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+}
+
 val releaseKeystorePath = providers.gradleProperty("releaseKeystorePath").orNull
 val releaseStorePassword = providers.gradleProperty("releaseStorePassword").orNull
 val releaseKeyAlias = providers.gradleProperty("releaseKeyAlias").orNull
@@ -93,6 +108,7 @@ android {
         targetSdk = 36
         versionCode = appVersionCode.get()
         versionName = appVersionName.get()
+        buildConfigField("String", "FOOD_CATALOGUE_REVISION", "\"${foodCatalogueRevision.get()}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

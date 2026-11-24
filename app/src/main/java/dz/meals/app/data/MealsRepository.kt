@@ -851,8 +851,13 @@ class MealsRepository(context: Context) {
                 .map { it.toModel() }
                 .associateBy { it.id }
                 .toMutableMap()
+            val categoriesById = dao.getFoodCategories().associateBy { it.id }
             dao.getFoodItems().forEach { food ->
-                val catalogueMaster = food.toIngredientMaster()
+                val category = categoriesById[food.categoryId]
+                    ?: throw IllegalStateException(
+                        "Food ${food.id} references missing category ${food.categoryId}."
+                    )
+                val catalogueMaster = food.toIngredientMaster(category.nameAr)
                 val localMaster = merged[food.id]
                 merged[food.id] = catalogueMaster.copy(
                     // Keep curated allergen knowledge and Algerian/Darija aliases
@@ -1058,7 +1063,7 @@ data class GenerationResult(
 )
 
 
-private fun FoodItemEntity.toIngredientMaster(): IngredientMaster {
+private fun FoodItemEntity.toIngredientMaster(categoryNameAr: String): IngredientMaster {
     val accepted = acceptedUnitsCsv.split("|").filter { it.isNotBlank() }
     val aliases = buildList {
         add(nameEn)
@@ -1070,7 +1075,7 @@ private fun FoodItemEntity.toIngredientMaster(): IngredientMaster {
         id = id,
         nameAr = nameAr.ifBlank { nameEn.ifBlank { nameFr } },
         nameFr = nameFr.ifBlank { nameEn },
-        category = categoryNameAr.ifBlank { "أخرى" },
+        category = categoryNameAr,
         baseUnit = accepted.firstOrNull() ?: "piece",
         allergens = emptySet(),
         aliases = aliases,

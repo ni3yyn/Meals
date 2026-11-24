@@ -115,3 +115,20 @@ Every generated food identity records an internal classification method, confide
 The stage-three override set currently contains 239 reviewed UUID-specific corrections. It corrects high-confidence source mistakes such as vegetable oil/fat appearing under vegetables, cocoa and chocolate appearing under unrelated food groups, and cardamom appearing under nuts or legumes. The preferred-label classifier is expanded with regression-covered food vocabulary for common recipe ingredients (including fruit, vegetables, dairy, seafood, bakery, grains and spices); it is not necessary to add an identity override for a food family that can be classified reliably from its preferred name. Salt, ice and non-food smoking accessories remain in the catch-all group where the current taxonomy has no more precise category; the builder does not force every record into an inappropriate category merely to reduce the catch-all count.
 
 The classification audit is intended for iterative review. A low-confidence or conflicting record is visible in the audit rather than silently assigned by a broad substring match.
+
+
+## Normalized Room taxonomy (schema v16)
+
+Room v16 stores the canonical taxonomy in three normalized tables:
+
+- `food_categories`: one row per category, with Arabic, English and French display labels and stable sort order.
+- `food_subcategories`: one row per subcategory, with its parent category ID and localized labels.
+- `food_items`: one row per generic food identity. It stores `categoryId` and `subcategoryId`, not duplicated translated category labels.
+
+The food-item relationship is enforced by a composite foreign key from `(categoryId, subcategoryId)` to `food_subcategories(categoryId, id)`. This prevents an item from pointing at a valid subcategory under the wrong category. Subcategories have a foreign key to their parent category.
+
+The v15-to-v16 Room migration reads the bundled canonical `food/categories.json` asset and seeds all 22 categories and 82 subcategories before rebuilding the existing food-item table. It validates every pre-existing food relationship and verifies that every old food UUID is retained. Any invalid reference or missing taxonomy asset aborts the migration transaction; it never drops or silently reclassifies a food item.
+
+The food-catalogue installer upserts taxonomy and food rows atomically. It does not delete the previous food table before installation, so a failed import can be retried without temporarily emptying the catalogue. A build-time SHA-256 revision over the actual catalogue and taxonomy assets ensures changed catalogue or translated category data is reinstalled automatically.
+
+The repository resolves localized category labels from `food_categories` rather than reading denormalized strings from every food row. Screen-level use of category IDs and taxonomy navigation is handled in the later app-integration stages.
