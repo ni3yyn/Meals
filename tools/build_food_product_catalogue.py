@@ -1068,7 +1068,6 @@ def build_catalogue(
             foodon_to_off_indices[foodon_id].add(off_index_value)
 
     foodon_only_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    matched_ids: dict[str, str] = {}
     matching_methods: Counter[str] = Counter()
     ambiguous: list[dict[str, Any]] = []
     unmatched: list[dict[str, Any]] = []
@@ -1133,7 +1132,6 @@ def build_catalogue(
         products.append(product)
         for group in groups_for_record:
             consumed_groups.add(group["key"])
-            for legacy_id in group["legacyIds"]:
 
     # FoodOn-only matches are grouped by exact ontology class, so alternate
     # recipe spellings of the same verified concept share one food identity.
@@ -1142,8 +1140,6 @@ def build_catalogue(
         products.append(product)
         for group in related_groups:
             consumed_groups.add(group["key"])
-            for legacy_id in group["legacyIds"]:
-                matched_ids[legacy_id] = product["id"]
 
     # Every recipe ingredient must resolve to a product, even when neither external
     # dataset contains its exact name. These are reported for future curation.
@@ -1156,9 +1152,6 @@ def build_catalogue(
     for identity, related_groups in recipe_only_by_key.items():
         product = build_product(None, related_groups, [], foodon, foodon_ancestors)
         products.append(product)
-        for group in related_groups:
-            for legacy_id in group["legacyIds"]:
-                matched_ids[legacy_id] = product["id"]
 
     # Merge exact normalized English duplicates before assigning UUIDs.
     by_english: dict[str, dict[str, Any]] = {}
