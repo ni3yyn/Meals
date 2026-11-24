@@ -138,7 +138,7 @@ fun ShoppingCataloguePicker(
 
     MealsBottomSheet(
         onDismissRequest = onDismiss,
-        titleText = "إضافة إلى قائمة المشتريات",
+        titleText = pickerCopy(localeTag, "إضافة إلى قائمة المشتريات", "Add to shopping list", "Ajouter à la liste de courses"),
         fillBody = true,
         fixedHeightFraction = 0.88f,
         text = {
@@ -166,7 +166,7 @@ fun ShoppingCataloguePicker(
                             ) {
                                 MealsIcon(
                                     if (layoutDirection == LayoutDirection.Rtl) MealsIconName.ArrowBack else MealsIconName.ArrowForward,
-                                    contentDescription = "الرجوع إلى التصنيفات",
+                                    contentDescription = pickerCopy(localeTag, "الرجوع إلى التصنيفات", "Back to categories", "Retour aux catégories"),
                                     modifier = Modifier.size(23.dp)
                                 )
                             }
@@ -180,7 +180,7 @@ fun ShoppingCataloguePicker(
                                 translate = false
                             )
                             Text(
-                                "${categoryFoods.size} مكوّناً",
+                                pickerFoodCount(categoryFoods.size, localeTag),
                                 color = MutedInk,
                                 style = MaterialTheme.typography.labelSmall
                             )
@@ -188,9 +188,9 @@ fun ShoppingCataloguePicker(
                     }
                 } else {
                     MealsSubtabsIndicator(
-                        items = listOf("بحث", "التصنيفات"),
-                        selected = if (page == 0) "بحث" else "التصنيفات",
-                        onSelect = { page = if (it == "بحث") 0 else 1 },
+                        items = listOf(pickerCopy(localeTag, "بحث", "Search", "Recherche"), pickerCopy(localeTag, "التصنيفات", "Categories", "Catégories")),
+                        selected = if (page == 0) pickerCopy(localeTag, "بحث", "Search", "Recherche") else pickerCopy(localeTag, "التصنيفات", "Categories", "Catégories"),
+                        onSelect = { page = if (it == pickerCopy(localeTag, "بحث", "Search", "Recherche")) 0 else 1 },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -245,7 +245,7 @@ fun ShoppingCataloguePicker(
                                 MealsSearchBar(
                                     value = query,
                                     onValueChange = { query = it },
-                                    placeholder = "ابحثي عن مكوّن أو منتج...",
+                                    placeholder = pickerCopy(localeTag, "ابحثي عن مكوّن أو منتج...", "Search for a food or ingredient...", "Rechercher un aliment ou un ingrédient..."),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 if (query.isBlank()) {
@@ -254,7 +254,7 @@ fun ShoppingCataloguePicker(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            "ابحثي بالاسم العربي أو الفرنسي أو الإنجليزي، أو اسحبي لعرض التصنيفات.",
+                                            pickerCopy(localeTag, "ابحثي بالاسم العربي أو الفرنسي أو الإنجليزي، أو اسحبي لعرض التصنيفات.", "Search in Arabic, French or English, or swipe to browse categories.", "Recherchez en arabe, français ou anglais, ou balayez pour parcourir les catégories."),
                                             color = MutedInk,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
@@ -264,7 +264,7 @@ fun ShoppingCataloguePicker(
                                         modifier = Modifier.weight(1f).fillMaxWidth().padding(18.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("لا توجد نتائج مطابقة.", color = MutedInk)
+                                        Text(pickerCopy(localeTag, "لا توجد نتائج مطابقة.", "No matching foods.", "Aucun résultat."), color = MutedInk, translate = false)
                                     }
                                 } else {
                                     LazyColumn(
@@ -292,7 +292,7 @@ fun ShoppingCataloguePicker(
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 Text(
-                                    "اختاري تصنيفاً لعرض مكوّناته.",
+                                    pickerCopy(localeTag, "اختاري تصنيفاً لعرض مكوّناته.", "Choose a category to browse its foods.", "Choisissez une catégorie pour parcourir ses aliments."),
                                     color = MutedInk,
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -355,7 +355,7 @@ fun ShoppingCataloguePicker(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     ShoppingCatalogueFilterChip(
-                                        label = "الكل",
+                                        label = pickerCopy(localeTag, "الكل", "All", "Tout"),
                                         selected = selectedSubcategoryId == null,
                                         onClick = { selectedSubcategoryId = null }
                                     )
@@ -374,7 +374,7 @@ fun ShoppingCataloguePicker(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            "لا توجد مكوّنات في هذا التصنيف الفرعي حالياً.",
+                                            pickerCopy(localeTag, "لا توجد مكوّنات في هذا التصنيف الفرعي حالياً.", "No foods in this subcategory yet.", "Aucun aliment dans cette sous-catégorie pour le moment."),
                                             color = MutedInk,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
@@ -409,7 +409,7 @@ fun ShoppingCataloguePicker(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 MealsIcon(MealsIconName.Add, contentDescription = null, modifier = Modifier.size(21.dp))
-                Text("العنصر غير موجود؟ أضيفيه يدوياً")
+                Text(pickerCopy(localeTag, "العنصر غير موجود؟ أضيفيه يدوياً", "Can’t find it? Add a custom item", "Introuvable ? Ajouter un article personnalisé"), translate = false)
             }
         }
     )
@@ -477,13 +477,25 @@ private fun ShoppingCatalogueFoodRow(
                 )
             }
             if (alreadyAdded) {
-                Text("في القائمة", color = MutedInk, style = MaterialTheme.typography.labelMedium)
-                MealsIcon(MealsIconName.Check, contentDescription = "موجود في القائمة", modifier = Modifier.size(23.dp))
+                Text(pickerCopy(localeTag, "في القائمة", "In list", "Dans la liste"), color = MutedInk, style = MaterialTheme.typography.labelMedium, translate = false)
+                MealsIcon(MealsIconName.Check, contentDescription = pickerCopy(localeTag, "موجود في القائمة", "Already in list", "Déjà dans la liste"), modifier = Modifier.size(23.dp))
             } else {
-                MealsIcon(MealsIconName.Add, contentDescription = "إضافة إلى القائمة", modifier = Modifier.size(25.dp))
+                MealsIcon(MealsIconName.Add, contentDescription = pickerCopy(localeTag, "إضافة إلى القائمة", "Add to list", "Ajouter à la liste"), modifier = Modifier.size(25.dp))
             }
         }
     }
+}
+
+private fun pickerFoodCount(count: Int, localeTag: String): String = when {
+    localeTag.startsWith("en") -> "$count ingredients"
+    localeTag.startsWith("fr") -> "$count ingrédients"
+    else -> "$count مكوّناً"
+}
+
+private fun pickerCopy(localeTag: String, ar: String, en: String, fr: String): String = when {
+    localeTag.startsWith("en") -> en
+    localeTag.startsWith("fr") -> fr
+    else -> ar
 }
 
 private fun pickerFoodName(food: IngredientMaster, localeTag: String): String = when {
