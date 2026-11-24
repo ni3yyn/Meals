@@ -58,6 +58,29 @@ interface MealsDao {
     @Query("SELECT COUNT(*) FROM recipes WHERE id LIKE 'unitools-%'")
     suspend fun countUnitoolsRecipes(): Int
 
+    /**
+     * Imported recipe ingredients with no seed/non-catalogue recipe usage.
+     * Keep these hidden until the pinned catalogue is fully installed.
+     */
+    @Query("""
+        SELECT DISTINCT imported.ingredientId
+        FROM recipe_ingredients AS imported
+        WHERE (
+            imported.recipeId LIKE 'orc-%' OR
+            imported.recipeId LIKE 'focus-%' OR
+            imported.recipeId LIKE 'unitools-%'
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM recipe_ingredients AS local
+            WHERE local.ingredientId = imported.ingredientId
+              AND local.recipeId NOT LIKE 'orc-%'
+              AND local.recipeId NOT LIKE 'focus-%'
+              AND local.recipeId NOT LIKE 'unitools-%'
+        )
+    """)
+    suspend fun getUnpublishedArabicCatalogueIngredientIds(): List<String>
+
 
     @Query("DELETE FROM recipe_ingredients WHERE recipeId LIKE 'orc-%'")
     suspend fun deleteLegacyOpenRecipeIngredients()
@@ -79,8 +102,7 @@ interface MealsDao {
 
     @Query("""
         DELETE FROM ingredients
-        WHERE substr(id, 1, 8) = 'orc-ing-'
-          AND NOT EXISTS (
+        WHERE NOT EXISTS (
               SELECT 1 FROM recipe_ingredients
               WHERE recipe_ingredients.ingredientId = ingredients.id
           )
