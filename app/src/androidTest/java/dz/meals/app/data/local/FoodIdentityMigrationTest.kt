@@ -72,7 +72,7 @@ class FoodIdentityMigrationTest {
             db.query(
                 "SELECT ingredientId, checked, purchaseQuantityOverride, storeNote, actualSpentDzd " +
                     "FROM shopping_items WHERE id = ?",
-                arrayOf<Any>(oldShoppingId)
+                arrayOf<Any?>(oldShoppingId)
             ).use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals(canonicalId, cursor.getString(0))
@@ -211,60 +211,60 @@ class FoodIdentityMigrationTest {
 
             db.execSQL(
                 "INSERT INTO ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>(legacyA, "اسم قديم أ", "old name A", "مكوّن", "g", "", "")
+                arrayOf<Any?>(legacyA, "اسم قديم أ", "old name A", "مكوّن", "g", "", "")
             )
             db.execSQL(
                 "INSERT INTO ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>(legacyB, "اسم قديم ب", "old name B", "مكوّن", "g", "", "")
+                arrayOf<Any?>(legacyB, "اسم قديم ب", "old name B", "مكوّن", "g", "", "")
             )
             db.execSQL(
                 "INSERT INTO ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("chicken", "دجاج", "poulet", "لحوم ودواجن", "g", "", "")
+                arrayOf<Any?>("chicken", "دجاج", "poulet", "لحوم ودواجن", "g", "", "")
             )
 
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("focus:test-recipe", legacyA, 2.0, "g", "ملاحظة أ", 0, "linear")
+                arrayOf<Any?>("focus:test-recipe", legacyA, 2.0, "g", "ملاحظة أ", 0, "linear")
             )
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("focus:test-recipe", legacyB, 3.0, "g", "ملاحظة ب", 1, "linear")
+                arrayOf<Any?>("focus:test-recipe", legacyB, 3.0, "g", "ملاحظة ب", 1, "linear")
             )
             // This same food is used by a seed recipe too, so it must remain
             // available even while the community recipe catalogue is pending.
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("seed:baseline", legacyA, 1.0, "g", "seed use", 0, "linear")
+                arrayOf<Any?>("seed:baseline", legacyA, 1.0, "g", "seed use", 0, "linear")
             )
             // This canonical product is used only by an imported recipe and
             // should remain hidden until the imported catalogue is complete.
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("unitools:chicken-demo", "chicken", 0.5, "g", "imported use", 0, "linear")
+                arrayOf<Any?>("unitools:chicken-demo", "chicken", 0.5, "g", "imported use", 0, "linear")
             )
             db.execSQL(
                 "INSERT INTO pantry_items VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("pantry-row-a", legacyA, 10.0, "g", 0, "stock A", null)
+                arrayOf<Any?>("pantry-row-a", legacyA, 10.0, "g", 0, "stock A", null)
             )
             db.execSQL(
                 "INSERT INTO pantry_items VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("pantry-row-b", legacyB, 5.0, "g", 0, "stock B", null)
+                arrayOf<Any?>("pantry-row-b", legacyB, 5.0, "g", 0, "stock B", null)
             )
             db.execSQL(
                 "INSERT INTO pantry_items VALUES (?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("pantry-custom", "user-spice-legacy", 2.0, "g", 0, "custom stock", null)
+                arrayOf<Any?>("pantry-custom", "user-spice-legacy", 2.0, "g", 0, "custom stock", null)
             )
             db.execSQL(
                 "INSERT INTO price_observations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("price-a", legacyA, 100.0, "g", 50.0, "store A", "Algiers", 1700000000000L, "user_reported", "low")
+                arrayOf<Any?>("price-a", legacyA, 100.0, "g", 50.0, "store A", "Algiers", 1700000000000L, "user_reported", "low")
             )
             db.execSQL(
                 "INSERT INTO price_observations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("price-b", legacyB, 200.0, "g", 80.0, "store B", "Algiers", 1700000001000L, "user_reported", "low")
+                arrayOf<Any?>("price-b", legacyB, 200.0, "g", 80.0, "store B", "Algiers", 1700000001000L, "user_reported", "low")
             )
             db.execSQL(
                 "INSERT INTO shopping_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>(
+                arrayOf<Any?>(
                     "2025-01-06::" + legacyA + "::g", legacyA, "عنصر أ", 6.0, 1.0, 5.0, "g",
                     50.0, 100.0, "price", "store", 0, 1, 0, 1700000000000L, "2025-01-06",
                     4.0, "احتفظ بهذه الملاحظة", 0, 120.0
@@ -272,7 +272,7 @@ class FoodIdentityMigrationTest {
             )
             db.execSQL(
                 "INSERT INTO shopping_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>(
+                arrayOf<Any?>(
                     "2025-01-06::" + legacyB + "::g", legacyB, "عنصر ب", 7.0, 2.0, 5.0, "g",
                     60.0, 110.0, "price", "store", 0, 0, 0, 1700000001000L, "2025-01-06",
                     2.0, "ملاحظة أخرى", 0, 70.0
@@ -280,7 +280,7 @@ class FoodIdentityMigrationTest {
             )
             db.execSQL(
                 "INSERT INTO shopping_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>(
+                arrayOf<Any?>(
                     "custom-shopping-row", null, "عنصر مخصص", 0.0, 0.0, 1.0, "piece",
                     null, null, null, null, 0, 1, 1, 1700000002000L, "2025-01-06",
                     null, "", 0, null
@@ -288,19 +288,19 @@ class FoodIdentityMigrationTest {
             )
             db.execSQL(
                 "INSERT INTO cooked_meal_deductions VALUES (?, ?, ?, ?)",
-                arrayOf<Any>("meal-cooked-1", legacyA, "g", 1.0)
+                arrayOf<Any?>("meal-cooked-1", legacyA, "g", 1.0)
             )
             db.execSQL(
                 "INSERT INTO cooked_meal_deductions VALUES (?, ?, ?, ?)",
-                arrayOf<Any>("meal-cooked-1", legacyB, "g", 2.0)
+                arrayOf<Any?>("meal-cooked-1", legacyB, "g", 2.0)
             )
             db.execSQL(
                 "INSERT INTO plan_price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("2025-01-06", "price-a", legacyA, 100.0, "g", 50.0, "store A", "Algiers", 1700000000000L, "user_reported", "low")
+                arrayOf<Any?>("2025-01-06", "price-a", legacyA, 100.0, "g", 50.0, "store A", "Algiers", 1700000000000L, "user_reported", "low")
             )
             db.execSQL(
                 "INSERT INTO plan_price_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                arrayOf<Any>("2025-01-06", "price-b", legacyB, 200.0, "g", 80.0, "store B", "Algiers", 1700000001000L, "user_reported", "low")
+                arrayOf<Any?>("2025-01-06", "price-b", legacyB, 200.0, "g", 80.0, "store B", "Algiers", 1700000001000L, "user_reported", "low")
             )
 
             db.version = 13
