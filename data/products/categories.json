@@ -1,0 +1,886 @@
+{
+  "schemaVersion": 1,
+  "languageCodes": [
+    "ar",
+    "en",
+    "fr"
+  ],
+  "categories": [
+    {
+      "id": "foodcat-fruits",
+      "names": {
+        "ar": "الفواكه",
+        "en": "Fruits",
+        "fr": "Fruits"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-fruits-citrus",
+          "names": {
+            "ar": "الحمضيات",
+            "en": "Citrus fruits",
+            "fr": "Agrumes"
+          }
+        },
+        {
+          "id": "foodsub-fruits-dates",
+          "names": {
+            "ar": "التمور",
+            "en": "Dates",
+            "fr": "Dattes"
+          }
+        },
+        {
+          "id": "foodsub-fruits-tropical",
+          "names": {
+            "ar": "الفواكه الاستوائية",
+            "en": "Tropical fruits",
+            "fr": "Fruits tropicaux"
+          }
+        },
+        {
+          "id": "foodsub-fruits-berries",
+          "names": {
+            "ar": "التوت والفواكه الصغيرة",
+            "en": "Berries",
+            "fr": "Baies"
+          }
+        },
+        {
+          "id": "foodsub-fruits-other",
+          "names": {
+            "ar": "فواكه أخرى",
+            "en": "Other fruits",
+            "fr": "Autres fruits"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-vegetables",
+      "names": {
+        "ar": "الخضروات",
+        "en": "Vegetables",
+        "fr": "Légumes"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-vegetables-leafy",
+          "names": {
+            "ar": "الخضروات الورقية",
+            "en": "Leafy vegetables",
+            "fr": "Légumes-feuilles"
+          }
+        },
+        {
+          "id": "foodsub-vegetables-roots",
+          "names": {
+            "ar": "الجذور والدرنات",
+            "en": "Roots and tubers",
+            "fr": "Racines et tubercules"
+          }
+        },
+        {
+          "id": "foodsub-vegetables-bulbs",
+          "names": {
+            "ar": "الخضروات البصلية",
+            "en": "Bulb vegetables",
+            "fr": "Légumes bulbeux"
+          }
+        },
+        {
+          "id": "foodsub-vegetables-fruit",
+          "names": {
+            "ar": "الخضروات الثمرية",
+            "en": "Fruit vegetables",
+            "fr": "Légumes-fruits"
+          }
+        },
+        {
+          "id": "foodsub-vegetables-other",
+          "names": {
+            "ar": "خضروات أخرى",
+            "en": "Other vegetables",
+            "fr": "Autres légumes"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-dairy",
+      "names": {
+        "ar": "الألبان والأجبان",
+        "en": "Dairy and cheese",
+        "fr": "Produits laitiers et fromages"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-dairy-milk",
+          "names": {
+            "ar": "الحليب",
+            "en": "Milk",
+            "fr": "Lait"
+          }
+        },
+        {
+          "id": "foodsub-dairy-fermented",
+          "names": {
+            "ar": "الألبان المخمرة (لبن ورايب)",
+            "en": "Fermented milk (leben and raib)",
+            "fr": "Laits fermentés (lben et raïb)"
+          }
+        },
+        {
+          "id": "foodsub-dairy-yogurt",
+          "names": {
+            "ar": "الزبادي",
+            "en": "Yogurt",
+            "fr": "Yaourts"
+          }
+        },
+        {
+          "id": "foodsub-dairy-cheese",
+          "names": {
+            "ar": "الأجبان",
+            "en": "Cheese",
+            "fr": "Fromages"
+          }
+        },
+        {
+          "id": "foodsub-dairy-cream-butter",
+          "names": {
+            "ar": "القشدة والزبدة",
+            "en": "Cream and butter",
+            "fr": "Crème et beurre"
+          }
+        },
+        {
+          "id": "foodsub-dairy-other",
+          "names": {
+            "ar": "مشتقات الحليب الأخرى",
+            "en": "Other dairy products",
+            "fr": "Autres produits laitiers"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-meat",
+      "names": {
+        "ar": "اللحوم والأحشاء",
+        "en": "Meat and offal",
+        "fr": "Viandes et abats"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-meat-red",
+          "names": {
+            "ar": "اللحوم الحمراء",
+            "en": "Red meat",
+            "fr": "Viandes rouges"
+          }
+        },
+        {
+          "id": "foodsub-meat-offal",
+          "names": {
+            "ar": "الأحشاء",
+            "en": "Offal",
+            "fr": "Abats"
+          }
+        },
+        {
+          "id": "foodsub-meat-processed",
+          "names": {
+            "ar": "اللحوم المحضرة",
+            "en": "Prepared meat products",
+            "fr": "Produits carnés préparés"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-poultry",
+      "names": {
+        "ar": "الدواجن",
+        "en": "Poultry",
+        "fr": "Volailles"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-poultry-chicken",
+          "names": {
+            "ar": "الدجاج",
+            "en": "Chicken",
+            "fr": "Poulet"
+          }
+        },
+        {
+          "id": "foodsub-poultry-turkey",
+          "names": {
+            "ar": "الديك الرومي",
+            "en": "Turkey",
+            "fr": "Dinde"
+          }
+        },
+        {
+          "id": "foodsub-poultry-other",
+          "names": {
+            "ar": "دواجن أخرى",
+            "en": "Other poultry",
+            "fr": "Autres volailles"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-seafood",
+      "names": {
+        "ar": "المأكولات البحرية",
+        "en": "Seafood",
+        "fr": "Produits de la mer"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-seafood-fish",
+          "names": {
+            "ar": "الأسماك",
+            "en": "Fish",
+            "fr": "Poissons"
+          }
+        },
+        {
+          "id": "foodsub-seafood-crustaceans",
+          "names": {
+            "ar": "القشريات",
+            "en": "Crustaceans",
+            "fr": "Crustacés"
+          }
+        },
+        {
+          "id": "foodsub-seafood-molluscs",
+          "names": {
+            "ar": "الرخويات",
+            "en": "Molluscs",
+            "fr": "Mollusques"
+          }
+        },
+        {
+          "id": "foodsub-seafood-preserved",
+          "names": {
+            "ar": "المأكولات البحرية المحفوظة",
+            "en": "Preserved seafood",
+            "fr": "Produits de la mer en conserve"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-legumes",
+      "names": {
+        "ar": "البقوليات",
+        "en": "Legumes",
+        "fr": "Légumineuses"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-legumes-chickpeas",
+          "names": {
+            "ar": "الحمص",
+            "en": "Chickpeas",
+            "fr": "Pois chiches"
+          }
+        },
+        {
+          "id": "foodsub-legumes-lentils",
+          "names": {
+            "ar": "العدس",
+            "en": "Lentils",
+            "fr": "Lentilles"
+          }
+        },
+        {
+          "id": "foodsub-legumes-beans",
+          "names": {
+            "ar": "الفاصولياء",
+            "en": "Beans",
+            "fr": "Haricots"
+          }
+        },
+        {
+          "id": "foodsub-legumes-peas-fava",
+          "names": {
+            "ar": "البازلاء والفول",
+            "en": "Peas and fava beans",
+            "fr": "Pois et fèves"
+          }
+        },
+        {
+          "id": "foodsub-legumes-other",
+          "names": {
+            "ar": "بقوليات أخرى",
+            "en": "Other legumes",
+            "fr": "Autres légumineuses"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-grains",
+      "names": {
+        "ar": "الحبوب ومشتقاتها",
+        "en": "Grains and cereals",
+        "fr": "Céréales et grains"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-grains-rice",
+          "names": {
+            "ar": "الأرز",
+            "en": "Rice",
+            "fr": "Riz"
+          }
+        },
+        {
+          "id": "foodsub-grains-wheat-semolina",
+          "names": {
+            "ar": "القمح والسميد",
+            "en": "Wheat and semolina",
+            "fr": "Blé et semoule"
+          }
+        },
+        {
+          "id": "foodsub-grains-flour",
+          "names": {
+            "ar": "الدقيق والفرينة",
+            "en": "Flour",
+            "fr": "Farines"
+          }
+        },
+        {
+          "id": "foodsub-grains-oats",
+          "names": {
+            "ar": "الشوفان",
+            "en": "Oats",
+            "fr": "Avoine"
+          }
+        },
+        {
+          "id": "foodsub-grains-other",
+          "names": {
+            "ar": "حبوب أخرى",
+            "en": "Other grains",
+            "fr": "Autres céréales"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-pasta-bakery",
+      "names": {
+        "ar": "العجائن والخبز",
+        "en": "Pasta and bakery",
+        "fr": "Pâtes et boulangerie"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-pasta-bakery-pasta",
+          "names": {
+            "ar": "العجائن",
+            "en": "Pasta",
+            "fr": "Pâtes"
+          }
+        },
+        {
+          "id": "foodsub-pasta-bakery-couscous",
+          "names": {
+            "ar": "الكسكس",
+            "en": "Couscous",
+            "fr": "Couscous"
+          }
+        },
+        {
+          "id": "foodsub-pasta-bakery-bread",
+          "names": {
+            "ar": "الخبز",
+            "en": "Bread",
+            "fr": "Pains"
+          }
+        },
+        {
+          "id": "foodsub-pasta-bakery-pastry",
+          "names": {
+            "ar": "المعجنات",
+            "en": "Pastries",
+            "fr": "Pâtisseries"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-canned",
+      "names": {
+        "ar": "المعلبات والمواد المحفوظة",
+        "en": "Canned and preserved foods",
+        "fr": "Conserves et aliments préservés"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-canned-legumes",
+          "names": {
+            "ar": "البقوليات المعلبة",
+            "en": "Canned legumes",
+            "fr": "Légumineuses en conserve"
+          }
+        },
+        {
+          "id": "foodsub-canned-vegetables",
+          "names": {
+            "ar": "الخضروات المعلبة",
+            "en": "Canned vegetables",
+            "fr": "Légumes en conserve"
+          }
+        },
+        {
+          "id": "foodsub-canned-fish",
+          "names": {
+            "ar": "الأسماك المعلبة",
+            "en": "Canned fish",
+            "fr": "Poissons en conserve"
+          }
+        },
+        {
+          "id": "foodsub-canned-fruit",
+          "names": {
+            "ar": "الفواكه المحفوظة",
+            "en": "Preserved fruit",
+            "fr": "Fruits en conserve"
+          }
+        },
+        {
+          "id": "foodsub-canned-pickles",
+          "names": {
+            "ar": "المخللات",
+            "en": "Pickles",
+            "fr": "Pickles et marinades"
+          }
+        },
+        {
+          "id": "foodsub-canned-other",
+          "names": {
+            "ar": "معلبات أخرى",
+            "en": "Other canned foods",
+            "fr": "Autres conserves"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-frozen",
+      "names": {
+        "ar": "الأغذية المجمدة",
+        "en": "Frozen foods",
+        "fr": "Produits surgelés"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-frozen-vegetables",
+          "names": {
+            "ar": "خضروات مجمدة",
+            "en": "Frozen vegetables",
+            "fr": "Légumes surgelés"
+          }
+        },
+        {
+          "id": "foodsub-frozen-fruit",
+          "names": {
+            "ar": "فواكه مجمدة",
+            "en": "Frozen fruit",
+            "fr": "Fruits surgelés"
+          }
+        },
+        {
+          "id": "foodsub-frozen-meat-fish",
+          "names": {
+            "ar": "لحوم وأسماك مجمدة",
+            "en": "Frozen meat and fish",
+            "fr": "Viandes et poissons surgelés"
+          }
+        },
+        {
+          "id": "foodsub-frozen-other",
+          "names": {
+            "ar": "مجمدات أخرى",
+            "en": "Other frozen foods",
+            "fr": "Autres surgelés"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-oils",
+      "names": {
+        "ar": "الزيوت والدهون",
+        "en": "Oils and fats",
+        "fr": "Huiles et matières grasses"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-oils-olive",
+          "names": {
+            "ar": "زيت الزيتون",
+            "en": "Olive oil",
+            "fr": "Huile d'olive"
+          }
+        },
+        {
+          "id": "foodsub-oils-vegetable",
+          "names": {
+            "ar": "الزيوت النباتية",
+            "en": "Vegetable oils",
+            "fr": "Huiles végétales"
+          }
+        },
+        {
+          "id": "foodsub-oils-animal",
+          "names": {
+            "ar": "الدهون الحيوانية",
+            "en": "Animal fats",
+            "fr": "Graisses animales"
+          }
+        },
+        {
+          "id": "foodsub-oils-other",
+          "names": {
+            "ar": "دهون أخرى",
+            "en": "Other fats",
+            "fr": "Autres matières grasses"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-spices",
+      "names": {
+        "ar": "التوابل والبهارات",
+        "en": "Spices and seasonings",
+        "fr": "Épices et assaisonnements"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-spices-whole",
+          "names": {
+            "ar": "توابل كاملة",
+            "en": "Whole spices",
+            "fr": "Épices entières"
+          }
+        },
+        {
+          "id": "foodsub-spices-ground",
+          "names": {
+            "ar": "توابل مطحونة",
+            "en": "Ground spices",
+            "fr": "Épices moulues"
+          }
+        },
+        {
+          "id": "foodsub-spices-blends",
+          "names": {
+            "ar": "خلطات التوابل",
+            "en": "Spice blends",
+            "fr": "Mélanges d'épices"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-herbs",
+      "names": {
+        "ar": "الأعشاب العطرية",
+        "en": "Culinary herbs",
+        "fr": "Herbes aromatiques"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-herbs-fresh",
+          "names": {
+            "ar": "أعشاب طازجة",
+            "en": "Fresh herbs",
+            "fr": "Herbes fraîches"
+          }
+        },
+        {
+          "id": "foodsub-herbs-dried",
+          "names": {
+            "ar": "أعشاب مجففة",
+            "en": "Dried herbs",
+            "fr": "Herbes séchées"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-nuts-seeds",
+      "names": {
+        "ar": "المكسرات والبذور",
+        "en": "Nuts and seeds",
+        "fr": "Fruits à coque et graines"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-nuts-tree",
+          "names": {
+            "ar": "المكسرات",
+            "en": "Tree nuts",
+            "fr": "Fruits à coque"
+          }
+        },
+        {
+          "id": "foodsub-nuts-seeds",
+          "names": {
+            "ar": "البذور",
+            "en": "Edible seeds",
+            "fr": "Graines comestibles"
+          }
+        },
+        {
+          "id": "foodsub-nuts-peanuts",
+          "names": {
+            "ar": "الفول السوداني",
+            "en": "Peanuts",
+            "fr": "Arachides"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-eggs",
+      "names": {
+        "ar": "البيض",
+        "en": "Eggs",
+        "fr": "Œufs"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-eggs-hen",
+          "names": {
+            "ar": "بيض الدجاج",
+            "en": "Chicken eggs",
+            "fr": "Œufs de poule"
+          }
+        },
+        {
+          "id": "foodsub-eggs-other",
+          "names": {
+            "ar": "بيض آخر",
+            "en": "Other eggs",
+            "fr": "Autres œufs"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-sauces",
+      "names": {
+        "ar": "الصلصات والمنكهات",
+        "en": "Sauces and condiments",
+        "fr": "Sauces et condiments"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-sauces-mayonnaise",
+          "names": {
+            "ar": "المايونيز",
+            "en": "Mayonnaise",
+            "fr": "Mayonnaise"
+          }
+        },
+        {
+          "id": "foodsub-sauces-ketchup-mustard",
+          "names": {
+            "ar": "الكاتشب والخردل",
+            "en": "Ketchup and mustard",
+            "fr": "Ketchup et moutarde"
+          }
+        },
+        {
+          "id": "foodsub-sauces-tomato",
+          "names": {
+            "ar": "صلصات ومعجون الطماطم",
+            "en": "Tomato sauces and paste",
+            "fr": "Sauces et concentré de tomate"
+          }
+        },
+        {
+          "id": "foodsub-sauces-other",
+          "names": {
+            "ar": "صلصات ومنكهات أخرى",
+            "en": "Other sauces and condiments",
+            "fr": "Autres sauces et condiments"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-sweeteners",
+      "names": {
+        "ar": "المحليات والمربى",
+        "en": "Sweeteners and spreads",
+        "fr": "Édulcorants et confitures"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-sweeteners-sugar",
+          "names": {
+            "ar": "السكر",
+            "en": "Sugar",
+            "fr": "Sucre"
+          }
+        },
+        {
+          "id": "foodsub-sweeteners-honey",
+          "names": {
+            "ar": "العسل",
+            "en": "Honey",
+            "fr": "Miel"
+          }
+        },
+        {
+          "id": "foodsub-sweeteners-jam",
+          "names": {
+            "ar": "المربى",
+            "en": "Jam",
+            "fr": "Confitures"
+          }
+        },
+        {
+          "id": "foodsub-sweeteners-syrup",
+          "names": {
+            "ar": "الشراب المركز",
+            "en": "Syrups",
+            "fr": "Sirops"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-beverages",
+      "names": {
+        "ar": "المشروبات",
+        "en": "Beverages",
+        "fr": "Boissons"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-beverages-coffee",
+          "names": {
+            "ar": "القهوة",
+            "en": "Coffee",
+            "fr": "Café"
+          }
+        },
+        {
+          "id": "foodsub-beverages-tea",
+          "names": {
+            "ar": "الشاي",
+            "en": "Tea",
+            "fr": "Thé"
+          }
+        },
+        {
+          "id": "foodsub-beverages-juice",
+          "names": {
+            "ar": "العصائر",
+            "en": "Juices",
+            "fr": "Jus"
+          }
+        },
+        {
+          "id": "foodsub-beverages-water",
+          "names": {
+            "ar": "المياه",
+            "en": "Water",
+            "fr": "Eaux"
+          }
+        },
+        {
+          "id": "foodsub-beverages-other",
+          "names": {
+            "ar": "مشروبات أخرى",
+            "en": "Other beverages",
+            "fr": "Autres boissons"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-mushrooms",
+      "names": {
+        "ar": "الفطريات",
+        "en": "Mushrooms and fungi",
+        "fr": "Champignons"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-mushrooms-edible",
+          "names": {
+            "ar": "الفطريات الصالحة للأكل",
+            "en": "Edible mushrooms",
+            "fr": "Champignons comestibles"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-baking",
+      "names": {
+        "ar": "مكونات الخَبز والحلويات",
+        "en": "Baking and dessert ingredients",
+        "fr": "Ingrédients de pâtisserie"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-baking-yeast",
+          "names": {
+            "ar": "الخميرة ومواد الرفع",
+            "en": "Yeast and raising agents",
+            "fr": "Levures et agents levants"
+          }
+        },
+        {
+          "id": "foodsub-baking-cocoa",
+          "names": {
+            "ar": "الكاكاو والشوكولاتة",
+            "en": "Cocoa and chocolate",
+            "fr": "Cacao et chocolat"
+          }
+        },
+        {
+          "id": "foodsub-baking-other",
+          "names": {
+            "ar": "مكونات الحلويات الأخرى",
+            "en": "Other baking ingredients",
+            "fr": "Autres ingrédients de pâtisserie"
+          }
+        }
+      ]
+    },
+    {
+      "id": "foodcat-other",
+      "names": {
+        "ar": "مواد غذائية أخرى",
+        "en": "Other groceries",
+        "fr": "Autres produits alimentaires"
+      },
+      "subcategories": [
+        {
+          "id": "foodsub-other-general",
+          "names": {
+            "ar": "أخرى",
+            "en": "Other",
+            "fr": "Autres"
+          }
+        }
+      ]
+    }
+  ]
+}
