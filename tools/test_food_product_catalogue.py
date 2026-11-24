@@ -16,7 +16,6 @@ from tools.build_food_product_catalogue import (
     room_ingredient_id,
     _clean_english_ingredient,
     ingredient_name_variants,
-    assign_stable_product_ids,
 )
 
 
