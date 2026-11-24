@@ -1123,8 +1123,8 @@ def build_catalogue(
                     "existingCategoryId": existing["categoryId"],
                     "incomingCategoryId": product["categoryId"],
                 })
-                existing["categoryId"] = "other"
-                existing["subcategoryId"] = None
+                existing["categoryId"] = "foodcat-other"
+                existing["subcategoryId"] = "foodsub-other-general"
             for lang in ("ar", "en", "fr"):
                 current_name = existing["names"].get(lang)
                 other_name = product["names"].get(lang)
@@ -1142,8 +1142,6 @@ def build_catalogue(
             existing["sourceMappings"].update(product["sourceMappings"])
             for legacy_id in product["recipeIngredientIds"]:
                 matched_ids[legacy_id] = existing["id"]
-            continue
-            collisions.append({"type": "english-name", "value": english_key})
             continue
         by_id[product_id] = product
         if english_key:
@@ -1256,7 +1254,7 @@ def build_catalogue(
             "ambiguousRecipeGroups": len(ambiguous),
             "foodOnMatchedGroups": matching_methods["foodon_exact"] + matching_methods["foodon_exact_to_off"],
             "foodOnAmbiguousGroups": matching_methods["foodon_ambiguous"] + matching_methods["foodon_ambiguous_off_link"],
-        "offMatchCoveragePercent": round(
+            "offMatchCoveragePercent": round(
             100.0 * sum(
                 count for method, count in matching_methods.items()
                 if method.startswith("exact_")
