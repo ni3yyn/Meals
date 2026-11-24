@@ -303,6 +303,8 @@ def build_foodon_indexes(foodon: dict[str, dict[str, Any]]) -> tuple[dict[str, s
         ancestor_cache[item_id] = result
         return result
 
+    for item_id in foodon:
+        ancestors(item_id)
     return label_index, ancestor_cache
 
 
