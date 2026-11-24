@@ -1302,6 +1302,17 @@ def apply_machine_name_translations(
     ignored_existing: Counter[str] = Counter()
     stale: list[dict[str, str]] = []
     invalid: list[dict[str, str]] = []
+    english_name_owners: dict[str, set[str]] = defaultdict(set)
+    english_name_conflicts: list[dict[str, Any]] = []
+
+    # Reserve every source-backed English name before applying any machine output.
+    # This prevents an early translation from stealing a name owned by a later
+    # product in the catalogue's deterministic iteration order.
+    for product in products:
+        product_id = str(product.get("id") or "")
+        english_name = normalize_label(str((product.get("names") or {}).get("en") or ""))
+        if english_name:
+            english_name_owners[english_name].add(product_id)
 
     for product in products:
         product_id = str(product.get("id") or "")
@@ -1340,6 +1351,27 @@ def apply_machine_name_translations(
                 })
                 continue
 
+            if target_language == "en":
+                english_key = normalize_label(translated_text)
+                conflicting_ids = sorted(
+                    owner_id
+                    for owner_id in english_name_owners.get(english_key, set())
+                    if owner_id != product_id
+                )
+                if conflicting_ids:
+                    # Keep source-backed canonical names unique. We retain the
+                    # translation in the UUID-keyed sidecar for audit/resume, but
+                    # do not publish it as a second canonical English name.
+                    english_name_conflicts.append({
+                        "id": product_id,
+                        "language": target_language,
+                        "text": translated_text,
+                        "normalizedName": english_key,
+                        "conflictingProductIds": conflicting_ids[:20],
+                    })
+                    continue
+                english_name_owners[english_key].add(product_id)
+
             names[target_language] = translated_text
             applied[target_language] += 1
 
@@ -1348,6 +1380,8 @@ def apply_machine_name_translations(
         "appliedByLanguage": {lang: applied[lang] for lang in ("ar", "en", "fr")},
         "totalApplied": sum(applied.values()),
         "ignoredExistingSourceNamesByLanguage": {lang: ignored_existing[lang] for lang in ("ar", "en", "fr")},
+        "englishNameConflictCount": len(english_name_conflicts),
+        "englishNameConflicts": english_name_conflicts[:100],
         "staleCount": len(stale),
         "staleEntries": stale[:100],
         "invalidCount": len(invalid),
