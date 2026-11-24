@@ -4,19 +4,19 @@ This pipeline creates a **generic food identity catalogue** for recipe ingredien
 
 ## Generated files
 
-- \`data/products/catalogue.json\`: canonical food items, multilingual names, aliases, unit support and Midati category IDs.
-- \`data/products/recipe-ingredient-map.json\`: explicit map from every existing Room recipe ingredient ID to one canonical food-item ID.
-- \`data/products/build-audit.json\`: source counts, matching coverage, unresolved/ambiguous recipe matches, category conflicts and missing optional data.
+- `data/products/catalogue.json`: canonical food items, multilingual names, aliases, unit support and Midati category IDs.
+- `data/products/recipe-ingredient-map.json`: explicit map from every existing Room recipe ingredient ID to one canonical food-item ID.
+- `data/products/build-audit.json`: source counts, matching coverage, unresolved/ambiguous recipe matches, category conflicts and missing optional data.
 
-The workflow commits these generated files to \`main\`. It runs after the combined recipe catalogue changes, when the builder/tests/workflow change, or when manually dispatched.
+The workflow commits these generated files to `main`. It runs after the combined recipe catalogue changes, when the builder/tests/workflow change, or when manually dispatched.
 
 ## Food item shape
 
 Each product record is a generic food identity:
 
-\`\`\`json
+```json
 {
-  "id": "orc-ing-unitools-...",
+  "id": "3a4f0f2a-....-....-....-............",
   "names": {
     "ar": "حمص",
     "en": "Chickpeas",
@@ -37,14 +37,14 @@ Each product record is a generic food identity:
   "sourceMappings": {},
   "recipeIngredientIds": ["orc-ing-unitools-..."]
 }
-\`\`\`
+```
 
-- \`id\` is opaque and stable, never a lowercase English label. When an item matches recipe usage, the catalogue reuses one existing recipe ingredient ID and maps every other legacy ID for that same exact item to it. New taxonomy-only items receive deterministic UUIDv5 IDs.
-- \`names\` and \`aliases\` are multilingual. Missing source translations stay null/empty rather than being guessed.
-- \`acceptedUnits\` contains units already used by recipes when observed. Otherwise, it gets a conservative category-based default set.
-- \`quantity\` is reserved for a future market-product/package variant. It is not the recipe quantity.
-- \`imageUrl\`, \`countryOfOrigin\` and \`nutrition\` remain null unless an item-specific source supports them. The two taxonomy files used here do not provide reliable generic product images or complete per-food nutrition panels.
-- \`sourceMappings\` preserves source identifiers/codes without using source IDs as Midati's public identity.
+- `id` is a persistent opaque UUIDv4, independent of display names and language. The generated identity registry remembers source-to-UUID assignments between builds.
+- `names` and `aliases` are multilingual. Missing source translations stay null/empty rather than being guessed.
+- `acceptedUnits` contains units already used by recipes when observed. Otherwise, it gets a conservative category-based default set.
+- `quantity` is reserved for a future market-product/package variant. It is not the recipe quantity.
+- `imageUrl`, `countryOfOrigin` and `nutrition` remain null unless an item-specific source supports them. The two taxonomy files used here do not provide reliable generic product images or complete per-food nutrition panels.
+- `sourceMappings` preserves source identifiers/codes without using source IDs as Midati's public identity.
 
 ## Matching and duplicate policy
 
@@ -55,17 +55,17 @@ Each product record is a generic food identity:
 5. Do not fuzzy-merge ambiguous terms. An ambiguous match becomes a recipe-derived item and is listed in the audit for review.
 6. Fail the build if any existing recipe ingredient ID is unmapped, or if duplicate IDs or normalized English names remain.
 
-This stage produces the crosswalk but does not rewrite the installed Room database or migrate pantry, shopping, price-observation or plan references. That integration must consume the mapping and migrate every foreign-key-like reference transactionally in a later change.
+This stage produces the crosswalk but does not rewrite the installed Room database or migrate pantry, shopping, price-observation or plan references. A later migration must update all related foreign-key references transactionally, then the app can start using the new UUIDs.
 
 ## Sources and reproducibility
 
 ### Open Food Facts ingredients taxonomy
 
-Pinned to commit \`f5abb0a0ca8ae5702f3e192219511adf211b55ee\`, file \`taxonomies/food/ingredients.txt\`. It provides multilingual terms, alternate names, parent relationships and selected external codes. The source format and taxonomy are documented in the [Open Food Facts ingredients taxonomy](https://github.com/openfoodfacts/openfoodfacts-server/blob/main/taxonomies/food/ingredients.txt).
+Pinned to commit `f5abb0a0ca8ae5702f3e192219511adf211b55ee`, file `taxonomies/food/ingredients.txt`. It provides multilingual terms, alternate names, parent relationships and selected external codes. The source format and taxonomy are documented in the [Open Food Facts ingredients taxonomy](https://github.com/openfoodfacts/openfoodfacts-server/blob/main/taxonomies/food/ingredients.txt).
 
 ### FoodOn
 
-Pinned to commit \`8a27493346a122e86ac1748aac24199d5af69166\`, file \`foodon-base.owl\`. The builder extracts FOODON class IDs, English labels, synonyms and subclass ancestry to enrich classification and retain semantic references. FoodOn describes raw and processed food materials/products; see the [FoodOn project](https://github.com/FoodOntology/foodon).
+Pinned to commit `8a27493346a122e86ac1748aac24199d5af69166`, file `foodon-base.owl`. The builder extracts FOODON class IDs, English labels, synonyms and subclass ancestry to enrich classification and retain semantic references. FoodOn describes raw and processed food materials/products; see the [FoodOn project](https://github.com/FoodOntology/foodon).
 
 The workflow downloads both files by immutable commit and verifies their Git blob SHA before parsing. GitHub Actions caches these source files, so subsequent runs avoid repeat downloads. The datasets are not copied into this repository.
 
