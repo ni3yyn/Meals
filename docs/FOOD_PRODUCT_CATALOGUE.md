@@ -24,8 +24,8 @@ Each product record is a generic food identity:
   },
   "acceptedUnits": ["g", "kg"],
   "imageUrl": null,
-  "categoryId": "legumes",
-  "subcategoryId": "chickpeas",
+  "categoryId": "foodcat-legumes",
+  "subcategoryId": "foodsub-legumes-chickpeas",
   "aliases": {
     "ar": [],
     "en": ["chickpea"],
