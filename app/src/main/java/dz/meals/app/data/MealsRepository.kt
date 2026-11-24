@@ -434,11 +434,11 @@ class MealsRepository(context: Context) {
                                 !it.isApproximate && it.quantityBase != null
                         }
                         .sortedBy { it.id }
-                    stocks.forEach { stock ->
-                        if (remaining <= 0.0) return@forEach
-                        val available = stock.quantityBase ?: return@forEach
+                    for (stock in stocks) {
+                        if (remaining <= 0.0) break
+                        val available = stock.quantityBase ?: continue
                         val deducted = exactPantryDeduction(remaining, available, false)
-                        if (deducted <= 0.0) return@forEach
+                        if (deducted <= 0.0) continue
                         dao.upsertPantryItem(
                             stock.copy(quantityBase = (available - deducted).coerceAtLeast(0.0))
                         )
