@@ -9,6 +9,7 @@ from tools.build_food_product_catalogue import (
     assign_stable_product_ids,
     build_catalogue,
     category_for,
+    classify_food_category,
     normalize_label,
     normalize_recipe_unit,
     parse_foodon_owl,
@@ -90,6 +91,43 @@ class FoodCatalogueParserTests(unittest.TestCase):
             category_for(["canned chickpeas", "chickpeas", "canned legumes"]),
             ("canned_preserved", "canned_legumes"),
         )
+
+    def test_classifier_prefers_specific_food_names_over_keyword_collisions(self):
+        self.assertEqual(category_for(["3% fat reduced cocoa powder"]), ("baking", "cocoa"))
+        self.assertEqual(category_for(["vegetable oil"]), ("oils_fats", "cooking_oils"))
+        self.assertEqual(category_for(["vegetable fat"]), ("oils_fats", "cooking_oils"))
+        self.assertEqual(category_for(["cocoa butter"]), ("oils_fats", None))
+        self.assertEqual(category_for(["Cardamom"]), ("spices", "whole_spices"))
+        self.assertEqual(category_for(["Ground cardamom"]), ("spices", "ground_spices"))
+        self.assertEqual(category_for(["white chocolate"]), ("baking", "cocoa"))
+        self.assertEqual(category_for(["milk chocolate"]), ("baking", "cocoa"))
+        self.assertEqual(category_for(["chilli powder"]), ("spices", "ground_spices"))
+        self.assertEqual(category_for(["bean sprouts"]), ("vegetables", "other"))
+        self.assertEqual(category_for(["seaweed"]), ("seafood", "preserved"))
+        self.assertEqual(category_for(["Tofu"]), ("legumes", None))
+        self.assertEqual(category_for(["Chicken sausage"]), ("meat_offal", "processed_meat"))
+        self.assertEqual(category_for(["apple juice"]), ("beverages", "juice"))
+        self.assertEqual(category_for(["tapioca syrup"]), ("sweeteners", "syrup"))
+        self.assertEqual(category_for(["sugar beet"]), ("vegetables", "root_tubers"))
+        self.assertEqual(category_for(["tomatoes"]), ("vegetables", "fruit_vegetables"))
+        self.assertEqual(category_for(["potatoes"]), ("vegetables", "root_tubers"))
+        self.assertEqual(category_for(["berries"]), ("fruits", "berries"))
+        self.assertEqual(category_for(["cabbages"]), ("vegetables", "leafy_vegetables"))
+        self.assertEqual(category_for(["green beans"]), ("vegetables", "fruit_vegetables"))
+        self.assertEqual(category_for(["black beans"]), ("legumes", "beans"))
+        self.assertEqual(category_for(["coriander leaves"]), ("herbs", "fresh_herbs"))
+        self.assertEqual(category_for(["coriander"]), ("spices", "whole_spices"))
+        self.assertEqual(category_for(["coriander seeds"]), ("spices", "whole_spices"))
+        self.assertEqual(category_for(["ground coriander"]), ("spices", "ground_spices"))
+
+    def test_classifier_keeps_preferred_label_ahead_of_conflicting_synonyms(self):
+        category, subcategory, decision = classify_food_category(
+            ["cardamom"],
+            supporting_labels=["tree nut", "mixed nuts"],
+        )
+        self.assertEqual((category, subcategory), ("spices", "whole_spices"))
+        self.assertEqual(decision["method"], "preferred_food_label")
+        self.assertEqual(decision["confidence"], "high")
 
     def test_normalization_handles_arabic_diacritics_and_punctuation(self):
         self.assertEqual(normalize_label("  الطَّمَاطِم! "), "الطماطم")

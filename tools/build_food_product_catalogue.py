@@ -47,6 +47,7 @@ XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
 CATEGORY_PATH = ROOT / "data" / "products" / "categories.json"
 CURATED_ITEMS_PATH = ROOT / "data" / "products" / "curated-food-items.json"
+CATEGORY_OVERRIDES_PATH = ROOT / "data" / "products" / "category-overrides.json"
 TRANSLATIONS_PATH = ROOT / "data" / "products" / "translations.json"
 CATEGORY_CATALOGUE = json.loads(CATEGORY_PATH.read_text(encoding="utf-8"))
 CATEGORY_DATA = CATEGORY_CATALOGUE.get("categories") or []
@@ -104,6 +105,7 @@ SUBCATEGORY_IDS = {
     ("seafood", "crustaceans"): "foodsub-seafood-crustaceans",
     ("seafood", "molluscs"): "foodsub-seafood-molluscs",
     ("seafood", "shellfish"): "foodsub-seafood-crustaceans",
+    ("seafood", "preserved"): "foodsub-seafood-preserved",
     ("seafood", None): "foodsub-seafood-fish",
     ("legumes", "chickpeas"): "foodsub-legumes-chickpeas",
     ("legumes", "lentils"): "foodsub-legumes-lentils",
@@ -147,6 +149,8 @@ SUBCATEGORY_IDS = {
     ("sweeteners", "jam"): "foodsub-sweeteners-jam",
     ("sweeteners", "syrup"): "foodsub-sweeteners-syrup",
     ("sweeteners", None): "foodsub-sweeteners-sugar",
+    ("eggs", "hen"): "foodsub-eggs-hen",
+    ("eggs", "other"): "foodsub-eggs-other",
     ("eggs", None): "foodsub-eggs-hen",
     ("mushrooms", None): "foodsub-mushrooms-edible",
     ("frozen", "frozen_vegetables"): "foodsub-frozen-vegetables",
@@ -164,18 +168,49 @@ SUBCATEGORY_IDS = {
     ("other", None): "foodsub-other-general",
 }
 
-def canonical_category_ids(category_slug: str, subcategory_slug: str | None) -> tuple[str, str | None]:
+CATEGORY_DEFAULT_SUBCATEGORIES = {
+    "fruits": None,
+    "vegetables": None,
+    "dairy": None,
+    "meat_offal": "red_meat",
+    "poultry": None,
+    "seafood": "fish",
+    "legumes": None,
+    "canned_preserved": None,
+    "grains_cereals": None,
+    "bakery_pasta": None,
+    "nuts_seeds": "seeds",
+    "oils_fats": None,
+    "spices": "ground_spices",
+    "herbs": None,
+    "sauces_condiments": None,
+    "sweeteners": None,
+    "eggs": None,
+    "mushrooms": None,
+    "frozen": None,
+    "baking": None,
+    "beverages": None,
+    "other": None,
+}
+
+def canonical_category_ids(category_slug: str, subcategory_slug: str | None) -> tuple[str, str]:
     category_id = CATEGORY_ROOT_IDS.get(category_slug, CATEGORY_ROOT_IDS["other"])
-    subcategory_id = SUBCATEGORY_IDS.get((category_slug, subcategory_slug))
-    if subcategory_id is None:
-        subcategory_id = SUBCATEGORY_IDS.get((category_slug, None))
+    selected_subcategory = subcategory_slug
+    if selected_subcategory is None:
+        selected_subcategory = CATEGORY_DEFAULT_SUBCATEGORIES.get(category_slug)
+    subcategory_id = SUBCATEGORY_IDS.get((category_slug, selected_subcategory))
     valid_category = next((item for item in CATEGORY_DATA if item.get("id") == category_id), None)
     valid_subcategories = {
         child.get("id")
         for child in (valid_category or {}).get("subcategories", [])
     }
     if subcategory_id not in valid_subcategories:
-        subcategory_id = None
+        fallback_slug = CATEGORY_DEFAULT_SUBCATEGORIES.get(category_slug)
+        subcategory_id = SUBCATEGORY_IDS.get((category_slug, fallback_slug))
+    if subcategory_id not in valid_subcategories:
+        raise RuntimeError(
+            f"No valid canonical subcategory for taxonomy category {category_slug!r}."
+        )
     return category_id, subcategory_id
 
 
@@ -405,183 +440,469 @@ def build_foodon_indexes(foodon: dict[str, dict[str, Any]]) -> tuple[dict[str, s
     return label_index, ancestor_cache
 
 
-def category_for(names: Iterable[str]) -> tuple[str, str | None]:
-    text = " ".join(str(value).casefold() for value in names if value)
-    compact = normalize_label(text)
+def _label_has(label: str, *terms: str) -> bool:
+    """Match whole normalized words/phrases, never arbitrary substrings."""
+    normalized = " " + normalize_label(label) + " "
+    for term in terms:
+        key = normalize_label(term)
+        if not key:
+            continue
+        candidates = {key}
+        # Generate common English plural forms for the final word of the
+        # phrase. Arabic labels remain exact after diacritic normalization.
+        parts = key.split()
+        last_word = parts[-1]
+        prefix = " ".join(parts[:-1])
+        plural_forms: set[str] = set()
+        if re.fullmatch(r"[a-z]+", last_word):
+            if last_word.endswith("ies") and len(last_word) > 3:
+                plural_forms.add(last_word[:-3] + "y")
+            if last_word.endswith("y") and len(last_word) > 1 and last_word[-2] not in "aeiou":
+                plural_forms.add(last_word[:-1] + "ies")
+            elif last_word.endswith(("s", "x", "z", "ch", "sh")):
+                plural_forms.add(last_word + "es")
+            elif last_word.endswith(("f", "fe")):
+                plural_forms.add(last_word[:-2] + "ves" if last_word.endswith("fe") else last_word[:-1] + "ves")
+                plural_forms.add(last_word + "s")
+            elif last_word.endswith("o"):
+                plural_forms.add(last_word + "es")
+                plural_forms.add(last_word + "s")
+            else:
+                plural_forms.add(last_word + "s")
+            candidates.update(
+                (prefix + " " + plural).strip()
+                for plural in plural_forms
+            )
+        if any((" " + candidate + " ") in normalized for candidate in candidates):
+            return True
+    return False
 
-    def has(*terms: str) -> bool:
-        return any(normalize_label(term) in compact for term in terms)
 
-    canned = has("canned", "tinned", "in conserve", "en conserve", "appertized", "preserved", "conserva", "conserve", "معلب")
-    seafood = has("fish", "tuna", "sardine", "anchovy", "salmon", "shrimp", "prawn", "seafood", "shellfish", "mollusc", "mussel", "oyster", "squid", "octopus", "crab", "lobster", "سمك", "تونة", "سردين", "جمبري")
-    legumes = has("chickpea", "garbanzo", "lentil", "pulse", "legume", "dried bean", "kidney bean", "white bean", "haricot", "حمص", "عدس", "فاصولياء", "لوبيا")
-    vegetables = has("vegetable", "tomato", "potato", "onion", "carrot", "pepper", "courgette", "zucchini", "cabbage", "spinach", "lettuce", "eggplant", "aubergine", "green bean", "pea pod", "خضروات", "بطاطا", "طماطم", "بصل", "جزر")
-    fruit = has("fruit", "apple", "banana", "orange", "lemon", "date", "grape", "berry", "mango", "pear", "peach", "apricot", "تمر", "تفاح", "موز", "برتقال")
-    dairy = has("milk", "lait", "yogurt", "yoghurt", "yoghourt", "yaourt", "raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "cream", "cheese", "fromage", "butter", "beurre", "حليب", "لبن", "رايب", "زبادي", "جبن")
-    meat = has("meat", "beef", "lamb", "mutton", "veal", "chicken", "turkey", "duck", "pork", "offal", "liver", "kidney", "heart", "tripe", "tongue", "لحوم", "دجاج", "كبد", "قلب")
-    poultry = has("chicken", "turkey", "duck", "poultry", "دجاج", "ديك رومي")
-    grains = has("grain", "cereal", "wheat", "semolina", "semoule", "flour", "rice", "oat", "barley", "cornmeal", "couscous", "سميد", "فرينة", "دقيق", "أرز")
-    nuts = has("nut", "almond", "walnut", "hazelnut", "pistachio", "peanut", "seed", "sesame", "لوز", "جوز", "بذور")
-    spices = has("spice", "peppercorn", "cumin", "coriander seed", "paprika", "turmeric", "cinnamon", "clove", "saffron", "بهارات", "كمون", "فلفل أسود", "قرفة")
-    herbs = has("herb", "parsley", "coriander leaf", "cilantro", "mint", "thyme", "basil", "rosemary", "معدنوس", "قصبر", "نعناع")
-    oils = has("oil", "fat", "margarine", "olive oil", "sunflower oil", "زيت", "سمن", "مارغرين")
-    sauces = has("sauce", "mayonnaise", "ketchup", "mustard", "harissa", "paste", "condiment", "vinegar", "صلصة", "مايونيز", "خردل", "هريسة")
-    sweeteners = has("sugar", "honey", "syrup", "molasses", "jam", "sweetener", "عسل", "سكر", "مربى")
-    eggs = has("egg", "بيض")
-    mushrooms = has("mushroom", "fungus", "truffle", "فطر")
-    frozen = has("frozen", "deep frozen", "surgelé", "مجمد")
-    baking = has("baking powder", "baking soda", "yeast", "cocoa", "chocolate", "vanilla extract", "gelatin", "خميرة", "كاكاو")
-    beverages = has("beverage", "drink", "juice", "coffee", "tea", "water", "مشروب", "عصير", "قهوة", "شاي")
+def _food_type_hints(label: str) -> dict[str, bool]:
+    """Detect broad food families from one preferred label, not merged aliases."""
+    return {
+        "seafood": _label_has(
+            label, "fish", "tuna", "sardine", "anchovy", "salmon", "shrimp",
+            "prawn", "seafood", "shellfish", "mollusc", "mussel", "oyster",
+            "squid", "octopus", "crab", "lobster", "clam", "scallop",
+            "herring", "cod", "seaweed", "nori", "kombu", "wakame",
+            "سمك", "تونة", "سردين", "جمبري", "طحالب بحرية"
+        ),
+        "legumes": (
+            _label_has(
+                label, "chickpea", "garbanzo", "lentil", "pulse", "legume",
+                "bean", "beans", "haricot", "fava bean", "broad bean",
+                "split pea", "mung bean", "soybean", "soy bean",
+                "فول", "حمص", "عدس", "فاصولياء", "لوبيا", "بازلاء"
+            )
+            and not _label_has(
+                label, "green bean", "string bean", "runner bean",
+                "yard long bean", "yard-long bean", "bean sprout", "sprout"
+            )
+        ),
+        "vegetables": _label_has(
+            label, "vegetable", "tomato", "potato", "onion", "carrot", "pepper",
+            "courgette", "zucchini", "cabbage", "spinach", "lettuce", "eggplant",
+            "aubergine", "green bean", "bean sprout", "sprout", "okra", "beet",
+            "radish", "turnip", "sweet potato", "cassava", "taro", "yam",
+            "cucumber", "pumpkin", "squash", "asparagus", "broccoli", "celery",
+            "garlic", "leek", "bok choy", "collard", "kale", "chard",
+            "سبانخ", "بطاطا", "طماطم", "بصل", "جزر", "فلفل", "كرنب", "ملفوف",
+            "خيار", "شمندر", "فجل", "بامية", "ثوم", "قرع", "كسافا"
+        ),
+        "fruit": _label_has(
+            label, "fruit", "apple", "banana", "orange", "lemon", "lime", "date",
+            "grape", "berry", "mango", "pear", "peach", "apricot", "cherry",
+            "plum", "pineapple", "papaya", "kiwi", "guanabana", "soursop",
+            "lulo", "cranberry", "barberry", "prune", "تمر", "تفاح", "موز",
+            "برتقال", "ليمون", "كرز", "برقوق", "توت"
+        ),
+        "meat": _label_has(
+            label, "meat", "beef", "lamb", "mutton", "veal", "pork", "bison",
+            "rabbit", "offal", "liver", "kidney", "heart", "tripe", "tongue",
+            "sausage", "bacon", "ham", "brisket", "sirloin", "ribs", "meatball",
+            "لحم", "كبد", "قلب", "أرنب"
+        ),
+    }
 
-    if frozen:
-        if has("vegetable", "vegetables"):
-            return "frozen", "frozen_vegetables"
-        if fruit:
-            return "frozen", "frozen_fruit"
-        if seafood or meat:
-            return "frozen", "frozen_meat_fish"
-        return "frozen", None
 
-    if canned:
-        if seafood:
-            return "canned_preserved", "canned_seafood"
-        if legumes:
-            return "canned_preserved", "canned_legumes"
-        if fruit:
-            return "canned_preserved", "canned_fruit"
-        if vegetables:
-            return "canned_preserved", "canned_vegetables"
-        return "canned_preserved", "pickled_preserved"
+def _classify_food_label(label: str) -> tuple[str, str | None, str]:
+    """Classify one preferred food label using specific, ordered culinary rules."""
+    if not str(label or "").strip():
+        return "other", None, "empty_preferred_label"
 
-    # Commercially prepared sauces/pastes must not be misfiled as raw produce.
-    if sauces:
-        if has("mayonnaise", "مايونيز"):
-            return "sauces_condiments", "mayonnaise"
-        if has("ketchup", "mustard", "خردل"):
-            return "sauces_condiments", "ketchup_mustard"
-        if has("tomato paste", "tomato sauce", "paste", "معجون الطماطم"):
-            return "sauces_condiments", "tomato_sauce"
-        return "sauces_condiments", None
+    has = lambda *terms: _label_has(label, *terms)
+    hints = _food_type_hints(label)
 
-    if dairy:
-        if has("cheese", "fromage", "جبن"):
-            return "dairy", "cheese"
-        # Lben and raib are separate Algerian fermented dairy foods.
-        if has("raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "لبن", "اللبن", "رايب", "الرايب"):
-            return "dairy", "fermented_dairy"
-        if has("yogurt", "yoghurt", "yoghourt", "yaourt", "زبادي", "yogurt drink"):
-            return "dairy", "yogurt"
-        if has("cream", "butter", "beurre"):
-            return "dairy", "cream_butter"
-        if has("milk", "lait", "حليب"):
-            return "dairy", "milk"
-        return "dairy", None
+    # Frozen and preserved forms are handled before their underlying food
+    # families so "frozen spinach" and "pickled herring" retain their form.
+    if has("frozen", "deep frozen", "surgelé", "congelé", "مجمد", "مجمّدة"):
+        if hints["seafood"] or hints["meat"]:
+            return "frozen", "frozen_meat_fish", "frozen_animal_food"
+        if hints["fruit"]:
+            return "frozen", "frozen_fruit", "frozen_fruit"
+        if hints["vegetables"]:
+            return "frozen", "frozen_vegetables", "frozen_vegetable"
+        return "frozen", None, "frozen_other"
 
-    if seafood:
-        if has("shrimp", "prawn", "crab", "lobster", "shellfish", "crustacean"):
-            return "seafood", "crustaceans"
-        if has("mussel", "oyster", "squid", "octopus", "mollusc", "clam"):
-            return "seafood", "molluscs"
-        return "seafood", "fish"
+    if has(
+        "canned", "tinned", "in brine", "brined", "pickled", "preserved",
+        "in conserve", "en conserve", "appertized", "conserva", "conserve",
+        "معلب", "مخلل", "محفوظ", "مخلّلة"
+    ):
+        if hints["seafood"]:
+            return "canned_preserved", "canned_seafood", "preserved_seafood"
+        if hints["legumes"]:
+            return "canned_preserved", "canned_legumes", "preserved_legume"
+        if hints["fruit"]:
+            return "canned_preserved", "canned_fruit", "preserved_fruit"
+        if hints["vegetables"]:
+            return "canned_preserved", "canned_vegetables", "preserved_vegetable"
+        return "canned_preserved", "pickled_preserved", "preserved_other"
 
-    if poultry:
-        if has("turkey", "ديك رومي"):
-            return "poultry", "turkey"
-        if has("chicken", "دجاج"):
-            return "poultry", "chicken"
-        return "poultry", None
+    # Cocoa butter is a fat; chocolate/cocoa powders and confectionery are
+    # baking ingredients. These specific cases must precede broad "fat",
+    # "butter", "paste" and dairy rules.
+    if has("cocoa butter", "cacao butter", "زبدة الكاكاو"):
+        return "oils_fats", None, "cocoa_butter_fat"
+    if has("chocolate ice cream", "ice cream", "glace", "gelato", "sorbet"):
+        return "frozen", None, "frozen_dessert"
+    if has("chocolate sauce", "cocoa sauce", "صلصة الشوكولاتة", "صلصة الكاكاو"):
+        return "sauces_condiments", None, "chocolate_or_cocoa_sauce"
+    if has("cocoa spread", "chocolate spread", "hazelnut and cocoa spread", "كريمة الكاكاو"):
+        return "sweeteners", "jam", "sweet_chocolate_spread"
+    if has(
+        "cocoa", "cacao", "chocolate", "cocoa powder", "cacao powder",
+        "baking powder", "baking soda", "bicarbonate of soda", "bicarbonate",
+        "agar agar", "gelatin", "gelatine", "vanilla extract", "raising agent",
+        "leavening agent", "yeast", "خميرة", "كاكاو", "شوكولاتة", "أجار"
+    ):
+        if has("baking powder", "baking soda", "bicarbonate", "yeast", "raising agent", "خميرة"):
+            return "baking", "yeast", "baking_leavening"
+        return "baking", "cocoa", "cocoa_or_confectionery"
 
-    if meat:
-        if has("liver", "kidney", "heart", "tripe", "tongue", "offal", "كبد", "قلب"):
-            return "meat_offal", "offal"
-        if has("sausage", "bacon", "ham", "processed meat"):
-            return "meat_offal", "processed_meat"
-        return "meat_offal", "red_meat"
+    # Prepared condiments are distinct from fresh produce and raw ingredients.
+    if has("mayonnaise", "mayo", "مايونيز"):
+        return "sauces_condiments", "mayonnaise", "mayonnaise"
+    if has("ketchup", "mustard", "خردل", "كاتشب"):
+        return "sauces_condiments", "ketchup_mustard", "ketchup_or_mustard"
+    if has("tomato paste", "tomato sauce", "معجون الطماطم", "صلصة الطماطم"):
+        return "sauces_condiments", "tomato_sauce", "tomato_condiment"
+    if has(
+        "sauce", "paste", "condiment", "dressing", "marinade", "chutney",
+        "relish", "vinegar", "harissa", "salsa", "zhug", "chimichurri",
+        "gochujang", "doubanjiang", "amba", "chamoy", "kecap", "soy sauce",
+        "bouillon", "stock cube", "seasoning sauce", "صلصة", "معجون",
+        "هريسة", "خل", "تتبيلة"
+    ):
+        return "sauces_condiments", None, "prepared_sauce_or_condiment"
 
-    if legumes:
-        if has("chickpea", "garbanzo", "حمص"):
-            return "legumes", "chickpeas"
-        if has("lentil", "عدس"):
-            return "legumes", "lentils"
-        if has("pea", "بازلاء", "fava"):
-            return "legumes", "peas"
-        return "legumes", "beans"
+    # Beverages precede fruit/vegetable rules so juice and drinks are not
+    # misclassified as their raw fruit ingredients.
+    if has("coffee", "قهوة"):
+        return "beverages", "coffee", "coffee"
+    if has("tea", "matcha", "شاي"):
+        return "beverages", "tea", "tea"
+    if has("juice", "nectar", "عصير"):
+        return "beverages", "juice", "juice"
+    if has("water", "ماء"):
+        return "beverages", "water", "water"
+    if has("beverage", "drink", "مشروب"):
+        return "beverages", None, "other_beverage"
 
-    if vegetables:
-        if has("potato", "carrot", "beet", "radish", "turnip", "sweet potato", "بطاطا", "جزر"):
-            return "vegetables", "root_tubers"
-        if has("onion", "garlic", "shallot", "leek", "بصل", "ثوم"):
-            return "vegetables", "bulb_vegetables"
-        if has("spinach", "lettuce", "cabbage", "kale", "chard", "parsley leaf", "سبانخ"):
-            return "vegetables", "leafy_vegetables"
-        return "vegetables", "fruit_vegetables"
-
-    if fruit:
-        if has("lemon", "lime", "orange", "citrus", "grapefruit", "برتقال", "ليمون"):
-            return "fruits", "citrus"
-        if has("berry", "strawberry", "raspberry", "blueberry"):
-            return "fruits", "berries"
-        if has("date", "raisin", "dried fruit", "تمر", "زبيب"):
-            return "fruits", "dried_fruits"
-        if has("peach", "plum", "apricot", "cherry", "مشمش"):
-            return "fruits", "stone_fruits"
-        if has("mango", "pineapple", "papaya", "banana", "kiwi"):
-            return "fruits", "tropical_fruits"
-        return "fruits", None
-
-    if nuts:
-        if has("peanut", "فول سوداني"):
-            return "nuts_seeds", "peanuts"
-        if has("almond", "walnut", "hazelnut", "pistachio", "لوز", "جوز"):
-            return "nuts_seeds", "tree_nuts"
-        return "nuts_seeds", "seeds"
-    if spices:
-        return "spices", "spice_blends" if has("blend", "mix", "seasoning", "بهارات مشكلة") else (
-            "whole_spices" if has("whole", "seed", "peppercorn") else "ground_spices"
-        )
-    if herbs:
-        return "herbs", "fresh_herbs" if has("fresh", "leaf", "leaves", "طازج") else "dried_herbs"
-    if oils:
-        return "oils_fats", "olive_oil" if has("olive oil", "زيت الزيتون") else "cooking_oils"
-    if sweeteners:
+    # Sweeteners and syrups precede roots/grains, but sugar beet itself and
+    # its fibre remain crop ingredients rather than sweeteners.
+    sugar_beet_crop = has("sugar beet", "sugar beet fibre") and not has("syrup")
+    if not sugar_beet_crop and has(
+        "sugar", "honey", "syrup", "molasses", "jam", "marmalade",
+        "sweetener", "fruit preserve", "preserves", "عسل", "سكر", "مربى"
+    ):
         if has("honey", "عسل"):
-            return "sweeteners", "honey"
-        if has("jam", "مربى"):
-            return "sweeteners", "jam"
-        if has("syrup", "molasses"):
-            return "sweeteners", "syrup"
-        return "sweeteners", "sugar"
-    if eggs:
-        return "eggs", None
-    if mushrooms:
-        return "mushrooms", None
-    if grains:
-        if has("rice", "riz", "أرز"):
-            return "grains_cereals", "rice"
-        if has("semolina", "semoule", "wheat", "قمح", "سميد"):
-            return "grains_cereals", "wheat_semolina"
-        if has("flour", "farine", "فرينة", "دقيق"):
-            return "grains_cereals", "flour"
-        return "grains_cereals", "oats_barley"
-    if has("bread", "pasta", "couscous", "noodle", "خبز", "عجائن"):
+            return "sweeteners", "honey", "honey"
+        if has("jam", "marmalade", "spread", "preserve", "مربى"):
+            return "sweeteners", "jam", "jam_or_spread"
+        if has("syrup", "molasses", "شراب"):
+            return "sweeteners", "syrup", "syrup"
+        return "sweeteners", "sugar", "sugar"
+
+    # Culinary herbs are resolved before the broader spice and seed families.
+    if has(
+        "oregano", "parsley", "cilantro", "culantro", "coriander leaf",
+        "coriander leaves", "mint", "thyme", "basil", "rosemary", "dill",
+        "tarragon", "sage", "chives", "lovage", "marjoram", "fenugreek leaves",
+        "methi leaves", "molokhia leaves", "curry leaves", "laksa leaf",
+        "guascas", "hibiscus flowers", "أوريجانو", "معدنوس", "قصبر", "نعناع",
+        "زعتر", "إكليل الجبل", "ريحان", "كزبرة خضراء", "أوراق الكاري"
+    ):
+        if has("dried", "séché", "séché", "مجفف", "مجففة", "dry"):
+            return "herbs", "dried_herbs", "dried_culinary_herb"
+        return "herbs", "fresh_herbs", "fresh_culinary_herb"
+
+    # Spices use exact normalized words/phrases. "Cardamom" no longer matches
+    # "nut" as an arbitrary substring, and chilli powder is not fresh produce.
+    if has(
+        "spice", "spices", "seasoning", "peppercorn", "black pepper",
+        "white pepper", "cumin", "coriander", "coriander seed", "coriander seeds",
+        "ground coriander", "coriander powder", "cardamom", "green cardamom",
+        "ginger", "garlic powder", "onion powder", "paprika", "turmeric", "cinnamon",
+        "clove", "cloves", "saffron", "annatto", "mahlab", "berbere",
+        "chilli powder", "chili powder", "chilli flakes", "chili flakes",
+        "chilli flake", "chili flake", "chilli pepper powder",
+        "ground chilli", "ground chili", "dried chilli", "dried chili",
+        "chillies", "chiles", "guajillo", "pasilla", "mulato", "cobanero",
+        "gochugaru", "pul biber", "piri piri", "tajin seasoning",
+        "kashmiri", "pepper flakes", "بهارات", "كمون", "فلفل أسود",
+        "قرفة", "هيل", "يانسون", "كركم", "زعفران", "كزبرة حب"
+    ):
+        if has("blend", "mix", "seasoning", "berbere", "tajin", "gochugaru blend", "بهارات مشكلة"):
+            return "spices", "spice_blends", "spice_blend"
+        if has("powder", "ground", "flakes", "flake", "crushed", "مطحون", "مسحوق", "رقائق"):
+            return "spices", "ground_spices", "ground_spice"
+        return "spices", "whole_spices", "whole_spice"
+
+    # Oils and fats must precede vegetables: "vegetable oil" and "vegetable fat"
+    # are never vegetables.
+    if has(
+        "olive oil", "huile d olive", "زيت الزيتون"
+    ):
+        return "oils_fats", "olive_oil", "olive_oil"
+    if has(
+        "oil", "oils", "fat", "fats", "margarine", "shortening", "ghee",
+        "lard", "vegetable oil", "vegetable fat", "cocoa fat", "butter oil",
+        "زيت", "دهون نباتية", "دهن", "سمن", "مارغرين"
+    ):
+        return "oils_fats", "cooking_oils", "oil_or_fat"
+
+    if has(
+        "milk", "lait", "dairy", "yogurt", "yoghurt", "yoghourt", "yaourt",
+        "raib", "rayeb", "leben", "lben", "kefir", "buttermilk",
+        "fermented milk", "cream", "cheese", "fromage", "butter", "beurre",
+        "ricotta", "rennet", "casein", "whey protein", "qurut", "curd",
+        "حليب", "لبن", "رايب", "زبادي", "جبن", "قشدة", "زبدة", "مصل اللبن",
+        "منفحة"
+    ):
+        if has("cheese", "fromage", "ricotta", "rennet", "curd", "جبن", "منفحة"):
+            return "dairy", "cheese", "cheese_or_cheese_making"
+        if has("raib", "rayeb", "leben", "lben", "kefir", "buttermilk", "fermented milk", "qurut", "لبن", "رايب"):
+            return "dairy", "fermented_dairy", "fermented_dairy"
+        if has("yogurt", "yoghurt", "yoghourt", "yaourt", "زبادي"):
+            return "dairy", "yogurt", "yogurt"
+        if has("cream", "butter", "beurre", "قشدة", "زبدة"):
+            return "dairy", "cream_butter", "dairy_cream_or_butter"
+        if has("milk", "lait", "حليب", "casein", "whey protein", "مصل اللبن"):
+            return "dairy", "milk", "milk_or_milk_protein"
+        return "dairy", "other", "other_dairy"
+
+    if has("seaweed", "nori", "kombu", "wakame", "dulse", "kelp", "طحالب بحرية", "أعشاب بحرية"):
+        return "seafood", "preserved", "edible_seaweed"
+    if hints["seafood"]:
+        if has("shrimp", "prawn", "crab", "lobster", "shellfish", "crustacean", "جمبري"):
+            return "seafood", "crustaceans", "crustacean"
+        if has("mussel", "oyster", "squid", "octopus", "mollusc", "clam", "scallop", "رخويات", "محار"):
+            return "seafood", "molluscs", "mollusc"
+        if has("dried", "smoked", "salted", "fermented", "séché", "مجفف", "مدخن"):
+            return "seafood", "preserved", "preserved_seafood"
+        return "seafood", "fish", "fish"
+
+    if has(
+        "sausage", "bacon", "ham", "chorizo", "chouriço", "frankfurter",
+        "rookworst", "processed meat", "cured meat", "smoked ribs", "نقانق"
+    ):
+        return "meat_offal", "processed_meat", "processed_meat"
+
+    if has("poultry", "chicken", "turkey", "duck", "goose", "hen", "دجاج", "ديك رومي"):
+        if has("turkey", "ديك رومي"):
+            return "poultry", "turkey", "turkey"
+        if has("chicken", "دجاج"):
+            return "poultry", "chicken", "chicken"
+        return "poultry", None, "other_poultry"
+
+    if hints["meat"]:
+        if has("liver", "kidney", "heart", "tripe", "tongue", "offal", "كبد", "قلب"):
+            return "meat_offal", "offal", "offal"
+        if has("sausage", "bacon", "ham", "chorizo", "chouriço", "frankfurter", "rookworst", "processed meat", "cured", "smoked ribs", "نقانق"):
+            return "meat_offal", "processed_meat", "processed_meat"
+        return "meat_offal", "red_meat", "red_meat"
+
+    # Soy foods and bean products belong with legumes; sprouted beans are
+    # produce and are intentionally handled before this branch.
+    if has("tofu", "soy protein", "soybean protein", "tempeh", "miso", "bean curd", "edamame", "توفو"):
+        return "legumes", None, "soy_food"
+    if hints["legumes"]:
+        if has("chickpea", "garbanzo", "حمص"):
+            return "legumes", "chickpeas", "chickpea"
+        if has("lentil", "عدس"):
+            return "legumes", "lentils", "lentil"
+        if has("pea", "split pea", "fava", "broad bean", "فول", "بازلاء"):
+            return "legumes", "peas", "pea_or_fava"
+        return "legumes", "beans", "bean_or_pulse"
+
+    if hints["vegetables"]:
+        if has("bean sprout", "sprout", "sprouts", "ground dried okra"):
+            return "vegetables", "other", "sprouted_or_prepared_vegetable"
+        if has(
+            "potato", "carrot", "beet", "beetroot", "radish", "turnip",
+            "sweet potato", "cassava", "taro", "yam", "daikon", "parsnip",
+            "celeriac", "burdock", "yautia", "yuca", "بطاطا", "جزر", "شمندر",
+            "فجل", "لفت", "كسافا", "يام"
+        ):
+            return "vegetables", "root_tubers", "root_or_tuber"
+        if has("onion", "garlic", "shallot", "leek", "بصل", "ثوم"):
+            return "vegetables", "bulb_vegetables", "bulb_vegetable"
+        if has(
+            "spinach", "lettuce", "cabbage", "kale", "chard", "parsley leaf",
+            "bok choy", "collard", "molokhia", "arugula", "rocket", "leafy",
+            "sprout", "جرجير", "سبانخ", "ملفوف", "كرنب", "ملوخية"
+        ):
+            return "vegetables", "leafy_vegetables", "leafy_vegetable"
+        return "vegetables", "fruit_vegetables", "fruit_vegetable_or_pod"
+
+    if hints["fruit"]:
+        if has("lemon", "lime", "orange", "citrus", "grapefruit", "citron", "برتقال", "ليمون"):
+            return "fruits", "citrus", "citrus_fruit"
+        if has("berry", "strawberry", "raspberry", "blueberry", "cranberry", "barberry", "توت"):
+            return "fruits", "berries", "berry"
+        if has("date", "raisin", "dried fruit", "تمر", "زبيب"):
+            return "fruits", "dried_fruits", "dried_fruit_or_date"
+        if has("mango", "pineapple", "papaya", "banana", "kiwi", "guanabana", "soursop", "lulo", "موز"):
+            return "fruits", "tropical_fruits", "tropical_fruit"
+        return "fruits", None, "other_fruit"
+
+    if has("peanut", "almond", "walnut", "hazelnut", "pistachio", "cashew", "pecan", "macadamia", "nut", "nuts", "seed", "sesame", "لوز", "جوز", "فول سوداني", "بذور"):
+        if has("peanut", "فول سوداني"):
+            return "nuts_seeds", "peanuts", "peanut"
+        if has("almond", "walnut", "hazelnut", "pistachio", "cashew", "pecan", "macadamia", "لوز", "جوز"):
+            return "nuts_seeds", "tree_nuts", "tree_nut"
+        return "nuts_seeds", "seeds", "seed"
+
+    if has("egg", "oeuf", "بيض"):
+        if has("quail", "duck egg", "goose egg", "بيض السمان", "بيض البط"):
+            return "eggs", "other", "non_chicken_egg"
+        return "eggs", "hen", "egg"
+
+    if has("mushroom", "fungus", "truffle", "champignon", "فطر"):
+        return "mushrooms", None, "mushroom"
+
+    if has(
+        "bread", "pasta", "couscous", "noodle", "macaroni", "tortilla",
+        "phyllo", "filo", "pastry", "dough", "arepa", "injera", "roti",
+        "paratha", "lavash", "bun", "cracker", "biscuit", "wafer",
+        "empanada", "kataifi", "yufka", "malsouka", "flatbread", "خبز",
+        "عجائن", "كسكس", "معجنات"
+    ):
         if has("couscous", "كسكس"):
-            return "bakery_pasta", "couscous"
-        if has("pasta", "noodle", "macaroni"):
-            return "bakery_pasta", "pasta"
-        return "bakery_pasta", "bread"
-    if baking:
-        return "baking", "cocoa" if has("cocoa", "chocolate") else "yeast" if has("yeast", "baking powder", "خميرة") else None
-    if beverages:
-        if has("coffee", "قهوة"):
-            return "beverages", "coffee"
-        if has("tea", "شاي"):
-            return "beverages", "tea"
-        if has("juice", "عصير"):
-            return "beverages", "juice"
-        if has("water", "ماء"):
-            return "beverages", "water"
-        return "beverages", None
-    return "other", None
+            return "bakery_pasta", "couscous", "couscous"
+        if has("pasta", "noodle", "macaroni", "عجائن"):
+            return "bakery_pasta", "pasta", "pasta_or_noodle"
+        if has("bread", "bun", "tortilla", "arepa", "injera", "roti", "paratha", "lavash", "flatbread", "خبز"):
+            return "bakery_pasta", "bread", "bread_or_flatbread"
+        return "bakery_pasta", "pastry", "pastry_or_baked_dough"
+
+    if has(
+        "rice", "wheat", "semolina", "semoule", "flour", "farine", "oat",
+        "barley", "cornmeal", "maize", "millet", "sorghum", "bulgur",
+        "quinoa", "hominy", "popcorn", "gari", "attieke", "dzavar",
+        "tapioca", "cassava starch", "starch", "cereal", "grain", "couscous grain",
+        "أرز", "سميد", "فرينة", "دقيق", "قمح", "حبوب", "شوفان"
+    ):
+        if has("rice", "riz", "أرز"):
+            return "grains_cereals", "rice", "rice"
+        if has("semolina", "semoule", "wheat", "bulgur", "dzavar", "قمح", "سميد"):
+            return "grains_cereals", "wheat_semolina", "wheat_or_semolina"
+        if has("flour", "farine", "starch", "tapioca", "gari", "نشا", "دقيق", "فرينة"):
+            return "grains_cereals", "flour", "flour_or_starch"
+        if has("oat", "barley", "شوفان", "شعير"):
+            return "grains_cereals", "oats_barley", "oat_or_barley"
+        return "grains_cereals", None, "other_grain"
+
+    return "other", None, "no_specific_food_rule"
+
+
+def classify_food_category(
+    primary_labels: Iterable[str],
+    parent_labels: Iterable[str] = (),
+    supporting_labels: Iterable[str] = (),
+) -> tuple[str, str | None, dict[str, str]]:
+    """Classify using preferred labels first, then source parents, then aliases.
+
+    A single high-quality preferred label always outranks aliases. Aliases may
+    only provide a fallback when all preferred labels are unknown and their
+    non-unknown classifications agree exactly.
+    """
+    primary = [str(value).strip() for value in primary_labels if str(value or "").strip()]
+    parents = [str(value).strip() for value in parent_labels if str(value or "").strip()]
+    supporting = [str(value).strip() for value in supporting_labels if str(value or "").strip()]
+
+    for label in primary:
+        category, subcategory, rule = _classify_food_label(label)
+        if category != "other":
+            return category, subcategory, {
+                "method": "preferred_food_label",
+                "confidence": "high",
+                "matchedLabel": label,
+                "rule": rule,
+            }
+
+    parent_matches: dict[tuple[str, str | None], list[tuple[str, str]]] = defaultdict(list)
+    for label in parents:
+        category, subcategory, rule = _classify_food_label(label)
+        if category != "other":
+            parent_matches[(category, subcategory)].append((label, rule))
+    if len(parent_matches) == 1:
+        (category, subcategory), matches = next(iter(parent_matches.items()))
+        label, rule = matches[0]
+        return category, subcategory, {
+            "method": "source_taxonomy_parent",
+            "confidence": "medium",
+            "matchedLabel": label,
+            "rule": rule,
+        }
+    if len(parent_matches) > 1:
+        return "other", None, {
+            "method": "conflicting_source_taxonomy_parents",
+            "confidence": "low",
+            "matchedLabel": "",
+            "rule": "conflicting_source_parent_categories",
+        }
+
+    supporting_matches: dict[tuple[str, str | None], list[tuple[str, str]]] = defaultdict(list)
+    for label in supporting:
+        category, subcategory, rule = _classify_food_label(label)
+        if category != "other":
+            supporting_matches[(category, subcategory)].append((label, rule))
+
+    if len(supporting_matches) == 1:
+        (category, subcategory), matches = next(iter(supporting_matches.items()))
+        label, rule = matches[0]
+        return category, subcategory, {
+            "method": "unambiguous_supporting_synonym",
+            "confidence": "low",
+            "matchedLabel": label,
+            "rule": rule,
+        }
+
+    if len(supporting_matches) > 1:
+        return "other", None, {
+            "method": "conflicting_supporting_synonyms",
+            "confidence": "low",
+            "matchedLabel": "",
+            "rule": "conflicting_alias_categories",
+        }
+
+    return "other", None, {
+        "method": "unclassified",
+        "confidence": "low",
+        "matchedLabel": primary[0] if primary else "",
+        "rule": "no_specific_food_rule",
+    }
+
+
+def category_for(names: Iterable[str]) -> tuple[str, str | None]:
+    """Compatibility wrapper; arguments are preferred labels, not aliases."""
+    category, subcategory, _ = classify_food_category(names)
+    return category, subcategory
+
+
 
 def default_units(category_id: str, subcategory_id: str | None, names: Iterable[str]) -> list[str]:
     text = normalize_label(" ".join(names))
@@ -1078,28 +1399,56 @@ def build_product(
     foodon: dict[str, dict[str, Any]],
     foodon_ancestors: dict[str, list[str]],
 ) -> dict[str, Any]:
-    all_labels: list[str] = []
-    if record:
-        for lang in ("en", "fr", "ar"):
-            all_labels.extend(record["allNames"].get(lang, []))
-        all_labels.extend(record.get("parents", []))
-    for group in groups:
-        all_labels.extend(group["names"].values())
-        for lang in ("ar", "en", "fr"):
-            all_labels.extend(group["aliases"].get(lang, []))
+    source_properties = record.get("sourceProperties", {}) if record else {}
 
-    foodon_labels: list[str] = []
+    # Preferred OFF and recipe names are classified independently from aliases.
+    # Parent paths and synonyms are fallback evidence only; concatenating every
+    # alias and ancestor creates false positives (e.g. cardamom -> nuts).
+    preferred_labels: list[str] = []
+    source_parent_labels: list[str] = []
+    supporting_labels: list[str] = []
+    if record:
+        if record.get("name"):
+            preferred_labels.append(record["name"])
+        preferred_labels.extend(record.get("names", {}).values())
+        source_parent_labels.extend(record.get("parents", []))
+        for language in ("en", "fr", "ar"):
+            all_values = record.get("allNames", {}).get(language, [])
+            preferred = record.get("names", {}).get(language)
+            supporting_labels.extend(value for value in all_values if value != preferred)
+    for group in groups:
+        preferred_labels.extend(group.get("names", {}).values())
+        for language in ("ar", "en", "fr"):
+            supporting_labels.extend(group.get("aliases", {}).get(language, []))
+
     for item_id in foodon_ids:
         item = foodon.get(item_id)
         if item:
-            foodon_labels.append(item["name"])
-            foodon_labels.extend(item.get("aliases", []))
-        foodon_labels.extend(foodon_ancestors.get(item_id, []))
-    category_slug, subcategory_slug = category_for([*all_labels, *foodon_labels])
+            supporting_labels.extend([item.get("name", ""), *item.get("names", {}).values()])
+            supporting_labels.extend(item.get("aliases", []))
+            for language_aliases in item.get("aliasesByLanguage", {}).values():
+                supporting_labels.extend(language_aliases)
+        source_parent_labels.extend(foodon_ancestors.get(item_id, []))
+
+    category_slug, subcategory_slug, category_decision = classify_food_category(
+        preferred_labels,
+        parent_labels=source_parent_labels,
+        supporting_labels=supporting_labels,
+    )
     category_id, subcategory_id = canonical_category_ids(category_slug, subcategory_slug)
-    source_properties = record.get("sourceProperties", {}) if record else {}
-    category_id = source_properties.get("midatiCategoryId") or category_id
-    subcategory_id = source_properties.get("midatiSubcategoryId") or subcategory_id
+    if source_properties.get("midatiCategoryId"):
+        category_id = source_properties["midatiCategoryId"]
+        subcategory_id = source_properties.get("midatiSubcategoryId") or ""
+        category_decision = {
+            "method": "midati_curated_identity",
+            "confidence": "high",
+            "matchedLabel": str(source_properties.get("midatiCuratedKey") or ""),
+            "rule": "reviewed_curated_food_identity",
+        }
+    if not subcategory_id:
+        raise RuntimeError(
+            f"Food identity has no canonical subcategory: {record.get('name') if record else preferred_labels[:1]}"
+        )
 
     legacy_ids = sorted({
         legacy_id
@@ -1201,6 +1550,7 @@ def build_product(
         "nutrition": None,
         "sourceMappings": source_mappings,
         "recipeIngredientIds": legacy_ids,
+        "_categoryAssignment": category_decision,
     }
 
 
@@ -1388,6 +1738,93 @@ def apply_machine_name_translations(
         "invalidEntries": invalid[:100],
     }
 
+def apply_reviewed_category_overrides(products: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Apply reviewed UUID-keyed category corrections without changing identity."""
+    try:
+        data = json.loads(CATEGORY_OVERRIDES_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise RuntimeError(
+            f"Required reviewed category override file is missing: {CATEGORY_OVERRIDES_PATH}"
+        ) from error
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"Invalid category override JSON: {error}") from error
+
+    if not isinstance(data, dict) or data.get("schemaVersion") != 1:
+        raise RuntimeError("Category override file must be an object with schemaVersion 1.")
+    overrides = data.get("overrides")
+    if not isinstance(overrides, list):
+        raise RuntimeError("Category override file must contain an overrides array.")
+
+    category_ids = {item.get("id") for item in CATEGORY_DATA}
+    subcategory_parent = {
+        child.get("id"): item.get("id")
+        for item in CATEGORY_DATA
+        for child in item.get("subcategories", [])
+    }
+    products_by_id = {str(product.get("id") or ""): product for product in products}
+    if len(products_by_id) != len(products):
+        raise RuntimeError("Cannot apply category overrides to duplicate food UUIDs.")
+
+    seen_ids: set[str] = set()
+    applied: list[dict[str, Any]] = []
+    for index, override in enumerate(overrides):
+        if not isinstance(override, dict) or set(override) != {
+            "foodItemId", "categoryId", "subcategoryId", "reason"
+        }:
+            raise RuntimeError(
+                f"Category override {index + 1} must contain exactly foodItemId, "
+                "categoryId, subcategoryId and reason."
+            )
+        food_id = str(override.get("foodItemId") or "")
+        category_id = str(override.get("categoryId") or "")
+        subcategory_id = str(override.get("subcategoryId") or "")
+        reason = str(override.get("reason") or "").strip()
+        if not food_id or food_id in seen_ids:
+            raise RuntimeError(f"Missing or duplicate foodItemId in category override: {food_id!r}.")
+        seen_ids.add(food_id)
+        product = products_by_id.get(food_id)
+        if product is None:
+            # Small synthetic unit-test builds intentionally contain only a
+            # subset of the production identity set. The full data validator
+            # separately requires every override to be applied in release builds.
+            continue
+        if category_id not in category_ids:
+            raise RuntimeError(f"Unknown categoryId {category_id!r} for food {food_id}.")
+        if subcategory_parent.get(subcategory_id) != category_id:
+            raise RuntimeError(
+                f"Subcategory {subcategory_id!r} does not belong to {category_id!r} for food {food_id}."
+            )
+        if not reason:
+            raise RuntimeError(f"Category override for {food_id} must include a review reason.")
+
+        previous_category_id = product["categoryId"]
+        previous_subcategory_id = product["subcategoryId"]
+        product["categoryId"] = category_id
+        product["subcategoryId"] = subcategory_id
+        product["_categoryAssignment"] = {
+            "method": "reviewed_identity_override",
+            "confidence": "high",
+            "matchedLabel": (
+                product.get("names", {}).get("en")
+                or product.get("names", {}).get("ar")
+                or food_id
+            ),
+            "rule": "explicit_reviewed_food_identity",
+            "reason": reason,
+        }
+        applied.append({
+            "foodItemId": food_id,
+            "nameAr": product.get("names", {}).get("ar"),
+            "nameEn": product.get("names", {}).get("en"),
+            "previousCategoryId": previous_category_id,
+            "previousSubcategoryId": previous_subcategory_id,
+            "categoryId": category_id,
+            "subcategoryId": subcategory_id,
+            "reason": reason,
+        })
+    return applied
+
+
 def build_catalogue(
     recipe_data: dict[str, Any],
     off_records: list[dict[str, Any]],
@@ -1421,8 +1858,23 @@ def build_catalogue(
         ]
         is_recipe_term = any(normalize_label(value) in recipe_terms for value in labels if value)
         foodon_ids = foodon_matches(record, foodon, foodon_index)
-        category_id, _ = category_for(labels)
-        if category_id != "other" or foodon_ids or is_recipe_term:
+        source_properties = record.get("sourceProperties", {})
+        canonical_key = normalize_label(
+            source_properties.get("openFoodFactsTerm") or record.get("name", "")
+        )
+        curated_key = str(source_properties.get("midatiCuratedKey") or "").strip()
+        registered_identity_keys = (identity_registry or {}).get("ids", {})
+        existed_in_baseline = (
+            "openfoodfacts:" + canonical_key in registered_identity_keys
+            or (
+                curated_key
+                and "midati-curated:" + curated_key in registered_identity_keys
+            )
+        )
+        # Stage 3 is category-only: it must not change which source identities
+        # enter the published catalogue. Preserve every registered OFF/curated
+        # identity and every existing FoodOn/recipe-linked concept.
+        if foodon_ids or is_recipe_term or existed_in_baseline:
             filtered_off.append(record)
     off_records = filtered_off
     off_index = make_indexes(off_records)
@@ -1536,13 +1988,40 @@ def build_catalogue(
             existing["categoryId"] != product["categoryId"]
             or existing.get("subcategoryId") != product.get("subcategoryId")
         ):
+            existing_assignment = existing.get("_categoryAssignment") or {}
+            incoming_assignment = product.get("_categoryAssignment") or {}
+            confidence_rank = {"high": 3, "medium": 2, "low": 1}
+            existing_rank = confidence_rank.get(existing_assignment.get("confidence"), 0)
+            incoming_rank = confidence_rank.get(incoming_assignment.get("confidence"), 0)
             category_conflicts.append({
                 "englishName": english_key,
                 "existingCategoryId": existing["categoryId"],
+                "existingSubcategoryId": existing.get("subcategoryId"),
+                "existingMethod": existing_assignment.get("method", "unknown"),
                 "incomingCategoryId": product["categoryId"],
+                "incomingSubcategoryId": product.get("subcategoryId"),
+                "incomingMethod": incoming_assignment.get("method", "unknown"),
+                "resolution": (
+                    "incoming_higher_confidence"
+                    if incoming_rank > existing_rank
+                    else "existing_higher_or_equal_confidence"
+                ),
             })
-            existing["categoryId"] = "foodcat-other"
-            existing["subcategoryId"] = None
+            if incoming_rank > existing_rank:
+                existing["categoryId"] = product["categoryId"]
+                existing["subcategoryId"] = product["subcategoryId"]
+                existing["_categoryAssignment"] = incoming_assignment
+            elif existing_rank == incoming_rank:
+                # Equal-confidence disagreement is recorded and left visible as
+                # an explicit taxonomy conflict until an identity-specific review.
+                existing["categoryId"] = "foodcat-other"
+                existing["subcategoryId"] = "foodsub-other-general"
+                existing["_categoryAssignment"] = {
+                    "method": "duplicate_identity_category_conflict",
+                    "confidence": "low",
+                    "matchedLabel": english_key,
+                    "rule": "equal_confidence_disagreement",
+                }
 
         for lang in ("ar", "en", "fr"):
             if product["names"].get(lang) and not existing["names"].get(lang):
@@ -1572,6 +2051,7 @@ def build_catalogue(
     ))
 
     identity_registry = assign_stable_product_ids(products, identity_registry)
+    reviewed_category_overrides = apply_reviewed_category_overrides(products)
     translation_report = apply_machine_name_translations(products, translation_data)
 
     matched_ids: dict[str, str] = {}
@@ -1678,8 +2158,8 @@ def build_catalogue(
     missing_en = sum(1 for p in products if not p["names"].get("en"))
     missing_fr = sum(1 for p in products if not p["names"].get("fr"))
     valid_category_ids = {item.get("id") for item in CATEGORY_DATA}
-    valid_subcategory_ids = {
-        child.get("id")
+    subcategory_parent = {
+        child.get("id"): item.get("id")
         for item in CATEGORY_DATA
         for child in item.get("subcategories", [])
     }
@@ -1687,7 +2167,7 @@ def build_catalogue(
         {"id": p["id"], "categoryId": p["categoryId"], "subcategoryId": p["subcategoryId"]}
         for p in products
         if p["categoryId"] not in valid_category_ids
-        or (p["subcategoryId"] is not None and p["subcategoryId"] not in valid_subcategory_ids)
+        or subcategory_parent.get(p["subcategoryId"]) != p["categoryId"]
     ]
     if invalid_categories:
         raise RuntimeError("Product references invalid Midati category IDs: " + json.dumps(invalid_categories[:10]))
@@ -1700,6 +2180,56 @@ def build_catalogue(
         count for method, count in matching_methods.items()
         if method not in {"unmatched", "foodon_ambiguous", "foodon_ambiguous_off_link"}
     )
+    category_method_counts = Counter(
+        (product.get("_categoryAssignment") or {}).get("method", "unknown")
+        for product in products
+    )
+    category_confidence_counts = Counter(
+        (product.get("_categoryAssignment") or {}).get("confidence", "unknown")
+        for product in products
+    )
+    category_counts = Counter(product["categoryId"] for product in products)
+    subcategory_counts = Counter(product["subcategoryId"] for product in products)
+    item_decisions = []
+    unclassified_products = []
+    for product in products:
+        assignment = product.get("_categoryAssignment") or {}
+        decision = {
+            "foodItemId": product["id"],
+            "categoryId": product["categoryId"],
+            "subcategoryId": product["subcategoryId"],
+            "method": assignment.get("method", "unknown"),
+            "confidence": assignment.get("confidence", "unknown"),
+            "matchedLabel": assignment.get("matchedLabel", ""),
+            "rule": assignment.get("rule", "unknown"),
+        }
+        if assignment.get("reason"):
+            decision["reason"] = assignment["reason"]
+        item_decisions.append(decision)
+
+        if product["categoryId"] == "foodcat-other" and assignment.get("confidence") == "low":
+            unclassified_products.append({
+                **decision,
+                "nameAr": product.get("names", {}).get("ar"),
+                "nameEn": product.get("names", {}).get("en"),
+                "nameFr": product.get("names", {}).get("fr"),
+            })
+
+    category_assignment_audit = {
+        "itemDecisionCount": len(item_decisions),
+        "itemDecisions": item_decisions,
+        "methodCounts": dict(sorted(category_method_counts.items())),
+        "confidenceCounts": dict(sorted(category_confidence_counts.items())),
+        "categoryCounts": dict(sorted(category_counts.items())),
+        "subcategoryCounts": dict(sorted(subcategory_counts.items())),
+        "reviewedOverrideCount": len(reviewed_category_overrides),
+        "reviewedOverrides": reviewed_category_overrides,
+        "unclassifiedCount": len(unclassified_products),
+        "unclassifiedExamples": unclassified_products[:500],
+    }
+    for product in products:
+        product.pop("_categoryAssignment", None)
+
     report = {
         "schemaVersion": 1,
         "sourceCounts": {
@@ -1768,6 +2298,7 @@ def build_catalogue(
         "unmatchedRecipeIngredients": unmatched[:500],
         "ambiguousRecipeIngredients": ambiguous[:500],
         "categoryConflicts": category_conflicts[:500],
+        "categoryAssignments": category_assignment_audit,
         "dataAvailabilityNotes": [
             "The OFF ingredient taxonomy supplies multilingual labels, aliases and taxonomy relations, not product photographs or complete nutrient panels.",
             "FoodOn supplies food classes, labels, synonyms and semantic hierarchy; it is not a complete image or nutrition database.",

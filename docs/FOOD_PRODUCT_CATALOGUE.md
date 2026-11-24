@@ -98,3 +98,20 @@ Run the canonical data guard from the repository root with:
 `python tools/validate_food_taxonomy.py`
 
 The food catalogue build workflow runs this guard after generating the catalogue, crosswalk and audit. It is not an Android build or a device test; it validates the data contract and compatibility invariants directly.
+
+## Reviewed category classification
+
+The category builder classifies one preferred food label at a time. It does not concatenate arbitrary aliases, synonyms and ancestor labels into one keyword string. The precedence is:
+
+1. Preferred OFF/recipe name using specific whole-token food rules.
+2. Explicit source taxonomy parent when the preferred label is not specific enough.
+3. Supporting synonyms only when every recognized synonym agrees on the same category and subcategory.
+4. A conservative unclassified result when evidence is absent or conflicting.
+
+Every generated food identity records an internal classification method, confidence, matched label and rule. The build audit publishes per-method and per-confidence totals, per-category/subcategory counts, classification conflicts, and unclassified examples. Internal decision fields are removed from the shipped food-item records.
+
+`data/products/category-overrides.json` contains reviewed, identity-specific corrections keyed by existing UUIDv4. It is deliberately separate from source taxonomy matching: these records repair known bad source classifications without renaming or recreating a food identity. Every override includes a category ID, a subcategory ID belonging to that category, and a human-readable reason. The catalogue build rejects duplicate, unknown, or invalid override references; the validator confirms that every reviewed override was applied exactly.
+
+The stage-three override set currently contains 239 reviewed UUID-specific corrections. It gives every one of the 151 recipe-used identities that previously appeared in the catch-all category an explicit reviewed category choice, while also correcting high-confidence source mistakes such as vegetable oil/fat appearing under vegetables, cocoa and chocolate appearing under unrelated food groups, and cardamom appearing under nuts or legumes. Salt and non-food recipe utilities remain in the catch-all group where the current taxonomy has no more precise category; the builder does not force every record into an inappropriate category merely to reduce the catch-all count.
+
+The classification audit is intended for iterative review. A low-confidence or conflicting record is visible in the audit rather than silently assigned by a broad substring match.

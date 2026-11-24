@@ -6,6 +6,7 @@ on:
     paths:
       - "data/recipes/ar/recipes.json"
       - "data/products/categories.json"
+      - "data/products/category-overrides.json"
       - "data/products/catalogue-baseline.json"
       - "data/products/taxonomy.schema.json"
       - "data/products/curated-food-items.json"
@@ -80,6 +81,7 @@ jobs:
           input_paths=(
             "data/recipes/ar/recipes.json"
             "data/products/categories.json"
+            "data/products/category-overrides.json"
             "data/products/catalogue-baseline.json"
             "data/products/taxonomy.schema.json"
             "data/products/curated-food-items.json"

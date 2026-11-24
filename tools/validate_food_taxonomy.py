@@ -23,6 +23,7 @@ MAPPING_PATH = PRODUCTS_DIR / "recipe-ingredient-map.json"
 REGISTRY_PATH = PRODUCTS_DIR / "identity_registry.json"
 AUDIT_PATH = PRODUCTS_DIR / "build-audit.json"
 BASELINE_PATH = PRODUCTS_DIR / "catalogue-baseline.json"
+CATEGORY_OVERRIDES_PATH = PRODUCTS_DIR / "category-overrides.json"
 
 EXPECTED_LOCALES = ("ar", "en", "fr")
 EXPECTED_CATEGORY_COUNT = 22
@@ -381,6 +382,167 @@ def validate_recipe_crosswalk(
     return len(legacy_map), len(rows)
 
 
+def validate_category_overrides(
+    overrides: dict[str, Any],
+    catalogue: dict[str, Any],
+    taxonomy: dict[str, Any],
+    audit: dict[str, Any],
+) -> int:
+    if set(overrides) != {"schemaVersion", "description", "overrides"}:
+        fail("category-overrides.json must contain schemaVersion, description and overrides only.")
+    if overrides.get("schemaVersion") != 1:
+        fail("Unsupported category-overrides.json schemaVersion; expected 1.")
+
+    rows = overrides.get("overrides")
+    if not isinstance(rows, list):
+        fail("category-overrides.json overrides must be an array.")
+
+    products = catalogue.get("products") or []
+    by_id = {str(product.get("id") or ""): product for product in products}
+    if len(by_id) != len(products):
+        fail("Cannot validate reviewed category overrides against duplicate food UUIDs.")
+
+    category_ids = {
+        category.get("id")
+        for category in taxonomy.get("categories") or []
+    }
+    subcategory_parent = {
+        child.get("id"): category.get("id")
+        for category in taxonomy.get("categories") or []
+        for child in category.get("subcategories") or []
+    }
+
+    seen: set[str] = set()
+    expected_assignments: dict[str, tuple[str, str]] = {}
+    for index, row in enumerate(rows):
+        owner = f"category-overrides.json overrides[{index}]"
+        if not isinstance(row, dict) or set(row) != {
+            "foodItemId", "categoryId", "subcategoryId", "reason"
+        }:
+            fail(
+                f"{owner} must contain exactly foodItemId, categoryId, "
+                "subcategoryId and reason."
+            )
+        food_id = row.get("foodItemId")
+        category_id = row.get("categoryId")
+        subcategory_id = row.get("subcategoryId")
+        reason = row.get("reason")
+        if not isinstance(food_id, str) or not food_id or food_id in seen:
+            fail(f"{owner} has a missing or duplicate foodItemId.")
+        seen.add(food_id)
+        if food_id not in by_id:
+            fail(f"{owner} refers to missing food identity {food_id}.")
+        if category_id not in category_ids:
+            fail(f"{owner} refers to unknown category {category_id!r}.")
+        if subcategory_parent.get(subcategory_id) != category_id:
+            fail(
+                f"{owner} assigns subcategory {subcategory_id!r} outside "
+                f"category {category_id!r}."
+            )
+        if not isinstance(reason, str) or not reason.strip():
+            fail(f"{owner} must include a human-readable review reason.")
+        product = by_id[food_id]
+        if (
+            product.get("categoryId") != category_id
+            or product.get("subcategoryId") != subcategory_id
+        ):
+            fail(
+                f"Reviewed category override for {food_id} was not applied "
+                "to the generated catalogue."
+            )
+        expected_assignments[food_id] = (category_id, subcategory_id)
+
+    assignment_audit = audit.get("categoryAssignments") or {}
+    applied = assignment_audit.get("reviewedOverrides")
+    if not isinstance(applied, list):
+        fail("build-audit.json is missing categoryAssignments.reviewedOverrides.")
+    if assignment_audit.get("reviewedOverrideCount") != len(rows) or len(applied) != len(rows):
+        fail("Applied reviewed category override count does not match category-overrides.json.")
+
+    applied_by_id: dict[str, tuple[str, str]] = {}
+    for row in applied:
+        if not isinstance(row, dict):
+            fail("build-audit.json contains an invalid reviewed category override record.")
+        food_id = row.get("foodItemId")
+        if food_id in applied_by_id:
+            fail(f"build-audit.json reports duplicate applied override for {food_id}.")
+        applied_by_id[food_id] = (row.get("categoryId"), row.get("subcategoryId"))
+
+    if applied_by_id != expected_assignments:
+        fail("build-audit.json applied override assignments do not match category-overrides.json.")
+
+    return len(rows)
+
+
+def validate_category_assignment_ledger(
+    catalogue: dict[str, Any],
+    audit: dict[str, Any],
+) -> None:
+    products = catalogue.get("products") or []
+    products_by_id = {product.get("id"): product for product in products}
+    assignment_audit = audit.get("categoryAssignments") or {}
+    decisions = assignment_audit.get("itemDecisions")
+    if not isinstance(decisions, list):
+        fail("build-audit.json is missing categoryAssignments.itemDecisions.")
+    if assignment_audit.get("itemDecisionCount") != len(products) or len(decisions) != len(products):
+        fail("Category assignment decision ledger must contain exactly one row per food identity.")
+
+    decisions_by_id: dict[str, dict[str, Any]] = {}
+    for index, decision in enumerate(decisions):
+        owner = f"categoryAssignments.itemDecisions[{index}]"
+        if not isinstance(decision, dict):
+            fail(f"{owner} must be an object.")
+        food_id = decision.get("foodItemId")
+        if not isinstance(food_id, str) or not food_id or food_id in decisions_by_id:
+            fail(f"{owner} has a missing or duplicate foodItemId.")
+        product = products_by_id.get(food_id)
+        if product is None:
+            fail(f"{owner} references food identity {food_id} outside catalogue.json.")
+        if (
+            decision.get("categoryId") != product.get("categoryId")
+            or decision.get("subcategoryId") != product.get("subcategoryId")
+        ):
+            fail(f"{owner} disagrees with the generated category assignment for {food_id}.")
+        for field in ("method", "confidence", "rule"):
+            if not isinstance(decision.get(field), str) or not decision[field].strip():
+                fail(f"{owner} is missing classification {field}.")
+        if not isinstance(decision.get("matchedLabel"), str):
+            fail(f"{owner} matchedLabel must be a string.")
+        decisions_by_id[food_id] = decision
+
+    if set(decisions_by_id) != set(products_by_id):
+        fail("Category decision ledger does not cover the complete food catalogue.")
+
+    method_counts = assignment_audit.get("methodCounts") or {}
+    confidence_counts = assignment_audit.get("confidenceCounts") or {}
+    if sum(method_counts.values()) != len(products):
+        fail("Category assignment method counts do not reconcile with the decision ledger.")
+    if sum(confidence_counts.values()) != len(products):
+        fail("Category assignment confidence counts do not reconcile with the decision ledger.")
+
+    category_counts = assignment_audit.get("categoryCounts") or {}
+    subcategory_counts = assignment_audit.get("subcategoryCounts") or {}
+    expected_category_counts: dict[str, int] = {}
+    expected_subcategory_counts: dict[str, int] = {}
+    for product in products:
+        category_id = product["categoryId"]
+        subcategory_id = product["subcategoryId"]
+        expected_category_counts[category_id] = expected_category_counts.get(category_id, 0) + 1
+        expected_subcategory_counts[subcategory_id] = expected_subcategory_counts.get(subcategory_id, 0) + 1
+    if category_counts != expected_category_counts:
+        fail("Category distribution audit does not match catalogue.json.")
+    if subcategory_counts != expected_subcategory_counts:
+        fail("Subcategory distribution audit does not match catalogue.json.")
+
+    unclassified = [
+        decision
+        for decision in decisions
+        if decision.get("categoryId") == "foodcat-other" and decision.get("confidence") == "low"
+    ]
+    if assignment_audit.get("unclassifiedCount") != len(unclassified):
+        fail("Unclassified food count does not reconcile with the category decision ledger.")
+
+
 def validate_audit(
     audit: dict[str, Any],
     *,
@@ -413,6 +575,7 @@ def main() -> int:
     registry = read_json(REGISTRY_PATH)
     audit = read_json(AUDIT_PATH)
     baseline = read_json(BASELINE_PATH)
+    category_overrides = read_json(CATEGORY_OVERRIDES_PATH)
 
     if baseline.get("schemaVersion") != 1:
         fail("Unsupported catalogue-baseline.json schemaVersion; expected 1.")
@@ -427,6 +590,13 @@ def main() -> int:
         registry,
     )
     legacy_count, row_count = validate_recipe_crosswalk(mapping, catalogue_ids, baseline)
+    override_count = validate_category_overrides(
+        category_overrides,
+        catalogue,
+        taxonomy,
+        audit,
+    )
+    validate_category_assignment_ledger(catalogue, audit)
     validate_audit(
         audit,
         product_count=len(catalogue_ids),
@@ -439,8 +609,9 @@ def main() -> int:
         f"{len(catalogue_ids):,} food identities, "
         f"{len(category_ids)} categories, "
         f"{len(subcategory_parent)} subcategories, "
-        f"{legacy_count:,} legacy Room mappings and "
-        f"{row_count:,} recipe ingredient rows. "
+        f"{legacy_count:,} legacy Room mappings, "
+        f"{row_count:,} recipe ingredient rows and "
+        f"{override_count:,} reviewed category overrides. "
         "All frozen identities and recipe links are preserved."
     )
     return 0
