@@ -1296,6 +1296,8 @@ def apply_machine_name_translations(
     """Apply UUID-keyed machine names only when the original source still matches."""
     data = translation_data or {}
     entries = data.get("translations") or {}
+    if not isinstance(entries, dict):
+        raise RuntimeError("Food translation sidecar has an invalid translations object.")
     applied: Counter[str] = Counter()
     ignored_existing: Counter[str] = Counter()
     stale: list[dict[str, str]] = []
