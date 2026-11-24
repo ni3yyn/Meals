@@ -401,6 +401,6 @@ internal class FoodIdentityMigration(
     )
 
     private companion object {
-        const val GENERIC_INGREDIENT_CATEGORY = "مكوّن"
+        const val GENERIC_INGREDIENT_CATEGORY = "أخرى"
     }
 }
