@@ -38502,12 +38502,13 @@
       },
       {
         "foodItemId": "d376b5b9-31c4-4007-bfac-309c1a7648a7",
-        "categoryId": "foodcat-vegetables",
-        "subcategoryId": "foodsub-vegetables-fruit",
-        "method": "preferred_food_label",
+        "categoryId": "foodcat-sauces",
+        "subcategoryId": "foodsub-sauces-tomato",
+        "method": "reviewed_identity_override",
         "confidence": "high",
         "matchedLabel": "tomato concentrate",
-        "rule": "fruit_vegetable_or_pod"
+        "rule": "explicit_reviewed_food_identity",
+        "reason": "Tomato paste is a concentrated tomato sauce/condiment, not a fresh fruit vegetable."
       },
       {
         "foodItemId": "1b277b16-9dc8-4b94-929e-4e2be075f7eb",
@@ -46613,8 +46614,8 @@
       "conflicting_source_taxonomy_parents": 311,
       "conflicting_supporting_synonyms": 2,
       "midati_curated_identity": 6,
-      "preferred_food_label": 3548,
-      "reviewed_identity_override": 239,
+      "preferred_food_label": 3547,
+      "reviewed_identity_override": 240,
       "source_taxonomy_parent": 339,
       "unambiguous_supporting_synonym": 33,
       "unclassified": 171
@@ -46642,11 +46643,11 @@
       "foodcat-other": 492,
       "foodcat-pasta-bakery": 114,
       "foodcat-poultry": 109,
-      "foodcat-sauces": 214,
+      "foodcat-sauces": 215,
       "foodcat-seafood": 211,
       "foodcat-spices": 171,
       "foodcat-sweeteners": 193,
-      "foodcat-vegetables": 468
+      "foodcat-vegetables": 467
     },
     "subcategoryCounts": {
       "foodsub-baking-cocoa": 77,
@@ -46711,7 +46712,7 @@
       "foodsub-sauces-ketchup-mustard": 27,
       "foodsub-sauces-mayonnaise": 8,
       "foodsub-sauces-other": 178,
-      "foodsub-sauces-tomato": 1,
+      "foodsub-sauces-tomato": 2,
       "foodsub-seafood-crustaceans": 43,
       "foodsub-seafood-fish": 98,
       "foodsub-seafood-molluscs": 46,
@@ -46724,12 +46725,12 @@
       "foodsub-sweeteners-sugar": 67,
       "foodsub-sweeteners-syrup": 70,
       "foodsub-vegetables-bulbs": 36,
-      "foodsub-vegetables-fruit": 276,
+      "foodsub-vegetables-fruit": 275,
       "foodsub-vegetables-leafy": 55,
       "foodsub-vegetables-other": 10,
       "foodsub-vegetables-roots": 91
     },
-    "reviewedOverrideCount": 239,
+    "reviewedOverrideCount": 240,
     "reviewedOverrides": [
       {
         "foodItemId": "004e66ff-882e-49a1-ad72-76e0e68e04d6",
@@ -48650,6 +48651,16 @@
         "categoryId": "foodcat-vegetables",
         "subcategoryId": "foodsub-vegetables-leafy",
         "reason": "Red cabbage is a leafy brassica vegetable."
+      },
+      {
+        "foodItemId": "d376b5b9-31c4-4007-bfac-309c1a7648a7",
+        "nameAr": "معجون الطماطم",
+        "nameEn": "tomato concentrate",
+        "previousCategoryId": "foodcat-vegetables",
+        "previousSubcategoryId": "foodsub-vegetables-fruit",
+        "categoryId": "foodcat-sauces",
+        "subcategoryId": "foodsub-sauces-tomato",
+        "reason": "Tomato paste is a concentrated tomato sauce/condiment, not a fresh fruit vegetable."
       },
       {
         "foodItemId": "d4142dc1-e788-42ea-b074-5bea0decb161",
