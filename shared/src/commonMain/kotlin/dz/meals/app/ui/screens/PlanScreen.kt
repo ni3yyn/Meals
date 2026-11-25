@@ -81,6 +81,7 @@ fun PlanScreen(
     onNextWeek: () -> Unit,
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
+    val weekDays = remember { (0 until 7).toList() }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
     var selectedDayIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
@@ -299,7 +300,11 @@ fun PlanScreen(
             }
         }
 
-        items((0 until 7).toList(), key = { it }) { day ->
+        items(
+            weekDays,
+            key = { day -> day },
+            contentType = { "plan-day" }
+        ) { day ->
             val date = weekStart.plus(DatePeriod(days = day))
             val dateLabel = formatArabicDate(date)
             val breakfast = mealsByDayAndSlot[day to "breakfast"]
@@ -444,7 +449,11 @@ fun PlanScreen(
                                     )
                                 }
                             }
-                            items(eligibleRecipes, key = { it.id }) { recipe ->
+                            items(
+                                eligibleRecipes,
+                                key = { it.id },
+                                contentType = { "recipe-choice" }
+                            ) { recipe ->
                                 MealsTextButton(
                                     onClick = {
                                         onSetMeal(day, editingSlot!!, recipe.id)
