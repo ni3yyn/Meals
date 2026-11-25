@@ -16,8 +16,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -319,7 +317,7 @@ fun ShoppingScreen(
             when (activePage) {
                 0 -> {
         LazyColumn(
-        modifier = Modifier.weight(1f),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             start = 20.dp,
             end = 20.dp,
@@ -709,7 +707,7 @@ fun ShoppingScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "ابحثي في الأعلى لإضافة المكوّنات، أو افتحي الدليل من زر الإضافة داخل البحث.",
+                                "ابحثي في الأعلى أو افتحي التصنيفات لإضافة المكوّنات.",
                                 color = MutedInk,
                                 style = MaterialTheme.typography.bodyMedium
                             )
