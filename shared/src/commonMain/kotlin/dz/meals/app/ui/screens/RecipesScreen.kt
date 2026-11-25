@@ -465,7 +465,11 @@ fun RecipesScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(filtered, key = { it.id }) { recipe ->
+                    items(
+                        filtered,
+                        key = { it.id },
+                        contentType = { "recipe-card" }
+                    ) { recipe ->
                         MealsPressable(
                             onClick = { selectedRecipeId = recipe.id },
                             modifier = Modifier.fillMaxWidth(),
@@ -703,7 +707,11 @@ fun RecipesScreen(
                                 )
                             }
                         }
-                        items(imageSearchResults, key = { it.sourcePageUrl }) { candidate ->
+                        items(
+                            imageSearchResults,
+                            key = { it.sourcePageUrl },
+                            contentType = { "image-search-result" }
+                        ) { candidate ->
                             MealsCard(
                                 containerColor = WarmSurface,
                                 borderColor = null,
@@ -1154,7 +1162,11 @@ fun RecipesScreen(
                         }
                     }
                     item { Text("طريقة التحضير", fontWeight = FontWeight.Bold) }
-                    itemsIndexed(detail.stepsAr) { index, step ->
+                    itemsIndexed(
+                        detail.stepsAr,
+                        key = { index, _ -> "recipe-step-${detail.id}-$index" },
+                        contentType = { _, _ -> "recipe-step" }
+                    ) { index, step ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.Top,
@@ -1636,7 +1648,13 @@ private fun RecipeCookingFlow(
                                 }
                             }
 
-                            items(recipe.ingredients) { ingredient ->
+                            itemsIndexed(
+                                recipe.ingredients,
+                                key = { index, ingredient ->
+                                    "cooking-ingredient-${recipe.id}-$index-${ingredient.ingredientId}"
+                                },
+                                contentType = { _, _ -> "cooking-ingredient" }
+                            ) { _, ingredient ->
                                 val master = ingredientNames[ingredient.ingredientId]
                                 val factor = servings.toDouble() /
                                     recipe.baseServings.coerceAtLeast(1).toDouble()
