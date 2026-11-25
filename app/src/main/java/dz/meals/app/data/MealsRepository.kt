@@ -228,7 +228,7 @@ class MealsRepository internal constructor(
             if (autoItems.isNotEmpty()) dao.upsertShoppingItems(autoItems)
         }
         val shoppingItems = dao.getShoppingItems(weekStartIso).map { it.toModel(names[it.ingredientId]) }
-        return MealsSnapshot(
+        MealsSnapshot(
             recipes = recipes,
             ingredients = ingredients,
             plannedMeals = planned,
