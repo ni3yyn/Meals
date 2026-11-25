@@ -204,6 +204,31 @@ fun RecipesScreen(
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
     var browseDirection by rememberSaveable { mutableStateOf(1) }
     val ingredientNames = remember(ingredients) { ingredients.associateBy { it.id } }
+    // Build each recipe's searchable text once per catalogue/language revision.
+    // Search keystrokes then scan compact strings instead of rebuilding nested
+    // ingredient, translation and alias lists for every recipe on every query.
+    val searchableRecipeTextById = remember(recipes, ingredientNames, appLocaleTag) {
+        recipes.associate { recipe ->
+            val searchableText = buildList {
+                add(recipe.nameAr)
+                add(mealsText(recipe.nameAr, appLocaleTag))
+                add(recipe.nameFr)
+                add(recipe.descriptionAr)
+                add(mealsText(recipe.descriptionAr, appLocaleTag))
+                add(recipe.descriptionFr)
+                addAll(recipe.tags)
+                recipe.ingredients.forEach { recipeIngredient ->
+                    ingredientNames[recipeIngredient.ingredientId]?.let { ingredient ->
+                        add(ingredient.nameAr)
+                        add(ingredient.nameFr)
+                        add(mealsText(ingredient.nameAr, appLocaleTag))
+                        addAll(ingredient.aliases)
+                    }
+                }
+            }.joinToString(" ")
+            recipe.id to searchableText
+        }
+    }
     val layoutDirection = LocalLayoutDirection.current
     val appLocaleTag = LocalMealsLocaleTag.current
     val uriHandler = LocalUriHandler.current
@@ -429,28 +454,15 @@ fun RecipesScreen(
                     page,
                     favoriteRecipeIds,
                     query,
-                    appLocaleTag,
-                    ingredientNames
+                    searchableRecipeTextById
                 ) {
+                    val searchTerm = query.trim()
                     recipes.filter { recipe ->
-                        val ingredientMasters = recipe.ingredients.mapNotNull {
-                            ingredientNames[it.ingredientId]
-                        }
-                        val searchableIngredientNames = ingredientMasters.flatMap { master ->
-                            listOf(master.nameAr, master.nameFr, mealsText(master.nameAr, appLocaleTag)) +
-                                master.aliases
-                        }
                         recipe.allergens.intersect(allergyIds).isEmpty() &&
                             (!page.first || recipe.id in favoriteRecipeIds) &&
                             (page.second == "الكل" || recipe.category == page.second) &&
-                            (query.isBlank() || recipe.nameAr.contains(query.trim(), true) ||
-                                mealsText(recipe.nameAr, appLocaleTag).contains(query.trim(), true) ||
-                                recipe.nameFr.contains(query.trim(), true) ||
-                                recipe.descriptionAr.contains(query.trim(), true) ||
-                                mealsText(recipe.descriptionAr, appLocaleTag).contains(query.trim(), true) ||
-                                recipe.descriptionFr.contains(query.trim(), true) ||
-                                searchableIngredientNames.any { it.contains(query.trim(), true) } ||
-                                recipe.tags.any { it.contains(query.trim(), true) })
+                            (searchTerm.isBlank() ||
+                                searchableRecipeTextById[recipe.id]?.contains(searchTerm, ignoreCase = true) == true)
                     }
                 }
 
