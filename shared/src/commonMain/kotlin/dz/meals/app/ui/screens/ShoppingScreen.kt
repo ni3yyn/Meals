@@ -1577,9 +1577,12 @@ private fun ShoppingItemRow(
                 )
             }
 
-            MealsIconButton(
+            MealsPressable(
                 onClick = if (actionIsDelete) onDelete else onEdit,
-                size = 38.dp
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(WarmSurface.copy(alpha = 0.78f), RoundedCornerShape(11.dp)),
+                shape = RoundedCornerShape(11.dp)
             ) {
                 MealsIcon(
                     if (actionIsDelete) MealsIconName.Delete else MealsIconName.Edit,
