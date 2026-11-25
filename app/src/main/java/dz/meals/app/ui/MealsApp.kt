@@ -664,6 +664,9 @@ private fun MealsAppContent(
                         onDeleteCustomItem = { id -> perform { repository.deleteCustomShoppingItem(id) } },
                         onRecordPrice = { id, pack, amount, context ->
                             perform { repository.recordPriceObservation(id, pack, amount, preferences.wilaya, context) }
+                        },
+                        backHandler = { enabled, onBack ->
+                            BackHandler(enabled = enabled, onBack = onBack)
                         }
                     )
                     }
