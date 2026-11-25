@@ -167,9 +167,9 @@ fun ShoppingScreen(
     val categoriesById = remember(snapshot.foodCategories) { snapshot.foodCategories.associateBy { it.id } }
     val subcategoriesById = remember(snapshot.foodSubcategories) { snapshot.foodSubcategories.associateBy { it.id } }
     val alreadyAddedIngredientIds = rows.mapNotNull { it.ingredientId }.toSet()
-    val visibleSearchResults = searchResults
     var catalogueSearchIndex by remember { mutableStateOf<FoodCatalogueSearchIndex?>(null) }
     var searchResults by remember { mutableStateOf<FoodCatalogueSearchResult?>(null) }
+    val visibleSearchResults = searchResults
 
     // Build all normalized names/aliases and category groupings once, off the UI thread.
     // The effect is cancelled if the catalogue or active locale changes while building.
