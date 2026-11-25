@@ -135,7 +135,6 @@ import androidx.compose.material3.ModalBottomSheetProperties
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
-import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.rememberHazeState
 import dz.meals.app.data.MEALS_BACKGROUND_CLASSIC
 import dz.meals.app.data.MEALS_BACKGROUND_PINK
@@ -1518,7 +1517,7 @@ fun MealsCheckRow(
     ) {
         MealsCard(
             modifier = Modifier.fillMaxWidth(),
-            containerColor = if (checked) WarmSurface else Paper,
+            containerColor = if (checked) WarmSurface else Color.Transparent,
             contentPadding = 0.dp,
             borderColor = if (checked) TextAccent.copy(alpha = 0.32f) else Border.copy(alpha = 0.72f),
             shape = shape,
@@ -1561,7 +1560,7 @@ fun MealsChoiceTile(
     ) {
         MealsCard(
             modifier = Modifier.fillMaxWidth(),
-            containerColor = if (selected) SoftOrange else Paper,
+            containerColor = if (selected) SoftOrange else Color.Transparent,
             contentPadding = 0.dp,
             borderColor = if (selected) TextAccent.copy(alpha = 0.48f) else Border.copy(alpha = 0.72f),
             shape = LargeTileShape,

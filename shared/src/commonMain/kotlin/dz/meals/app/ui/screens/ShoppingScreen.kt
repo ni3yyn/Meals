@@ -393,7 +393,7 @@ fun ShoppingScreen(
         item(key = "shopping-summary") {
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
-                tintColor = WarmSurface,
+                tintColor = Color.Transparent,
                 contentPadding = 19.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {
@@ -555,7 +555,7 @@ fun ShoppingScreen(
         if (showPriceHistory && snapshot.priceObservations.isNotEmpty()) {
             item(key = "shopping-price-history") {
                 MealsCard(
-                    containerColor = Paper,
+                    containerColor = Color.Transparent,
                     borderColor = Border,
                     contentPadding = 14.dp,
                     shape = RoundedCornerShape(22.dp),
@@ -609,7 +609,7 @@ fun ShoppingScreen(
             ) {
                 MealsCard(
                     modifier = Modifier.fillMaxWidth(),
-                    containerColor = WarmSurface.copy(alpha = 0.90f),
+                    containerColor = Color.Transparent,
                     borderColor = null,
                     contentPadding = 12.dp,
                     shadowElevation = 1.dp
@@ -722,7 +722,7 @@ fun ShoppingScreen(
                 item(key = "shopping-catalogue-search-results-card") {
                     MealsCard(
                         modifier = Modifier.fillMaxWidth(),
-                        containerColor = WarmSurface,
+                        containerColor = Color.Transparent,
                         borderColor = null,
                         contentPadding = 0.dp,
                         shape = RoundedCornerShape(22.dp),
@@ -827,7 +827,7 @@ fun ShoppingScreen(
                             ) {
                                 MealsCard(
                                     modifier = Modifier.fillMaxWidth(),
-                                    containerColor = Paper,
+                                    containerColor = Color.Transparent,
                                     borderColor = Border,
                                     contentPadding = 0.dp,
                                     shape = RoundedCornerShape(22.dp),
@@ -979,7 +979,7 @@ fun ShoppingScreen(
                                     .weight(1f)
                                     .fillMaxWidth()
                                     .padding(start = 20.dp, end = 20.dp, bottom = 124.dp),
-                                containerColor = WarmSurface,
+                                containerColor = Color.Transparent,
                                 borderColor = null,
                                 contentPadding = 0.dp,
                                 shape = RoundedCornerShape(22.dp),

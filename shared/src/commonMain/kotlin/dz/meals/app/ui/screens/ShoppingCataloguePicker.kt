@@ -316,7 +316,7 @@ fun ShoppingCataloguePicker(
                                                 ) {
                                                     MealsCard(
                                                         modifier = Modifier.fillMaxWidth(),
-                                                        containerColor = Paper,
+                                                        containerColor = Color.Transparent,
                                                         borderColor = null,
                                                         contentPadding = 15.dp,
                                                         shape = RoundedCornerShape(17.dp),

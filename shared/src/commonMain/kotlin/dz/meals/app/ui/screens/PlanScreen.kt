@@ -109,7 +109,7 @@ fun PlanScreen(
         item {
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
-                tintColor = androidx.compose.ui.graphics.Color(0xFFFFF6EC),
+                tintColor = androidx.compose.ui.graphics.Color.Transparent,
                 contentPadding = 15.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {
@@ -331,7 +331,7 @@ fun PlanScreen(
             ) {
                 MealsCard(
                     modifier = Modifier.fillMaxWidth(),
-                    containerColor = Paper,
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
                     borderColor = Border,
                     contentPadding = 15.dp
                 ) {
@@ -516,7 +516,7 @@ fun PlanScreen(
                         ) {
                             item {
                                 MealsCard(
-                                    containerColor = dz.meals.app.ui.theme.WarmSurface,
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
                                     borderColor = null,
                                     contentPadding = 14.dp
                                 ) {
