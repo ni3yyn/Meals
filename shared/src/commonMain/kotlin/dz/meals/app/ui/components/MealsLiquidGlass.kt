@@ -25,29 +25,20 @@ import dz.meals.app.ui.theme.Border
  * icon actions, search fields, cards, dialogs and navigation share one finish.
  */
 object MealsLiquidGlass {
-    /**
-     * A luminous ivory frost shared by cards, hero surfaces, dropdowns and sheets.
-     * Its opacity is strong enough to separate glass from pale blue/green artwork
-     * while keeping the backdrop visible through the surface.
-     */
-    // Neutral ivory keeps the glass luminous without turning the blue theme yellow.
-    val GlassTint = Color(0xFFFFFCF8)
-    const val GlassTintOpacity = 0.42f
+    /** Neutral white frost; theme-specific opacity is supplied by MealsBackdrop. */
+    val GlassTint = Color.White
+    const val GlassTintOpacity = 0.30f
 
-    /**
-     * Original near-neutral control tint. Buttons use their own very light
-     * gradient so they stay distinct from their parent without looking opaque.
-     */
-    val ControlTint = Color(0xFFFFFEFC)
-    const val ControlTintOpacity = 0.44f
+    /** Control faces use the same neutral white, at a lighter opacity than cards. */
+    val ControlTint = Color.White
+    const val ControlTintOpacity = 0.22f
 
-    /** Button faces remain lighter than the stronger 42% parent glass surfaces. */
-    const val ButtonFaceOpacity = 0.18f
+    /** Buttons stay the lightest glass layer, never competing with their parent. */
+    const val ButtonFaceOpacity = 0.12f
 
-    val ControlBlurRadius = 12.dp
-    val SurfaceBlurRadius = 10.dp
-    // Keep modal frost consistent with cards without adding another blur layer.
-    val ModalBlurRadius = 10.dp
+    val ControlBlurRadius = 8.dp
+    val SurfaceBlurRadius = 6.dp
+    val ModalBlurRadius = 6.dp
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
@@ -64,31 +55,38 @@ object MealsLiquidGlass {
      * Original subtle pearl gradient restored as one face layer. No Haze tint
      * is stacked underneath it.
      */
-    fun controlFace(): Brush = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.White.copy(alpha = ControlTintOpacity + 0.06f),
-            0.22f to ControlTint.copy(alpha = ControlTintOpacity),
-            0.68f to Color(0xFFF5F1EB).copy(alpha = ControlTintOpacity - 0.06f),
-            1f to Color.White.copy(alpha = ControlTintOpacity)
+    fun controlFace(opacity: Float = ControlTintOpacity): Brush {
+        val faceOpacity = opacity.coerceIn(0.04f, 0.38f)
+        return Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = faceOpacity + 0.035f),
+                0.22f to ControlTint.copy(alpha = faceOpacity),
+                0.68f to Color.White.copy(alpha = (faceOpacity - 0.045f).coerceAtLeast(0.02f)),
+                1f to Color.White.copy(alpha = faceOpacity)
+            )
         )
-    )
+    }
 
-    /**
-     * Button face: a restrained pearl wash, always lighter than the sheet's
-     * 42% shared ivory tint so the blurred backdrop remains clearly visible.
-     */
-    fun buttonFace(): Brush = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.White.copy(alpha = ButtonFaceOpacity + 0.04f),
-            0.22f to ControlTint.copy(alpha = ButtonFaceOpacity),
-            0.68f to Color(0xFFF5F1EB).copy(alpha = ButtonFaceOpacity * 0.55f),
-            1f to Color.White.copy(alpha = ButtonFaceOpacity)
+    /** A restrained white wash that remains lighter than every parent surface. */
+    fun buttonFace(opacity: Float = ButtonFaceOpacity): Brush {
+        val faceOpacity = opacity.coerceIn(0.04f, 0.24f)
+        return Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = faceOpacity + 0.025f),
+                0.22f to ControlTint.copy(alpha = faceOpacity),
+                0.68f to Color.White.copy(alpha = faceOpacity * 0.55f),
+                1f to Color.White.copy(alpha = faceOpacity)
+            )
         )
-    )
+    }
 
-    /** The sole translucent color layer shared by parent glass surfaces. */
-    private fun sharedGlassFace(tint: Color = GlassTint): Brush =
-        SolidColor((if (tint == Color.Transparent) GlassTint else tint).copy(alpha = GlassTintOpacity))
+    /** One white translucent layer; opacity is resolved from the active wallpaper. */
+    private fun sharedGlassFace(
+        tint: Color = GlassTint,
+        opacity: Float = GlassTintOpacity
+    ): Brush = SolidColor(
+        (if (tint == Color.Transparent) GlassTint else tint).copy(alpha = opacity.coerceIn(0.08f, 0.48f))
+    )
 
     /** A neutral white optical edge; its intensity variation is drawn separately. */
     fun controlRim(): Brush = Brush.verticalGradient(
@@ -143,12 +141,15 @@ object MealsLiquidGlass {
         )
     )
 
-    /** Cards, hero surfaces and overlays all share exactly the same tint token. */
-    fun cardFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
+    /** Cards, hero surfaces and overlays share white material with theme-aware opacity. */
+    fun cardFace(tint: Color = GlassTint, opacity: Float = GlassTintOpacity): Brush =
+        sharedGlassFace(tint, opacity)
 
-    fun heroFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
+    fun heroFace(tint: Color = GlassTint, opacity: Float = GlassTintOpacity): Brush =
+        sharedGlassFace(tint, opacity)
 
-    fun modalFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
+    fun modalFace(tint: Color = GlassTint, opacity: Float = GlassTintOpacity): Brush =
+        sharedGlassFace(tint, opacity)
 
     fun modalRim(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
@@ -159,23 +160,24 @@ object MealsLiquidGlass {
         )
     )
 
-    fun illustrationFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
+    fun illustrationFace(tint: Color = GlassTint, opacity: Float = GlassTintOpacity): Brush =
+        sharedGlassFace(tint, opacity)
 
     // Blur stays active without a fixed color effect: the backdrop itself
     // supplies the hue for every glass material on both Android and iOS.
     val ControlBlurStyle = HazeBlurStyle {
-        blurRadius(12.dp)
-        noiseFactor(0.014f)
+        blurRadius(ControlBlurRadius)
+        noiseFactor(0.004f)
     }
 
     val ModalBlurStyle = HazeBlurStyle {
         blurRadius(ModalBlurRadius)
-        noiseFactor(0.005f)
+        noiseFactor(0.002f)
     }
 
     val SurfaceBlurStyle = HazeBlurStyle {
         blurRadius(SurfaceBlurRadius)
-        noiseFactor(0.02f)
+        noiseFactor(0.004f)
     }
 }
 

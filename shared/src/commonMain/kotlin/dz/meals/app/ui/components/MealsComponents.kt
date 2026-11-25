@@ -272,8 +272,9 @@ fun MealsCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val cardHazeState = LocalMealsCardHazeState.current
-    val face = remember(containerColor) {
-        MealsLiquidGlass.cardFace(containerColor)
+    val glassOpacity = LocalMealsGlassOpacity.current
+    val face = remember(containerColor, glassOpacity.surfaceOpacity) {
+        MealsLiquidGlass.cardFace(containerColor, glassOpacity.surfaceOpacity)
     }
     val rim = remember(borderColor) {
         MealsLiquidGlass.surfaceRim(borderColor ?: Color(0xFFEADFD7))
@@ -329,7 +330,7 @@ fun MealsGlassDot(
                 Color.White.copy(alpha = 0.36f)
             )
         )
-        else -> MealsLiquidGlass.controlFace()
+        else -> MealsLiquidGlass.controlFace(LocalMealsGlassOpacity.current.controlOpacity)
     }
 
     MealsLiquidGlassFrame(
@@ -654,6 +655,24 @@ val LocalMealsCardGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> 
 val LocalMealsScreenGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
 internal val LocalMealsGlassPressed = staticCompositionLocalOf { false }
 
+/**
+ * Theme-aware material strengths. Pale wallpapers use less white fill so the
+ * backdrop remains visible; controls and buttons stay progressively lighter.
+ */
+internal data class MealsGlassOpacity(
+    val surfaceOpacity: Float,
+    val controlOpacity: Float,
+    val buttonOpacity: Float
+)
+
+internal val LocalMealsGlassOpacity = staticCompositionLocalOf {
+    MealsGlassOpacity(
+        surfaceOpacity = MealsLiquidGlass.GlassTintOpacity,
+        controlOpacity = MealsLiquidGlass.ControlTintOpacity,
+        buttonOpacity = MealsLiquidGlass.ButtonFaceOpacity
+    )
+}
+
 
 /**
  * High-emphasis hero surface using the exact same backdrop blur material as
@@ -673,8 +692,9 @@ fun MealsGlassSurface(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current
-    val face = remember(tintColor) {
-        MealsLiquidGlass.heroFace(tintColor)
+    val glassOpacity = LocalMealsGlassOpacity.current
+    val face = remember(tintColor, glassOpacity.surfaceOpacity) {
+        MealsLiquidGlass.heroFace(tintColor, glassOpacity.surfaceOpacity)
     }
 
     MealsLiquidGlassFrame(
@@ -859,7 +879,7 @@ private fun MealsLiquidGlassControl(
             modifier = frameModifier,
             shape = MealsLiquidGlass.ControlShape,
             elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
-            face = MealsLiquidGlass.buttonFace(),
+            face = MealsLiquidGlass.buttonFace(LocalMealsGlassOpacity.current.buttonOpacity),
             hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
             blurStyle = MealsLiquidGlass.ControlBlurStyle,
             blurRadius = MealsLiquidGlass.ControlBlurRadius,
@@ -1107,7 +1127,7 @@ fun <T> MealsGlassDropdown(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MealsLiquidGlass.ControlShape,
                 elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
-                face = MealsLiquidGlass.controlFace(),
+                face = MealsLiquidGlass.controlFace(LocalMealsGlassOpacity.current.controlOpacity),
                 hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
                 blurStyle = MealsLiquidGlass.ControlBlurStyle,
                 blurRadius = MealsLiquidGlass.ControlBlurRadius,
@@ -1168,7 +1188,7 @@ fun <T> MealsGlassDropdown(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MealsLiquidGlass.DropdownShape,
                 elevation = MealsLiquidGlass.DropdownElevation,
-                face = MealsLiquidGlass.modalFace(),
+                face = MealsLiquidGlass.modalFace(opacity = LocalMealsGlassOpacity.current.surfaceOpacity),
                 hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
                 blurStyle = MealsLiquidGlass.ModalBlurStyle,
                 blurRadius = MealsLiquidGlass.ModalBlurRadius,
@@ -1287,7 +1307,7 @@ fun MealsLiquidGlassTextField(
         modifier = modifier.fillMaxWidth(),
         shape = MealsLiquidGlass.ControlShape,
         elevation = if (enabled) MealsLiquidGlass.SurfaceElevation else 0.dp,
-        face = MealsLiquidGlass.controlFace(),
+        face = MealsLiquidGlass.controlFace(LocalMealsGlassOpacity.current.controlOpacity),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
         blurRadius = MealsLiquidGlass.ControlBlurRadius,
@@ -1344,7 +1364,7 @@ fun MealsSearchBar(
         modifier = modifier.fillMaxWidth(),
         shape = MealsLiquidGlass.ControlShape,
         elevation = MealsLiquidGlass.ControlElevation,
-        face = MealsLiquidGlass.controlFace(),
+        face = MealsLiquidGlass.controlFace(LocalMealsGlassOpacity.current.controlOpacity),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
         blurRadius = MealsLiquidGlass.ControlBlurRadius,
@@ -1650,7 +1670,10 @@ fun MealsIllustrationBadge(
         modifier = modifier.size(size),
         shape = CircleShape,
         elevation = MealsLiquidGlass.ControlElevation,
-        face = MealsLiquidGlass.illustrationFace(background),
+        face = MealsLiquidGlass.illustrationFace(
+            background,
+            LocalMealsGlassOpacity.current.controlOpacity
+        ),
         hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
         blurStyle = MealsLiquidGlass.ControlBlurStyle,
         blurRadius = MealsLiquidGlass.ControlBlurRadius,
@@ -1692,8 +1715,9 @@ private fun MealsModalSurface(
     } else {
         null
     }
-    val face = remember(tintColor) {
-        MealsLiquidGlass.modalFace(tintColor)
+    val glassOpacity = LocalMealsGlassOpacity.current
+    val face = remember(tintColor, glassOpacity.surfaceOpacity) {
+        MealsLiquidGlass.modalFace(tintColor, glassOpacity.surfaceOpacity)
     }
 
     MealsLiquidGlassFrame(
@@ -2338,7 +2362,7 @@ fun MealsFrostedBottomBar(
             modifier = Modifier.fillMaxWidth().height(72.dp),
             shape = navigationShape,
             elevation = 10.dp,
-            face = MealsLiquidGlass.controlFace(),
+            face = MealsLiquidGlass.controlFace(LocalMealsGlassOpacity.current.controlOpacity),
             hazeState = hazeState,
             blurStyle = MealsLiquidGlass.SurfaceBlurStyle,
             blurRadius = MealsLiquidGlass.SurfaceBlurRadius,
@@ -2540,11 +2564,26 @@ fun MealsBackdrop(
     val cardGlassBackdrop = rememberMealsGlassBackdrop()
     val screenGlassBackdrop = rememberMealsGlassBackdrop()
 
+    val glassOpacity = if (backgroundTheme == MEALS_BACKGROUND_BLUE) {
+        MealsGlassOpacity(
+            surfaceOpacity = 0.23f,
+            controlOpacity = 0.16f,
+            buttonOpacity = 0.09f
+        )
+    } else {
+        MealsGlassOpacity(
+            surfaceOpacity = MealsLiquidGlass.GlassTintOpacity,
+            controlOpacity = MealsLiquidGlass.ControlTintOpacity,
+            buttonOpacity = MealsLiquidGlass.ButtonFaceOpacity
+        )
+    }
+
     CompositionLocalProvider(
         LocalMealsHazeState provides hazeState,
         LocalMealsCardHazeState provides cardHazeState,
         LocalMealsCardGlassBackdrop provides cardGlassBackdrop,
-        LocalMealsScreenGlassBackdrop provides screenGlassBackdrop
+        LocalMealsScreenGlassBackdrop provides screenGlassBackdrop,
+        LocalMealsGlassOpacity provides glassOpacity
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
