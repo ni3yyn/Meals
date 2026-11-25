@@ -203,6 +203,7 @@ fun RecipesScreen(
     var cookingCompleted by rememberSaveable { mutableStateOf(false) }
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
     var browseDirection by rememberSaveable { mutableStateOf(1) }
+    val appLocaleTag = LocalMealsLocaleTag.current
     val ingredientNames = remember(ingredients) { ingredients.associateBy { it.id } }
     // Build each recipe's searchable text once per catalogue/language revision.
     // Search keystrokes then scan compact strings instead of rebuilding nested
@@ -230,7 +231,6 @@ fun RecipesScreen(
         }
     }
     val layoutDirection = LocalLayoutDirection.current
-    val appLocaleTag = LocalMealsLocaleTag.current
     val uriHandler = LocalUriHandler.current
     val availableCategories = remember(recipes) {
         (recipeCategories + recipes.map { it.category.trim() }.filter { it.isNotBlank() })
