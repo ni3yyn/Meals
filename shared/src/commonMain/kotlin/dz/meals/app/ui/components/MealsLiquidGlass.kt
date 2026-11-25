@@ -34,7 +34,7 @@ object MealsLiquidGlass {
 
     val ControlBlurRadius = 12.dp
     val SurfaceBlurRadius = 8.dp
-    val ModalBlurRadius = 17.dp
+    val ModalBlurRadius = 13.dp
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
