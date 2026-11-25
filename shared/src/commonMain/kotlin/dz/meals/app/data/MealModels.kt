@@ -112,6 +112,9 @@ data class RecipeAttribution(
     val changes: String
 )
 
+const val MEALS_BACKGROUND_CLASSIC = "classic"
+const val MEALS_BACKGROUND_PINK = "pink"
+
 data class AppPreferences(
     val weeklyBudgetDzd: Int = 15_000,
     val wilaya: String = "الجزائر",
@@ -126,8 +129,9 @@ data class AppPreferences(
     val commune: String = "",
     val shoppingChannel: String = "market",
     val preferredShop: String = "",
-    // Kept last to preserve the positional constructor order for existing callers.
-    val appLanguage: String = "ar-DZ"
+    // Append new preferences here to preserve existing positional constructor calls.
+    val appLanguage: String = "ar-DZ",
+    val kitchenBackground: String = MEALS_BACKGROUND_PINK
 )
 
 data class PantryItem(

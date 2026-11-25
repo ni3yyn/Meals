@@ -88,6 +88,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -135,6 +136,8 @@ import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.rememberHazeState
+import dz.meals.app.data.MEALS_BACKGROUND_CLASSIC
+import dz.meals.app.data.MEALS_BACKGROUND_PINK
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
 import dz.meals.app.ui.theme.Forest
@@ -152,6 +155,7 @@ import dz.meals.app.ui.icons.MealsNavigationIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_kitchen_background
+import dz.meals.app.shared.generated.resources.meals_kitchen_background_pink
 import androidx.compose.ui.layout.ContentScale
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.text.BasicTextField
@@ -2424,8 +2428,101 @@ fun MealsFrostedBottomBar(
     }
 }
 
+
+/**
+ * Compact visual picker for the fixed kitchen artwork behind the glass UI.
+ * The selected artwork remains the actual Haze source, so every glass surface
+ * samples the same background that is visible on screen.
+ */
 @Composable
-fun MealsBackdrop(content: @Composable () -> Unit) {
+fun MealsBackgroundPicker(
+    selectedTheme: String,
+    onThemeSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        MealsBackgroundOption(
+            modifier = Modifier.weight(1f),
+            title = "الخلفية الكلاسيكية",
+            selected = selectedTheme == MEALS_BACKGROUND_CLASSIC,
+            painter = painterResource(Res.drawable.meals_kitchen_background),
+            onClick = { onThemeSelected(MEALS_BACKGROUND_CLASSIC) }
+        )
+        MealsBackgroundOption(
+            modifier = Modifier.weight(1f),
+            title = "الخلفية الوردية",
+            selected = selectedTheme == MEALS_BACKGROUND_PINK,
+            painter = painterResource(Res.drawable.meals_kitchen_background_pink),
+            onClick = { onThemeSelected(MEALS_BACKGROUND_PINK) }
+        )
+    }
+}
+
+@Composable
+private fun MealsBackgroundOption(
+    modifier: Modifier = Modifier,
+    title: String,
+    selected: Boolean,
+    painter: Painter,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(17.dp)
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(if (selected) Paper.copy(alpha = 0.44f) else Color.White.copy(alpha = 0.24f))
+            .border(
+                BorderStroke(
+                    if (selected) 1.5.dp else 1.dp,
+                    if (selected) Forest.copy(alpha = 0.82f) else Border.copy(alpha = 0.48f)
+                ),
+                shape
+            )
+            .clickable(role = Role.RadioButton, onClick = onClick)
+            .padding(7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(112.dp)
+                .clip(RoundedCornerShape(11.dp))
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                title,
+                color = Ink,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                maxLines = 1
+            )
+            if (selected) {
+                MealsIcon(
+                    MealsIconName.Check,
+                    contentDescription = null,
+                    modifier = Modifier.padding(start = 4.dp).size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MealsBackdrop(
+    backgroundTheme: String = MEALS_BACKGROUND_PINK,
+    content: @Composable () -> Unit
+) {
     // The full-screen state is used by the floating navigation so it can blur
     // moving content. The card state is isolated to the fixed background artwork,
     // preventing a card from sampling itself or neighbouring card outputs.
@@ -2449,7 +2546,13 @@ fun MealsBackdrop(content: @Composable () -> Unit) {
             ) {
                 // This sits behind the Scaffold, so it stays fixed while tab content scrolls.
                 Image(
-                    painter = painterResource(Res.drawable.meals_kitchen_background),
+                    painter = painterResource(
+                        if (backgroundTheme == MEALS_BACKGROUND_CLASSIC) {
+                            Res.drawable.meals_kitchen_background
+                        } else {
+                            Res.drawable.meals_kitchen_background_pink
+                        }
+                    ),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

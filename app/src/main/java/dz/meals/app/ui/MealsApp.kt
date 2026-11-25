@@ -416,7 +416,7 @@ private fun MealsAppContent(
         LocalLayoutDirection provides mealsLayoutDirection(appLanguage),
         LocalMealsLocaleTag provides appLanguage
     ) {
-    MealsBackdrop {
+    MealsBackdrop(backgroundTheme = preferences.kitchenBackground) {
         val hazeState = requireNotNull(LocalMealsHazeState.current) {
             "MealsApp must be hosted inside MealsBackdrop so the shared Haze source is available."
         }
@@ -750,6 +750,10 @@ private fun MealsAppContent(
         if (showSettings) {
             SettingsDialog(
                 appLanguage = appLanguage,
+                kitchenBackground = preferences.kitchenBackground,
+                onKitchenBackgroundSelected = { background ->
+                    scope.launch { preferencesStore.setKitchenBackground(background) }
+                },
                 onLanguageSelected = { languageTag ->
                     val target = normalizeMealsLocaleTag(languageTag)
                     preferencesStore.setAppLanguage(target)
@@ -1055,6 +1059,8 @@ private fun LanguageTransitionOverlay(
 @Composable
 private fun SettingsDialog(
     appLanguage: String,
+    kitchenBackground: String,
+    onKitchenBackgroundSelected: (String) -> Unit,
     onLanguageSelected: suspend (String) -> Unit,
     onDismiss: () -> Unit,
     onOpenHouseholdSettings: () -> Unit,
@@ -1170,6 +1176,18 @@ private fun SettingsDialog(
                 value = "فاتح",
                 icon = MealsIconName.Settings,
                 showSwitch = true
+            )
+
+            SettingsSectionHeading("خلفية التطبيق")
+            Text(
+                text = mealsText("اختاري خلفية المطبخ التي تفضلينها"),
+                color = dz.meals.app.ui.theme.MutedInk,
+                style = MaterialTheme.typography.bodySmall
+            )
+            MealsBackgroundPicker(
+                selectedTheme = kitchenBackground,
+                onThemeSelected = onKitchenBackgroundSelected,
+                modifier = Modifier.fillMaxWidth()
             )
 
             SettingsSectionHeading("تفضيلات التخطيط")

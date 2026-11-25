@@ -38,6 +38,7 @@ class PreferencesStore(context: Context) {
         val budgetBufferPercent = intPreferencesKey("budget_buffer_percent")
         val hasCompletedSetup = booleanPreferencesKey("has_completed_setup")
         val appLanguage = stringPreferencesKey("app_language")
+        val kitchenBackground = stringPreferencesKey("kitchen_background")
     }
 
     val preferences: Flow<AppPreferences> = dataStore.data
@@ -62,7 +63,10 @@ class PreferencesStore(context: Context) {
                 maxCookingMinutes = (values[Keys.maxCookingMinutes] ?: 60).coerceIn(10, 240),
                 budgetBufferPercent = (values[Keys.budgetBufferPercent] ?: 5).coerceIn(0, 30),
                 hasCompletedSetup = values[Keys.hasCompletedSetup] ?: false,
-                appLanguage = normalizeStoredLanguage(values[Keys.appLanguage])
+                appLanguage = normalizeStoredLanguage(values[Keys.appLanguage]),
+                kitchenBackground = values[Keys.kitchenBackground]
+                    ?.takeIf { it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK }
+                    ?: MEALS_BACKGROUND_PINK
             )
         }
 
@@ -114,6 +118,13 @@ class PreferencesStore(context: Context) {
             else -> return
         }
         dataStore.edit { values -> values[Keys.appLanguage] = normalized }
+    }
+
+    suspend fun setKitchenBackground(background: String) {
+        val normalized = background.takeIf {
+            it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK
+        } ?: MEALS_BACKGROUND_PINK
+        dataStore.edit { values -> values[Keys.kitchenBackground] = normalized }
     }
 
     private fun normalizeStoredLanguage(languageTag: String?): String =
