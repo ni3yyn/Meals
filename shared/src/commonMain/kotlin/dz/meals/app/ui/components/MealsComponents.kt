@@ -61,6 +61,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -643,12 +644,44 @@ val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
 @OptIn(ExperimentalMaterial3Api::class)
 private val LocalMealsBottomSheetState = staticCompositionLocalOf<SheetState?> { null }
 
+private class MealsBottomSheetCoordinator {
+    var activeOwner: Any? by mutableStateOf(null)
+        private set
+    private var activeOwnerDismiss: (() -> Unit)? = null
+
+    fun activate(owner: Any, dismissPrevious: () -> Unit) {
+        if (activeOwner === owner) {
+            activeOwnerDismiss = dismissPrevious
+            return
+        }
+
+        val previousDismiss = activeOwnerDismiss
+        activeOwner = owner
+        activeOwnerDismiss = dismissPrevious
+        // Claim first, then release the old owner. Only the newly claimed
+        // dialog is allowed to render against the shared SheetState.
+        previousDismiss?.invoke()
+    }
+
+    fun deactivate(owner: Any) {
+        if (activeOwner === owner) {
+            activeOwner = null
+            activeOwnerDismiss = null
+        }
+    }
+}
+
+private val LocalMealsBottomSheetCoordinator =
+    staticCompositionLocalOf<MealsBottomSheetCoordinator?> { null }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealsBottomSheetStateProvider(content: @Composable () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coordinator = remember { MealsBottomSheetCoordinator() }
     CompositionLocalProvider(
         LocalMealsBottomSheetState provides sheetState,
+        LocalMealsBottomSheetCoordinator provides coordinator,
         content = content
     )
 }
@@ -1837,6 +1870,8 @@ fun MealsBottomSheet(
     // preview/test still receives a local fallback state.
     val fallbackSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val sheetState = LocalMealsBottomSheetState.current ?: fallbackSheetState
+    val sheetCoordinator = LocalMealsBottomSheetCoordinator.current
+    val sheetOwner = remember { Any() }
     val sheetScope = rememberCoroutineScope()
     val dismissStarted = remember { mutableStateOf(false) }
     val dismissalDelivered = remember { mutableStateOf(false) }
@@ -1864,6 +1899,21 @@ fun MealsBottomSheet(
         }
     }
 
+    // A newly composed sheet claims the shared host. If another sheet is still
+    // present, complete its owner callback and remove its dialog before this
+    // owner starts using the same SheetState.
+    DisposableEffect(sheetCoordinator, sheetOwner) {
+        sheetCoordinator?.activate(sheetOwner) {
+            completeDismissal.value()
+        }
+        onDispose {
+            sheetCoordinator?.deactivate(sheetOwner)
+        }
+    }
+    val isCurrentSheetOwner =
+        sheetCoordinator == null || sheetCoordinator.activeOwner === sheetOwner
+
+    if (isCurrentSheetOwner) {
     LaunchedEffect(sheetState, windowHeightPx) {
         snapshotFlow {
             val measuredHeight = sheetHeightPx.intValue
@@ -1938,6 +1988,7 @@ fun MealsBottomSheet(
         }
     }
 
+    }
     val dismissSheet: (afterDismiss: () -> Unit) -> Unit = remember(
         sheetState,
         sheetScope,
@@ -1975,6 +2026,7 @@ fun MealsBottomSheet(
     }
     val topShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
 
+    if (isCurrentSheetOwner) {
     MealsBottomSheetMotionProvider {
         CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
@@ -2245,6 +2297,7 @@ fun MealsBottomSheet(
                 }
             }
         }
+    }
     }
 }
 
