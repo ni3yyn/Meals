@@ -131,7 +131,7 @@ class MealsRepository internal constructor(
         weekStartIso: String,
         selectedWilaya: String? = null,
         selectedMealSlots: Set<String> = MealSlots.ids.toSet()
-    ): MealsSnapshot {
+    ): MealsSnapshot = withContext(Dispatchers.Default) {
         ensureInitialized()
         val ingredients = loadIngredients()
         val ingredientTaxonomyById = ingredients.associate { ingredient ->
@@ -162,6 +162,11 @@ class MealsRepository internal constructor(
         } else currentPrices
         val planWilaya = savedRun?.wilaya?.takeIf { it.isNotBlank() } ?: selectedWilaya
         val existingShopping = dao.getShoppingItems(weekStartIso)
+        // Basket rows frequently share ingredient/unit pairs. Build this lookup
+        // once so each generated basket line does not rescan the full shopping list.
+        val existingShoppingByIngredientAndUnit = existingShopping.groupBy {
+            it.ingredientId to it.unit
+        }
         val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
         val checkedItemIds = existingShopping
             .filter { it.checked && it.ingredientId != null }
@@ -184,9 +189,9 @@ class MealsRepository internal constructor(
             val scopedId = "$weekStartIso::${line.id}"
             // Reuse old rows by canonical ingredient and unit, not their legacy
             // embedded IDs. If aliases converge, fold their editable state together.
-            val oldRows = existingShopping.filter { item ->
-                item.unit == line.unit && item.ingredientId == line.ingredientId
-            }
+            val oldRows = existingShoppingByIngredientAndUnit[
+                line.ingredientId to line.unit
+            ].orEmpty()
             val old = oldRows.maxByOrNull { it.updatedAtEpochMillis }
             val overrides = oldRows.mapNotNull { it.purchaseQuantityOverride }
             val purchaseOverride = overrides.takeIf { it.isNotEmpty() }?.sum()
@@ -230,7 +235,7 @@ class MealsRepository internal constructor(
             pantry = pantry,
             shoppingItems = shoppingItems,
             priceObservations = currentPrices.mapNotNull { observation ->
-                val master = ingredients.firstOrNull { it.id == observation.ingredientId } ?: return@mapNotNull null
+                val master = names[observation.ingredientId] ?: return@mapNotNull null
                 PriceObservationSummary(
                     id = observation.id,
                     ingredientId = observation.ingredientId,
