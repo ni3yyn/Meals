@@ -125,7 +125,7 @@ class MidatiBaselineProfile {
             packageName = TARGET_PACKAGE,
             includeInStartupProfile = false
         ) {
-            val currentDevice = device()
+            val currentDevice = benchmarkUiDevice()
             openAppAndPrepareShopping(currentDevice)
 
             val category = currentDevice.wait(
@@ -183,12 +183,12 @@ class MidatiMacrobenchmark {
             iterations = 5,
             startupMode = StartupMode.COLD,
             setupBlock = {
-                openAppAndPrepareShopping(device())
+                openAppAndPrepareShopping(benchmarkUiDevice())
                 pressHome()
             }
         ) {
             startActivityAndWait()
-            val currentDevice = device()
+            val currentDevice = benchmarkUiDevice()
 
             val shoppingTab = currentDevice.wait(
                 Until.findObject(By.res("nav.tab.2")),
