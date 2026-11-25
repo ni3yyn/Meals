@@ -5,9 +5,16 @@ import dz.meals.app.ui.theme.LocalMealsLocaleTag
 import dz.meals.app.ui.theme.bidiIsolate
 import dz.meals.app.ui.theme.mealsText
 import dz.meals.app.ui.theme.logicalStartRevealSign
+import dz.meals.app.ui.theme.logicalAnimationDirectionSign
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,6 +22,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -62,6 +70,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.mealsSheetDismissAction
+import dz.meals.app.ui.components.MealsChoiceTile
+import dz.meals.app.ui.components.MealsFilterChips
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsCheckbox
 import dz.meals.app.ui.components.MealsGlassSurface
@@ -117,8 +127,11 @@ fun ShoppingScreen(
 ) {
     val appLocaleTag = LocalMealsLocaleTag.current
     var addDialog by rememberSaveable { mutableStateOf(false) }
-    var cataloguePicker by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var browsePage by rememberSaveable { mutableStateOf(0) }
+    var browseDirection by remember { mutableStateOf(1) }
+    var selectedBrowseCategoryId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedSubcategoryId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCategoryId by rememberSaveable { mutableStateOf<String?>(null) }
     var locallyAddedIngredientIds by remember { mutableStateOf(emptySet<String>()) }
     var showPurchased by rememberSaveable { mutableStateOf(false) }
@@ -193,52 +206,118 @@ fun ShoppingScreen(
         compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
     )
 
+    val layoutDirection = LocalLayoutDirection.current
+    val orderedFoodCategories = remember(snapshot.foodCategories) {
+        snapshot.foodCategories.sortedBy { it.sortOrder }
+    }
+    val selectedBrowseCategory = selectedBrowseCategoryId?.let(categoriesById::get)
+    val browseSubcategories = remember(snapshot.foodSubcategories, selectedBrowseCategoryId) {
+        snapshot.foodSubcategories
+            .filter { it.categoryId == selectedBrowseCategoryId }
+            .sortedBy { it.sortOrder }
+    }
+    val allSubcategoriesLabel = when {
+        appLocaleTag.startsWith("en") -> "All"
+        appLocaleTag.startsWith("fr") -> "Tout"
+        else -> "الكل"
+    }
+    val selectedSubcategoryLabel = selectedSubcategoryId
+        ?.let(subcategoriesById::get)
+        ?.label(appLocaleTag)
+        ?: allSubcategoriesLabel
+    val browseFoods = remember(
+        ingredients,
+        selectedBrowseCategoryId,
+        selectedSubcategoryId,
+        appLocaleTag
+    ) {
+        ingredients.filter { food ->
+            food.categoryId == selectedBrowseCategoryId &&
+                (selectedSubcategoryId == null || food.subcategoryId == selectedSubcategoryId)
+        }.sortedBy { food ->
+            when {
+                appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }.lowercase()
+                appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }.lowercase()
+                else -> food.nameAr.lowercase()
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             MealsSearchBar(
                 value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = when {
-                    appLocaleTag.startsWith("en") -> "Search to add an ingredient..."
-                    appLocaleTag.startsWith("fr") -> "Rechercher un ingrédient à ajouter..."
-                    else -> "ابحثي لإضافة مكوّن أو منتج..."
-                },
-                modifier = Modifier.weight(1f),
-                trailingContent = {
-                    MealsIconButton(
-                        onClick = { cataloguePicker = true },
-                        size = 40.dp
-                    ) {
-                        MealsIcon(
-                            MealsIconName.Add,
-                            contentDescription = when {
-                                appLocaleTag.startsWith("en") -> "Browse ingredients"
-                                appLocaleTag.startsWith("fr") -> "Parcourir les ingrédients"
-                                else -> "تصفح المكونات"
-                            },
-                            modifier = Modifier.size(23.dp)
-                        )
+                onValueChange = {
+                    searchQuery = it
+                    if (browsePage != 0) {
+                        browseDirection = -1
+                        browsePage = 0
                     }
-                }
+                },
+                placeholder = when {
+                    appLocaleTag.startsWith("en") -> "Search ingredients..."
+                    appLocaleTag.startsWith("fr") -> "Rechercher un ingrédient..."
+                    else -> "ابحث عن مكوّن أو منتج..."
+                },
+                modifier = Modifier.weight(1f)
             )
             MealsSecondaryButton(
-                label = when {
-                    appLocaleTag.startsWith("en") -> "Share"
-                    appLocaleTag.startsWith("fr") -> "Partager"
-                    else -> "مشاركة"
+                label = if (browsePage == 0) {
+                    when {
+                        appLocaleTag.startsWith("en") -> "Categories"
+                        appLocaleTag.startsWith("fr") -> "Catégories"
+                        else -> "التصنيفات"
+                    }
+                } else {
+                    when {
+                        appLocaleTag.startsWith("en") -> "Shopping"
+                        appLocaleTag.startsWith("fr") -> "Achats"
+                        else -> "المشتريات"
+                    }
                 },
-                onClick = { onShareList(buildShoppingShareText(rows, snapshot, appLocaleTag)) },
-                modifier = Modifier.width(104.dp),
-                enabled = rows.isNotEmpty()
+                onClick = {
+                    searchQuery = ""
+                    if (browsePage == 0) {
+                        browseDirection = 1
+                        browsePage = 1
+                    } else {
+                        browseDirection = -1
+                        browsePage = 0
+                    }
+                },
+                modifier = Modifier.width(108.dp).height(50.dp)
             )
         }
 
+        AnimatedContent(
+            targetState = browsePage,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            transitionSpec = {
+                val movingForward = targetState > initialState
+                val directionSign = logicalAnimationDirectionSign(layoutDirection)
+                (slideInHorizontally(
+                    animationSpec = spring<IntOffset>(dampingRatio = 0.82f, stiffness = 390f),
+                    initialOffsetX = { width ->
+                        (if (movingForward) width / 5 else -width / 5) * directionSign
+                    }
+                ) + fadeIn(animationSpec = tween(155, delayMillis = 18))) togetherWith
+                    (slideOutHorizontally(
+                        animationSpec = spring(dampingRatio = 0.94f, stiffness = 560f),
+                        targetOffsetX = { width ->
+                            (if (movingForward) -width / 12 else width / 12) * directionSign
+                        }
+                    ) + fadeOut(animationSpec = tween(125)))
+            },
+            label = "shoppingBrowsePages"
+        ) { activePage ->
+            when (activePage) {
+                0 -> {
         LazyColumn(
         modifier = Modifier.weight(1f),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -364,6 +443,17 @@ fun ShoppingScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                MealsTextButton(
+                    onClick = { onShareList(buildShoppingShareText(rows, snapshot, appLocaleTag)) },
+                    modifier = Modifier.weight(1f),
+                    compact = true
+                ) {
+                    Text(when {
+                        appLocaleTag.startsWith("en") -> "Share"
+                        appLocaleTag.startsWith("fr") -> "Partager"
+                        else -> "مشاركة"
+                    })
+                }
                 MealsTextButton(
                     onClick = { priceDialog = true },
                     modifier = Modifier.weight(1f),
@@ -705,8 +795,242 @@ fun ShoppingScreen(
             }
         }
         }
-    }
 
+                }
+                1 -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            start = 20.dp,
+                            end = 20.dp,
+                            top = 14.dp,
+                            bottom = 124.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item(key = "ingredient-categories-heading") {
+                            Text(
+                                when {
+                                    appLocaleTag.startsWith("en") -> "Choose a category"
+                                    appLocaleTag.startsWith("fr") -> "Choisissez une catégorie"
+                                    else -> "اختاري تصنيفاً"
+                                },
+                                modifier = Modifier.padding(bottom = 2.dp),
+                                color = Ink,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        orderedFoodCategories.chunked(2).forEachIndexed { rowIndex, categoryPair ->
+                            item(key = "ingredient-category-row-$rowIndex") {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    categoryPair.forEach { category ->
+                                        val count = ingredients.count { it.categoryId == category.id }
+                                        MealsChoiceTile(
+                                            title = category.label(appLocaleTag),
+                                            description = when {
+                                                appLocaleTag.startsWith("en") -> "$count ingredients"
+                                                appLocaleTag.startsWith("fr") -> "$count ingrédients"
+                                                else -> "$count مكوّن"
+                                            },
+                                            selected = false,
+                                            onClick = {
+                                                selectedBrowseCategoryId = category.id
+                                                selectedSubcategoryId = null
+                                                browseDirection = 1
+                                                browsePage = 2
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    if (categoryPair.size == 1) {
+                                        Spacer(Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    val category = selectedBrowseCategory
+                    if (category == null) {
+                        LaunchedEffect(Unit) {
+                            browseDirection = -1
+                            browsePage = 1
+                        }
+                    } else {
+                        val browseFoodCount = browseFoods.size
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                MealsIconButton(
+                                    onClick = {
+                                        browseDirection = -1
+                                        browsePage = 1
+                                    },
+                                    size = 42.dp
+                                ) {
+                                    MealsIcon(
+                                        MealsIconName.ArrowBack,
+                                        contentDescription = when {
+                                            appLocaleTag.startsWith("en") -> "Back to categories"
+                                            appLocaleTag.startsWith("fr") -> "Retour aux catégories"
+                                            else -> "العودة إلى التصنيفات"
+                                        },
+                                        modifier = Modifier.size(23.dp)
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        category.label(appLocaleTag),
+                                        color = Ink,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        when {
+                                            appLocaleTag.startsWith("en") -> "$browseFoodCount ingredients"
+                                            appLocaleTag.startsWith("fr") -> "$browseFoodCount ingrédients"
+                                            else -> "$browseFoodCount مكوّن"
+                                        },
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+
+                            MealsFilterChips(
+                                items = listOf(allSubcategoriesLabel) + browseSubcategories.map { it.label(appLocaleTag) },
+                                selected = selectedSubcategoryLabel,
+                                onSelect = { selected ->
+                                    selectedSubcategoryId = browseSubcategories
+                                        .firstOrNull { it.label(appLocaleTag) == selected }
+                                        ?.id
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 10.dp)
+                            )
+
+                            LazyColumn(
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    top = 4.dp,
+                                    bottom = 124.dp
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (browseFoods.isEmpty()) {
+                                    item(key = "category-ingredients-empty") {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 26.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            MealsIllustrationBadge(icon = MealsIconName.Basket, size = 60.dp)
+                                            Text(
+                                                when {
+                                                    appLocaleTag.startsWith("en") -> "No ingredients in this category yet"
+                                                    appLocaleTag.startsWith("fr") -> "Aucun ingrédient dans cette catégorie"
+                                                    else -> "لا توجد مكوّنات في هذا التصنيف حالياً"
+                                                },
+                                                color = MutedInk,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                    }
+                                }
+                                browseFoods.forEach { food ->
+                                    item(key = "browse-food-${food.id}") {
+                                        val foodName = when {
+                                            appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }
+                                            appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
+                                            else -> food.nameAr
+                                        }
+                                        val alreadyAdded = food.id in alreadyAddedIngredientIds ||
+                                            food.id in locallyAddedIngredientIds
+                                        MealsPressable(
+                                            onClick = {
+                                                if (!alreadyAdded) {
+                                                    locallyAddedIngredientIds = locallyAddedIngredientIds + food.id
+                                                    addedFeedback = foodName
+                                                    onAddCatalogueItem(food.id)
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(14.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.weight(1f),
+                                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                                ) {
+                                                    Text(
+                                                        foodName,
+                                                        color = Ink,
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        translate = false
+                                                    )
+                                                    Text(
+                                                        listOfNotNull(
+                                                            subcategoriesById[food.subcategoryId]?.label(appLocaleTag),
+                                                            food.baseUnit.takeIf { it.isNotBlank() }
+                                                        ).joinToString(" · "),
+                                                        color = MutedInk,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        translate = false
+                                                    )
+                                                }
+                                                if (alreadyAdded) {
+                                                    Text(
+                                                        when {
+                                                            appLocaleTag.startsWith("en") -> "In list"
+                                                            appLocaleTag.startsWith("fr") -> "Dans la liste"
+                                                            else -> "في القائمة"
+                                                        },
+                                                        color = MutedInk,
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                }
+                                                MealsIcon(
+                                                    if (alreadyAdded) MealsIconName.Check else MealsIconName.Add,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(23.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     selectedCategoryId?.let { categoryId ->
         val categoryRows = visibleRows.filter { it.categoryId == categoryId }
         val groupedRows = categoryRows.groupBy { it.subcategoryId }.entries.sortedWith(
@@ -774,24 +1098,6 @@ fun ShoppingScreen(
                     }
                 }
             }
-        )
-    }
-
-    if (cataloguePicker) {
-        ShoppingCataloguePicker(
-            ingredients = ingredients,
-            foodCategories = snapshot.foodCategories,
-            foodSubcategories = snapshot.foodSubcategories,
-            existingIngredientIds = rows.mapNotNull { it.ingredientId }.toSet(),
-            onAddIngredient = { id ->
-                addedFeedback = ingredients.firstOrNull { it.id == id }?.nameAr ?: id
-                onAddCatalogueItem(id)
-            },
-            onAddCustom = {
-                cataloguePicker = false
-                addDialog = true
-            },
-            onDismiss = { cataloguePicker = false }
         )
     }
 
