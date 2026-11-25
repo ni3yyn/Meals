@@ -70,9 +70,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.CornerRadius
@@ -205,13 +207,15 @@ private fun MealsLiquidGlassFrame(
         label = "mealsGlassPressGlow"
     )
     val surfaceModifier = modifier
-        .shadow(
-            elevation = elevation * opticalDepth,
-            shape = shape,
-            clip = false,
-            ambientColor = Color(0xFFB7AA9F).copy(alpha = 0.13f),
-            spotColor = Color(0xFF8F8278).copy(alpha = 0.075f)
-        )
+        // Shadow elevation is a layer property, so its animation is read in the
+        // graphics phase instead of recomposing every nested glass surface.
+        .graphicsLayer {
+            shadowElevation = (elevation * opticalDepth).toPx()
+            this.shape = shape
+            clip = false
+            ambientShadowColor = Color(0xFFB7AA9F).copy(alpha = 0.13f)
+            spotShadowColor = Color(0xFF8F8278).copy(alpha = 0.075f)
+        }
         .clip(shape)
         .mealsGlassBlur(
             backdrop = resolvedGlassBackdrop,
@@ -221,9 +225,16 @@ private fun MealsLiquidGlassFrame(
             blurRadius = blurRadius
         )
         .background(face, shape)
-        // The lift in brightness sits on the glass face, behind its content,
-        // so labels and icons stay crisp while the white optical rim catches light.
-        .background(Color.White.copy(alpha = pressGlow), shape)
+        // Press glow is draw-only. Cache the outline once per size/shape and
+        // read the animated alpha during drawing, not during composition.
+        .drawWithCache {
+            val outline = shape.createOutline(size, layoutDirection, this)
+            onDrawBehind {
+                if (pressGlow > 0f) {
+                    drawOutline(outline, Color.White.copy(alpha = pressGlow))
+                }
+            }
+        }
         .mealsOpticalEdges(
             shape = shape,
             baseRim = rim,
@@ -1312,7 +1323,8 @@ fun MealsSearchBar(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
-    trailingContent: (@Composable () -> Unit)? = null
+    trailingContent: (@Composable () -> Unit)? = null,
+    textFieldModifier: Modifier = Modifier
 ) {
     MealsLiquidGlassFrame(
         modifier = modifier.fillMaxWidth(),
@@ -1338,7 +1350,7 @@ fun MealsSearchBar(
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).then(textFieldModifier),
                 singleLine = true,
                 cursorBrush = SolidColor(TextAccent),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink, textDirection = TextDirection.Content),
@@ -2178,7 +2190,7 @@ data class MealsNavigationItem(
  * crest. The crest is part of the rim/clip shape, not a detached decoration.
  */
 private class MealsNavigationRimShape(
-    private val bumpCenter: Dp,
+    private val bumpCenter: () -> Dp,
     private val bumpWidth: Dp,
     private val rise: Dp = 6.5.dp,
     private val topEdgeInset: Dp = 8.dp
@@ -2197,7 +2209,9 @@ private class MealsNavigationRimShape(
             .coerceIn(minimumInsetPx, height * 0.2f)
         val crestY = (edgeY - with(density) { rise.toPx() })
             .coerceAtLeast(minimumInsetPx)
-        val center = with(density) { bumpCenter.toPx() }
+        // Read the animated center only when Compose asks the Shape for its
+        // outline. The navigation composable keeps one Shape instance alive.
+        val center = with(density) { bumpCenter().toPx() }
             .coerceIn(radius, width - radius)
         val crestWidth = with(density) { bumpWidth.toPx() }
             .coerceAtMost((width - radius * 2f).coerceAtLeast(0f))
@@ -2290,14 +2304,14 @@ fun MealsFrostedBottomBar(
             tabSlotWidth * visualIndex +
             tabGap * visualIndex +
             (tabSlotWidth - bumpWidth) / 2
-        val bumpOffsetX by animateDpAsState(
+        val bumpOffsetState = animateDpAsState(
             targetValue = bumpTargetX,
             animationSpec = spring(dampingRatio = 0.78f, stiffness = 430f),
             label = "mealsNavGlassBumpPosition"
         )
-        val navigationShape = remember(bumpOffsetX, bumpWidth) {
+        val navigationShape = remember(bumpOffsetState, bumpWidth) {
             MealsNavigationRimShape(
-                bumpCenter = bumpOffsetX + bumpWidth / 2,
+                bumpCenter = { bumpOffsetState.value + bumpWidth / 2 },
                 bumpWidth = bumpWidth
             )
         }
@@ -2355,18 +2369,14 @@ fun MealsFrostedBottomBar(
             ) {
                 items.forEachIndexed { index, item ->
                     val selected = index == activeIndex
-                    val foreground by animateColorAsState(
-                        targetValue = if (selected) Ink else MutedInk,
-                        label = "mealsNavForeground$index"
-                    )
-                    val labelFontSize by animateFloatAsState(
-                        targetValue = if (selected) 14f else 13f,
+                    val labelScale = animateFloatAsState(
+                        targetValue = if (selected) 1f else 0.93f,
                         animationSpec = tween(durationMillis = 210),
-                        label = "mealsNavLabelSize$index"
+                        label = "mealsNavLabelScale$index"
                     )
                     MealsPressable(
                         onClick = { onItemSelected(index) },
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        modifier = Modifier.weight(1f).fillMaxHeight().testTag("nav.tab.$index"),
                         role = Role.Tab,
                         shape = RoundedCornerShape(18.dp)
                     ) {
@@ -2384,10 +2394,13 @@ fun MealsFrostedBottomBar(
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = item.label,
-                            color = foreground,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontSize = labelFontSize.sp
-                            ),
+                            modifier = Modifier.graphicsLayer {
+                                // Keep the subtle selected-label sizing animation in Draw.
+                                scaleX = labelScale.value
+                                scaleY = labelScale.value
+                            },
+                            color = if (selected) Ink else MutedInk,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1
                         )
