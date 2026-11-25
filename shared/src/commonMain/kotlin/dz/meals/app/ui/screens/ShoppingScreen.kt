@@ -719,82 +719,35 @@ fun ShoppingScreen(
                     }
                 }
             } else {
-                itemsIndexed(
-                    visibleSearchResults.items,
-                    key = { _, food -> "food-search-result-${food.id}" },
-                    contentType = { _, _ -> "food-search-result" }
-                ) { index, food ->
-                    val foodName = when {
-                        appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }
-                        appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
-                        else -> food.nameAr
-                    }
-                    val alreadyAdded = isCatalogueIngredientAdded(food.id)
-                    val categoryLabel = categoriesById[food.categoryId]?.label(appLocaleTag)
-                    val subcategoryLabel = subcategoriesById[food.subcategoryId]?.label(appLocaleTag)
-                    if (index > 0) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
-                                .height(1.dp)
-                                .background(Border.copy(alpha = 0.72f))
-                        )
-                    }
-                    MealsPressable(
-                        onClick = { toggleCatalogueIngredient(food.id, foodName) },
+                item(key = "shopping-catalogue-search-results-card") {
+                    MealsCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
+                        containerColor = WarmSurface,
+                        borderColor = null,
+                        contentPadding = 0.dp,
+                        shape = RoundedCornerShape(22.dp),
+                        shadowElevation = 0.dp
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 15.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Text(
-                                    foodName,
-                                    color = Ink,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    translate = false
-                                )
-                                Text(
-                                    listOfNotNull(
-                                        categoryLabel,
-                                        subcategoryLabel,
-                                        food.baseUnit.takeIf { it.isNotBlank() }
-                                    ).joinToString(" · "),
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    translate = false
-                                )
+                        visibleSearchResults.items.forEachIndexed { index, food ->
+                            val foodName = when {
+                                appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }
+                                appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
+                                else -> food.nameAr
                             }
-                            if (alreadyAdded) {
-                                Text(
-                                    when {
-                                        appLocaleTag.startsWith("en") -> "In list"
-                                        appLocaleTag.startsWith("fr") -> "Dans la liste"
-                                        else -> "في القائمة"
-                                    },
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            MealsIcon(
-                                if (alreadyAdded) MealsIconName.Check else MealsIconName.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(23.dp)
+                            val alreadyAdded = isCatalogueIngredientAdded(food.id)
+                            val supportingText = listOfNotNull(
+                                categoriesById[food.categoryId]?.label(appLocaleTag),
+                                subcategoriesById[food.subcategoryId]?.label(appLocaleTag),
+                                food.baseUnit.takeIf { it.isNotBlank() }
+                            ).joinToString(" · ")
+
+                            ShoppingCatalogueIngredientRow(
+                                foodName = foodName,
+                                supportingText = supportingText,
+                                alreadyAdded = alreadyAdded,
+                                localeTag = appLocaleTag,
+                                showDivider = index < visibleSearchResults.items.lastIndex,
+                                onClick = { toggleCatalogueIngredient(food.id, foodName) }
                             )
                         }
                     }
@@ -1021,16 +974,25 @@ fun ShoppingScreen(
                                 )
                             }
 
-                            LazyColumn(
-                                modifier = Modifier.weight(1f).fillMaxWidth(),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                    start = 20.dp,
-                                    end = 20.dp,
-                                    top = 4.dp,
-                                    bottom = 124.dp
-                                ),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            MealsCard(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, bottom = 124.dp),
+                                containerColor = WarmSurface,
+                                borderColor = null,
+                                contentPadding = 0.dp,
+                                shape = RoundedCornerShape(22.dp),
+                                shadowElevation = 0.dp
                             ) {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                        top = 4.dp,
+                                        bottom = 12.dp
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
                                 if (browseFoods.isEmpty()) {
                                     item(key = "category-ingredients-empty") {
                                         Column(
@@ -1051,7 +1013,7 @@ fun ShoppingScreen(
                                         }
                                     }
                                 }
-                                browseFoods.forEach { food ->
+                                browseFoods.forEachIndexed { index, food ->
                                     item(key = "browse-food-${food.id}") {
                                         val foodName = when {
                                             appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }
@@ -1059,63 +1021,22 @@ fun ShoppingScreen(
                                             else -> food.nameAr
                                         }
                                         val alreadyAdded = isCatalogueIngredientAdded(food.id)
-                                        MealsPressable(
-                                            onClick = { toggleCatalogueIngredient(food.id, foodName) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(14.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                            ) {
-                                                Column(
-                                                    modifier = Modifier.weight(1f),
-                                                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                                                ) {
-                                                    Text(
-                                                        foodName,
-                                                        color = Ink,
-                                                        style = MaterialTheme.typography.bodyLarge,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
-                                                        translate = false
-                                                    )
-                                                    Text(
-                                                        listOfNotNull(
-                                                            subcategoriesById[food.subcategoryId]?.label(appLocaleTag),
-                                                            food.baseUnit.takeIf { it.isNotBlank() }
-                                                        ).joinToString(" · "),
-                                                        color = MutedInk,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
-                                                        translate = false
-                                                    )
-                                                }
-                                                if (alreadyAdded) {
-                                                    Text(
-                                                        when {
-                                                            appLocaleTag.startsWith("en") -> "In list"
-                                                            appLocaleTag.startsWith("fr") -> "Dans la liste"
-                                                            else -> "في القائمة"
-                                                        },
-                                                        color = MutedInk,
-                                                        style = MaterialTheme.typography.labelMedium,
-                                                        fontWeight = FontWeight.SemiBold
-                                                    )
-                                                }
-                                                MealsIcon(
-                                                    if (alreadyAdded) MealsIconName.Check else MealsIconName.Add,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(23.dp)
-                                                )
-                                            }
-                                        }
+                                        val supportingText = listOfNotNull(
+                                            subcategoriesById[food.subcategoryId]?.label(appLocaleTag),
+                                            food.baseUnit.takeIf { it.isNotBlank() }
+                                        ).joinToString(" · ")
+
+                                        ShoppingCatalogueIngredientRow(
+                                            foodName = foodName,
+                                            supportingText = supportingText,
+                                            alreadyAdded = alreadyAdded,
+                                            localeTag = appLocaleTag,
+                                            showDivider = index < browseFoods.lastIndex,
+                                            onClick = { toggleCatalogueIngredient(food.id, foodName) }
+                                        )
                                     }
+                                }
+                            
                                 }
                             }
                         }
@@ -1611,6 +1532,83 @@ private fun ShoppingItemRow(
                     .height(1.dp)
                     .background(Border.copy(alpha = 0.72f))
             )
+        }
+    }
+}
+
+@Composable
+private fun ShoppingCatalogueIngredientRow(
+    foodName: String,
+    supportingText: String,
+    alreadyAdded: Boolean,
+    localeTag: String,
+    showDivider: Boolean,
+    onClick: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    foodName,
+                    color = Ink,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    translate = false
+                )
+                if (supportingText.isNotBlank()) {
+                    Text(
+                        supportingText,
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        translate = false
+                    )
+                }
+            }
+            if (alreadyAdded) {
+                Text(
+                    when {
+                        localeTag.startsWith("en") -> "In list"
+                        localeTag.startsWith("fr") -> "Dans la liste"
+                        else -> "في القائمة"
+                    },
+                    color = MutedInk,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            MealsIcon(
+                if (alreadyAdded) MealsIconName.Check else MealsIconName.Add,
+                contentDescription = null,
+                modifier = Modifier.size(23.dp)
+            )
+        }
+
+        if (showDivider) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.70f)
+                        .height(1.dp)
+                        .background(Border.copy(alpha = 0.52f))
+                )
+            }
         }
     }
 }
