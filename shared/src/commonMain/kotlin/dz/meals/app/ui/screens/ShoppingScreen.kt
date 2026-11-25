@@ -82,7 +82,6 @@ import dz.meals.app.ui.components.MealsLiquidGlassProgressBar
 import dz.meals.app.ui.components.MealsSearchBar
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.components.MealsSubtabsIndicator
-import dz.meals.app.ui.components.MealsTextButton
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.data.IngredientMaster
@@ -126,7 +125,8 @@ fun ShoppingScreen(
     onUpdateItemDetails: (String, Double?, String, Boolean, Double?) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
     onRecordPrice: (String, Double, Double, String) -> Unit,
-    onShareList: (String) -> Unit
+    onShareList: (String) -> Unit,
+    backHandler: @Composable (enabled: Boolean, onBack: () -> Unit) -> Unit
 ) {
     val appLocaleTag = LocalMealsLocaleTag.current
     var addDialog by rememberSaveable { mutableStateOf(false) }
@@ -137,6 +137,7 @@ fun ShoppingScreen(
     var selectedSubcategoryId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCategoryId by rememberSaveable { mutableStateOf<String?>(null) }
     var locallyAddedIngredientIds by remember { mutableStateOf(emptySet<String>()) }
+    var locallyRemovedIngredientIds by remember { mutableStateOf(emptySet<String>()) }
     var showPurchased by rememberSaveable { mutableStateOf(false) }
     var showPriceHistory by rememberSaveable { mutableStateOf(false) }
     var editItemId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -166,10 +167,62 @@ fun ShoppingScreen(
     val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
     val categoriesById = remember(snapshot.foodCategories) { snapshot.foodCategories.associateBy { it.id } }
     val subcategoriesById = remember(snapshot.foodSubcategories) { snapshot.foodSubcategories.associateBy { it.id } }
-    val alreadyAddedIngredientIds = rows.mapNotNull { it.ingredientId }.toSet()
+    val shoppingRowsByIngredientId = remember(rows) {
+        rows.mapNotNull { item ->
+            item.ingredientId?.let { ingredientId -> ingredientId to item }
+        }.toMap()
+    }
+    val alreadyAddedIngredientIds = shoppingRowsByIngredientId.keys
     var catalogueSearchIndex by remember { mutableStateOf<FoodCatalogueSearchIndex?>(null) }
     var searchResults by remember { mutableStateOf<FoodCatalogueSearchResult?>(null) }
     val visibleSearchResults = searchResults
+
+    // Reconcile optimistic catalogue taps once the repository snapshot catches up.
+    LaunchedEffect(rows) {
+        locallyAddedIngredientIds = locallyAddedIngredientIds - alreadyAddedIngredientIds
+        locallyRemovedIngredientIds = locallyRemovedIngredientIds.intersect(alreadyAddedIngredientIds)
+    }
+
+    fun isCatalogueIngredientAdded(ingredientId: String): Boolean =
+        ingredientId in locallyAddedIngredientIds ||
+            (ingredientId in alreadyAddedIngredientIds && ingredientId !in locallyRemovedIngredientIds)
+
+    fun toggleCatalogueIngredient(ingredientId: String, displayName: String) {
+        val existingRow = shoppingRowsByIngredientId[ingredientId]
+        if (isCatalogueIngredientAdded(ingredientId)) {
+            // Catalogue rows added by the user are removable; generated plan rows remain managed by the plan.
+            if (existingRow?.userAdded != true) return
+            locallyRemovedIngredientIds = locallyRemovedIngredientIds + ingredientId
+            locallyAddedIngredientIds = locallyAddedIngredientIds - ingredientId
+            onDeleteCustomItem(existingRow.id)
+        } else {
+            locallyRemovedIngredientIds = locallyRemovedIngredientIds - ingredientId
+            locallyAddedIngredientIds = locallyAddedIngredientIds + ingredientId
+            addedFeedback = displayName
+            onAddCatalogueItem(ingredientId)
+        }
+    }
+
+    fun navigateBackInBrowse() {
+        when (browsePage) {
+            2 -> {
+                browseDirection = -1
+                browsePage = 1
+            }
+            1 -> {
+                browseDirection = -1
+                browsePage = 0
+                selectedBrowseCategoryId = null
+                selectedSubcategoryId = null
+            }
+        }
+    }
+
+    backHandler(
+        enabled = browsePage > 0 && !addDialog && selectedCategoryId == null &&
+            editItemId == null && !priceDialog,
+        onBack = ::navigateBackInBrowse
+    )
 
     // Build the KMP inverted index once when the catalogue itself changes.
     // Search data is locale-neutral; changing the UI language must not rebuild it.
@@ -440,41 +493,57 @@ fun ShoppingScreen(
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
-            }
-        }
 
-        item(key = "shopping-price-actions") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                MealsTextButton(
-                    onClick = { onShareList(buildShoppingShareText(rows, snapshot, appLocaleTag)) },
-                    modifier = Modifier.weight(1f),
-                    compact = true
+                // Keep the utility actions visually anchored inside the summary surface.
+                // In Arabic RTL, Arrangement.End places this compact action rail at bottom-left.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(when {
-                        appLocaleTag.startsWith("en") -> "Share"
-                        appLocaleTag.startsWith("fr") -> "Partager"
-                        else -> "مشاركة"
-                    })
-                }
-                MealsTextButton(
-                    onClick = { priceDialog = true },
-                    modifier = Modifier.weight(1f),
-                    compact = true
-                ) {
-                    MealsIcon(MealsIconName.Wallet, contentDescription = null, modifier = Modifier.size(24.dp))
-                    Text("تسجيل سعر")
-                }
-                if (snapshot.priceObservations.isNotEmpty()) {
-                    MealsTextButton(
-                        onClick = { showPriceHistory = !showPriceHistory },
-                        modifier = Modifier.weight(1f),
-                        compact = true
+                    MealsIconButton(
+                        onClick = { onShareList(buildShoppingShareText(rows, snapshot, appLocaleTag)) },
+                        size = 42.dp
                     ) {
-                        Text(if (showPriceHistory) "إخفاء السجل" else "سجل الأسعار")
+                        MealsIcon(
+                            MealsIconName.Share,
+                            contentDescription = when {
+                                appLocaleTag.startsWith("en") -> "Share shopping list"
+                                appLocaleTag.startsWith("fr") -> "Partager la liste"
+                                else -> "مشاركة قائمة المشتريات"
+                            },
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    MealsIconButton(
+                        onClick = { priceDialog = true },
+                        size = 42.dp
+                    ) {
+                        MealsIcon(
+                            MealsIconName.Wallet,
+                            contentDescription = when {
+                                appLocaleTag.startsWith("en") -> "Record a price"
+                                appLocaleTag.startsWith("fr") -> "Enregistrer un prix"
+                                else -> "تسجيل سعر"
+                            },
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    if (snapshot.priceObservations.isNotEmpty()) {
+                        MealsIconButton(
+                            onClick = { showPriceHistory = !showPriceHistory },
+                            size = 42.dp
+                        ) {
+                            MealsIcon(
+                                MealsIconName.Clock,
+                                contentDescription = when {
+                                    appLocaleTag.startsWith("en") -> if (showPriceHistory) "Hide price history" else "Show price history"
+                                    appLocaleTag.startsWith("fr") -> if (showPriceHistory) "Masquer l’historique des prix" else "Afficher l’historique des prix"
+                                    else -> if (showPriceHistory) "إخفاء سجل الأسعار" else "عرض سجل الأسعار"
+                                },
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -655,8 +724,7 @@ fun ShoppingScreen(
                                 appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
                                 else -> food.nameAr
                             }
-                            val alreadyAdded = food.id in alreadyAddedIngredientIds ||
-                                food.id in locallyAddedIngredientIds
+                            val alreadyAdded = isCatalogueIngredientAdded(food.id)
                             val categoryLabel = categoriesById[food.categoryId]?.label(appLocaleTag)
                             val subcategoryLabel = subcategoriesById[food.subcategoryId]?.label(appLocaleTag)
                             if (index > 0) {
@@ -669,13 +737,7 @@ fun ShoppingScreen(
                                 )
                             }
                             MealsPressable(
-                                onClick = {
-                                    if (!alreadyAdded) {
-                                        locallyAddedIngredientIds = locallyAddedIngredientIds + food.id
-                                        addedFeedback = foodName
-                                        onAddCatalogueItem(food.id)
-                                    }
-                                },
+                                onClick = { toggleCatalogueIngredient(food.id, foodName) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp)
                             ) {
@@ -962,18 +1024,38 @@ fun ShoppingScreen(
                                 }
                             }
 
-                            MealsFilterChips(
-                                items = listOf(allSubcategoriesLabel) + browseSubcategories.map { it.label(appLocaleTag) },
-                                selected = selectedSubcategoryLabel,
-                                onSelect = { selected ->
-                                    selectedSubcategoryId = browseSubcategories
-                                        .firstOrNull { it.label(appLocaleTag) == selected }
-                                        ?.id
-                                },
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 10.dp)
-                            )
+                                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(9.dp)
+                            ) {
+                                MealsIconButton(
+                                    onClick = ::navigateBackInBrowse,
+                                    size = 42.dp
+                                ) {
+                                    MealsIcon(
+                                        MealsIconName.ArrowBack,
+                                        contentDescription = when {
+                                            appLocaleTag.startsWith("en") -> "Back to categories"
+                                            appLocaleTag.startsWith("fr") -> "Retour aux catégories"
+                                            else -> "العودة إلى التصنيفات"
+                                        },
+                                        modifier = Modifier.size(23.dp)
+                                    )
+                                }
+                                MealsFilterChips(
+                                    items = listOf(allSubcategoriesLabel) + browseSubcategories.map { it.label(appLocaleTag) },
+                                    selected = selectedSubcategoryLabel,
+                                    onSelect = { selected ->
+                                        selectedSubcategoryId = browseSubcategories
+                                            .firstOrNull { it.label(appLocaleTag) == selected }
+                                            ?.id
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
 
                             LazyColumn(
                                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -1012,16 +1094,9 @@ fun ShoppingScreen(
                                             appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
                                             else -> food.nameAr
                                         }
-                                        val alreadyAdded = food.id in alreadyAddedIngredientIds ||
-                                            food.id in locallyAddedIngredientIds
+                                        val alreadyAdded = isCatalogueIngredientAdded(food.id)
                                         MealsPressable(
-                                            onClick = {
-                                                if (!alreadyAdded) {
-                                                    locallyAddedIngredientIds = locallyAddedIngredientIds + food.id
-                                                    addedFeedback = foodName
-                                                    onAddCatalogueItem(food.id)
-                                                }
-                                            },
+                                            onClick = { toggleCatalogueIngredient(food.id, foodName) },
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(14.dp)
                                         ) {
