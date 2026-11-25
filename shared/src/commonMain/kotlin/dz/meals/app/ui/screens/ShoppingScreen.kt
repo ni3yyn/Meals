@@ -4,7 +4,6 @@ import dz.meals.app.ui.components.MealsText as Text
 import dz.meals.app.ui.theme.LocalMealsLocaleTag
 import dz.meals.app.ui.theme.bidiIsolate
 import dz.meals.app.ui.theme.mealsText
-import dz.meals.app.ui.theme.logicalStartRevealSign
 import dz.meals.app.ui.theme.logicalAnimationDirectionSign
 
 import androidx.compose.animation.AnimatedContent
@@ -19,7 +18,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -95,7 +93,6 @@ import dz.meals.app.ui.theme.WarmSurface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
 import dz.meals.app.shared.format.epochMillisToLocalDate
 import dz.meals.app.shared.format.formatDateDmy
 import dz.meals.app.shared.format.formatDzd
