@@ -2,7 +2,6 @@ package dz.meals.app.ui.components
 
 import dz.meals.app.ui.components.MealsText as Text
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -147,26 +146,23 @@ fun MealsFilterChips(
     ) {
         items.forEach { item ->
             val isSelected = item == selected
-            val contentColor by animateColorAsState(
-                targetValue = if (isSelected) Ink else MutedInk,
-                animationSpec = tween(160),
-                label = "mealsFilterChipContent"
-            )
-            val chipScale by androidx.compose.animation.core.animateFloatAsState(
+            val chipScale = androidx.compose.animation.core.animateFloatAsState(
                 targetValue = if (isSelected) 1.035f else 1f,
                 animationSpec = spring(dampingRatio = 0.78f, stiffness = 560f),
                 label = "mealsFilterChipScale"
             )
             MealsSelectionGlass(
                 modifier = Modifier.graphicsLayer {
-                    scaleX = chipScale
-                    scaleY = chipScale
+                    // Read animated scale in the graphics phase, not composition.
+                    scaleX = chipScale.value
+                    scaleY = chipScale.value
                 },
                 selected = isSelected
             ) {
                 MealsPressable(onClick = { onSelect(item) }, role = Role.RadioButton) {
                     Box(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
-                        Text(item, color = contentColor, style = MaterialTheme.typography.labelLarge,
+                        Text(item, color = if (isSelected) Ink else MutedInk,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
                     }
                 }
@@ -208,7 +204,7 @@ fun MealsSubtabsIndicator(
             // relative offset therefore tracks the same slot without a second
             // manual RTL inversion.
             val targetOffset = (itemWidth + gap) * selectedIndex
-            val indicatorOffset by animateDpAsState(
+            val indicatorOffset = animateDpAsState(
                 targetValue = targetOffset,
                 animationSpec = spring(
                     dampingRatio = 0.82f,
@@ -221,7 +217,7 @@ fun MealsSubtabsIndicator(
             // at each destination, so its position and optical surface animate together.
             MealsSelectionGlass(
                 modifier = Modifier
-                    .offset(x = indicatorOffset)
+                    .offset { androidx.compose.ui.unit.IntOffset(indicatorOffset.value.roundToPx(), 0) }
                     .width(itemWidth)
                     .fillMaxHeight(),
                 selected = true,
@@ -235,11 +231,6 @@ fun MealsSubtabsIndicator(
             ) {
                 items.forEach { item ->
                     val isSelected = item == selected
-                    val textColor by animateColorAsState(
-                        targetValue = if (isSelected) Ink else MutedInk,
-                        animationSpec = tween(190),
-                        label = "mealsSubtabText"
-                    )
                     Box(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                         contentAlignment = Alignment.Center
@@ -259,7 +250,7 @@ fun MealsSubtabsIndicator(
                             ) {
                                 Text(
                                     item,
-                                    color = textColor,
+                                    color = if (isSelected) Ink else MutedInk,
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     maxLines = 1
