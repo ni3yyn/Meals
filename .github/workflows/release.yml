@@ -129,7 +129,7 @@ jobs:
           set -euo pipefail
           # Signing credentials are evaluated during configuration. Avoid storing
           # them in a reusable configuration-cache entry for this release build.
-          ./gradlew :app:testReleaseUnitTest :app:assembleRelease :app:lintRelease --no-configuration-cache --stacktrace \
+          ./gradlew :baselineprofile:assemble :app:testReleaseUnitTest :app:assembleRelease :app:lintRelease --no-configuration-cache --stacktrace \
             -PappVersionCode="$APP_VERSION_CODE" \
             -PappVersionName="$APP_VERSION" \
             -PreleaseKeystorePath="$RUNNER_TEMP/meals-release.jks" \
