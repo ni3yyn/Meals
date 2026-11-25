@@ -80,6 +80,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.LayoutDirection
@@ -443,6 +445,7 @@ private fun MealsAppContent(
             exit = fadeOut(animationSpec = tween(120))
         ) {
         Scaffold(
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
             containerColor = Color.Transparent,
             snackbarHost = {
                 SnackbarHost(snackbarHostState) { data ->
