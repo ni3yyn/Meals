@@ -140,8 +140,9 @@ suspend fun buildFoodCatalogueSearchIndex(
  * existing Arabic/French/English partial-name semantics while letting the
  * library do vocabulary retrieval and relevance ordering.
  *
- * The engine retains at most 100 candidates internally; the UI renders only
- * [resultLimit]. hasMore is conservative when the candidate pool is full.
+ * The engine retains at most 100 ranked candidates internally; the UI renders only
+ * [resultLimit]. hasMore describes exact filtered matches beyond the rendered rows,
+ * not merely a full fuzzy-candidate pool.
  */
 suspend fun searchFoodCatalogue(
     index: FoodCatalogueSearchIndex,
@@ -170,7 +171,7 @@ suspend fun searchFoodCatalogue(
     return FoodCatalogueSearchResult(
         items = exactMatches.take(safeLimit).map { it.first.ingredient },
         totalCount = exactMatches.size,
-        hasMore = rankedCandidates.size >= index.maxCandidates
+        hasMore = exactMatches.size > safeLimit
     )
 }
 
