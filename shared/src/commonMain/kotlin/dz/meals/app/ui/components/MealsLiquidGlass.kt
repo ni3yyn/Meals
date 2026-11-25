@@ -174,7 +174,7 @@ object MealsLiquidGlass {
     }
 
     val SurfaceBlurStyle = HazeBlurStyle {
-        blurRadius(8.dp)
+        blurRadius(SurfaceBlurRadius)
         noiseFactor(0.02f)
     }
 }
