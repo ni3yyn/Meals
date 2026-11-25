@@ -206,7 +206,11 @@ fun MealsApp(
     onInitialContentReady: () -> Unit = {},
     onExit: () -> Unit = {}
 ) {
-    MealsAppContent(onInitialContentReady = onInitialContentReady, onExit = onExit)
+    // All app sheets share one Material3 SheetState. Switching sheets can now
+    // retarget an active hide instead of creating competing modal animations.
+    MealsBottomSheetStateProvider {
+        MealsAppContent(onInitialContentReady = onInitialContentReady, onExit = onExit)
+    }
 }
 
 @Composable
