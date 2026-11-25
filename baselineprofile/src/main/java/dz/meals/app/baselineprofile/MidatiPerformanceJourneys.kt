@@ -21,7 +21,7 @@ private const val TARGET_PACKAGE = "dz.meals.app"
 private const val UI_TIMEOUT_MS = 30_000L
 private const val ADD_ROW_COUNT = 9
 
-private fun device(): UiDevice =
+private fun benchmarkUiDevice(): UiDevice =
     UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
 /**
@@ -105,7 +105,7 @@ class MidatiBaselineProfile {
         ) {
             pressHome()
             startActivityAndWait()
-            val currentDevice = device()
+            val currentDevice = benchmarkUiDevice()
             val quickStart = currentDevice.wait(
                 Until.findObject(By.text("ابدئي الآن")),
                 10_000L
