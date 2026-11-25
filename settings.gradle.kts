@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Meals"
-include(":app", ":shared")
+include(":app", ":shared", ":baselineprofile")
