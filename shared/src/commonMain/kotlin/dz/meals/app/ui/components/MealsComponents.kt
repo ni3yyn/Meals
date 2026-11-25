@@ -55,6 +55,8 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
@@ -67,6 +69,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +87,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
@@ -124,6 +129,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -627,6 +634,24 @@ fun MealsLiquidGlassLoadingExperience(
 }
 
 val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/**
+ * One sheet state per app composition. Sharing it lets a new sheet retarget an
+ * in-flight hide() animation instead of creating a second, competing dialog
+ * animation on another SheetState.
+ */
+private val LocalMealsBottomSheetState = staticCompositionLocalOf<SheetState?> { null }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MealsBottomSheetStateProvider(content: @Composable () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    CompositionLocalProvider(
+        LocalMealsBottomSheetState provides sheetState,
+        content = content
+    )
+}
+
 private val LocalMealsSheetDismissAction =
     staticCompositionLocalOf<(afterDismiss: () -> Unit) -> Unit> {
         { afterDismiss -> afterDismiss() }
@@ -634,7 +659,7 @@ private val LocalMealsSheetDismissAction =
 
 /**
  * Returns the active sheet's animated close action from inside its content slots.
- * The supplied action runs only after the sheet has completed its hide animation.
+ * The supplied action runs at the final visible part of the hide transition.
  */
 @Composable
 fun mealsSheetDismissAction(): (afterDismiss: () -> Unit) -> Unit =
@@ -1807,15 +1832,63 @@ fun MealsBottomSheet(
     loadingContent: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // MealsApp provides one shared SheetState to every sheet. A standalone
+    // preview/test still receives a local fallback state.
+    val fallbackSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = LocalMealsBottomSheetState.current ?: fallbackSheetState
     val sheetScope = rememberCoroutineScope()
     val dismissStarted = remember { mutableStateOf(false) }
+    val dismissalDelivered = remember { mutableStateOf(false) }
+    val pendingAfterDismiss = remember { mutableStateOf<(() -> Unit)?>(null) }
+    val sheetHeightPx = remember(sheetState) { mutableIntStateOf(0) }
+    val windowHeightPx = LocalWindowInfo.current.containerSize.height
+    val latestOnDismissRequest = rememberUpdatedState(onDismissRequest)
     val activeLoading = isLoading && loadingContent != null
     var visualPhase by remember { mutableStateOf(MealsSheetVisualPhase.Content) }
     val interactionLocked = activeLoading || visualPhase != MealsSheetVisualPhase.Content
     val expansion = remember { Animatable(0f) }
     val onLoadingStartedState = rememberUpdatedState(onLoadingStarted)
     val onLoadingExitFinishedState = rememberUpdatedState(onLoadingExitFinished)
+
+    // Deliver owner state near the end of the physical slide, not after the
+    // entire animation. The final few pixels are visually negligible, while
+    // removing the old modal promptly lets the next sheet reuse/reverse the
+    // shared SheetState without a second window animating above it.
+    val completeDismissal = rememberUpdatedState {
+        if (!dismissalDelivered.value) {
+            dismissalDelivered.value = true
+            val callback = pendingAfterDismiss.value
+            pendingAfterDismiss.value = null
+            (callback ?: latestOnDismissRequest.value).invoke()
+        }
+    }
+
+    LaunchedEffect(sheetState, windowHeightPx) {
+        snapshotFlow {
+            val measuredHeight = sheetHeightPx.intValue
+            val offset = runCatching { sheetState.requireOffset() }.getOrNull()
+            val isHiding = sheetState.targetValue == SheetValue.Hidden
+            val progress = if (
+                isHiding &&
+                measuredHeight > 0 &&
+                windowHeightPx > 0 &&
+                offset != null &&
+                offset.isFinite()
+            ) {
+                val expandedOffset = (windowHeightPx - measuredHeight).coerceAtLeast(0)
+                ((offset - expandedOffset) / measuredHeight.toFloat()).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+            isHiding to progress
+        }.collect { (isHiding, progress) ->
+            // At 97% only a very small bottom sliver remains. Closing the owner
+            // here avoids a frozen screen after the user has visually dismissed it.
+            if (isHiding && progress >= 0.97f) {
+                completeDismissal.value()
+            }
+        }
+    }
 
     LaunchedEffect(activeLoading, expandToFullScreenWhileLoading) {
         if (activeLoading && visualPhase == MealsSheetVisualPhase.Content) {
@@ -1867,17 +1940,33 @@ fun MealsBottomSheet(
     val dismissSheet: (afterDismiss: () -> Unit) -> Unit = remember(
         sheetState,
         sheetScope,
-        dismissStarted
+        dismissStarted,
+        pendingAfterDismiss,
+        dismissalDelivered
     ) {
         { afterDismiss ->
-            if (!dismissStarted.value) {
+            if (!dismissStarted.value && !dismissalDelivered.value) {
                 dismissStarted.value = true
+                pendingAfterDismiss.value = afterDismiss
                 sheetScope.launch {
-                    sheetState.hide()
-                    if (!sheetState.isVisible) {
-                        afterDismiss()
-                    } else {
-                        dismissStarted.value = false
+                    try {
+                        sheetState.hide()
+                        // Fallback for short sheets/fast devices where the final
+                        // progress sample and the completed hide arrive together.
+                        completeDismissal.value()
+                    } catch (cancelled: CancellationException) {
+                        // A new sheet can call show() on the same SheetState while
+                        // this hide is running. Cancellation is the intended
+                        // reversible handoff; do not deliver the old callback.
+                        if (
+                            sheetState.targetValue != SheetValue.Hidden &&
+                            !dismissalDelivered.value
+                        ) {
+                            dismissStarted.value = false
+                            pendingAfterDismiss.value = null
+                        } else {
+                            throw cancelled
+                        }
                     }
                 }
             }
@@ -1889,7 +1978,7 @@ fun MealsBottomSheet(
         CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    if (!interactionLocked) onDismissRequest()
+                    if (!interactionLocked) completeDismissal.value()
                 },
                 sheetGesturesEnabled = !interactionLocked,
                 properties = ModalBottomSheetProperties(
@@ -1967,6 +2056,12 @@ fun MealsBottomSheet(
                             .fillMaxWidth()
                             .then(sheetHeightModifier)
                             .onSizeChanged { size ->
+                                // This state is read only by snapshotFlow, not by
+                                // composition, so offset sampling cannot cascade
+                                // recompositions through the sheet content.
+                                if (sheetHeightPx.intValue != size.height) {
+                                    sheetHeightPx.intValue = size.height
+                                }
                                 if (
                                     !activeLoading &&
                                     visualPhase == MealsSheetVisualPhase.Content &&
