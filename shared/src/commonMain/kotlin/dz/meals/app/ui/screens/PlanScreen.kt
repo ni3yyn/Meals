@@ -107,38 +107,6 @@ fun PlanScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(48.dp)) {
-                        MealsIcon(
-                            MealsIconName.ArrowBack,
-                            contentDescription = "الأسبوع السابق",
-                            modifier = Modifier.size(28.dp),
-                        )
-                    }
-                    Text(
-                        text = formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
-                        modifier = Modifier.weight(1f),
-                        color = MutedInk,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center
-                    )
-                    MealsIconAction(onClick = onNextWeek, modifier = Modifier.size(44.dp)) {
-                        MealsIcon(
-                            MealsIconName.ArrowForward,
-                            contentDescription = "الأسبوع التالي",
-                            modifier = Modifier.size(28.dp),
-                        )
-                    }
-                }
-            }
-        }
-        item {
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
                 tintColor = androidx.compose.ui.graphics.Color(0xFFFFF6EC),
@@ -211,6 +179,45 @@ fun PlanScreen(
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+                }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Border.copy(alpha = 0.48f))
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        MealsIconAction(onClick = onPreviousWeek, modifier = Modifier.size(40.dp)) {
+                            MealsIcon(
+                                MealsIconName.ArrowBack,
+                                contentDescription = "الأسبوع السابق",
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                        Text(
+                            text = formatArabicWeekRange(weekStart, weekStart.plus(DatePeriod(days = 6))),
+                            modifier = Modifier.weight(1f),
+                            color = MutedInk,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center
+                        )
+                        MealsIconAction(onClick = onNextWeek, modifier = Modifier.size(40.dp)) {
+                            MealsIcon(
+                                MealsIconName.ArrowForward,
+                                contentDescription = "الأسبوع التالي",
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
                     }
                 }
             }
