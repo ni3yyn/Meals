@@ -1311,7 +1311,8 @@ fun MealsSearchBar(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
     MealsLiquidGlassFrame(
         modifier = modifier.fillMaxWidth(),
@@ -1354,6 +1355,7 @@ fun MealsSearchBar(
                     }
                 }
             )
+            trailingContent?.invoke()
         }
     }
 }
