@@ -32,7 +32,7 @@ Do not turn on `automaticGenerationDuringBuild` for the headless GitHub release 
 Use a physical Android device (API 33+ is recommended) and run the tests in `baselineprofile/src/main/java/dz/meals/app/baselineprofile/MidatiPerformanceJourneys.kt` from Android Studio, or run:
 
 ```bash
-./gradlew :baselineprofile:connectedAndroidTest
+./gradlew :baselineprofile:connectedCheck
 ```
 
 The startup benchmark reports startup timing. The category benchmark records frame timing while navigating into and scrolling the Shopping category sheet. Compare results on the same device, Android version, build variant and thermal state; do not treat a debug build or a different device as an apples-to-apples comparison.
