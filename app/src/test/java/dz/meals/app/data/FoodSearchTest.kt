@@ -146,7 +146,7 @@ class FoodSearchTest {
             ),
             subcategories = listOf(
                 FoodSubcategory("fresh", "vegetables", "طازج", "Fresh", "Frais", 1),
-                FoodSubcategory("misc", "other", "متنوع", "Misc", 1)
+                FoodSubcategory("misc", "other", "متنوع", "Misc", "Divers", 1)
             )
         )
 
