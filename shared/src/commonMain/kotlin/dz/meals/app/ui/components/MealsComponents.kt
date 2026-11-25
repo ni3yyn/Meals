@@ -2608,7 +2608,18 @@ fun MealsBackdrop(
                         .mealsHazeSource(hazeState)
                 )
             }
-            content()
+
+            // The wallpaper remains the lower source (z=0). Capture the live
+            // page as a higher source in this same HazeState so dialog sheets
+            // sample both with one blur pass. Descendant in-window effects use
+            // Behind selection and cannot sample this page source recursively.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .mealsHazeSource(hazeState, zIndex = 1f)
+            ) {
+                content()
+            }
         }
     }
 }
