@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 
 /**
@@ -30,6 +31,7 @@ expect fun Modifier.mealsGlassBlur(
     backdrop: MealsGlassBackdrop?,
     hazeState: HazeState?,
     blurStyle: HazeBlurStyle?,
+    performanceMode: HazePerformanceMode = HazePerformanceMode.Default,
     shape: Shape,
     blurRadius: Dp
 ): Modifier
@@ -40,13 +42,6 @@ expect fun Modifier.mealsHazeSource(
     zIndex: Float = 0f
 ): Modifier
 
-/**
- * Adds a subtle native blur-behind effect to the platform dialog hosting a modal sheet.
- * Platforms without a separate modal window can keep this as a no-op.
- */
+/** Configures edge-to-edge and system-bar appearance for a platform modal window. */
 @Composable
-expect fun MealsModalWindowBlur(enableBlurBehind: Boolean = true)
-
-/** Applies the sheet-specific motion curve without changing the app-wide theme. */
-@Composable
-expect fun MealsBottomSheetMotionProvider(content: @Composable () -> Unit)
+expect fun MealsConfigureModalWindow()
