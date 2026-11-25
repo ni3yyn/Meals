@@ -203,121 +203,125 @@ internal fun Modifier.mealsButtonOpticalEdges(
 ): Modifier = drawWithCache {
     val edgeDepth = depth.coerceIn(0.35f, 1f)
     val inset = 0.9.dp.toPx()
-    val crownWidth = 1.22.dp.toPx()
-    val shoulderWidth = 0.78.dp.toPx()
+    val topRise = 0.025f * size.height
+    val topShoulder = 0.16f * size.height
+    val sideInset = 3.0.dp.toPx()
+    val lowerInset = 3.1.dp.toPx()
 
+    // A pronounced convex arc follows the lens curvature. Its ends sit lower
+    // inside the rounded shoulders and the middle rises, avoiding a straight
+    // horizontal streak across the top of the button.
     val crown = Path().apply {
-        moveTo(size.width * 0.13f, inset * 1.65f)
+        moveTo(size.width * 0.16f, topShoulder)
         cubicTo(
-            size.width * 0.25f, inset * 0.30f,
-            size.width * 0.72f, inset * 0.30f,
-            size.width * 0.87f, inset * 1.58f
+            size.width * 0.28f, topRise,
+            size.width * 0.72f, topRise,
+            size.width * 0.84f, topShoulder
+        )
+    }
+    val innerCrown = Path().apply {
+        moveTo(size.width * 0.25f, topShoulder * 0.92f)
+        cubicTo(
+            size.width * 0.36f, topShoulder * 0.48f,
+            size.width * 0.64f, topShoulder * 0.48f,
+            size.width * 0.75f, topShoulder * 0.92f
         )
     }
     val leftShoulder = Path().apply {
-        moveTo(inset * 1.45f, size.height * 0.25f)
+        moveTo(sideInset, size.height * 0.29f)
         cubicTo(
-            inset * 0.50f, size.height * 0.38f,
-            inset * 0.54f, size.height * 0.62f,
-            inset * 1.45f, size.height * 0.76f
+            inset * 1.0f, size.height * 0.39f,
+            inset * 1.0f, size.height * 0.61f,
+            sideInset, size.height * 0.71f
         )
     }
     val rightShoulder = Path().apply {
-        moveTo(size.width - inset * 1.45f, size.height * 0.24f)
+        moveTo(size.width - sideInset, size.height * 0.29f)
         cubicTo(
-            size.width - inset * 0.50f, size.height * 0.37f,
-            size.width - inset * 0.54f, size.height * 0.63f,
-            size.width - inset * 1.45f, size.height * 0.77f
+            size.width - inset, size.height * 0.39f,
+            size.width - inset, size.height * 0.61f,
+            size.width - sideInset, size.height * 0.71f
         )
     }
     val lowerCaustic = Path().apply {
-        moveTo(size.width * 0.27f, size.height - inset * 1.42f)
+        moveTo(size.width * 0.30f, size.height - lowerInset)
         cubicTo(
-            size.width * 0.40f, size.height - inset * 0.48f,
-            size.width * 0.60f, size.height - inset * 0.48f,
-            size.width * 0.73f, size.height - inset * 1.42f
+            size.width * 0.40f, size.height - inset * 0.62f,
+            size.width * 0.60f, size.height - inset * 0.62f,
+            size.width * 0.70f, size.height - lowerInset
         )
     }
 
-    val crownSheen = Brush.verticalGradient(
+    val crownBrush = Brush.horizontalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.19f * edgeDepth),
-            0.22f to Color.White.copy(alpha = 0.085f * edgeDepth),
-            0.62f to Color.Transparent
-        ),
-        startY = 0f,
-        endY = (size.height * 0.58f).coerceAtLeast(1f)
+            0f to Color.Transparent,
+            0.16f to Color.White.copy(alpha = 0.38f * edgeDepth),
+            0.50f to Color.White.copy(alpha = 0.98f * edgeDepth),
+            0.84f to Color.White.copy(alpha = 0.44f * edgeDepth),
+            1f to Color.Transparent
+        )
     )
-    val lensBloom = Brush.radialGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.12f * edgeDepth),
-            Color.White.copy(alpha = 0.038f * edgeDepth),
-            Color.Transparent
-        ),
-        center = Offset(size.width * 0.72f, size.height * 0.20f),
-        radius = (size.width * 0.66f).coerceAtLeast(1f)
+    val innerCrownBrush = Brush.horizontalGradient(
+        colorStops = arrayOf(
+            0f to Color.Transparent,
+            0.22f to Color.White.copy(alpha = 0.12f * edgeDepth),
+            0.50f to Color.White.copy(alpha = 0.30f * edgeDepth),
+            0.78f to Color.White.copy(alpha = 0.12f * edgeDepth),
+            1f to Color.Transparent
+        )
     )
     val shoulderBrush = Brush.verticalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.25f to Color.White.copy(alpha = 0.50f * edgeDepth),
-            0.52f to Color.White.copy(alpha = 0.88f * edgeDepth),
-            0.80f to Color.White.copy(alpha = 0.42f * edgeDepth),
+            0.22f to Color.White.copy(alpha = 0.36f * edgeDepth),
+            0.50f to Color.White.copy(alpha = 0.78f * edgeDepth),
+            0.78f to Color.White.copy(alpha = 0.34f * edgeDepth),
             1f to Color.Transparent
         ),
-        startY = size.height * 0.24f,
-        endY = size.height * 0.78f
+        startY = size.height * 0.29f,
+        endY = size.height * 0.71f
     )
     val lowerBrush = Brush.horizontalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.20f to Color(0xFFC8B8A5).copy(alpha = 0.19f * edgeDepth),
-            0.50f to Color.White.copy(alpha = 0.52f * edgeDepth),
-            0.80f to Color(0xFFC8B8A5).copy(alpha = 0.19f * edgeDepth),
+            0.20f to Color(0xFFC8B8A5).copy(alpha = 0.14f * edgeDepth),
+            0.50f to Color.White.copy(alpha = 0.44f * edgeDepth),
+            0.80f to Color(0xFFC8B8A5).copy(alpha = 0.14f * edgeDepth),
             1f to Color.Transparent
-        )
-    )
-    val lowerFalloff = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0f to Color.Transparent,
-            0.70f to Color.Transparent,
-            1f to Color(0xFF9F907F).copy(alpha = 0.075f * edgeDepth)
         )
     )
 
     onDrawBehind {
-        drawRect(
-            brush = crownSheen,
-            size = Size(size.width, size.height * 0.58f)
-        )
-        drawRect(brush = lensBloom, size = size)
-        drawRect(brush = lowerFalloff, size = size)
-
-        // Discrete light catches: no enclosing outline and no inset border.
+        // Each reflection is a curved, localized stroke. No rectangular
+        // gradient overlays are painted behind labels or icons.
         drawPath(
             path = crown,
-            brush = baseRim,
-            alpha = 0.98f * edgeDepth,
-            style = Stroke(width = crownWidth, cap = StrokeCap.Round)
+            brush = crownBrush,
+            alpha = edgeDepth,
+            style = Stroke(width = 1.30.dp.toPx(), cap = StrokeCap.Round)
+        )
+        drawPath(
+            path = innerCrown,
+            brush = innerCrownBrush,
+            style = Stroke(width = 0.62.dp.toPx(), cap = StrokeCap.Round)
         )
         drawPath(
             path = leftShoulder,
             brush = shoulderBrush,
-            style = Stroke(width = shoulderWidth, cap = StrokeCap.Round)
+            style = Stroke(width = 0.78.dp.toPx(), cap = StrokeCap.Round)
         )
         drawPath(
             path = rightShoulder,
             brush = shoulderBrush,
-            style = Stroke(width = shoulderWidth, cap = StrokeCap.Round)
+            style = Stroke(width = 0.78.dp.toPx(), cap = StrokeCap.Round)
         )
         drawPath(
             path = lowerCaustic,
             brush = lowerBrush,
-            style = Stroke(width = 0.82.dp.toPx(), cap = StrokeCap.Round)
+            style = Stroke(width = 0.78.dp.toPx(), cap = StrokeCap.Round)
         )
     }
 }
-
 
 /**
  * Lightweight optical treatment shared by every Meals glass surface.
@@ -356,11 +360,11 @@ internal fun Modifier.mealsOpticalEdges(
     // A short curved catchlight sits just inside the upper rim, not around
     // the entire surface, so it reads as a reflection rather than a border.
     val topReflection = Path().apply {
-        moveTo(size.width * 0.15f, inset * 1.16f)
+        moveTo(size.width * 0.16f, inset * 2.75f)
         cubicTo(
-            size.width * 0.29f, inset * 0.46f,
-            size.width * 0.69f, inset * 0.46f,
-            size.width * 0.85f, inset * 1.12f
+            size.width * 0.29f, inset * 0.30f,
+            size.width * 0.71f, inset * 0.30f,
+            size.width * 0.84f, inset * 2.70f
         )
     }
     val sideReflection = Path().apply {

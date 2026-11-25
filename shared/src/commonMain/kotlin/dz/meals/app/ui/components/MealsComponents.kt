@@ -73,6 +73,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -224,32 +225,41 @@ private fun MealsLiquidGlassFrame(
         label = "mealsGlassOpticalDepth"
     )
     val pressGlow by animateFloatAsState(
-        targetValue = if (isPressed) {
-            if (buttonFinish) 0.045f else 0.12f
-        } else {
-            0f
-        },
+        targetValue = if (isPressed && !buttonFinish) 0.12f else 0f,
         animationSpec = tween(durationMillis = 65),
         label = "mealsGlassPressGlow"
     )
-    val surfaceModifier = modifier
-        // Shadow elevation is a layer property, so its animation is read in the
-        // graphics phase instead of recomposing every nested glass surface.
-        .graphicsLayer {
+    // Buttons use draw-based drop shadows instead of shadowElevation on a
+    // graphicsLayer. This avoids exposing the backing elevation layer through
+    // their translucent face while preserving an independently rendered lift.
+    val elevationModifier = if (buttonFinish) {
+        Modifier
+            .dropShadow(shape) {
+                radius = (8.5.dp * opticalDepth).toPx()
+                spread = (0.15.dp * opticalDepth).toPx()
+                color = Color(0xFF9D8B78)
+                alpha = 0.20f * opticalDepth
+                offset = Offset(0f, (3.0.dp * opticalDepth).toPx())
+            }
+            .dropShadow(shape) {
+                radius = (2.2.dp * opticalDepth).toPx()
+                spread = 0f
+                color = Color(0xFF81715F)
+                alpha = 0.12f * opticalDepth
+                offset = Offset(0f, (1.1.dp * opticalDepth).toPx())
+            }
+    } else {
+        Modifier.graphicsLayer {
             shadowElevation = (elevation * opticalDepth).toPx()
             this.shape = shape
             clip = false
-            ambientShadowColor = if (buttonFinish) {
-                Color(0xFF9D8B78).copy(alpha = 0.22f)
-            } else {
-                Color(0xFFB7AA9F).copy(alpha = 0.13f)
-            }
-            spotShadowColor = if (buttonFinish) {
-                Color(0xFF81715F).copy(alpha = 0.16f)
-            } else {
-                Color(0xFF8F8278).copy(alpha = 0.075f)
-            }
+            ambientShadowColor = Color(0xFFB7AA9F).copy(alpha = 0.13f)
+            spotShadowColor = Color(0xFF8F8278).copy(alpha = 0.075f)
         }
+    }
+
+    val surfaceModifier = modifier
+        .then(elevationModifier)
         .clip(shape)
         .mealsGlassBlur(
             backdrop = resolvedGlassBackdrop,
