@@ -32,7 +32,7 @@
     "taxonomySourceLanguage": "en",
     "targetLanguage": "ar"
   },
-  "generatedAt": "2026-11-24T07:07:13.367548+00:00",
+  "generatedAt": "2026-11-25T13:59:01.602729+00:00",
   "complete": true,
   "translatedCount": 912,
   "expectedCount": 912,
@@ -326133,6 +326133,17 @@
       "provider": "Google Apps Script LanguageApp",
       "type": "machine",
       "direction": "English and Spanish to Arabic"
+    },
+    {
+      "provider": "Google Apps Script LanguageApp",
+      "type": "machine",
+      "direction": "Polish and Spanish to Arabic",
+      "sourceLanguages": [
+        "pl",
+        "es"
+      ],
+      "taxonomySourceLanguage": "en",
+      "targetLanguage": "ar"
     }
   ],
   "safetyPolicy": {
