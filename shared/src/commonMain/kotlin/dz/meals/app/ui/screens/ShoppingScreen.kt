@@ -15,15 +15,13 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,9 +35,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsGlassDropdown
@@ -48,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,8 +58,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import dz.meals.app.ui.components.MealsBottomSheet
@@ -164,9 +158,16 @@ fun ShoppingScreen(
     val rows = snapshot.shoppingItems
     val checkedCount = rows.count { it.checked }
     val remainingCount = rows.size - checkedCount
-    val visibleRows = if (showPurchased) rows else rows.filterNot { it.checked }
+    val visibleRows = remember(rows, showPurchased) {
+        if (showPurchased) rows else rows.filterNot { it.checked }
+    }
     val categoriesById = remember(snapshot.foodCategories) { snapshot.foodCategories.associateBy { it.id } }
     val subcategoriesById = remember(snapshot.foodSubcategories) { snapshot.foodSubcategories.associateBy { it.id } }
+    // Group once per shopping-list revision. The main list and category sheets
+    // both read the same groups, avoiding repeated full-list filters on open.
+    val visibleRowsByCategory = remember(visibleRows) {
+        visibleRows.groupBy { it.categoryId }
+    }
     val shoppingRowsByIngredientId = remember(rows) {
         rows.mapNotNull { item ->
             item.ingredientId?.let { ingredientId -> ingredientId to item }
@@ -255,9 +256,11 @@ fun ShoppingScreen(
         }
         searchResults = results
     }
-    val categoryIds = visibleRows.map { it.categoryId }.distinct().sortedWith(
-        compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
-    )
+    val categoryIds = remember(visibleRowsByCategory, categoriesById) {
+        visibleRowsByCategory.keys.sortedWith(
+            compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
+        )
+    }
 
     val layoutDirection = LocalLayoutDirection.current
     val orderedFoodCategories = remember(snapshot.foodCategories) {
@@ -856,7 +859,7 @@ fun ShoppingScreen(
                 }
                 else -> {
                     categoryIds.forEach { categoryId ->
-                        val categoryRows = visibleRows.filter { it.categoryId == categoryId }
+                        val categoryRows = visibleRowsByCategory[categoryId].orEmpty()
                         val categoryLabel = categoriesById[categoryId]?.label(appLocaleTag) ?: "مواد غذائية أخرى"
                         item(key = "category-$categoryId") {
                             MealsPressable(
@@ -1117,42 +1120,53 @@ fun ShoppingScreen(
         }
     }
     selectedCategoryId?.let { categoryId ->
-        val categoryRows = visibleRows.filter { it.categoryId == categoryId }
-        val groupedRows = categoryRows.groupBy { it.subcategoryId }.entries.sortedWith(
-            compareBy<Map.Entry<String, List<ShoppingListItem>>> {
-                subcategoriesById[it.key]?.sortOrder ?: Int.MAX_VALUE
-            }.thenBy { it.key }
-        )
+        // The rows are already grouped by category above. Only build the much
+        // smaller subcategory sections once for this selected sheet.
+        val categoryRows = visibleRowsByCategory[categoryId].orEmpty()
+        val groupedRows = remember(categoryId, categoryRows, subcategoriesById) {
+            categoryRows.groupBy { it.subcategoryId }.entries.sortedWith(
+                compareBy<Map.Entry<String, List<ShoppingListItem>>> {
+                    subcategoriesById[it.key]?.sortOrder ?: Int.MAX_VALUE
+                }.thenBy { it.key }
+            )
+        }
 
         MealsBottomSheet(
             onDismissRequest = { selectedCategoryId = null },
             titleText = categoriesById[categoryId]?.label(appLocaleTag) ?: "مواد غذائية أخرى",
+            // This list is dense and mostly static. Keep the glass face/rim but
+            // skip cross-window Haze and Android blur-behind for a faster open.
+            lightweightPresentation = true,
             text = {
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 540.dp)
-                        .verticalScroll(rememberScrollState()),
+                        .heightIn(max = 540.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 4.dp,
+                        vertical = 4.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     groupedRows.forEachIndexed { groupIndex, group ->
-                        Text(
-                            subcategoriesById[group.key]?.label(appLocaleTag) ?: "أخرى",
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-                            color = MutedInk,
-                            style = MaterialTheme.typography.labelLarge,
-                            translate = false
-                        )
-                        group.value.forEachIndexed { index, item ->
-                            if (index > 0) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp)
-                                        .height(1.dp)
-                                        .background(Border.copy(alpha = 0.72f))
-                                )
-                            }
+                        item(
+                            key = "subcategory-header-$categoryId-${group.key}",
+                            contentType = "subcategory-header"
+                        ) {
+                            Text(
+                                subcategoriesById[group.key]?.label(appLocaleTag) ?: "أخرى",
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp),
+                                color = MutedInk,
+                                style = MaterialTheme.typography.labelLarge,
+                                translate = false
+                            )
+                        }
+
+                        items(
+                            items = group.value,
+                            key = { item -> "shopping-item-${item.id}" },
+                            contentType = { "shopping-item" }
+                        ) { item ->
                             ShoppingItemRow(
                                 item = item,
                                 onToggle = { onToggleItem(item.id, !item.checked) },
@@ -1168,16 +1182,8 @@ fun ShoppingScreen(
                                     editUnavailable = item.isUnavailable
                                     editUserAdded = item.userAdded && item.ingredientId == null
                                 },
-                                onDelete = { onDeleteCustomItem(item.id) }
-                            )
-                        }
-                        if (groupIndex < groupedRows.lastIndex) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 6.dp)
-                                    .height(1.dp)
-                                    .background(Border.copy(alpha = 0.78f))
+                                onDelete = { onDeleteCustomItem(item.id) },
+                                showDivider = item != group.value.lastOrNull() || groupIndex < groupedRows.lastIndex
                             )
                         }
                     }
@@ -1490,96 +1496,42 @@ private fun ShoppingItemRow(
     item: ShoppingListItem,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    showDivider: Boolean
 ) {
-    val actionWidth = 56.dp
-    val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
-    val layoutDirection = LocalLayoutDirection.current
-    // Reveal the action at logical Start. The foreground moves right in LTR and left in RTL.
-    val revealSign = logicalStartRevealSign(layoutDirection)
-    val minDragOffset = minOf(0f, revealSign * actionWidthPx)
-    val maxDragOffset = maxOf(0f, revealSign * actionWidthPx)
-    var dragOffset by remember(item.id) { mutableFloatStateOf(0f) }
-    var isDragging by remember(item.id) { mutableStateOf(false) }
-    var isActionRevealed by remember(item.id) { mutableStateOf(false) }
-    val settledOffset by animateFloatAsState(
-        targetValue = if (isActionRevealed) revealSign * actionWidthPx else 0f,
-        animationSpec = spring(dampingRatio = 0.86f, stiffness = 520f),
-        label = "shoppingSwipeSettle"
-    )
-    val dragState = rememberDraggableState { delta ->
-        dragOffset = (dragOffset + delta).coerceIn(minDragOffset, maxDragOffset)
+    val supportingDetails = remember(item.isUnavailable, item.actualSpentDzd) {
+        buildList {
+            if (item.isUnavailable) add("غير متوفر")
+            item.actualSpentDzd?.let { add("المدفوع " + it.toInt().formatDzd()) }
+        }.joinToString(" · ")
     }
-    val foregroundOffset = if (isDragging) dragOffset else settledOffset
+    val actionIsDelete = item.userAdded
 
-    val supportingDetails = buildList {
-        if (item.isUnavailable) add("غير متوفر")
-        item.actualSpentDzd?.let { add("المدفوع " + it.toInt().formatDzd()) }
-    }.joinToString(" · ")
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(vertical = 7.dp)
-                .size(width = actionWidth, height = 54.dp)
-                .background(WarmSurface, RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            MealsIconButton(
-                onClick = {
-                    if (item.userAdded) onDelete() else onEdit()
-                    isActionRevealed = false
-                },
-                size = 44.dp
-            ) {
-                MealsIcon(
-                    if (item.userAdded) MealsIconName.Delete else MealsIconName.Edit,
-                    contentDescription = if (item.userAdded) "حذف العنصر" else "تعديل العنصر",
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-        }
-
+    // One stable horizontal layout: selection, flexible item details, compact
+    // quantity/price, then one dedicated action slot at logical End. No swipe
+    // reveal layer, overlapping controls, or per-row drag animation is needed.
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(foregroundOffset.roundToInt(), 0) }
-                .draggable(
-                    state = dragState,
-                    orientation = Orientation.Horizontal,
-                    onDragStarted = {
-                        dragOffset = settledOffset
-                        isDragging = true
-                    },
-                    onDragStopped = {
-                        isDragging = false
-                        isActionRevealed = dragOffset * revealSign > actionWidthPx * 0.30f
-                        dragOffset = 0f
-                    }
-                )
-                .heightIn(min = 80.dp)
-                .padding(horizontal = 18.dp, vertical = 13.dp),
+                .heightIn(min = 76.dp)
+                .padding(horizontal = 4.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             MealsCheckbox(
                 checked = item.checked,
                 onCheckedChange = { onToggle() }
             )
-            MealsPressable(
-                onClick = onEdit,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onEdit)
+                    .padding(vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
                 Text(
                     item.name,
                     translate = item.ingredientId != null,
@@ -1596,22 +1548,21 @@ private fun ShoppingItemRow(
                         translate = false,
                         color = MutedInk,
                         style = MaterialTheme.typography.labelSmall,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                }
             }
-            MealsPressable(
-                onClick = onEdit,
-                modifier = Modifier.width(92.dp),
-                shape = RoundedCornerShape(12.dp)
+
+            Column(
+                modifier = Modifier
+                    .width(88.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onEdit)
+                    .padding(vertical = 5.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
                 Text(
                     item.purchaseQuantity.formatHouseholdQuantity(item.unit),
                     color = if (item.checked) MutedInk else dz.meals.app.ui.theme.TextAccent,
@@ -1627,8 +1578,28 @@ private fun ShoppingItemRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                }
             }
+
+            MealsIconButton(
+                onClick = if (actionIsDelete) onDelete else onEdit,
+                size = 38.dp
+            ) {
+                MealsIcon(
+                    if (actionIsDelete) MealsIconName.Delete else MealsIconName.Edit,
+                    contentDescription = if (actionIsDelete) "حذف العنصر" else "تعديل العنصر",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        if (showDivider) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp)
+                    .height(1.dp)
+                    .background(Border.copy(alpha = 0.72f))
+            )
         }
     }
 }
