@@ -167,6 +167,7 @@ private enum class AppTab {
 
 private enum class RecipeCataloguePhase {
     IDLE,
+    IMPORTING_ALGERIAN,
     DOWNLOADING,
     INSTALLING,
     READY,
@@ -246,6 +247,7 @@ private fun MealsAppContent(
     var snapshot by remember { mutableStateOf(MealsSnapshot()) }
     val arabicCatalogueDownloader = remember(context) { ArabicRecipeCatalogueDownloader(context) }
     val arabicCatalogueInstaller = remember(context) { ArabicRecipeCatalogueInstaller(context) }
+    val algerianCatalogueInstaller = remember(context) { dz.meals.app.data.AlgerianRecipeCatalogueInstaller(context) }
     var cataloguePhase by remember { mutableStateOf(RecipeCataloguePhase.IDLE) }
     var catalogueDownloadedBytes by remember { mutableStateOf(0L) }
     var catalogueTotalBytes by remember { mutableStateOf(ArabicRecipeCatalogueDownloader.EXPECTED_BYTES) }
@@ -295,15 +297,27 @@ private fun MealsAppContent(
         catalogueError = null
         catalogueJob = scope.launch {
             try {
-                // Complete the existing seed setup before importing extra rows.
-                // This also protects restored launches that reopen directly on Recipes.
+                // Finish seed and food-taxonomy setup before importing either
+                // supplemental collection. Algerian recipes are bundled locally,
+                // so they remain available even when the device is offline.
                 repository.ensureInitialized()
+
+                if (!algerianCatalogueInstaller.isInstalled()) {
+                    cataloguePhase = RecipeCataloguePhase.IMPORTING_ALGERIAN
+                    catalogueImportedRecipes = 0
+                    catalogueExpectedRecipes = dz.meals.app.data.AlgerianRecipeCatalogueInstaller.EXPECTED_RECIPE_COUNT
+                    algerianCatalogueInstaller.install { completed, total ->
+                        catalogueImportedRecipes = completed
+                        catalogueExpectedRecipes = total
+                    }
+                }
+
+                // Publish the local Algerian collection before attempting the
+                // optional remote 912-recipe catalogue download.
+                repository.invalidateCatalogueCache()
+                refresh()
+
                 if (arabicCatalogueInstaller.isInstalled()) {
-                    // The first app snapshot may have populated a seed-only ingredient cache
-                    // before the recipes tab was opened. Refresh both lookups even when the
-                    // on-disk catalogue is already current.
-                    repository.invalidateCatalogueCache()
-                    refresh()
                     cataloguePhase = RecipeCataloguePhase.READY
                     return@launch
                 }
@@ -330,8 +344,19 @@ private fun MealsAppContent(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                catalogueError = error.message ?: "تعذر تحميل مكتبة الوصفات. تحققي من الاتصال ثم أعيدي المحاولة."
-                cataloguePhase = RecipeCataloguePhase.FAILED
+                // A failed optional network catalogue must not hide the locally
+                // installed Algerian recipes or show a false empty-library error.
+                val algerianAvailable = runCatching {
+                    algerianCatalogueInstaller.isInstalled()
+                }.getOrDefault(false)
+                if (algerianAvailable) {
+                    catalogueError = null
+                    cataloguePhase = RecipeCataloguePhase.READY
+                } else {
+                    catalogueError = error.message
+                        ?: "تعذر تحميل مكتبة الوصفات. تحققي من الاتصال ثم أعيدي المحاولة."
+                    cataloguePhase = RecipeCataloguePhase.FAILED
+                }
             }
         }
     }
@@ -599,6 +624,8 @@ private fun MealsAppContent(
                             selectedTab = AppTab.Plan
                         },
                         catalogueProgress = when (cataloguePhase) {
+                            RecipeCataloguePhase.IMPORTING_ALGERIAN ->
+                                (catalogueImportedRecipes.toFloat() / catalogueExpectedRecipes.coerceAtLeast(1)).coerceIn(0f, 1f)
                             RecipeCataloguePhase.DOWNLOADING ->
                                 0.90f * (catalogueDownloadedBytes.toFloat() / catalogueTotalBytes.coerceAtLeast(1L)).coerceIn(0f, 1f)
                             RecipeCataloguePhase.INSTALLING ->
@@ -606,6 +633,8 @@ private fun MealsAppContent(
                             else -> null
                         },
                         catalogueStatusMessage = when (cataloguePhase) {
+                            RecipeCataloguePhase.IMPORTING_ALGERIAN ->
+                                "نضيف الوصفات الجزائرية إلى Midati…  $catalogueImportedRecipes / $catalogueExpectedRecipes"
                             RecipeCataloguePhase.DOWNLOADING -> "جارٍ تنزيل مكتبة الوصفات…"
                             RecipeCataloguePhase.INSTALLING -> "نضيف الوصفات إلى مكتبة Midati…  $catalogueImportedRecipes / $catalogueExpectedRecipes"
                             else -> null

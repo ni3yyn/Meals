@@ -99,6 +99,7 @@ import kotlin.math.abs
 import kotlin.math.roundToLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+private const val ALGERIAN_RECIPE_ID_PREFIX = "dz-algerian-dzirielle-"
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
 
@@ -185,6 +186,7 @@ fun RecipesScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
     var showFavorites by rememberSaveable { mutableStateOf(false) }
+    var showAlgerianOnly by rememberSaveable { mutableStateOf(false) }
     var selectedRecipeId by rememberSaveable { mutableStateOf<String?>(null) }
     var imageSearchOpen by rememberSaveable { mutableStateOf(false) }
     var imageSearchQuery by rememberSaveable { mutableStateOf("") }
@@ -247,10 +249,24 @@ fun RecipesScreen(
         }
     }
 
-    fun selectFavorites(nextFavorites: Boolean) {
-        if (nextFavorites != showFavorites) {
-            browseDirection = if (nextFavorites) 1 else -1
+    fun selectBrowseScope(nextScope: String) {
+        val nextFavorites = nextScope == "المفضلة"
+        val nextAlgerianOnly = nextScope == "جزائرية"
+        val currentIndex = when {
+            showFavorites -> 2
+            showAlgerianOnly -> 1
+            else -> 0
+        }
+        val nextIndex = when {
+            nextFavorites -> 2
+            nextAlgerianOnly -> 1
+            else -> 0
+        }
+        if (nextFavorites != showFavorites || nextAlgerianOnly != showAlgerianOnly) {
+            browseDirection = if (nextIndex >= currentIndex) 1 else -1
             showFavorites = nextFavorites
+            showAlgerianOnly = nextAlgerianOnly
+            category = "الكل"
         }
     }
 
@@ -299,7 +315,7 @@ fun RecipesScreen(
         }
     }
 
-    val browsePage = showFavorites to category
+    val browsePage = Triple(showFavorites, showAlgerianOnly, category)
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -365,9 +381,13 @@ fun RecipesScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             MealsSubtabsIndicator(
-                items = listOf("كل الوصفات", "المفضلة"),
-                selected = if (showFavorites) "المفضلة" else "كل الوصفات",
-                onSelect = { selectFavorites(it == "المفضلة") }
+                items = listOf("كل الوصفات", "جزائرية", "المفضلة"),
+                selected = when {
+                    showFavorites -> "المفضلة"
+                    showAlgerianOnly -> "جزائرية"
+                    else -> "كل الوصفات"
+                },
+                onSelect = { selectBrowseScope(it) }
             )
             MealsFilterChips(
                 items = availableCategories,
@@ -381,7 +401,7 @@ fun RecipesScreen(
             targetState = browsePage,
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(showFavorites, category, layoutDirection) {
+                .pointerInput(showFavorites, showAlgerianOnly, category, layoutDirection) {
                     var dragDistance = 0f
                     // detectHorizontalDragGestures already waits for platform touch slop;
                     // keep the additional travel short so intentional swipes feel responsive.
@@ -395,7 +415,9 @@ fun RecipesScreen(
                             if (abs(dragDistance) >= swipeThreshold) {
                                 val movingForward = isLogicalForwardSwipe(dragDistance, layoutDirection)
                                 when {
-                                    showFavorites && !movingForward -> selectFavorites(false)
+                                    showFavorites && !movingForward -> selectBrowseScope("جزائرية")
+                                    showAlgerianOnly ->
+                                        selectBrowseScope(if (movingForward) "المفضلة" else "كل الوصفات")
                                     !showFavorites -> {
                                         val currentIndex = availableCategories.indexOf(category)
                                         val nextIndex = currentIndex + if (movingForward) 1 else -1
@@ -403,7 +425,7 @@ fun RecipesScreen(
                                             nextIndex in availableCategories.indices ->
                                                 selectCategory(availableCategories[nextIndex])
                                             movingForward && currentIndex == availableCategories.lastIndex ->
-                                                selectFavorites(true)
+                                                selectBrowseScope("جزائرية")
                                         }
                                     }
                                 }
@@ -458,7 +480,8 @@ fun RecipesScreen(
                     recipes.filter { recipe ->
                         recipe.allergens.intersect(allergyIds).isEmpty() &&
                             (!page.first || recipe.id in favoriteRecipeIds) &&
-                            (page.second == "الكل" || recipe.category == page.second) &&
+                            (!page.second || recipe.id.startsWith(ALGERIAN_RECIPE_ID_PREFIX)) &&
+                            (page.third == "الكل" || recipe.category == page.third) &&
                             (searchTerm.isBlank() ||
                                 searchableRecipeTextById[recipe.id]?.contains(searchTerm, ignoreCase = true) == true)
                     }

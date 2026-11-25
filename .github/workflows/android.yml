@@ -1,7 +1,9 @@
 name: Android CI
 
-# Reusable only; no automatic or manual runs.
+# Validate every pull request and remain reusable by release/other workflows.
 on:
+  pull_request:
+    branches: [main]
   workflow_call:
 
 permissions:
