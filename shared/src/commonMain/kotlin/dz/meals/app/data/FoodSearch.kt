@@ -170,7 +170,7 @@ suspend fun searchFoodCatalogue(
     return FoodCatalogueSearchResult(
         items = exactMatches.take(safeLimit).map { it.first.ingredient },
         totalCount = exactMatches.size,
-        hasMore = exactMatches.size >= index.maxCandidates
+        hasMore = rankedCandidates.size >= index.maxCandidates
     )
 }
 
