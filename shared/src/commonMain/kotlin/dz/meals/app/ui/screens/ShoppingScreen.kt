@@ -979,51 +979,7 @@ fun ShoppingScreen(
                             browsePage = 1
                         }
                     } else {
-                        val browseFoodCount = browseFoods.size
                         Column(modifier = Modifier.fillMaxSize()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                MealsIconButton(
-                                    onClick = {
-                                        browseDirection = -1
-                                        browsePage = 1
-                                    },
-                                    size = 42.dp
-                                ) {
-                                    MealsIcon(
-                                        MealsIconName.ArrowBack,
-                                        contentDescription = when {
-                                            appLocaleTag.startsWith("en") -> "Back to categories"
-                                            appLocaleTag.startsWith("fr") -> "Retour aux catégories"
-                                            else -> "العودة إلى التصنيفات"
-                                        },
-                                        modifier = Modifier.size(23.dp)
-                                    )
-                                }
-                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        category.label(appLocaleTag),
-                                        color = Ink,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        when {
-                                            appLocaleTag.startsWith("en") -> "$browseFoodCount ingredients"
-                                            appLocaleTag.startsWith("fr") -> "$browseFoodCount ingrédients"
-                                            else -> "$browseFoodCount مكوّن"
-                                        },
-                                        color = MutedInk,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
-
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
