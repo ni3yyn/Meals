@@ -29,8 +29,9 @@ object MealsLiquidGlass {
      * One very subtle neutral tint shared by cards, hero surfaces, dropdowns
      * and sheets. Kept at the original low surface opacity and drawn only once.
      */
-    val GlassTint = Color(0xFFFFFCF7)
-    const val GlassTintOpacity = 0.20f
+    // A touch warmer and more present, while remaining a translucent ivory wash.
+    val GlassTint = Color(0xFFFFFBF4)
+    const val GlassTintOpacity = 0.23f
 
     /**
      * Original near-neutral control tint. Buttons use their own very light
@@ -195,16 +196,17 @@ internal fun Modifier.mealsOpticalEdges(
     val edgeDepth = depth.coerceIn(0.35f, 1f)
     val outline = shape.createOutline(size, layoutDirection, this)
     val inset = 1.15.dp.toPx()
-    val edgeWidth = 0.86.dp.toPx()
-    val topReflectionWidth = 0.82.dp.toPx()
+    // Slightly fuller single contour improves edge readability without stacking borders.
+    val edgeWidth = 0.98.dp.toPx()
+    val topReflectionWidth = 0.96.dp.toPx()
     val sideLength = sideGlintHeight.toPx().coerceAtMost(size.height * 0.58f)
     val sideTop = ((size.height - sideLength) * 0.5f).coerceAtLeast(inset * 2f)
 
     // Keep the face sheen concentrated near the light-facing upper edge.
     val topSurfaceSheen = Brush.verticalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.15f * edgeDepth),
-            0.30f to Color.White.copy(alpha = 0.055f * edgeDepth),
+            0f to Color.White.copy(alpha = 0.19f * edgeDepth),
+            0.30f to Color.White.copy(alpha = 0.072f * edgeDepth),
             1f to Color.Transparent
         ),
         startY = 0f,
@@ -241,18 +243,29 @@ internal fun Modifier.mealsOpticalEdges(
     val reflectionBrush = Brush.horizontalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.18f to Color.White.copy(alpha = 0.34f * edgeDepth),
-            0.48f to Color.White.copy(alpha = 0.72f * edgeDepth),
-            0.82f to Color.White.copy(alpha = 0.38f * edgeDepth),
+            0.18f to Color.White.copy(alpha = 0.40f * edgeDepth),
+            0.48f to Color.White.copy(alpha = 0.80f * edgeDepth),
+            0.82f to Color.White.copy(alpha = 0.44f * edgeDepth),
             1f to Color.Transparent
         )
+    )
+    // A broad, low-energy lens bloom adds a soft optical hotspot to the face;
+    // it is not a second border or a color overlay.
+    val lensBloom = Brush.radialGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.105f * edgeDepth),
+            Color.White.copy(alpha = 0.035f * edgeDepth),
+            Color.Transparent
+        ),
+        center = Offset(size.width * 0.50f, size.height * 0.055f),
+        radius = (size.width * 0.72f).coerceAtLeast(1f)
     )
     val sideBrush = Brush.verticalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.24f to Color.White.copy(alpha = 0.34f * edgeDepth),
-            0.52f to Color.White.copy(alpha = 0.66f * edgeDepth),
-            0.82f to Color.White.copy(alpha = 0.30f * edgeDepth),
+            0.24f to Color.White.copy(alpha = 0.40f * edgeDepth),
+            0.52f to Color.White.copy(alpha = 0.74f * edgeDepth),
+            0.82f to Color.White.copy(alpha = 0.36f * edgeDepth),
             1f to Color.Transparent
         ),
         startY = sideTop,
@@ -263,6 +276,10 @@ internal fun Modifier.mealsOpticalEdges(
         drawRect(
             brush = topSurfaceSheen,
             size = Size(size.width, size.height * 0.32f)
+        )
+        drawRect(
+            brush = lensBloom,
+            size = Size(size.width, size.height * 0.28f)
         )
 
         // One clean, white contour replaces the former stacked full outlines.
