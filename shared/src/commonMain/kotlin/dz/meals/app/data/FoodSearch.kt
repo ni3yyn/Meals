@@ -2,6 +2,8 @@ package dz.meals.app.data
 
 import io.github.karloti.typeahead.TypeaheadRecord.TypeaheadMetadata
 import io.github.karloti.typeahead.TypeaheadSearchEngine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private val FOOD_SEARCH_SEPARATORS = Regex("[^\\p{L}\\p{N}]+")
 private val FOOD_SEARCH_WHITESPACE = Regex("\\s+")
