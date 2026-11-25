@@ -48,6 +48,8 @@ object MealsLiquidGlass {
     val NavigationShape = RoundedCornerShape(27.dp)
 
     val ControlElevation = 3.dp
+    /** Buttons sit visibly above the sheet instead of sharing its surface plane. */
+    val ButtonElevation = 5.dp
     val SurfaceElevation = 2.dp
     val ModalElevation = 1.dp
     val DropdownElevation = 7.dp
