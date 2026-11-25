@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import dz.meals.app.ui.components.MealsBottomSheet
@@ -324,7 +325,8 @@ fun ShoppingScreen(
                     appLocaleTag.startsWith("fr") -> "Rechercher un ingrédient..."
                     else -> "ابحث عن مكوّن أو منتج..."
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                textFieldModifier = Modifier.testTag("shopping.search")
             )
             MealsSecondaryButton(
                 label = if (browsePage == 0) {
@@ -351,7 +353,7 @@ fun ShoppingScreen(
                         browsePage = 0
                     }
                 },
-                modifier = Modifier.width(108.dp).height(50.dp)
+                modifier = Modifier.width(108.dp).height(50.dp).testTag("shopping.categories")
             )
         }
 
@@ -712,7 +714,7 @@ fun ShoppingScreen(
                                 itemEstimatedPrice = ""
                                 addDialog = true
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().testTag("shopping.addCustomItem")
                         )
                     }
                 }
@@ -862,7 +864,7 @@ fun ShoppingScreen(
                         item(key = "category-$categoryId") {
                             MealsPressable(
                                 onClick = { selectedCategoryId = categoryId },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().testTag("shopping.category.row"),
                                 shape = RoundedCornerShape(22.dp)
                             ) {
                                 MealsCard(
@@ -1140,7 +1142,8 @@ fun ShoppingScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 540.dp),
+                        .heightIn(max = 540.dp)
+                        .testTag("shopping.category.sheet"),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
                         horizontal = 4.dp,
                         vertical = 4.dp
@@ -1198,6 +1201,7 @@ fun ShoppingScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     MealsLiquidGlassTextField(
+                        modifier = Modifier.testTag("shopping.customItem.name"),
                         value = itemName,
                         onValueChange = { itemName = it },
                         label = { Text("اسم العنصر") },
@@ -1232,7 +1236,7 @@ fun ShoppingScreen(
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("shopping.customItem.confirm"),
                     enabled = itemName.isNotBlank() &&
                         (itemEstimatedPrice.isBlank() || (itemEstimatedPrice.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 )
