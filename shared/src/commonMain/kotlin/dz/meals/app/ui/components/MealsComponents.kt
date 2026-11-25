@@ -131,6 +131,7 @@ import androidx.compose.material3.ModalBottomSheetProperties
 
 
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazePerformanceMode
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.rememberHazeState
@@ -181,6 +182,7 @@ private fun MealsLiquidGlassFrame(
     face: Brush,
     hazeState: HazeState? = null,
     blurStyle: HazeBlurStyle? = null,
+    hazePerformanceMode: HazePerformanceMode = HazePerformanceMode.Default,
     blurRadius: Dp = MealsLiquidGlass.SurfaceBlurRadius,
     glassBackdrop: MealsGlassBackdrop? = null,
     /** Use source-backed Haze when the surface lives in a separate modal window. */
@@ -225,6 +227,7 @@ private fun MealsLiquidGlassFrame(
             backdrop = resolvedGlassBackdrop,
             hazeState = hazeState,
             blurStyle = blurStyle,
+            performanceMode = hazePerformanceMode,
             shape = shape,
             blurRadius = blurRadius
         )
@@ -1695,6 +1698,7 @@ private fun MealsModalSurface(
         hazeState = hazeState,
         blurStyle = MealsLiquidGlass.ModalBlurStyle,
         blurRadius = MealsLiquidGlass.ModalBlurRadius,
+        hazePerformanceMode = HazePerformanceMode.Performance,
         glassBackdrop = glassBackdropOverride,
         forceHazeBlur = forceHazeBlur,
         rim = MealsLiquidGlass.modalRim(),
@@ -1781,10 +1785,7 @@ fun MealsBottomSheet(
     onDismissAction: (() -> Unit)? = null,
     dismissActionClosesSheet: Boolean = false,
     showCloseButton: Boolean = true,
-    /**
-     * Opt out of cross-window Haze and Android blur-behind only for exceptional,
-     * performance-sensitive static surfaces. The standard reusable sheet keeps both effects.
-     */
+    /** Opt out of backdrop blur for exceptional static surfaces; the glass face and rim remain. */
     lightweightPresentation: Boolean = false,
     /** Opt-in fixed height for immersive flows such as guided cooking. */
     fixedHeightFraction: Float? = null,
@@ -1886,8 +1887,7 @@ fun MealsBottomSheet(
     }
     val topShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
 
-    MealsBottomSheetMotionProvider {
-        CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
+    CompositionLocalProvider(LocalMealsSheetDismissAction provides dismissSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
                     if (!interactionLocked) onDismissRequest()
@@ -1925,7 +1925,7 @@ fun MealsBottomSheet(
                     )
                 }
             ) {
-                MealsModalWindowBlur(enableBlurBehind = !lightweightPresentation)
+                MealsConfigureModalWindow()
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     // Regular sheets remain natural-height and are capped at 87%.
@@ -2150,7 +2150,6 @@ fun MealsBottomSheet(
                 }
             }
         }
-    }
 }
 
 /** A navigation drawer keeps its drawer interaction but shares the glass modal material. */
