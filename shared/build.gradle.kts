@@ -52,6 +52,8 @@ kotlin {
             api(compose.material3)
             api(compose.components.resources)
             implementation(libs.kotlinx.datetime)
+            // On-device inverted-index search for the 4k+ food catalogue.
+            implementation("io.github.karloti:typeahead-kmp:2.0.4")
             api(libs.haze.core)
             implementation(libs.haze.glass)
             implementation(libs.haze.blur)
