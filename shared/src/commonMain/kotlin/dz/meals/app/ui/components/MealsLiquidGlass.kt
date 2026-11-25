@@ -26,27 +26,28 @@ import dz.meals.app.ui.theme.Border
  */
 object MealsLiquidGlass {
     /**
-     * One very subtle neutral tint shared by cards, hero surfaces, dropdowns
-     * and sheets. Kept at the original low surface opacity and drawn only once.
+     * A luminous ivory frost shared by cards, hero surfaces, dropdowns and sheets.
+     * Its opacity is strong enough to separate glass from pale blue/green artwork
+     * while keeping the backdrop visible through the surface.
      */
-    // A touch warmer and more present, while remaining a translucent ivory wash.
-    val GlassTint = Color(0xFFFFFBF4)
-    const val GlassTintOpacity = 0.23f
+    // Neutral ivory keeps the glass luminous without turning the blue theme yellow.
+    val GlassTint = Color(0xFFFFFCF8)
+    const val GlassTintOpacity = 0.42f
 
     /**
      * Original near-neutral control tint. Buttons use their own very light
      * gradient so they stay distinct from their parent without looking opaque.
      */
     val ControlTint = Color(0xFFFFFEFC)
-    const val ControlTintOpacity = 0.36f
+    const val ControlTintOpacity = 0.44f
 
-    /** Button faces must stay more translucent than their 20% glass parent. */
-    const val ButtonFaceOpacity = 0.10f
+    /** Button faces remain lighter than the stronger 42% parent glass surfaces. */
+    const val ButtonFaceOpacity = 0.18f
 
     val ControlBlurRadius = 12.dp
-    val SurfaceBlurRadius = 8.dp
-    // A compact blur retains the frosted glass while keeping modal transitions light.
-    val ModalBlurRadius = 8.dp
+    val SurfaceBlurRadius = 10.dp
+    // Keep modal frost consistent with cards without adding another blur layer.
+    val ModalBlurRadius = 10.dp
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
@@ -74,7 +75,7 @@ object MealsLiquidGlass {
 
     /**
      * Button face: a restrained pearl wash, always lighter than the sheet's
-     * 23% shared ivory tint so the blurred backdrop remains clearly visible.
+     * 42% shared ivory tint so the blurred backdrop remains clearly visible.
      */
     fun buttonFace(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
@@ -92,20 +93,20 @@ object MealsLiquidGlass {
     /** A neutral white optical edge; its intensity variation is drawn separately. */
     fun controlRim(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.96f),
-            0.24f to Color.White.copy(alpha = 0.62f),
-            0.58f to Color.White.copy(alpha = 0.30f),
-            1f to Color.White.copy(alpha = 0.78f)
+            0f to Color.White.copy(alpha = 0.98f),
+            0.24f to Color.White.copy(alpha = 0.72f),
+            0.58f to Color.White.copy(alpha = 0.38f),
+            1f to Color.White.copy(alpha = 0.86f)
         )
     )
 
     @Suppress("UNUSED_PARAMETER")
     fun surfaceRim(lowerEdge: Color = Border): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.92f),
-            0.30f to Color.White.copy(alpha = 0.58f),
-            0.72f to Color.White.copy(alpha = 0.26f),
-            1f to Color.White.copy(alpha = 0.74f)
+            0f to Color.White.copy(alpha = 0.98f),
+            0.30f to Color.White.copy(alpha = 0.72f),
+            0.72f to Color.White.copy(alpha = 0.38f),
+            1f to Color.White.copy(alpha = 0.86f)
         )
     )
 
@@ -151,10 +152,10 @@ object MealsLiquidGlass {
 
     fun modalRim(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.98f),
-            0.22f to Color.White.copy(alpha = 0.82f),
-            0.56f to Color.White.copy(alpha = 0.42f),
-            1f to Color.White.copy(alpha = 0.90f)
+            0f to Color.White.copy(alpha = 0.99f),
+            0.22f to Color.White.copy(alpha = 0.88f),
+            0.56f to Color.White.copy(alpha = 0.52f),
+            1f to Color.White.copy(alpha = 0.94f)
         )
     )
 
@@ -197,16 +198,16 @@ internal fun Modifier.mealsOpticalEdges(
     val outline = shape.createOutline(size, layoutDirection, this)
     val inset = 1.15.dp.toPx()
     // Slightly fuller single contour improves edge readability without stacking borders.
-    val edgeWidth = 0.98.dp.toPx()
-    val topReflectionWidth = 0.96.dp.toPx()
+    val edgeWidth = 1.10.dp.toPx()
+    val topReflectionWidth = 1.06.dp.toPx()
     val sideLength = sideGlintHeight.toPx().coerceAtMost(size.height * 0.58f)
     val sideTop = ((size.height - sideLength) * 0.5f).coerceAtLeast(inset * 2f)
 
     // Keep the face sheen concentrated near the light-facing upper edge.
     val topSurfaceSheen = Brush.verticalGradient(
         colorStops = arrayOf(
-            0f to Color.White.copy(alpha = 0.19f * edgeDepth),
-            0.30f to Color.White.copy(alpha = 0.072f * edgeDepth),
+            0f to Color.White.copy(alpha = 0.23f * edgeDepth),
+            0.30f to Color.White.copy(alpha = 0.088f * edgeDepth),
             1f to Color.Transparent
         ),
         startY = 0f,
@@ -243,9 +244,9 @@ internal fun Modifier.mealsOpticalEdges(
     val reflectionBrush = Brush.horizontalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.18f to Color.White.copy(alpha = 0.40f * edgeDepth),
-            0.48f to Color.White.copy(alpha = 0.80f * edgeDepth),
-            0.82f to Color.White.copy(alpha = 0.44f * edgeDepth),
+            0.18f to Color.White.copy(alpha = 0.46f * edgeDepth),
+            0.48f to Color.White.copy(alpha = 0.88f * edgeDepth),
+            0.82f to Color.White.copy(alpha = 0.50f * edgeDepth),
             1f to Color.Transparent
         )
     )
@@ -253,8 +254,8 @@ internal fun Modifier.mealsOpticalEdges(
     // it is not a second border or a color overlay.
     val lensBloom = Brush.radialGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.105f * edgeDepth),
-            Color.White.copy(alpha = 0.035f * edgeDepth),
+            Color.White.copy(alpha = 0.13f * edgeDepth),
+            Color.White.copy(alpha = 0.045f * edgeDepth),
             Color.Transparent
         ),
         center = Offset(size.width * 0.50f, size.height * 0.055f),
@@ -263,9 +264,9 @@ internal fun Modifier.mealsOpticalEdges(
     val sideBrush = Brush.verticalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.24f to Color.White.copy(alpha = 0.40f * edgeDepth),
-            0.52f to Color.White.copy(alpha = 0.74f * edgeDepth),
-            0.82f to Color.White.copy(alpha = 0.36f * edgeDepth),
+            0.24f to Color.White.copy(alpha = 0.46f * edgeDepth),
+            0.52f to Color.White.copy(alpha = 0.82f * edgeDepth),
+            0.82f to Color.White.copy(alpha = 0.42f * edgeDepth),
             1f to Color.Transparent
         ),
         startY = sideTop,
