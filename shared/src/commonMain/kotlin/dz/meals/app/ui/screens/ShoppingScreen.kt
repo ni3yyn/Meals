@@ -171,17 +171,16 @@ fun ShoppingScreen(
     var searchResults by remember { mutableStateOf<FoodCatalogueSearchResult?>(null) }
     val visibleSearchResults = searchResults
 
-    // Build all normalized names/aliases and category groupings once, off the UI thread.
-    // The effect is cancelled if the catalogue or active locale changes while building.
-    LaunchedEffect(ingredients, snapshot.foodCategories, snapshot.foodSubcategories, appLocaleTag) {
+    // Build the KMP inverted index once when the catalogue itself changes.
+    // Search data is locale-neutral; changing the UI language must not rebuild it.
+    LaunchedEffect(ingredients, snapshot.foodCategories, snapshot.foodSubcategories) {
         catalogueSearchIndex = null
         searchResults = null
         val newIndex = withContext(Dispatchers.Default) {
             buildFoodCatalogueSearchIndex(
                 ingredients = ingredients,
                 categories = snapshot.foodCategories,
-                subcategories = snapshot.foodSubcategories,
-                localeTag = appLocaleTag
+                subcategories = snapshot.foodSubcategories
             )
         }
         catalogueSearchIndex = newIndex
@@ -197,7 +196,7 @@ fun ShoppingScreen(
             return@LaunchedEffect
         }
 
-        delay(130)
+        delay(70)
         val results = withContext(Dispatchers.Default) {
             searchFoodCatalogue(index, query, resultLimit = 40)
         }
@@ -226,17 +225,25 @@ fun ShoppingScreen(
         ?.let(subcategoriesById::get)
         ?.label(appLocaleTag)
         ?: allSubcategoriesLabel
-    // Category lists come from the pre-grouped alphabetical index; changing a
-    // subcategory only filters that category's smaller list, never all 4,000 foods.
-    val browseFoods = remember(catalogueSearchIndex, selectedBrowseCategoryId, selectedSubcategoryId) {
+    // Category lists come from the pre-grouped index. Locale sorting only touches
+    // the selected category (not the full catalogue), and subcategory filtering
+    // touches that category's already-small list.
+    val browseFoods = remember(catalogueSearchIndex, selectedBrowseCategoryId, selectedSubcategoryId, appLocaleTag) {
         val categoryFoods = catalogueSearchIndex
             ?.ingredientsByCategory
             ?.get(selectedBrowseCategoryId)
             .orEmpty()
-        if (selectedSubcategoryId == null) {
+        val filtered = if (selectedSubcategoryId == null) {
             categoryFoods
         } else {
             categoryFoods.filter { it.subcategoryId == selectedSubcategoryId }
+        }
+        filtered.sortedBy { food ->
+            when {
+                appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }.lowercase()
+                appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }.lowercase()
+                else -> food.nameAr.lowercase()
+            }
         }
     }
 
@@ -564,7 +571,9 @@ fun ShoppingScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        visibleSearchResults?.totalCount?.toString() ?: "…",
+                        visibleSearchResults?.let {
+                            it.totalCount.toString() + if (it.hasMore) "+" else ""
+                        } ?: "…",
                         color = MutedInk,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -710,12 +719,12 @@ fun ShoppingScreen(
                             }
                         }
                     }
-                    if (visibleSearchResults.totalCount > visibleSearchResults.items.size) {
+                    if (visibleSearchResults.totalCount > visibleSearchResults.items.size || visibleSearchResults.hasMore) {
                         Text(
                             when {
-                                appLocaleTag.startsWith("en") -> "Showing first ${visibleSearchResults.items.size} of ${visibleSearchResults.totalCount} matches"
-                                appLocaleTag.startsWith("fr") -> "Affichage des ${visibleSearchResults.items.size} premiers sur ${visibleSearchResults.totalCount}"
-                                else -> "يظهر أول ${visibleSearchResults.items.size} من أصل ${visibleSearchResults.totalCount} نتيجة"
+                                appLocaleTag.startsWith("en") -> "Showing first ${visibleSearchResults.items.size} results${if (visibleSearchResults.hasMore) " (more matches available)" else ""}"
+                                appLocaleTag.startsWith("fr") -> "Affichage des ${visibleSearchResults.items.size} premiers résultats${if (visibleSearchResults.hasMore) " (autres résultats disponibles)" else ""}"
+                                else -> "يظهر أول ${visibleSearchResults.items.size} نتيجة${if (visibleSearchResults.hasMore) " (توجد نتائج أخرى)" else ""}"
                             },
                             modifier = Modifier.padding(top = 8.dp),
                             color = MutedInk,
