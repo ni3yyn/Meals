@@ -24,6 +24,7 @@ actual fun Modifier.mealsGlassBlur(
     backdrop: MealsGlassBackdrop?,
     hazeState: HazeState?,
     blurStyle: HazeBlurStyle?,
+    performanceMode: HazePerformanceMode,
     shape: Shape,
     blurRadius: Dp
 ): Modifier {
@@ -32,7 +33,7 @@ actual fun Modifier.mealsGlassBlur(
     return hazeBlur(
         input = HazeInput.Sources(source),
         style = style,
-        performanceMode = HazePerformanceMode.Default
+        performanceMode = performanceMode
     )
 }
 
@@ -40,13 +41,8 @@ actual fun Modifier.mealsHazeSource(state: HazeState, zIndex: Float): Modifier =
     hazeSource(state, zIndex = zIndex)
 
 
-@Composable
-actual fun MealsBottomSheetMotionProvider(content: @Composable () -> Unit) {
-    content()
-}
-
 @Suppress("UNUSED_PARAMETER")
 @Composable
-actual fun MealsModalWindowBlur(enableBlurBehind: Boolean) {
-    // iOS presents the sheet in the existing window; Haze handles its backdrop blur.
+actual fun MealsConfigureModalWindow() {
+    // iOS presents the sheet in the existing window; no window setup is required.
 }
