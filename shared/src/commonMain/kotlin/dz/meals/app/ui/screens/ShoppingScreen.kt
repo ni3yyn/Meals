@@ -86,17 +86,22 @@ import dz.meals.app.ui.components.MealsTextButton
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.data.IngredientMaster
+import dz.meals.app.data.FoodCatalogueSearchIndex
+import dz.meals.app.data.FoodCatalogueSearchResult
+import dz.meals.app.data.buildFoodCatalogueSearchIndex
+import dz.meals.app.data.searchFoodCatalogue
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PriceObservationSummary
 import dz.meals.app.data.ShoppingListItem
-import dz.meals.app.data.foodMatchesSearch
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.BodyInk
 import dz.meals.app.ui.theme.Ink
 import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.ui.theme.Paper
 import dz.meals.app.ui.theme.WarmSurface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import dz.meals.app.shared.format.epochMillisToLocalDate
 import dz.meals.app.shared.format.formatDateDmy
@@ -162,43 +167,40 @@ fun ShoppingScreen(
     val categoriesById = remember(snapshot.foodCategories) { snapshot.foodCategories.associateBy { it.id } }
     val subcategoriesById = remember(snapshot.foodSubcategories) { snapshot.foodSubcategories.associateBy { it.id } }
     val alreadyAddedIngredientIds = rows.mapNotNull { it.ingredientId }.toSet()
-    val searchResults = remember(
-        ingredients,
-        snapshot.foodCategories,
-        snapshot.foodSubcategories,
-        searchQuery,
-        appLocaleTag
-    ) {
-        val term = searchQuery.trim()
-        if (term.isBlank()) {
-            emptyList()
-        } else {
-            ingredients.filter { food ->
-                val category = categoriesById[food.categoryId]
-                val subcategory = subcategoriesById[food.subcategoryId]
-                foodMatchesSearch(
-                    buildList {
-                        add(food.nameAr)
-                        add(food.nameEn)
-                        add(food.nameFr)
-                        addAll(food.aliases)
-                        add(category?.nameAr.orEmpty())
-                        add(category?.nameEn.orEmpty())
-                        add(category?.nameFr.orEmpty())
-                        add(subcategory?.nameAr.orEmpty())
-                        add(subcategory?.nameEn.orEmpty())
-                        add(subcategory?.nameFr.orEmpty())
-                    },
-                    term
-                )
-            }.sortedBy { food ->
-                when {
-                    appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }.lowercase()
-                    appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }.lowercase()
-                    else -> food.nameAr.lowercase()
-                }
-            }
+    var catalogueSearchIndex by remember { mutableStateOf<FoodCatalogueSearchIndex?>(null) }
+    var searchResults by remember { mutableStateOf<FoodCatalogueSearchResult?>(null) }
+
+    // Build all normalized names/aliases and category groupings once, off the UI thread.
+    // The effect is cancelled if the catalogue or active locale changes while building.
+    LaunchedEffect(ingredients, snapshot.foodCategories, snapshot.foodSubcategories, appLocaleTag) {
+        catalogueSearchIndex = null
+        searchResults = null
+        val newIndex = withContext(Dispatchers.Default) {
+            buildFoodCatalogueSearchIndex(
+                ingredients = ingredients,
+                categories = snapshot.foodCategories,
+                subcategories = snapshot.foodSubcategories,
+                localeTag = appLocaleTag
+            )
         }
+        catalogueSearchIndex = newIndex
+    }
+
+    // Debounce typing, then search the immutable normalized index in the background.
+    // LaunchedEffect cancellation prevents an older query from overwriting newer results.
+    LaunchedEffect(searchQuery, catalogueSearchIndex) {
+        val query = searchQuery
+        val index = catalogueSearchIndex
+        if (query.isBlank() || index == null) {
+            searchResults = null
+            return@LaunchedEffect
+        }
+
+        delay(130)
+        val results = withContext(Dispatchers.Default) {
+            searchFoodCatalogue(index, query, resultLimit = 40)
+        }
+        searchResults = results
     }
     val categoryIds = visibleRows.map { it.categoryId }.distinct().sortedWith(
         compareBy<String> { categoriesById[it]?.sortOrder ?: Int.MAX_VALUE }.thenBy { it }
@@ -223,21 +225,17 @@ fun ShoppingScreen(
         ?.let(subcategoriesById::get)
         ?.label(appLocaleTag)
         ?: allSubcategoriesLabel
-    val browseFoods = remember(
-        ingredients,
-        selectedBrowseCategoryId,
-        selectedSubcategoryId,
-        appLocaleTag
-    ) {
-        ingredients.filter { food ->
-            food.categoryId == selectedBrowseCategoryId &&
-                (selectedSubcategoryId == null || food.subcategoryId == selectedSubcategoryId)
-        }.sortedBy { food ->
-            when {
-                appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }.lowercase()
-                appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }.lowercase()
-                else -> food.nameAr.lowercase()
-            }
+    // Category lists come from the pre-grouped alphabetical index; changing a
+    // subcategory only filters that category's smaller list, never all 4,000 foods.
+    val browseFoods = remember(catalogueSearchIndex, selectedBrowseCategoryId, selectedSubcategoryId) {
+        val categoryFoods = catalogueSearchIndex
+            ?.ingredientsByCategory
+            ?.get(selectedBrowseCategoryId)
+            .orEmpty()
+        if (selectedSubcategoryId == null) {
+            categoryFoods
+        } else {
+            categoryFoods.filter { it.subcategoryId == selectedSubcategoryId }
         }
     }
 
@@ -253,6 +251,7 @@ fun ShoppingScreen(
                 value = searchQuery,
                 onValueChange = {
                     searchQuery = it
+                    searchResults = null
                     if (browsePage != 0) {
                         browseDirection = -1
                         browsePage = 0
@@ -281,6 +280,7 @@ fun ShoppingScreen(
                 },
                 onClick = {
                     searchQuery = ""
+                    searchResults = null
                     if (browsePage == 0) {
                         browseDirection = 1
                         browsePage = 1
@@ -563,14 +563,34 @@ fun ShoppingScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        searchResults.size.toString(),
+                        searchResults?.totalCount?.toString() ?: "…",
                         color = MutedInk,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
 
-            if (searchResults.isEmpty()) {
+            if (searchResults == null) {
+                item(key = "shopping-catalogue-search-loading") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            when {
+                                catalogueSearchIndex == null && appLocaleTag.startsWith("en") -> "Preparing ingredient search…"
+                                catalogueSearchIndex == null && appLocaleTag.startsWith("fr") -> "Préparation de la recherche…"
+                                catalogueSearchIndex == null -> "جارٍ تجهيز البحث…"
+                                appLocaleTag.startsWith("en") -> "Searching…"
+                                appLocaleTag.startsWith("fr") -> "Recherche…"
+                                else -> "جارٍ البحث…"
+                            },
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            } else if (searchResults.items.isEmpty()) {
                 item(key = "shopping-catalogue-search-empty") {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
@@ -605,7 +625,7 @@ fun ShoppingScreen(
             } else {
                 item(key = "shopping-catalogue-search-results") {
                     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        searchResults.take(40).forEachIndexed { index, food ->
+                        searchResults.items.forEachIndexed { index, food ->
                             val foodName = when {
                                 appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }
                                 appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
@@ -688,6 +708,18 @@ fun ShoppingScreen(
                                 }
                             }
                         }
+                    }
+                    if (searchResults.totalCount > searchResults.items.size) {
+                        Text(
+                            when {
+                                appLocaleTag.startsWith("en") -> "Showing first ${searchResults.items.size} of ${searchResults.totalCount} matches"
+                                appLocaleTag.startsWith("fr") -> "Affichage des ${searchResults.items.size} premiers sur ${searchResults.totalCount}"
+                                else -> "يظهر أول ${searchResults.items.size} من أصل ${searchResults.totalCount} نتيجة"
+                            },
+                            modifier = Modifier.padding(top = 8.dp),
+                            color = MutedInk,
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                 }
             }
@@ -827,7 +859,7 @@ fun ShoppingScreen(
                                     verticalAlignment = Alignment.Top
                                 ) {
                                     categoryPair.forEach { category ->
-                                        val count = ingredients.count { it.categoryId == category.id }
+                                        val count = catalogueSearchIndex?.categoryCounts?.get(category.id) ?: 0
                                         MealsChoiceTile(
                                             title = category.label(appLocaleTag),
                                             description = when {
