@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 
 private const val TARGET_PACKAGE = "dz.meals.app"
 private const val UI_TIMEOUT_MS = 30_000L
-private const val ADD_ROW_COUNT = 5
+private const val ADD_ROW_COUNT = 9
 
 private fun device(): UiDevice =
     UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
