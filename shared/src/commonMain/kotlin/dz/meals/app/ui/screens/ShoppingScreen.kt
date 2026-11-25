@@ -191,7 +191,7 @@ fun ShoppingScreen(
     LaunchedEffect(searchQuery, catalogueSearchIndex) {
         val query = searchQuery
         val index = catalogueSearchIndex
-        if (query.isBlank() || index == null) {
+        if (query.isBlank() || query.trim().length < 2 || index == null) {
             searchResults = null
             return@LaunchedEffect
         }
@@ -580,7 +580,21 @@ fun ShoppingScreen(
                 }
             }
 
-            if (visibleSearchResults == null) {
+            if (searchQuery.trim().length < 2) {
+                item(key = "shopping-catalogue-search-hint") {
+                    Text(
+                        when {
+                            appLocaleTag.startsWith("en") -> "Type at least 2 characters to search"
+                            appLocaleTag.startsWith("fr") -> "Saisissez au moins 2 caractères"
+                            else -> "اكتب حرفين على الأقل للبحث"
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            } else if (visibleSearchResults == null) {
                 item(key = "shopping-catalogue-search-loading") {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
