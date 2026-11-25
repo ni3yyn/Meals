@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import dz.meals.app.ui.components.MealsGlassDropdown
@@ -1159,11 +1159,11 @@ fun ShoppingScreen(
                             )
                         }
 
-                        items(
+                        itemsIndexed(
                             items = group.value,
-                            key = { item -> "shopping-item-${item.id}" },
-                            contentType = { "shopping-item" }
-                        ) { item ->
+                            key = { _, item -> "shopping-item-${item.id}" },
+                            contentType = { _, _ -> "shopping-item" }
+                        ) { itemIndex, item ->
                             ShoppingItemRow(
                                 item = item,
                                 onToggle = { onToggleItem(item.id, !item.checked) },
@@ -1180,7 +1180,7 @@ fun ShoppingScreen(
                                     editUserAdded = item.userAdded && item.ingredientId == null
                                 },
                                 onDelete = { onDeleteCustomItem(item.id) },
-                                showDivider = item != group.value.lastOrNull() || groupIndex < groupedRows.lastIndex
+                                showDivider = itemIndex < group.value.lastIndex || groupIndex < groupedRows.lastIndex
                             )
                         }
                     }
