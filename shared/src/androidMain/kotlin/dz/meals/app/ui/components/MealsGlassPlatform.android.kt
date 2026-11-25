@@ -137,7 +137,7 @@ actual fun MealsModalWindowBlur(enableBlurBehind: Boolean) {
     // Settings opts out of blur-behind: the static glass face and rim remain,
     // while Android avoids an additional full-window blur during sheet motion.
     if (enableBlurBehind) {
-        val blurRadiusPx = with(LocalDensity.current) { 17.dp.roundToPx() }
+        val blurRadiusPx = with(LocalDensity.current) { 13.dp.roundToPx() }
         DisposableEffect(window, blurRadiusPx) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val hadBlurBehindFlag =
