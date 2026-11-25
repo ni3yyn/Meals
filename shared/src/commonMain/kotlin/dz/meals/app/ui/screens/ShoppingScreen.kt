@@ -1132,9 +1132,10 @@ fun ShoppingScreen(
         MealsBottomSheet(
             onDismissRequest = { selectedCategoryId = null },
             titleText = categoriesById[categoryId]?.label(appLocaleTag) ?: "مواد غذائية أخرى",
-            // This list is dense and mostly static. Keep the glass face/rim but
-            // skip cross-window Haze and Android blur-behind for a faster open.
-            lightweightPresentation = true,
+            // Use the standard Meals Liquid Glass modal treatment here:
+            // cross-window Haze blur plus Android blur-behind, with its shared
+            // warm tint, white optical rim and modal depth. Performance comes
+            // from lazy rows and cached grouping, not removing the material.
             text = {
                 LazyColumn(
                     modifier = Modifier
