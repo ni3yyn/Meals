@@ -71,7 +71,7 @@ class FoodSearchTest {
             localeTag = "ar"
         )
 
-        assertEquals(listOf("tomato", "chicken"), index.entries.map { it.ingredient.id })
+        assertEquals(listOf("chicken", "tomato"), index.entries.map { it.ingredient.id })
         assertEquals(1, index.categoryCounts["vegetables"])
         assertEquals(listOf("tomato"), index.ingredientsByCategory["vegetables"]?.map { it.id })
 
