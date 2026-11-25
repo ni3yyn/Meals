@@ -5,7 +5,6 @@ import dz.meals.app.ui.components.MealsText as Text
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 
-private val MealsCheckboxShape = RoundedCornerShape(8.dp)
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -160,6 +159,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.roundToInt
+
+private val MealsCheckboxShape = RoundedCornerShape(8.dp)
 
 private val LargeTileShape = RoundedCornerShape(24.dp)
 private val MealsCardShape = MealsLiquidGlass.CardShape
