@@ -140,7 +140,7 @@ class FoodCatalogueInstallerTest {
             val shoppingRows = dao.getShoppingItems(shoppingWeek)
             assertEquals(1, shoppingRows.size)
             val manualShoppingItem = shoppingRows.single()
-            val baseUnit = unseededFood.baseUnit.trim().ifBlank { "piece" }
+            val baseUnit = unseededFood.acceptedUnitsCsv.split("|").firstOrNull { it.isNotBlank() } ?: "piece"
             assertEquals(unseededFood.id, manualShoppingItem.ingredientId)
             assertEquals("$shoppingWeek::${unseededFood.id}::$baseUnit", manualShoppingItem.id)
             assertEquals(baseUnit, manualShoppingItem.unit)
