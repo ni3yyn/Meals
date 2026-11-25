@@ -72,6 +72,9 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
         }
 
         val recipeIds = recipes.map { it.id }
+        withContext(Dispatchers.Main.immediate) {
+            onProgress(0, recipes.size)
+        }
         database.withTransaction {
             // Remove old children for only this collection before the upsert.
             // This makes future catalogue revisions safe when a recipe loses a row.
@@ -82,13 +85,8 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
                 dao.upsertCatalogueIngredients(it)
             }
 
-            var imported = 0
-            recipes.chunked(RECIPE_BATCH_SIZE).forEach { batch ->
-                dao.upsertCatalogueRecipes(batch)
-                imported += batch.size
-                withContext(Dispatchers.Main.immediate) {
-                    onProgress(imported, recipes.size)
-                }
+            recipes.chunked(RECIPE_BATCH_SIZE).forEach {
+                dao.upsertCatalogueRecipes(it)
             }
 
             recipeIngredients.chunked(INSERT_BATCH_SIZE).forEach {
