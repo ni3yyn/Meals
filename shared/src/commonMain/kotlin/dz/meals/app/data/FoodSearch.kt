@@ -1,10 +1,16 @@
 package dz.meals.app.data
 
+import io.github.karloti.typeahead.TypeaheadRecord.TypeaheadMetadata
+import io.github.karloti.typeahead.TypeaheadSearchEngine
+
 private val FOOD_SEARCH_SEPARATORS = Regex("[^\\p{L}\\p{N}]+")
 private val FOOD_SEARCH_WHITESPACE = Regex("\\s+")
 
+private const val FOOD_SEARCH_MAX_CANDIDATES = 100
+private const val FOOD_SEARCH_TOP_VOCAB = 32
+
 /**
- * Folds search text without changing stored names or stable food IDs.
+ * Folds user search text without changing stored names or stable food IDs.
  * Supports Arabic vocalization/hamza variants, common Latin diacritics and
  * whitespace/punctuation differences. It intentionally does not translate.
  */
@@ -37,52 +43,50 @@ fun normalizeFoodSearchText(value: String): String {
         .replace(FOOD_SEARCH_WHITESPACE, " ")
 }
 
-/**
- * An immutable, pre-normalized catalogue row. Build these once when the
- * catalogue changes, not while the user types.
- */
+/** A normalized catalogue row indexed by the shared Typeahead engine. */
 data class FoodSearchIndexEntry internal constructor(
     val ingredient: IngredientMaster,
     internal val normalizedSearchText: String
 )
 
 /**
- * One catalogue index supports search and category browsing. The grouped lists
- * preserve the localized alphabetical order of [entries].
+ * One reusable in-memory inverted index supports both free-text search and
+ * category browsing. The native engine is built once per catalogue revision.
  */
-data class FoodCatalogueSearchIndex internal constructor(
+class FoodCatalogueSearchIndex internal constructor(
     val entries: List<FoodSearchIndexEntry>,
     val ingredientsByCategory: Map<String, List<IngredientMaster>>,
-    val categoryCounts: Map<String, Int>
+    val categoryCounts: Map<String, Int>,
+    internal val searchEngine: TypeaheadSearchEngine<FoodSearchIndexEntry, String>,
+    internal val maxCandidates: Int
 )
 
 data class FoodCatalogueSearchResult(
     val items: List<IngredientMaster>,
-    val totalCount: Int
+    val totalCount: Int,
+    val hasMore: Boolean = false
 )
 
 /**
- * Builds a reusable index over every supported locale, alias and taxonomy
- * label. Call from a background dispatcher for large catalogues.
+ * Builds the search document corpus and the KMP inverted index.
+ *
+ * This is suspendable because Typeahead performs vocabulary vectorization on
+ * Dispatchers.Default. Call it from a background coroutine, never from a
+ * composable calculation or the main thread.
  */
-fun buildFoodCatalogueSearchIndex(
+suspend fun buildFoodCatalogueSearchIndex(
     ingredients: List<IngredientMaster>,
     categories: List<FoodCategory>,
-    subcategories: List<FoodSubcategory>,
-    localeTag: String
+    subcategories: List<FoodSubcategory>
 ): FoodCatalogueSearchIndex {
     val categoriesById = categories.associateBy { it.id }
     val subcategoriesById = subcategories.associateBy { it.id }
 
-    val sortedIngredients = ingredients.sortedBy { food ->
-        when {
-            localeTag.startsWith("en", ignoreCase = true) -> food.nameEn.ifBlank { food.nameAr }.lowercase()
-            localeTag.startsWith("fr", ignoreCase = true) -> food.nameFr.ifBlank { food.nameAr }.lowercase()
-            else -> food.nameAr.lowercase()
-        }
-    }
-
-    val entries = sortedIngredients.map { food ->
+    // Stable order here is only for deterministic category grouping. Search
+    // ranking is supplied by the inverted index; the UI applies locale order
+    // to the selected category's much smaller list.
+    val catalogue = ingredients.sortedBy { it.nameAr.lowercase() }
+    val entries = catalogue.map { food ->
         val category = categoriesById[food.categoryId]
         val subcategory = subcategoriesById[food.subcategoryId]
         val searchFields = buildList {
@@ -103,49 +107,75 @@ fun buildFoodCatalogueSearchIndex(
         )
     }
 
-    val ingredientsByCategory = sortedIngredients.groupBy { it.categoryId }
+    val engine = TypeaheadSearchEngine<FoodSearchIndexEntry, String>(
+        textSelector = FoodSearchIndexEntry::normalizedSearchText,
+        keySelector = { it.ingredient.id },
+        metadata = TypeaheadMetadata(
+            // Keep a bounded candidate pool: we display at most 40 rows, and
+            // retain enough additional candidates for exact matching/ranking.
+            maxResults = FOOD_SEARCH_MAX_CANDIDATES,
+            topKVocab = FOOD_SEARCH_TOP_VOCAB,
+            haveStore = true
+        )
+    )
+    engine.addAll(entries)
+
+    val ingredientsByCategory = catalogue.groupBy { it.categoryId }
     val categoryCounts = ingredientsByCategory.mapValues { (_, foods) -> foods.size }
 
     return FoodCatalogueSearchIndex(
         entries = entries,
         ingredientsByCategory = ingredientsByCategory,
-        categoryCounts = categoryCounts
+        categoryCounts = categoryCounts,
+        searchEngine = engine,
+        maxCandidates = FOOD_SEARCH_MAX_CANDIDATES
     )
 }
 
 /**
- * Filters pre-normalized entries. Only [resultLimit] rows are retained for UI
- * composition, while [FoodCatalogueSearchResult.totalCount] remains exact.
- * Entries are already alphabetically sorted, so filtering needs no second sort.
+ * Queries the prebuilt Typeahead inverted index, then applies Midati's exact
+ * all-terms rule against the normalized document text. That preserves the
+ * existing Arabic/French/English partial-name semantics while letting the
+ * library do vocabulary retrieval and relevance ordering.
+ *
+ * The engine retains at most 100 candidates internally; the UI renders only
+ * [resultLimit]. hasMore is conservative when the candidate pool is full.
  */
-fun searchFoodCatalogue(
+suspend fun searchFoodCatalogue(
     index: FoodCatalogueSearchIndex,
     query: String,
     resultLimit: Int = 40
 ): FoodCatalogueSearchResult {
     val normalizedQuery = normalizeFoodSearchText(query)
-    if (normalizedQuery.isBlank()) return FoodCatalogueSearchResult(emptyList(), 0)
+    if (normalizedQuery.length < 2) {
+        return FoodCatalogueSearchResult(emptyList(), 0)
+    }
 
     val terms = normalizedQuery.split(' ').filter { it.isNotBlank() }
     if (terms.isEmpty()) return FoodCatalogueSearchResult(emptyList(), 0)
 
-    val safeLimit = resultLimit.coerceAtLeast(0)
-    val matches = ArrayList<IngredientMaster>(minOf(safeLimit, index.entries.size))
-    var totalCount = 0
+    index.searchEngine.find(normalizedQuery)
+    val rankedCandidates = index.searchEngine.storeResults?.value.orEmpty()
 
-    for (entry in index.entries) {
-        if (terms.all { term -> term in entry.normalizedSearchText }) {
-            totalCount += 1
-            if (matches.size < safeLimit) matches.add(entry.ingredient)
-        }
+    // MiniSearch-style retrieval is performed by the inverted index; this
+    // final check enforces Midati's established "all typed terms must occur"
+    // behaviour and removes fuzzy near-misses from the visible results.
+    val exactMatches = rankedCandidates.filter { (entry, _) ->
+        terms.all { term -> term in entry.normalizedSearchText }
     }
 
-    return FoodCatalogueSearchResult(items = matches, totalCount = totalCount)
+    val safeLimit = resultLimit.coerceAtLeast(0)
+    return FoodCatalogueSearchResult(
+        items = exactMatches.take(safeLimit).map { it.first.ingredient },
+        totalCount = exactMatches.size,
+        hasMore = exactMatches.size >= index.maxCandidates
+    )
 }
 
 /**
  * Compatibility helper for small one-off callers and existing tests.
- * Large catalogue screens should use [buildFoodCatalogueSearchIndex] once.
+ * Catalogue screens should use [buildFoodCatalogueSearchIndex] and
+ * [searchFoodCatalogue] instead.
  */
 fun foodMatchesSearch(fields: Iterable<String>, query: String): Boolean {
     val normalizedQuery = normalizeFoodSearchText(query)
