@@ -167,6 +167,7 @@ fun ShoppingScreen(
     val categoriesById = remember(snapshot.foodCategories) { snapshot.foodCategories.associateBy { it.id } }
     val subcategoriesById = remember(snapshot.foodSubcategories) { snapshot.foodSubcategories.associateBy { it.id } }
     val alreadyAddedIngredientIds = rows.mapNotNull { it.ingredientId }.toSet()
+    val visibleSearchResults = searchResults
     var catalogueSearchIndex by remember { mutableStateOf<FoodCatalogueSearchIndex?>(null) }
     var searchResults by remember { mutableStateOf<FoodCatalogueSearchResult?>(null) }
 
@@ -563,14 +564,14 @@ fun ShoppingScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        searchResults?.totalCount?.toString() ?: "…",
+                        visibleSearchResults?.totalCount?.toString() ?: "…",
                         color = MutedInk,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
 
-            if (searchResults == null) {
+            if (visibleSearchResults == null) {
                 item(key = "shopping-catalogue-search-loading") {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
@@ -590,7 +591,7 @@ fun ShoppingScreen(
                         )
                     }
                 }
-            } else if (searchResults.items.isEmpty()) {
+            } else if (visibleSearchResults.items.isEmpty()) {
                 item(key = "shopping-catalogue-search-empty") {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
@@ -625,7 +626,7 @@ fun ShoppingScreen(
             } else {
                 item(key = "shopping-catalogue-search-results") {
                     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        searchResults.items.forEachIndexed { index, food ->
+                        visibleSearchResults.items.forEachIndexed { index, food ->
                             val foodName = when {
                                 appLocaleTag.startsWith("en") -> food.nameEn.ifBlank { food.nameAr }
                                 appLocaleTag.startsWith("fr") -> food.nameFr.ifBlank { food.nameAr }
@@ -709,12 +710,12 @@ fun ShoppingScreen(
                             }
                         }
                     }
-                    if (searchResults.totalCount > searchResults.items.size) {
+                    if (visibleSearchResults.totalCount > visibleSearchResults.items.size) {
                         Text(
                             when {
-                                appLocaleTag.startsWith("en") -> "Showing first ${searchResults.items.size} of ${searchResults.totalCount} matches"
-                                appLocaleTag.startsWith("fr") -> "Affichage des ${searchResults.items.size} premiers sur ${searchResults.totalCount}"
-                                else -> "يظهر أول ${searchResults.items.size} من أصل ${searchResults.totalCount} نتيجة"
+                                appLocaleTag.startsWith("en") -> "Showing first ${visibleSearchResults.items.size} of ${visibleSearchResults.totalCount} matches"
+                                appLocaleTag.startsWith("fr") -> "Affichage des ${visibleSearchResults.items.size} premiers sur ${visibleSearchResults.totalCount}"
+                                else -> "يظهر أول ${visibleSearchResults.items.size} من أصل ${visibleSearchResults.totalCount} نتيجة"
                             },
                             modifier = Modifier.padding(top = 8.dp),
                             color = MutedInk,
