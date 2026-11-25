@@ -198,15 +198,19 @@ private fun MealsLiquidGlassFrame(
     sideGlintHeight: Dp = 17.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
-    // Prismal captures within the activity window. ModalBottomSheet is hosted
-    // in a separate dialog window, so it must consume Haze's cross-window source.
-    val resolvedGlassBackdrop = if (forceHazeBlur) {
+    // A modal surface owns the one cross-window blur for its entire content tree.
+    // Its child controls keep their own face/rim but reuse that already-blurred
+    // backdrop instead of starting a second Prismal or Haze blur pass.
+    val backdropBlurEnabled = enableBackdropBlur && LocalMealsGlassBlurEnabled.current
+    // Prismal captures only within the activity window; modal sheets use Haze.
+    val resolvedGlassBackdrop = if (!backdropBlurEnabled || forceHazeBlur) {
         null
     } else {
         glassBackdrop
             ?: LocalMealsCardGlassBackdrop.current
             ?: LocalMealsScreenGlassBackdrop.current
     }
+    val resolvedHazeState = if (backdropBlurEnabled) hazeState else null
     val isPressed = LocalMealsGlassPressed.current
     val opticalDepth by animateFloatAsState(
         targetValue = if (isPressed) 0.78f else 1f,
@@ -231,11 +235,11 @@ private fun MealsLiquidGlassFrame(
         .clip(shape)
         .mealsGlassBlur(
             backdrop = resolvedGlassBackdrop,
-            hazeState = hazeState,
+            hazeState = resolvedHazeState,
             blurStyle = blurStyle,
             performanceMode = hazePerformanceMode,
             shape = shape,
-            blurRadius = blurRadius
+            blurRadius = if (backdropBlurEnabled) blurRadius else 0.dp
         )
         .background(face, shape)
         // Press glow is draw-only. Cache the outline once per size/shape and
@@ -654,6 +658,9 @@ val LocalMealsCardHazeState = staticCompositionLocalOf<HazeState?> { null }
 val LocalMealsCardGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
 val LocalMealsScreenGlassBackdrop = staticCompositionLocalOf<MealsGlassBackdrop?> { null }
 internal val LocalMealsGlassPressed = staticCompositionLocalOf { false }
+
+/** Child glass inside an already-blurred modal surface must not blur the same backdrop again. */
+internal val LocalMealsGlassBlurEnabled = staticCompositionLocalOf { true }
 
 /**
  * Theme-aware material strengths. Pale wallpapers use less white fill so the
@@ -1720,28 +1727,33 @@ private fun MealsModalSurface(
         MealsLiquidGlass.modalFace(tintColor, glassOpacity.surfaceOpacity)
     }
 
-    MealsLiquidGlassFrame(
-        modifier = modifier,
-        shape = shape,
-        elevation = elevation,
-        face = face,
-        hazeState = hazeState,
-        blurStyle = MealsLiquidGlass.ModalBlurStyle,
-        blurRadius = MealsLiquidGlass.ModalBlurRadius,
-        hazePerformanceMode = HazePerformanceMode.Performance,
-        glassBackdrop = glassBackdropOverride,
-        forceHazeBlur = forceHazeBlur,
-        rim = MealsLiquidGlass.modalRim(),
-        sideGlintHeight = 30.dp
-    ) {
-        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
-            Column(
-                modifier = (if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
-                    .then(if (padNavigationBars) Modifier.navigationBarsPadding() else Modifier)
-                    .padding(contentPadding),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                content = content
-            )
+    CompositionLocalProvider(LocalMealsGlassBlurEnabled provides true) {
+        MealsLiquidGlassFrame(
+            modifier = modifier,
+            shape = shape,
+            elevation = elevation,
+            face = face,
+            hazeState = hazeState,
+            blurStyle = MealsLiquidGlass.ModalBlurStyle,
+            blurRadius = MealsLiquidGlass.ModalBlurRadius,
+            hazePerformanceMode = HazePerformanceMode.Performance,
+            glassBackdrop = glassBackdropOverride,
+            forceHazeBlur = forceHazeBlur,
+            rim = MealsLiquidGlass.modalRim(),
+            sideGlintHeight = 30.dp
+        ) {
+            CompositionLocalProvider(
+                LocalMealsGlassBlurEnabled provides false,
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                Column(
+                    modifier = (if (fillHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
+                        .then(if (padNavigationBars) Modifier.navigationBarsPadding() else Modifier)
+                        .padding(contentPadding),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    content = content
+                )
+            }
         }
     }
 }
