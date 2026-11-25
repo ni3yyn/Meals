@@ -34,7 +34,7 @@ object MealsLiquidGlass {
 
     val ControlBlurRadius = 12.dp
     val SurfaceBlurRadius = 8.dp
-    val ModalBlurRadius = 20.dp
+    val ModalBlurRadius = 17.dp
 
     val ControlShape = RoundedCornerShape(15.dp)
     val CardShape = RoundedCornerShape(26.dp)
@@ -162,7 +162,7 @@ object MealsLiquidGlass {
     }
 
     val ModalBlurStyle = HazeBlurStyle {
-        blurRadius(20.dp)
+        blurRadius(ModalBlurRadius)
         noiseFactor(0.015f)
         colorEffects(
             listOf(HazeColorEffect.tint(Color(0xFFFFFCF7).copy(alpha = ModalOpacity)))
