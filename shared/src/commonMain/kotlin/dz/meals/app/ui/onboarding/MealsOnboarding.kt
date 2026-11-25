@@ -82,10 +82,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import dz.meals.app.data.AppPreferences
+import dz.meals.app.data.MEALS_BACKGROUND_CLASSIC
+import dz.meals.app.data.MEALS_BACKGROUND_PINK
+import dz.meals.app.data.MEALS_BACKGROUND_BLUE
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.shared.format.formatDzd
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_kitchen_background
+import dz.meals.app.shared.generated.resources.meals_kitchen_background_pink
+import dz.meals.app.shared.generated.resources.meals_kitchen_background_blue
 import dz.meals.app.ui.components.MealsAnimatedCount
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsCheckRow
@@ -230,9 +235,16 @@ fun MealsOnboarding(
 
     CompositionLocalProvider(LocalMealsOnboardingMotionClock provides motionClock) {
         Box(modifier.fillMaxSize()) {
-        // Same artwork the glass samples, so the app underneath is fully covered.
+        // Match the user's saved app background; the onboarding layer covers
+        // the backdrop beneath it and must never fall back to fixed artwork.
+        val onboardingBackground = when (initial.kitchenBackground) {
+            MEALS_BACKGROUND_CLASSIC -> Res.drawable.meals_kitchen_background
+            MEALS_BACKGROUND_PINK -> Res.drawable.meals_kitchen_background_pink
+            MEALS_BACKGROUND_BLUE -> Res.drawable.meals_kitchen_background_blue
+            else -> Res.drawable.meals_kitchen_background
+        }
         Image(
-            painter = painterResource(Res.drawable.meals_kitchen_background),
+            painter = painterResource(onboardingBackground),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
