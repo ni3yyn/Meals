@@ -640,6 +640,7 @@ val LocalMealsHazeState = staticCompositionLocalOf<HazeState?> { null }
  * in-flight hide() animation instead of creating a second, competing dialog
  * animation on another SheetState.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 private val LocalMealsBottomSheetState = staticCompositionLocalOf<SheetState?> { null }
 
 @OptIn(ExperimentalMaterial3Api::class)
