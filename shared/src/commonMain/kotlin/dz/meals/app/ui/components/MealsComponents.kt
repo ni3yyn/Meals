@@ -157,6 +157,7 @@ import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_kitchen_background
 import dz.meals.app.shared.generated.resources.meals_kitchen_background_pink
+import dz.meals.app.shared.generated.resources.meals_kitchen_background_blue
 import androidx.compose.ui.layout.ContentScale
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.text.BasicTextField
@@ -2447,21 +2448,21 @@ fun MealsBackgroundPicker(
     ) {
         MealsBackgroundOption(
             modifier = Modifier.weight(1f),
-            title = "الخلفية الكلاسيكية",
+            title = "كلاسيكي",
             selected = selectedTheme == MEALS_BACKGROUND_CLASSIC,
             painter = painterResource(Res.drawable.meals_kitchen_background),
             onClick = { onThemeSelected(MEALS_BACKGROUND_CLASSIC) }
         )
         MealsBackgroundOption(
             modifier = Modifier.weight(1f),
-            title = "الخلفية الوردية",
+            title = "وردي",
             selected = selectedTheme == MEALS_BACKGROUND_PINK,
             painter = painterResource(Res.drawable.meals_kitchen_background_pink),
             onClick = { onThemeSelected(MEALS_BACKGROUND_PINK) }
         )
         MealsBackgroundOption(
             modifier = Modifier.weight(1f),
-            title = "الأزرق والنعناعي",
+            title = "نعناع",
             selected = selectedTheme == MEALS_BACKGROUND_BLUE,
             painter = painterResource(Res.drawable.meals_kitchen_background_blue),
             onClick = { onThemeSelected(MEALS_BACKGROUND_BLUE) }
