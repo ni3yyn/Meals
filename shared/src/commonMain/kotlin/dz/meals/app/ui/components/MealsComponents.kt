@@ -859,7 +859,7 @@ private fun MealsLiquidGlassControl(
             modifier = frameModifier,
             shape = MealsLiquidGlass.ControlShape,
             elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
-            face = MealsLiquidGlass.controlFace(),
+            face = MealsLiquidGlass.buttonFace(),
             hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
             blurStyle = MealsLiquidGlass.ControlBlurStyle,
             blurRadius = MealsLiquidGlass.ControlBlurRadius,

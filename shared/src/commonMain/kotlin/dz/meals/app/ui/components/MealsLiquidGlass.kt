@@ -39,6 +39,9 @@ object MealsLiquidGlass {
     val ControlTint = Color(0xFFFFFEFC)
     const val ControlTintOpacity = 0.36f
 
+    /** Button faces must stay more translucent than their 20% glass parent. */
+    const val ButtonFaceOpacity = 0.10f
+
     val ControlBlurRadius = 12.dp
     val SurfaceBlurRadius = 8.dp
     // A compact blur retains the frosted glass while keeping modal transitions light.
@@ -65,6 +68,19 @@ object MealsLiquidGlass {
             0.22f to ControlTint.copy(alpha = ControlTintOpacity),
             0.68f to Color(0xFFF5F1EB).copy(alpha = ControlTintOpacity - 0.06f),
             1f to Color.White.copy(alpha = ControlTintOpacity)
+        )
+    )
+
+    /**
+     * Button face: a restrained pearl wash, always lighter than the sheet's
+     * 20% shared tint so the blurred backdrop remains clearly visible.
+     */
+    fun buttonFace(): Brush = Brush.verticalGradient(
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = ButtonFaceOpacity + 0.04f),
+            0.22f to ControlTint.copy(alpha = ButtonFaceOpacity),
+            0.68f to Color(0xFFF5F1EB).copy(alpha = ButtonFaceOpacity * 0.55f),
+            1f to Color.White.copy(alpha = ButtonFaceOpacity)
         )
     )
 
