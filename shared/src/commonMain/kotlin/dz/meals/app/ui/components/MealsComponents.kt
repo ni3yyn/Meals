@@ -1419,21 +1419,26 @@ fun MealsCheckbox(
                 .clip(RoundedCornerShape(8.dp))
                 .drawWithCache {
                     val outline = RoundedCornerShape(8.dp).createOutline(size, layoutDirection, this)
-                    val fill = Brush.verticalGradient(
-                        listOf(
-                            fillColor.value.copy(alpha = if (checked) 0.94f else 0.74f),
-                            fillColor.value.copy(alpha = if (checked) 0.78f else 0.26f)
-                        )
-                    )
-                    val rim = Brush.verticalGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.98f),
-                            edgeColor.value.copy(alpha = 0.58f)
-                        )
-                    )
                     val strokeWidth = 1.15.dp.toPx()
 
                     onDrawBehind {
+                        // Animated colors are read inside DrawScope, not the
+                        // cache builder, so their frames do not rebuild the
+                        // cached outline or invalidate the composable.
+                        val currentFill = fillColor.value
+                        val currentEdge = edgeColor.value
+                        val fill = Brush.verticalGradient(
+                            listOf(
+                                currentFill.copy(alpha = if (checked) 0.94f else 0.74f),
+                                currentFill.copy(alpha = if (checked) 0.78f else 0.26f)
+                            )
+                        )
+                        val rim = Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.98f),
+                                currentEdge.copy(alpha = 0.58f)
+                            )
+                        )
                         drawOutline(outline, fill)
                         drawOutline(outline, rim, style = Stroke(width = strokeWidth))
 
