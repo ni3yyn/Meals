@@ -88,7 +88,7 @@ import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.FoodCatalogueSearchIndex
 import dz.meals.app.data.FoodCatalogueSearchResult
-import dz.meals.app.data.buildFoodCatalogueSearchIndex
+import dz.meals.app.data.getFoodCatalogueSearchIndex
 import dz.meals.app.data.searchFoodCatalogue
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PriceObservationSummary
@@ -177,7 +177,7 @@ fun ShoppingScreen(
         catalogueSearchIndex = null
         searchResults = null
         val newIndex = withContext(Dispatchers.Default) {
-            buildFoodCatalogueSearchIndex(
+            getFoodCatalogueSearchIndex(
                 ingredients = ingredients,
                 categories = snapshot.foodCategories,
                 subcategories = snapshot.foodSubcategories
