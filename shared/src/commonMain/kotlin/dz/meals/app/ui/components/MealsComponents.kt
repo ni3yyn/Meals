@@ -97,6 +97,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+private val MealsCheckboxShape = RoundedCornerShape(8.dp)
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -1416,9 +1418,9 @@ fun MealsCheckbox(
         Box(
             modifier = Modifier
                 .size(24.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(MealsCheckboxShape)
                 .drawWithCache {
-                    val outline = RoundedCornerShape(8.dp).createOutline(size, layoutDirection, this)
+                    val outline = MealsCheckboxShape.createOutline(size, layoutDirection, this)
                     val strokeWidth = 1.15.dp.toPx()
 
                     onDrawBehind {
