@@ -29,6 +29,48 @@ private fun benchmarkUiDevice(): UiDevice =
  * The app keeps its local data between iterations, so adding several rows once
  * gives the category sheet enough content to exercise actual lazy scrolling.
  */
+private fun closeVisibleSheet(device: UiDevice) {
+    val closeButton = device.wait(
+        Until.findObject(By.desc("إغلاق")),
+        UI_TIMEOUT_MS
+    ) ?: error("Bottom-sheet close button did not appear")
+    closeButton.click()
+
+    // Meals dismisses the owner as the sheet is almost off-screen; do not wait
+    // for the final hidden anchor before allowing the next sheet to open.
+    check(device.wait(Until.gone(By.desc("إغلاق")), UI_TIMEOUT_MS)) {
+        "Bottom sheet did not release its visible content after closing"
+    }
+}
+
+private fun openCustomItemSheet(device: UiDevice) {
+    val search = device.wait(
+        Until.findObject(By.res("shopping.search")),
+        UI_TIMEOUT_MS
+    ) ?: error("Shopping search field did not become available")
+    search.click()
+    search.setText("zzmidatisheethandoff-no-match")
+    device.pressBack()
+
+    val addCustom = device.wait(
+        Until.findObject(By.res("shopping.addCustomItem")),
+        UI_TIMEOUT_MS
+    ) ?: error("Custom-item action did not appear for an unmatched search")
+    addCustom.click()
+    device.wait(Until.hasObject(By.desc("إغلاق")), UI_TIMEOUT_MS)
+}
+
+private fun clearShoppingSearch(device: UiDevice) {
+    val search = device.wait(
+        Until.findObject(By.res("shopping.search")),
+        UI_TIMEOUT_MS
+    ) ?: error("Shopping search field did not become available")
+    search.click()
+    search.setText("")
+    device.pressBack()
+    device.wait(Until.hasObject(By.res("shopping.category.row")), UI_TIMEOUT_MS)
+}
+
 private fun MacrobenchmarkScope.openAppAndPrepareShopping(device: UiDevice) {
     pressHome()
     startActivityAndWait()
@@ -150,6 +192,21 @@ class MidatiBaselineProfile {
                     18
                 )
             }
+
+            // Close one modal and request a different sheet immediately. The
+            // shared SheetState must reverse/retarget rather than stack windows.
+            closeVisibleSheet(currentDevice)
+            openCustomItemSheet(currentDevice)
+            closeVisibleSheet(currentDevice)
+            clearShoppingSearch(currentDevice)
+
+            val reopenedCategory = currentDevice.wait(
+                Until.findObject(By.res("shopping.category.row")),
+                UI_TIMEOUT_MS
+            ) ?: error("Category row did not return after the custom-item sheet")
+            reopenedCategory.click()
+            currentDevice.wait(Until.hasObject(By.desc("إغلاق")), UI_TIMEOUT_MS)
+            closeVisibleSheet(currentDevice)
             pressHome()
         }
     }
@@ -216,7 +273,19 @@ class MidatiMacrobenchmark {
                     18
                 )
             }
-            currentDevice.pressBack()
+
+            closeVisibleSheet(currentDevice)
+            openCustomItemSheet(currentDevice)
+            closeVisibleSheet(currentDevice)
+            clearShoppingSearch(currentDevice)
+
+            val reopenedCategory = currentDevice.wait(
+                Until.findObject(By.res("shopping.category.row")),
+                UI_TIMEOUT_MS
+            ) ?: error("Category row did not return after the custom-item sheet")
+            reopenedCategory.click()
+            currentDevice.wait(Until.hasObject(By.desc("إغلاق")), UI_TIMEOUT_MS)
+            closeVisibleSheet(currentDevice)
         }
     }
 }
