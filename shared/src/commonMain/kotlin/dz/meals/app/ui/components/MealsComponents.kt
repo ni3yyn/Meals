@@ -138,6 +138,7 @@ import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.rememberHazeState
 import dz.meals.app.data.MEALS_BACKGROUND_CLASSIC
 import dz.meals.app.data.MEALS_BACKGROUND_PINK
+import dz.meals.app.data.MEALS_BACKGROUND_BLUE
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.Cream
 import dz.meals.app.ui.theme.Forest
@@ -2458,6 +2459,13 @@ fun MealsBackgroundPicker(
             painter = painterResource(Res.drawable.meals_kitchen_background_pink),
             onClick = { onThemeSelected(MEALS_BACKGROUND_PINK) }
         )
+        MealsBackgroundOption(
+            modifier = Modifier.weight(1f),
+            title = "الأزرق والنعناعي",
+            selected = selectedTheme == MEALS_BACKGROUND_BLUE,
+            painter = painterResource(Res.drawable.meals_kitchen_background_blue),
+            onClick = { onThemeSelected(MEALS_BACKGROUND_BLUE) }
+        )
     }
 }
 
@@ -2547,10 +2555,10 @@ fun MealsBackdrop(
                 // This sits behind the Scaffold, so it stays fixed while tab content scrolls.
                 Image(
                     painter = painterResource(
-                        if (backgroundTheme == MEALS_BACKGROUND_CLASSIC) {
-                            Res.drawable.meals_kitchen_background
-                        } else {
-                            Res.drawable.meals_kitchen_background_pink
+                        when (backgroundTheme) {
+                            MEALS_BACKGROUND_CLASSIC -> Res.drawable.meals_kitchen_background
+                            MEALS_BACKGROUND_BLUE -> Res.drawable.meals_kitchen_background_blue
+                            else -> Res.drawable.meals_kitchen_background_pink
                         }
                     ),
                     contentDescription = null,

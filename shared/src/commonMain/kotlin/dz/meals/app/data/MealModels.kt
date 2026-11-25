@@ -114,6 +114,7 @@ data class RecipeAttribution(
 
 const val MEALS_BACKGROUND_CLASSIC = "classic"
 const val MEALS_BACKGROUND_PINK = "pink"
+const val MEALS_BACKGROUND_BLUE = "blue"
 
 data class AppPreferences(
     val weeklyBudgetDzd: Int = 15_000,

@@ -65,7 +65,7 @@ class PreferencesStore(context: Context) {
                 hasCompletedSetup = values[Keys.hasCompletedSetup] ?: false,
                 appLanguage = normalizeStoredLanguage(values[Keys.appLanguage]),
                 kitchenBackground = values[Keys.kitchenBackground]
-                    ?.takeIf { it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK }
+                    ?.takeIf { it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK || it == MEALS_BACKGROUND_BLUE }
                     ?: MEALS_BACKGROUND_PINK
             )
         }
