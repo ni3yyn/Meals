@@ -1380,17 +1380,20 @@ fun MealsCheckbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val fillColor by animateColorAsState(
+    // Keep animation state out of composition. The checkmark and glass fill
+    // are drawn directly from these states, so each animation frame invalidates
+    // only this tiny 24dp draw node rather than rebuilding its parent row.
+    val fillColor = animateColorAsState(
         targetValue = if (checked) TextAccent else Color.White.copy(alpha = 0.34f),
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxFill"
     )
-    val edgeColor by animateColorAsState(
+    val edgeColor = animateColorAsState(
         targetValue = if (checked) TextAccent else Color.White.copy(alpha = 0.96f),
         animationSpec = tween(durationMillis = 180),
         label = "mealsCheckboxEdge"
     )
-    val checkProgress by animateFloatAsState(
+    val checkProgress = animateFloatAsState(
         targetValue = if (checked) 1f else 0f,
         animationSpec = tween(durationMillis = 210),
         label = "mealsCheckboxCheck"
@@ -1414,66 +1417,66 @@ fun MealsCheckbox(
             modifier = Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(
-                    Brush.verticalGradient(
+                .drawWithCache {
+                    val outline = RoundedCornerShape(8.dp).createOutline(size, layoutDirection, this)
+                    val fill = Brush.verticalGradient(
                         listOf(
-                            fillColor.copy(alpha = if (checked) 0.94f else 0.74f),
-                            fillColor.copy(alpha = if (checked) 0.78f else 0.26f)
+                            fillColor.value.copy(alpha = if (checked) 0.94f else 0.74f),
+                            fillColor.value.copy(alpha = if (checked) 0.78f else 0.26f)
                         )
-                    ),
-                    RoundedCornerShape(8.dp)
-                )
-                .border(
-                    BorderStroke(
-                        1.15.dp,
-                        Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.98f), edgeColor.copy(alpha = 0.58f))
+                    )
+                    val rim = Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.98f),
+                            edgeColor.value.copy(alpha = 0.58f)
                         )
-                    ),
-                    RoundedCornerShape(8.dp)
-                ),
+                    )
+                    val strokeWidth = 1.15.dp.toPx()
+
+                    onDrawBehind {
+                        drawOutline(outline, fill)
+                        drawOutline(outline, rim, style = Stroke(width = strokeWidth))
+
+                        // Read progress only in Draw. Never gate Canvas creation
+                        // with checkProgress in composition.
+                        val progress = checkProgress.value
+                        if (progress > 0f) {
+                            val start = androidx.compose.ui.geometry.Offset(size.width * 0.16f, size.height * 0.52f)
+                            val corner = androidx.compose.ui.geometry.Offset(size.width * 0.40f, size.height * 0.76f)
+                            val end = androidx.compose.ui.geometry.Offset(size.width * 0.86f, size.height * 0.24f)
+                            val firstLength = 0.38f
+                            val checkStroke = size.minDimension * 0.15f
+                            if (progress <= firstLength) {
+                                val firstProgress = (progress / firstLength).coerceIn(0f, 1f)
+                                drawLine(
+                                    Color.White,
+                                    start,
+                                    androidx.compose.ui.geometry.Offset(
+                                        start.x + (corner.x - start.x) * firstProgress,
+                                        start.y + (corner.y - start.y) * firstProgress
+                                    ),
+                                    checkStroke,
+                                    cap = StrokeCap.Round
+                                )
+                            } else {
+                                drawLine(Color.White, start, corner, checkStroke, cap = StrokeCap.Round)
+                                val secondProgress = ((progress - firstLength) / (1f - firstLength)).coerceIn(0f, 1f)
+                                drawLine(
+                                    Color.White,
+                                    corner,
+                                    androidx.compose.ui.geometry.Offset(
+                                        corner.x + (end.x - corner.x) * secondProgress,
+                                        corner.y + (end.y - corner.y) * secondProgress
+                                    ),
+                                    checkStroke,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                    }
+                },
             contentAlignment = Alignment.Center
-        ) {
-            if (checked || checkProgress > 0.001f) {
-                Canvas(
-                    modifier = Modifier.size(14.dp).graphicsLayer { alpha = checkProgress }
-                ) {
-                    // Draw the check in two strokes so completion feels like
-                    // a quick hand-drawn confirmation, not a pop-in glyph.
-                    val start = androidx.compose.ui.geometry.Offset(size.width * 0.16f, size.height * 0.52f)
-                    val corner = androidx.compose.ui.geometry.Offset(size.width * 0.40f, size.height * 0.76f)
-                    val end = androidx.compose.ui.geometry.Offset(size.width * 0.86f, size.height * 0.24f)
-                    val firstLength = 0.38f
-                    val strokeWidth = size.minDimension * 0.15f
-                    if (checkProgress > 0f) {
-                        val firstProgress = (checkProgress / firstLength).coerceIn(0f, 1f)
-                        drawLine(
-                            Color.White,
-                            start,
-                            androidx.compose.ui.geometry.Offset(
-                                start.x + (corner.x - start.x) * firstProgress,
-                                start.y + (corner.y - start.y) * firstProgress
-                            ),
-                            strokeWidth,
-                            cap = StrokeCap.Round
-                        )
-                    }
-                    if (checkProgress > firstLength) {
-                        val secondProgress = ((checkProgress - firstLength) / (1f - firstLength)).coerceIn(0f, 1f)
-                        drawLine(
-                            Color.White,
-                            corner,
-                            androidx.compose.ui.geometry.Offset(
-                                corner.x + (end.x - corner.x) * secondProgress,
-                                corner.y + (end.y - corner.y) * secondProgress
-                            ),
-                            strokeWidth,
-                            cap = StrokeCap.Round
-                        )
-                    }
-                }
-            }
-        }
+        ) {}
     }
 }
 
