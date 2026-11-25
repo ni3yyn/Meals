@@ -21,13 +21,13 @@ class AlgerianRecipeCatalogueInstallerTest {
     @Test
     fun installsAllAlgerianRecipesIntoRoomWithoutReplacingOtherCatalogueRows() = runBlocking {
         val context = RuntimeEnvironment.getApplication()
-        val databaseName = "algerian-recipes-\x24{UUID.randomUUID()}.db"
+        val databaseName = "algerian-recipes-${UUID.randomUUID()}.db"
         val foodPreferences = context.getSharedPreferences(
-            "algerian-food-test-\x24{UUID.randomUUID()}",
+            "algerian-food-test-${UUID.randomUUID()}",
             Context.MODE_PRIVATE
         )
         val recipePreferences = context.getSharedPreferences(
-            "algerian-recipe-test-\x24{UUID.randomUUID()}",
+            "algerian-recipe-test-${UUID.randomUUID()}",
             Context.MODE_PRIVATE
         )
         val database = MealsDatabase.createForTesting(context, databaseName)

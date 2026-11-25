@@ -67,7 +67,7 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
         }
         if (invalidIngredient != null) {
             throw IOException(
-                "المكوّن \x24{invalidIngredient.id} يشير إلى تصنيف غير مثبت في Midati."
+                "المكوّن ${invalidIngredient.id} يشير إلى تصنيف غير مثبت في Midati."
             )
         }
 
@@ -364,7 +364,7 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
         private const val FORMAT = "midati-room-entity-import"
         private const val FORMAT_VERSION = 1
         private const val TARGET_REPOSITORY = "ni3yyn/Meals"
-        private const val INSERT_BATCH_SIZE = 200
+        private const val INSERT_BATCH_SIZE = 80
         private const val RECIPE_BATCH_SIZE = 40
         private const val PREFERENCES_NAME = "algerian_recipe_catalogue"
         private const val INSTALLED_REVISION_KEY = "installed_revision"
