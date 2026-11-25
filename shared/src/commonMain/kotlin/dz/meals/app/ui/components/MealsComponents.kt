@@ -196,6 +196,8 @@ private fun MealsLiquidGlassFrame(
     enableBackdropBlur: Boolean = true,
     rim: Brush = MealsLiquidGlass.controlRim(),
     sideGlintHeight: Dp = 17.dp,
+    /** Use the raised, segmented optical finish reserved for tactile buttons. */
+    buttonFinish: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     // A modal surface owns the one cross-window blur for its entire content tree.
@@ -213,12 +215,20 @@ private fun MealsLiquidGlassFrame(
     val resolvedHazeState = if (backdropBlurEnabled) hazeState else null
     val isPressed = LocalMealsGlassPressed.current
     val opticalDepth by animateFloatAsState(
-        targetValue = if (isPressed) 0.78f else 1f,
+        targetValue = if (isPressed) {
+            if (buttonFinish) 0.46f else 0.78f
+        } else {
+            1f
+        },
         animationSpec = tween(durationMillis = 85),
         label = "mealsGlassOpticalDepth"
     )
     val pressGlow by animateFloatAsState(
-        targetValue = if (isPressed) 0.12f else 0f,
+        targetValue = if (isPressed) {
+            if (buttonFinish) 0.045f else 0.12f
+        } else {
+            0f
+        },
         animationSpec = tween(durationMillis = 65),
         label = "mealsGlassPressGlow"
     )
@@ -229,8 +239,16 @@ private fun MealsLiquidGlassFrame(
             shadowElevation = (elevation * opticalDepth).toPx()
             this.shape = shape
             clip = false
-            ambientShadowColor = Color(0xFFB7AA9F).copy(alpha = 0.13f)
-            spotShadowColor = Color(0xFF8F8278).copy(alpha = 0.075f)
+            ambientShadowColor = if (buttonFinish) {
+                Color(0xFF9D8B78).copy(alpha = 0.22f)
+            } else {
+                Color(0xFFB7AA9F).copy(alpha = 0.13f)
+            }
+            spotShadowColor = if (buttonFinish) {
+                Color(0xFF81715F).copy(alpha = 0.16f)
+            } else {
+                Color(0xFF8F8278).copy(alpha = 0.075f)
+            }
         }
         .clip(shape)
         .mealsGlassBlur(
@@ -252,12 +270,18 @@ private fun MealsLiquidGlassFrame(
                 }
             }
         }
-        .mealsOpticalEdges(
-            shape = shape,
-            baseRim = rim,
-            depth = 1f,
-            sideGlintHeight = sideGlintHeight
-        )
+        .let { edgeModifier ->
+            if (buttonFinish) {
+                edgeModifier.mealsButtonOpticalEdges(baseRim = rim)
+            } else {
+                edgeModifier.mealsOpticalEdges(
+                    shape = shape,
+                    baseRim = rim,
+                    depth = 1f,
+                    sideGlintHeight = sideGlintHeight
+                )
+            }
+        }
 
     Box(modifier = surfaceModifier, contentAlignment = Alignment.TopStart) {
         content()
@@ -737,6 +761,8 @@ fun MealsPressable(
     shape: Shape = MealsLiquidGlass.ControlShape,
     /** When non-null, exposes checked state through toggleable semantics. */
     checked: Boolean? = null,
+    /** Keep a child glass shadow visible outside the touch surface's bounds. */
+    clipContent: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
@@ -761,9 +787,9 @@ fun MealsPressable(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                translationY = if (pressed) 0.55.dp.toPx() else 0f
+                translationY = if (pressed) 0.95.dp.toPx() else 0f
             }
-            .clip(shape)
+            .then(if (clipContent) Modifier.clip(shape) else Modifier)
             .pointerInput(enabled) {
                 if (!enabled) {
                     setPointerPressed(false)
@@ -880,18 +906,20 @@ private fun MealsLiquidGlassControl(
             if (fixedSize != null) Modifier.size(fixedSize)
             else Modifier.defaultMinSize(minHeight = minHeight)
         ),
-        enabled = enabled
+        enabled = enabled,
+        clipContent = false
     ) {
         MealsLiquidGlassFrame(
             modifier = frameModifier,
             shape = MealsLiquidGlass.ControlShape,
-            elevation = if (enabled) MealsLiquidGlass.ControlElevation else 0.dp,
+            elevation = if (enabled) MealsLiquidGlass.ButtonElevation else 0.dp,
             face = MealsLiquidGlass.buttonFace(LocalMealsGlassOpacity.current.buttonOpacity),
             hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current,
             blurStyle = MealsLiquidGlass.ControlBlurStyle,
             blurRadius = MealsLiquidGlass.ControlBlurRadius,
             rim = MealsLiquidGlass.controlRim(),
-            sideGlintHeight = 17.dp
+            sideGlintHeight = 17.dp,
+            buttonFinish = true
         ) {
         Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
             CompositionLocalProvider(
