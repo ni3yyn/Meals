@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.baseline.profile)
 }
 
 val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(3)
@@ -193,6 +194,12 @@ android {
     }
 }
 
+baselineProfile {
+    // Generate profiles on a connected Android device and commit the result.
+    // Release CI stays device-free and consumes the latest checked-in profile.
+    saveInSrc = true
+    mergeIntoMain = true
+}
 
 // Every Android resource path that can read the generated res/font folder
 // must wait for the copy task. AGP 9.5 validates these dependencies explicitly.
@@ -220,6 +227,8 @@ tasks.matching { it.name == "mergeDebugAssets" }.configureEach {
 }
 
 dependencies {
+    baselineProfile(project(":baselineprofile"))
+    implementation(libs.androidx.profileinstaller)
     implementation(project(":shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
