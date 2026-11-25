@@ -219,9 +219,9 @@ fun ShoppingScreen(
     }
 
     backHandler(
-        enabled = browsePage > 0 && !addDialog && selectedCategoryId == null &&
+        browsePage > 0 && !addDialog && selectedCategoryId == null &&
             editItemId == null && !priceDialog,
-        onBack = ::navigateBackInBrowse
+        ::navigateBackInBrowse
     )
 
     // Build the KMP inverted index once when the catalogue itself changes.
