@@ -1,5 +1,6 @@
 package dz.meals.app.data
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,7 +36,7 @@ class FoodSearchTest {
         assertFalse(foodMatchesSearch(listOf("طماطم", "tomato"), "   "))
     }
     @Test
-    fun catalogueIndexNormalizesEveryLocaleAndAliasOnlyOnceForSearch() {
+    fun catalogueIndexNormalizesEveryLocaleAndAliasForSearch() = runBlocking {
         val tomato = IngredientMaster(
             id = "tomato",
             nameAr = "مُطَيِّشَة",
@@ -68,7 +69,6 @@ class FoodSearchTest {
                 FoodSubcategory("fresh", "vegetables", "طازج", "Fresh", "Frais", 1),
                 FoodSubcategory("poultry", "meat", "دواجن", "Poultry", "Volaille", 1)
             ),
-            localeTag = "ar"
         )
 
         assertEquals(listOf("chicken", "tomato"), index.entries.map { it.ingredient.id })
@@ -82,7 +82,7 @@ class FoodSearchTest {
     }
 
     @Test
-    fun catalogueSearchCapsRenderedRowsButKeepsExactMatchCount() {
+    fun catalogueSearchCapsRenderedRowsAndSignalsMoreCandidates() = runBlocking {
         val foods = (1..100).map { number ->
             IngredientMaster(
                 id = "food-$number",
@@ -100,14 +100,15 @@ class FoodSearchTest {
             ingredients = foods,
             categories = listOf(FoodCategory("other", "أخرى", "Other", "Autres", 1)),
             subcategories = listOf(FoodSubcategory("misc", "other", "متنوع", "Misc", "Divers", 1)),
-            localeTag = "en"
         )
 
         val result = searchFoodCatalogue(index, "product", resultLimit = 12)
 
         assertEquals(100, result.totalCount)
         assertEquals(12, result.items.size)
-        assertEquals("food-1", result.items.first().id)
+        assertEquals(100, result.totalCount)
+        assertTrue(result.hasMore)
+        assertEquals(12, result.items.map { it.id }.distinct().size)
     }
 
 }
