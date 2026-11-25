@@ -77,6 +77,7 @@ class FoodSearchTest {
 
         assertEquals(listOf("tomato"), searchFoodCatalogue(index, "maticha").items.map { it.id })
         assertEquals(listOf("tomato"), searchFoodCatalogue(index, "TOMATE").items.map { it.id })
+        assertEquals(listOf("tomato"), searchFoodCatalogue(index, "tom").items.map { it.id })
         assertEquals(listOf("tomato"), searchFoodCatalogue(index, "طماطم طازج").items.map { it.id })
         assertEquals(0, searchFoodCatalogue(index, "طماطم دجاج").totalCount)
     }
@@ -106,9 +107,58 @@ class FoodSearchTest {
 
         assertEquals(100, result.totalCount)
         assertEquals(12, result.items.size)
-        assertEquals(100, result.totalCount)
         assertTrue(result.hasMore)
         assertEquals(12, result.items.map { it.id }.distinct().size)
+    }
+
+    @Test
+    fun invertedIndexSearchHandlesFourThousandCatalogueItemsAndPartialNames() = runBlocking {
+        val target = IngredientMaster(
+            id = "target-tomato",
+            nameAr = "طماطم",
+            nameFr = "Tomate",
+            nameEn = "Tomato",
+            baseUnit = "kg",
+            allergens = emptySet(),
+            aliases = listOf("maticha", "مطيشة"),
+            categoryId = "vegetables",
+            subcategoryId = "fresh"
+        )
+        val backgroundFoods = (1..3_999).map { number ->
+            val suffix = number.toString().padStart(4, '0')
+            IngredientMaster(
+                id = "food-$suffix",
+                nameAr = "مكوّن $suffix",
+                nameFr = "Ingredient $suffix",
+                nameEn = "Food $suffix",
+                baseUnit = "piece",
+                allergens = emptySet(),
+                aliases = listOf("catalogueitem$suffix"),
+                categoryId = "other",
+                subcategoryId = "misc"
+            )
+        }
+        val index = buildFoodCatalogueSearchIndex(
+            ingredients = backgroundFoods + target,
+            categories = listOf(
+                FoodCategory("vegetables", "خضر", "Vegetables", "Légumes", 1),
+                FoodCategory("other", "أخرى", "Other", "Autres", 2)
+            ),
+            subcategories = listOf(
+                FoodSubcategory("fresh", "vegetables", "طازج", "Fresh", "Frais", 1),
+                FoodSubcategory("misc", "other", "متنوع", "Misc", 1)
+            )
+        )
+
+        val aliasResult = searchFoodCatalogue(index, "maticha", resultLimit = 40)
+        val partialNameResult = searchFoodCatalogue(index, "tom", resultLimit = 40)
+
+        assertEquals(listOf("target-tomato"), aliasResult.items.map { it.id })
+        assertEquals(listOf("target-tomato"), partialNameResult.items.map { it.id })
+        assertEquals(1, aliasResult.totalCount)
+        assertFalse(aliasResult.hasMore)
+        assertEquals(4_000, index.entries.size)
+        assertEquals(3_999, index.categoryCounts["other"])
     }
 
 }
