@@ -286,11 +286,10 @@ class MealsRepository internal constructor(
         val canonicalDislikedIngredientIds = dislikedIngredientIds
             .mapTo(linkedSetOf(), foodIdentityResolver::canonicalId)
         val recipes = loadRecipes()
-        // Community recipes are browseable and manually plannable. Keep automatic
-        // generation on the curated, price-aware seed catalogue for now.
-        val generatorRecipes = recipes.filterNot {
-            it.id.startsWith(ArabicRecipeCatalogueInstaller.RECIPE_ID_PREFIX)
-        }
+        // Temporary default: only the separately curated Algerian collection can
+        // enter generated plans. Settings will later supply the selected cuisines
+        // through this centralized policy.
+        val generatorRecipes = recipes.filter(PlanCuisinePolicy::allows)
         val validSlots = selectedMealSlots.intersect(MealSlots.ids.toSet())
         if (validSlots.isEmpty()) {
             return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)
@@ -327,7 +326,7 @@ class MealsRepository internal constructor(
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
         if (allowed.isEmpty()) {
-            return GenerationResult(false, "لا توجد وصفات متاحة بعد تطبيق قيود الحساسية والنمط الغذائي. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
+            return GenerationResult(false, "لا توجد وصفات جزائرية متاحة بعد تطبيق قيود الحساسية والنمط الغذائي. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
         }
 
         val slots = (0 until 7).flatMap { day ->
@@ -412,6 +411,7 @@ class MealsRepository internal constructor(
     }
 
     suspend fun setMeal(weekStartIso: String, dayIndex: Int, mealSlot: String, recipeId: String?, servings: Int) {
+        if (recipeId != null && !PlanCuisinePolicy.allowsRecipeId(recipeId)) return
         val id = "$weekStartIso-$dayIndex-$mealSlot"
         val old = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id }
         if (old?.isCooked == true) return
@@ -454,6 +454,7 @@ class MealsRepository internal constructor(
     }
 
     suspend fun addRecipeToNextSlot(weekStartIso: String, recipeId: String, servings: Int) {
+        if (!PlanCuisinePolicy.allowsRecipeId(recipeId)) return
         val current = dao.getPlanMeals(weekStartIso)
         val empty = (0 until 7).asSequence()
             .flatMap { day -> MealSlots.ids.asSequence().map { slot -> day to slot } }

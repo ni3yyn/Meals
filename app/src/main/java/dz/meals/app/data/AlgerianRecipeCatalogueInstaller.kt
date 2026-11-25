@@ -362,7 +362,7 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
     companion object {
         const val ASSET_PATH = "recipes/algerian_room_v17.json"
         const val COLLECTION_ID = "dz-algerian-dzirielle"
-        const val RECIPE_ID_PREFIX = "dz-algerian-dzirielle-"
+        const val RECIPE_ID_PREFIX = PlanCuisinePolicy.ALGERIAN_RECIPE_ID_PREFIX
         const val EXPECTED_RECIPE_COUNT = 187
         const val ROOM_SCHEMA_VERSION = 17
         const val REVISION = "99fca3fd4df7ff061d37779ecbb79210a980320da0f17d84cd6e0577b73c6dad"

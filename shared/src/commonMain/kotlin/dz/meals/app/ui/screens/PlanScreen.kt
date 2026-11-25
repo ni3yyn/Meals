@@ -53,6 +53,7 @@ import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.ui.theme.Border
@@ -87,7 +88,10 @@ fun PlanScreen(
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
     val recipesById = remember(snapshot.recipes) { snapshot.recipes.associateBy { it.id } }
     val eligibleRecipes = remember(snapshot.recipes, preferences.allergyIds) {
-        snapshot.recipes.filter { it.allergens.intersect(preferences.allergyIds).isEmpty() }
+        snapshot.recipes.filter {
+            PlanCuisinePolicy.allows(it) &&
+                it.allergens.intersect(preferences.allergyIds).isEmpty()
+        }
     }
     val mealsByDayAndSlot = remember(snapshot.plannedMeals) {
         snapshot.plannedMeals.associateBy { it.dayIndex to it.mealSlot }

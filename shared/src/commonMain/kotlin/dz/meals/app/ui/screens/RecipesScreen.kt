@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.data.RecipeImageCandidate
 import dz.meals.app.data.scaleRecipeIngredientQuantity
 import coil3.compose.AsyncImage
@@ -99,7 +100,6 @@ import kotlin.math.abs
 import kotlin.math.roundToLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-private const val ALGERIAN_RECIPE_ID_PREFIX = "dz-algerian-dzirielle-"
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
 
@@ -480,7 +480,7 @@ fun RecipesScreen(
                     recipes.filter { recipe ->
                         recipe.allergens.intersect(allergyIds).isEmpty() &&
                             (!page.first || recipe.id in favoriteRecipeIds) &&
-                            (!page.second || recipe.id.startsWith(ALGERIAN_RECIPE_ID_PREFIX)) &&
+                            (!page.second || PlanCuisinePolicy.allows(recipe)) &&
                             (page.third == "الكل" || recipe.category == page.third) &&
                             (searchTerm.isBlank() ||
                                 searchableRecipeTextById[recipe.id]?.contains(searchTerm, ignoreCase = true) == true)
