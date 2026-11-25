@@ -101,7 +101,6 @@ import dz.meals.app.data.AppUpdateChecker
 import dz.meals.app.data.AppUpdateCheckResult
 import dz.meals.app.data.AppUpdateInfo
 import dz.meals.app.data.MealsRepository
-import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.ui.onboarding.MealsOnboarding
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PreferencesStore
@@ -620,19 +619,15 @@ private fun MealsAppContent(
                         },
                         onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                         onAddRecipe = { id ->
-                            if (PlanCuisinePolicy.allowsRecipeId(id)) {
-                                generationMessage = "أُضيفت الوصفة الجزائرية إلى خطة الأسبوع"
-                                perform {
-                                    repository.addRecipeToNextSlot(
-                                        weekStartIso,
-                                        id,
-                                        preferences.householdServings
-                                    )
-                                }
-                                selectedTab = AppTab.Plan
-                            } else {
-                                generationMessage = "خطة الوجبات تستخدم الوصفات الجزائرية فقط حالياً."
+                            generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
+                            perform {
+                                repository.addRecipeToNextSlot(
+                                    weekStartIso,
+                                    id,
+                                    preferences.householdServings
+                                )
                             }
+                            selectedTab = AppTab.Plan
                         },
                         catalogueProgress = when (cataloguePhase) {
                             RecipeCataloguePhase.IMPORTING_ALGERIAN ->

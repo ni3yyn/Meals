@@ -411,7 +411,6 @@ class MealsRepository internal constructor(
     }
 
     suspend fun setMeal(weekStartIso: String, dayIndex: Int, mealSlot: String, recipeId: String?, servings: Int) {
-        if (recipeId != null && !PlanCuisinePolicy.allowsRecipeId(recipeId)) return
         val id = "$weekStartIso-$dayIndex-$mealSlot"
         val old = dao.getPlanMeals(weekStartIso).firstOrNull { it.id == id }
         if (old?.isCooked == true) return
@@ -454,7 +453,6 @@ class MealsRepository internal constructor(
     }
 
     suspend fun addRecipeToNextSlot(weekStartIso: String, recipeId: String, servings: Int) {
-        if (!PlanCuisinePolicy.allowsRecipeId(recipeId)) return
         val current = dao.getPlanMeals(weekStartIso)
         val empty = (0 until 7).asSequence()
             .flatMap { day -> MealSlots.ids.asSequence().map { slot -> day to slot } }

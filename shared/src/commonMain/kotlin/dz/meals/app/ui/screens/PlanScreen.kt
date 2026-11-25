@@ -53,7 +53,6 @@ import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MealRecipe
-import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.ui.theme.Border
@@ -89,8 +88,7 @@ fun PlanScreen(
     val recipesById = remember(snapshot.recipes) { snapshot.recipes.associateBy { it.id } }
     val eligibleRecipes = remember(snapshot.recipes, preferences.allergyIds) {
         snapshot.recipes.filter {
-            PlanCuisinePolicy.allows(it) &&
-                it.allergens.intersect(preferences.allergyIds).isEmpty()
+            it.allergens.intersect(preferences.allergyIds).isEmpty()
         }
     }
     val mealsByDayAndSlot = remember(snapshot.plannedMeals) {
