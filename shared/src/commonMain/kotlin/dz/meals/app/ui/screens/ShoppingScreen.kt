@@ -776,7 +776,6 @@ fun ShoppingScreen(
             }
         )
     }
-    }
 
     if (cataloguePicker) {
         ShoppingCataloguePicker(
