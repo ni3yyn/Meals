@@ -7,6 +7,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
@@ -25,12 +26,19 @@ import dz.meals.app.ui.theme.Border
  */
 object MealsLiquidGlass {
     /**
-     * Opacity for explicit, caller-requested surface colors. Default glass faces
-     * remain completely clear so the captured background supplies their color.
+     * One neutral tint shared by cards, hero surfaces, dropdowns and sheets.
+     * This alpha approximates the former subtle two-pass card veil in one draw.
      */
-    const val SurfaceOpacity = 0.20f
-    /** Opacity for explicit, caller-requested modal colors. */
-    const val ModalOpacity = 0.32f
+    val GlassTint = Color(0xFFFFFCF7)
+    const val GlassTintOpacity = 0.36f
+
+    /**
+     * Controls deliberately use a stronger, slightly whiter face so buttons
+     * stay distinct from their glass parent. This is a separate single-pass
+     * control token and can be tuned independently of the shared surface tint.
+     */
+    val ControlTint = Color(0xFFFFFEFC)
+    const val ControlTintOpacity = 0.58f
 
     val ControlBlurRadius = 12.dp
     val SurfaceBlurRadius = 8.dp
@@ -49,14 +57,21 @@ object MealsLiquidGlass {
     val ModalElevation = 1.dp
     val DropdownElevation = 7.dp
     /**
-     * Clear glass face. Blur contributes the sampled background color; optical
-     * highlights and white rims are drawn independently by mealsOpticalEdges.
+     * Stronger single-pass control tint. The slight opacity variation retains
+     * the former button contrast without adding a second Haze color wash.
      */
-    fun controlFace(): Brush = clearFace()
-
-    private fun clearFace(): Brush = Brush.verticalGradient(
-        colors = listOf(Color.Transparent, Color.Transparent, Color.Transparent)
+    fun controlFace(): Brush = Brush.verticalGradient(
+        colors = listOf(
+            ControlTint.copy(alpha = (ControlTintOpacity + 0.04f).coerceAtMost(1f)),
+            ControlTint.copy(alpha = ControlTintOpacity),
+            ControlTint.copy(alpha = (ControlTintOpacity - 0.04f).coerceAtLeast(0f)),
+            ControlTint.copy(alpha = ControlTintOpacity)
+        )
     )
+
+    /** The sole translucent color layer shared by parent glass surfaces. */
+    private fun sharedGlassFace(tint: Color = GlassTint): Brush =
+        SolidColor((if (tint == Color.Transparent) GlassTint else tint).copy(alpha = GlassTintOpacity))
 
     /** A neutral white optical edge; its intensity variation is drawn separately. */
     fun controlRim(): Brush = Brush.verticalGradient(
@@ -111,38 +126,12 @@ object MealsLiquidGlass {
         )
     )
 
-    /**
-     * Default cards and hero surfaces are untinted. A non-transparent tint is
-     * honored only when a caller explicitly requests a colored surface.
-     */
-    fun cardFace(tint: Color = Color.Transparent): Brush =
-        if (tint == Color.Transparent) {
-            clearFace()
-        } else {
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = SurfaceOpacity),
-                    tint.copy(alpha = SurfaceOpacity),
-                    tint.copy(alpha = SurfaceOpacity)
-                )
-            )
-        }
+    /** Cards, hero surfaces and overlays all share exactly the same tint token. */
+    fun cardFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
 
-    fun heroFace(tint: Color = Color.Transparent): Brush = cardFace(tint)
+    fun heroFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
 
-    /** Modal overlays are clear by default; explicit custom tint remains opt-in. */
-    fun modalFace(tint: Color = Color.Transparent): Brush =
-        if (tint == Color.Transparent) {
-            clearFace()
-        } else {
-            Brush.verticalGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = ModalOpacity),
-                    tint.copy(alpha = ModalOpacity),
-                    tint.copy(alpha = ModalOpacity)
-                )
-            )
-        }
+    fun modalFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
 
     fun modalRim(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
@@ -153,13 +142,7 @@ object MealsLiquidGlass {
         )
     )
 
-    fun illustrationFace(tint: Color): Brush = Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity),
-            tint.copy(alpha = SurfaceOpacity)
-        )
-    )
+    fun illustrationFace(tint: Color = GlassTint): Brush = sharedGlassFace(tint)
 
     // Blur stays active without a fixed color effect: the backdrop itself
     // supplies the hue for every glass material on both Android and iOS.

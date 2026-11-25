@@ -109,7 +109,6 @@ fun PlanScreen(
         item {
             MealsGlassSurface(
                 modifier = Modifier.fillMaxWidth(),
-                tintColor = androidx.compose.ui.graphics.Color.Transparent,
                 contentPadding = 15.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {

@@ -308,7 +308,6 @@ fun RecipesScreen(
         ) {
             if (catalogueProgress != null && catalogueStatusMessage != null) {
                 MealsCard(
-                    containerColor = Color.Transparent,
                     borderColor = null,
                     contentPadding = 14.dp
                 ) {
@@ -333,7 +332,6 @@ fun RecipesScreen(
 
             catalogueError?.let { error ->
                 MealsCard(
-                    containerColor = Color.Transparent,
                     borderColor = null,
                     contentPadding = 14.dp
                 ) {
@@ -489,7 +487,6 @@ fun RecipesScreen(
                         ) {
                             MealsCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                containerColor = Color.Transparent,
                                 borderColor = Border,
                                 contentPadding = 14.dp
                             ) {
@@ -725,7 +722,6 @@ fun RecipesScreen(
                             contentType = { "image-search-result" }
                         ) { candidate ->
                             MealsCard(
-                                containerColor = Color.Transparent,
                                 borderColor = null,
                                 contentPadding = 10.dp
                             ) {
@@ -1230,7 +1226,6 @@ fun RecipesScreen(
                     detail.attribution?.let { attribution ->
                         item {
                             MealsCard(
-                                containerColor = Color.Transparent,
                                 borderColor = null,
                                 contentPadding = 13.dp
                             ) {

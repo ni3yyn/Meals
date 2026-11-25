@@ -174,9 +174,9 @@ private val MealsCardShape = MealsLiquidGlass.CardShape
 /**
  * The shared elevated surface used for budgets, summaries and grouped content.
  *
- * Each card samples the kitchen artwork through source-backed blur. Its face
- * stays color-neutral so the selected background supplies the glass color;
- * a fine white rim and optical reflections define the material.
+ * Each card samples the kitchen artwork through source-backed blur, then
+ * receives one subtle shared neutral tint. A fine white rim and optical
+ * reflections define the material without stacked color effects.
  */
 @Composable
 private fun MealsLiquidGlassFrame(
@@ -261,7 +261,7 @@ private fun MealsLiquidGlassFrame(
 @Composable
 fun MealsCard(
     modifier: Modifier = Modifier,
-    containerColor: Color = Color.Transparent,
+    containerColor: Color = MealsLiquidGlass.GlassTint,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     contentPadding: Dp = 18.dp,
     borderColor: Color? = Border.copy(alpha = 0.72f),
@@ -665,7 +665,7 @@ internal val LocalMealsGlassPressed = staticCompositionLocalOf { false }
 @Composable
 fun MealsGlassSurface(
     modifier: Modifier = Modifier,
-    tintColor: Color = Color.Transparent,
+    tintColor: Color = MealsLiquidGlass.GlassTint,
     contentPadding: Dp = 18.dp,
     shape: RoundedCornerShape = MealsLiquidGlass.HeroShape,
     content: @Composable ColumnScope.() -> Unit
@@ -1517,7 +1517,7 @@ fun MealsCheckRow(
     ) {
         MealsCard(
             modifier = Modifier.fillMaxWidth(),
-            containerColor = if (checked) WarmSurface else Color.Transparent,
+            containerColor = if (checked) WarmSurface else MealsLiquidGlass.GlassTint,
             contentPadding = 0.dp,
             borderColor = if (checked) TextAccent.copy(alpha = 0.32f) else Border.copy(alpha = 0.72f),
             shape = shape,
@@ -1560,7 +1560,7 @@ fun MealsChoiceTile(
     ) {
         MealsCard(
             modifier = Modifier.fillMaxWidth(),
-            containerColor = if (selected) SoftOrange else Color.Transparent,
+            containerColor = if (selected) SoftOrange else MealsLiquidGlass.GlassTint,
             contentPadding = 0.dp,
             borderColor = if (selected) TextAccent.copy(alpha = 0.48f) else Border.copy(alpha = 0.72f),
             shape = LargeTileShape,
@@ -1641,7 +1641,7 @@ fun MealsSectionHeader(
 fun MealsIllustrationBadge(
     icon: MealsIconName,
     modifier: Modifier = Modifier,
-    background: Color = WarmSurface,
+    background: Color = MealsLiquidGlass.GlassTint,
     size: Dp = 54.dp
 ) {
     MealsLiquidGlassFrame(
@@ -1666,12 +1666,12 @@ fun MealsIllustrationBadge(
 
 /**
  * Shared glass material for every overlay surface: sheets and the navigation
- * drawer use a clear backdrop face, white gradient rim and specular edge.
+ * drawer share the same single neutral tint, white gradient rim and specular edge.
  */
 @Composable
 private fun MealsModalSurface(
     modifier: Modifier = Modifier,
-    tintColor: Color = Color.Transparent,
+    tintColor: Color = MealsLiquidGlass.GlassTint,
     contentPadding: Dp = 22.dp,
     shape: Shape = MealsLiquidGlass.ModalShape,
     elevation: Dp = MealsLiquidGlass.ModalElevation,
