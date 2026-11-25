@@ -978,7 +978,7 @@ fun ShoppingScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, bottom = 124.dp),
+                                    .padding(start = 20.dp, end = 20.dp, bottom = 124.dp),
                                 containerColor = WarmSurface,
                                 borderColor = null,
                                 contentPadding = 0.dp,
