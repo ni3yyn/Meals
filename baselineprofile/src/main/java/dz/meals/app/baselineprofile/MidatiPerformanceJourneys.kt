@@ -12,12 +12,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
 
 private const val TARGET_PACKAGE = "dz.meals.app"
 private const val UI_TIMEOUT_MS = 30_000L
@@ -59,8 +57,10 @@ private fun MacrobenchmarkScope.openAppAndPrepareShopping(device: UiDevice) {
         ) ?: error("The custom-item action did not appear for an unmatched search")
         addCustom.click()
 
+        // Modal sheets live in their own Android window, so use the
+        // focused text input and visible action label rather than Activity IDs.
         val name = device.wait(
-            Until.findObject(By.res("shopping.customItem.name")),
+            Until.findObject(By.clazz("android.widget.EditText")),
             UI_TIMEOUT_MS
         ) ?: error("Custom-item name field did not appear")
         name.click()
@@ -68,7 +68,7 @@ private fun MacrobenchmarkScope.openAppAndPrepareShopping(device: UiDevice) {
         device.pressBack()
 
         val confirm = device.wait(
-            Until.findObject(By.res("shopping.customItem.confirm")),
+            Until.findObject(By.text("إضافة")),
             UI_TIMEOUT_MS
         ) ?: error("Custom-item save action did not appear")
         confirm.click()
