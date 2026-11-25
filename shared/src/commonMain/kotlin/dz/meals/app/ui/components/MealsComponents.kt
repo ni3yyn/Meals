@@ -1918,7 +1918,11 @@ fun MealsBottomSheet(
         snapshotFlow {
             val measuredHeight = sheetHeightPx.intValue
             val offset = runCatching { sheetState.requireOffset() }.getOrNull()
-            val isHiding = sheetState.targetValue == SheetValue.Hidden
+            // Hidden is also the initial value before the first show().
+            // Only treat it as an exit after the sheet has actually become visible.
+            val isHiding =
+                sheetState.targetValue == SheetValue.Hidden &&
+                    sheetState.currentValue != SheetValue.Hidden
             val progress = if (
                 isHiding &&
                 measuredHeight > 0 &&
