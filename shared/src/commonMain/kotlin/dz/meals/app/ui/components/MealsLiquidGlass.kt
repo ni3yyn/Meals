@@ -26,19 +26,18 @@ import dz.meals.app.ui.theme.Border
  */
 object MealsLiquidGlass {
     /**
-     * One neutral tint shared by cards, hero surfaces, dropdowns and sheets.
-     * This alpha approximates the former subtle two-pass card veil in one draw.
+     * One very subtle neutral tint shared by cards, hero surfaces, dropdowns
+     * and sheets. Kept at the original low surface opacity and drawn only once.
      */
     val GlassTint = Color(0xFFFFFCF7)
-    const val GlassTintOpacity = 0.36f
+    const val GlassTintOpacity = 0.20f
 
     /**
-     * Controls deliberately use a stronger, slightly whiter face so buttons
-     * stay distinct from their glass parent. This is a separate single-pass
-     * control token and can be tuned independently of the shared surface tint.
+     * Original near-neutral control tint. Buttons use their own very light
+     * gradient so they stay distinct from their parent without looking opaque.
      */
     val ControlTint = Color(0xFFFFFEFC)
-    const val ControlTintOpacity = 0.58f
+    const val ControlTintOpacity = 0.36f
 
     val ControlBlurRadius = 12.dp
     val SurfaceBlurRadius = 8.dp
@@ -57,15 +56,15 @@ object MealsLiquidGlass {
     val ModalElevation = 1.dp
     val DropdownElevation = 7.dp
     /**
-     * Stronger single-pass control tint. The slight opacity variation retains
-     * the former button contrast without adding a second Haze color wash.
+     * Original subtle pearl gradient restored as one face layer. No Haze tint
+     * is stacked underneath it.
      */
     fun controlFace(): Brush = Brush.verticalGradient(
-        colors = listOf(
-            ControlTint.copy(alpha = (ControlTintOpacity + 0.04f).coerceAtMost(1f)),
-            ControlTint.copy(alpha = ControlTintOpacity),
-            ControlTint.copy(alpha = (ControlTintOpacity - 0.04f).coerceAtLeast(0f)),
-            ControlTint.copy(alpha = ControlTintOpacity)
+        colorStops = arrayOf(
+            0f to Color.White.copy(alpha = ControlTintOpacity + 0.06f),
+            0.22f to ControlTint.copy(alpha = ControlTintOpacity),
+            0.68f to Color(0xFFF5F1EB).copy(alpha = ControlTintOpacity - 0.06f),
+            1f to Color.White.copy(alpha = ControlTintOpacity)
         )
     )
 
