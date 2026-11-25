@@ -163,8 +163,9 @@ fun MealsNavigationIcon(
     modifier: Modifier = Modifier
 ) {
     if (name == MealsIconName.Share) {
+        val translatedDescription = mealsText(contentDescription)
         MealsShareGlyph(
-            modifier.semantics { this.contentDescription = mealsText(contentDescription) }
+            modifier.semantics { this.contentDescription = translatedDescription }
         )
         return
     }
