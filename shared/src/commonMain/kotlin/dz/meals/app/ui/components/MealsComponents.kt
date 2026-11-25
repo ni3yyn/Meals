@@ -175,9 +175,9 @@ private val MealsCardShape = MealsLiquidGlass.CardShape
 /**
  * The shared elevated surface used for budgets, summaries and grouped content.
  *
- * Each card uses Haze's source-backed Blur with a shared restrained style,
- * a translucent porcelain tint, fine white rim and no platform elevation
- * shadow. The dedicated card source contains only the fixed kitchen artwork.
+ * Each card samples the kitchen artwork through source-backed blur. Its face
+ * stays color-neutral so the selected background supplies the glass color;
+ * a fine white rim and optical reflections define the material.
  */
 @Composable
 private fun MealsLiquidGlassFrame(
@@ -262,7 +262,7 @@ private fun MealsLiquidGlassFrame(
 @Composable
 fun MealsCard(
     modifier: Modifier = Modifier,
-    containerColor: Color = Paper,
+    containerColor: Color = Color.Transparent,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     contentPadding: Dp = 18.dp,
     borderColor: Color? = Border.copy(alpha = 0.72f),
@@ -666,7 +666,7 @@ internal val LocalMealsGlassPressed = staticCompositionLocalOf { false }
 @Composable
 fun MealsGlassSurface(
     modifier: Modifier = Modifier,
-    tintColor: Color = Color(0xFFFFF6EC),
+    tintColor: Color = Color.Transparent,
     contentPadding: Dp = 18.dp,
     shape: RoundedCornerShape = MealsLiquidGlass.HeroShape,
     content: @Composable ColumnScope.() -> Unit
@@ -1167,7 +1167,7 @@ fun <T> MealsGlassDropdown(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MealsLiquidGlass.DropdownShape,
                 elevation = MealsLiquidGlass.DropdownElevation,
-                face = MealsLiquidGlass.modalFace(Color(0xFFFFF8F1)),
+                face = MealsLiquidGlass.modalFace(),
                 hazeState = LocalMealsHazeState.current ?: LocalMealsCardHazeState.current,
                 blurStyle = MealsLiquidGlass.ModalBlurStyle,
                 blurRadius = MealsLiquidGlass.ModalBlurRadius,
@@ -1667,12 +1667,12 @@ fun MealsIllustrationBadge(
 
 /**
  * Shared glass material for every overlay surface: sheets and the navigation
- * drawer use the same translucent face, white gradient rim and specular edge.
+ * drawer use a clear backdrop face, white gradient rim and specular edge.
  */
 @Composable
 private fun MealsModalSurface(
     modifier: Modifier = Modifier,
-    tintColor: Color = Color(0xFFFFF8F1),
+    tintColor: Color = Color.Transparent,
     contentPadding: Dp = 22.dp,
     shape: Shape = MealsLiquidGlass.ModalShape,
     elevation: Dp = MealsLiquidGlass.ModalElevation,
@@ -1911,7 +1911,7 @@ fun MealsBottomSheet(
                 shape = topShape,
                 containerColor = Color.Transparent,
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                scrimColor = Color(0xFFFFF8F1).copy(alpha = 0.14f),
+                scrimColor = Color.Transparent,
                 tonalElevation = 0.dp,
                 dragHandle = {
                     Box(
