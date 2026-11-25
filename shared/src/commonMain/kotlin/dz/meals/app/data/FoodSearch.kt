@@ -187,3 +187,60 @@ fun foodMatchesSearch(fields: Iterable<String>, query: String): Boolean {
     val normalizedIndex = normalizeFoodSearchText(fields.joinToString(" "))
     return terms.all { term -> term in normalizedIndex }
 }
+
+
+/**
+ * Process-wide cache so navigating away from Shopping and back does not
+ * reconstruct the typeahead engine (which owns a background coroutine scope).
+ * Structural snapshots detect real catalogue changes without coupling the
+ * cache to UI locale or screen lifetime.
+ */
+private object FoodCatalogueSearchIndexCache {
+    private val mutex = Mutex()
+    private var hasSnapshot = false
+    private var cachedIngredients: List<IngredientMaster> = emptyList()
+    private var cachedCategories: List<FoodCategory> = emptyList()
+    private var cachedSubcategories: List<FoodSubcategory> = emptyList()
+    private var cachedIndex: FoodCatalogueSearchIndex? = null
+
+    suspend fun getOrBuild(
+        ingredients: List<IngredientMaster>,
+        categories: List<FoodCategory>,
+        subcategories: List<FoodSubcategory>
+    ): FoodCatalogueSearchIndex = mutex.withLock {
+        val existing = cachedIndex
+        if (
+            hasSnapshot &&
+            existing != null &&
+            cachedIngredients == ingredients &&
+            cachedCategories == categories &&
+            cachedSubcategories == subcategories
+        ) {
+            return@withLock existing
+        }
+
+        val built = buildFoodCatalogueSearchIndex(
+            ingredients = ingredients,
+            categories = categories,
+            subcategories = subcategories
+        )
+        cachedIngredients = ingredients.toList()
+        cachedCategories = categories.toList()
+        cachedSubcategories = subcategories.toList()
+        cachedIndex = built
+        hasSnapshot = true
+        built
+    }
+}
+
+/** Returns the same process-wide index while the underlying catalogue is unchanged. */
+suspend fun getFoodCatalogueSearchIndex(
+    ingredients: List<IngredientMaster>,
+    categories: List<FoodCategory>,
+    subcategories: List<FoodSubcategory>
+): FoodCatalogueSearchIndex = FoodCatalogueSearchIndexCache.getOrBuild(
+    ingredients = ingredients,
+    categories = categories,
+    subcategories = subcategories
+)
+
