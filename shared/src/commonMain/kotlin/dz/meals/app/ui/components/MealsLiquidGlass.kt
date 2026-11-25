@@ -74,7 +74,7 @@ object MealsLiquidGlass {
 
     /**
      * Button face: a restrained pearl wash, always lighter than the sheet's
-     * 20% shared tint so the blurred backdrop remains clearly visible.
+     * 23% shared ivory tint so the blurred backdrop remains clearly visible.
      */
     fun buttonFace(): Brush = Brush.verticalGradient(
         colorStops = arrayOf(
