@@ -35,7 +35,7 @@ Kitchen-equipment awareness and recipe filtering based on equipment are intentio
 **Price warning:** bundled observations are explicitly tagged as demo values, not current Algerian market prices. No live retailer or government price feed is connected yet.
 
 ## Build
-JDK 17, Gradle 9.6.0 and Android SDK Platform 37.1:
+JDK 25 (Gradle/test runtime), Gradle 9.6.0 and Android SDK Platform 37.1. The app's Android bytecode remains targeted at JVM 17:
 
 ```bash
 ./gradlew testDebugUnitTest assembleDebug
