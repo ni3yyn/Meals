@@ -179,6 +179,10 @@ android {
                 "robolectric.dependency.repo.url",
                 "https://repo.maven.apache.org/maven2"
             )
+            it.testLogging {
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+            }
         }
     }
 
