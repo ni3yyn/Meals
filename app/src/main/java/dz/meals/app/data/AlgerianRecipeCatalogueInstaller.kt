@@ -10,6 +10,8 @@ import dz.meals.app.data.local.RecipeEntity
 import dz.meals.app.data.local.RecipeIngredientEntity
 import dz.meals.app.data.local.RecipeStepEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -42,7 +44,12 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
 
     suspend fun install(
         onProgress: (completedRecipes: Int, totalRecipes: Int) -> Unit = { _, _ -> }
-    ): Int = withContext(Dispatchers.IO) {
+    ): Int {
+        // Keep progress callbacks on the caller's dispatcher. Forcing Main here
+        // deadlocks blocking Robolectric callers and unnecessarily couples this
+        // data-layer installer to Android UI dispatch.
+        val callbackContext = currentCoroutineContext().minusKey(Job)
+        return withContext(Dispatchers.IO) {
         if (isInstalled()) return@withContext 0
 
         val root = readPayload()
@@ -72,7 +79,7 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
         }
 
         val recipeIds = recipes.map { it.id }
-        withContext(Dispatchers.Main.immediate) {
+        withContext(callbackContext) {
             onProgress(0, recipes.size)
         }
         database.withTransaction {
@@ -111,10 +118,11 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
             throw IOException("تعذر حفظ إصدار مكتبة الوصفات الجزائرية المثبت.")
         }
 
-        withContext(Dispatchers.Main.immediate) {
+        withContext(callbackContext) {
             onProgress(EXPECTED_RECIPE_COUNT, EXPECTED_RECIPE_COUNT)
         }
         EXPECTED_RECIPE_COUNT
+        }
     }
 
     private fun readPayload(): JSONObject = try {
