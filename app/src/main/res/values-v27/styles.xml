@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- API 27+ adds the light navigation-bar appearance flag. -->
-    <style name="Theme.Mida" parent="@style/ThemeMealsBase">
-        <item name="android:windowLightNavigationBar">true</item>
-    </style>
-</resources>

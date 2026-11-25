@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="launcher_background">#FFF8F1</color>
-    <color name="mida_splash_background">#FFF8F1</color>
-    <color name="mida_forest">#2B6F4B</color>
-    <color name="mida_leaf">#B5D2B0</color>
-    <color name="mida_tangerine">#EBA982</color>
-    <color name="mida_cinnamon">#8B573B</color>
-</resources>

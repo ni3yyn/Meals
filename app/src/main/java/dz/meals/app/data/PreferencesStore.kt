@@ -122,7 +122,7 @@ class PreferencesStore(context: Context) {
 
     suspend fun setKitchenBackground(background: String) {
         val normalized = background.takeIf {
-            it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK
+            it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK || it == MEALS_BACKGROUND_BLUE
         } ?: MEALS_BACKGROUND_PINK
         dataStore.edit { values -> values[Keys.kitchenBackground] = normalized }
     }
