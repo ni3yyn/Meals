@@ -17,22 +17,25 @@ class PlanCuisinePolicyTest {
 
     @Test
     fun generatorRequiresAnExplicitMainDishCourseType() {
-        assertTrue(PlanCuisinePolicy.allowsMainDish(recipe(category = "طبق رئيسي")))
+        assertTrue(PlanCuisinePolicy.allowsForGeneration(recipe(category = "طبق رئيسي")))
+        assertTrue(PlanCuisinePolicy.allowsForGeneration(recipe(category = "حساء")))
+        assertTrue(PlanCuisinePolicy.allowsForGeneration(recipe(category = "شوربة")))
+        assertTrue(PlanCuisinePolicy.allowsForGeneration(recipe(category = "Soup")))
         assertTrue(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "Family recipe", categories = listOf("Plats principaux"))
             )
         )
         assertTrue(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "طبق رئيسي", categories = listOf("طبق جانبي"))
             )
         )
         assertTrue(
-            PlanCuisinePolicy.allowsMainDish(recipe(category = "طبق رئيسي ومرافق"))
+            PlanCuisinePolicy.allowsForGeneration(recipe(category = "طبق رئيسي ومرافق"))
         )
         assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "تقليدي", categories = listOf("وصفة جزائرية"))
             )
         )
@@ -40,26 +43,26 @@ class PlanCuisinePolicyTest {
 
     @Test
     fun generatorRejectsDessertsAndSweetsFromCourseMetadata() {
-        assertFalse(PlanCuisinePolicy.allowsMainDish(recipe(category = "حلويات صغيرة")))
-        assertFalse(PlanCuisinePolicy.allowsMainDish(recipe(category = "حلويات جافة صغيرة")))
-        assertFalse(PlanCuisinePolicy.allowsMainDish(recipe(category = "Dessert")))
+        assertFalse(PlanCuisinePolicy.allowsForGeneration(recipe(category = "حلويات صغيرة")))
+        assertFalse(PlanCuisinePolicy.allowsForGeneration(recipe(category = "حلويات جافة صغيرة")))
+        assertFalse(PlanCuisinePolicy.allowsForGeneration(recipe(category = "Dessert")))
         assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "طبق رئيسي", categories = listOf("حلوى للقهوة"))
             )
         )
         assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "Plat principal", nameFr = "Gâteau au chocolat")
             )
         )
         assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "طبق رئيسي", nameAr = "كيكة الشوكولاتة")
             )
         )
         assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(category = "Plat principal", nameFr = "Gâteaux algériens")
             )
         )
@@ -68,7 +71,7 @@ class PlanCuisinePolicyTest {
     @Test
     fun sweetProfiledAlgerianMainDishesAreNotMistakenForDesserts() {
         assertTrue(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(
                     nameAr = "لحم حلو بالبرقوق المجفف والمشمش والزبيب",
                     nameFr = "Lham Lahlou aux pruneaux, abricots et raisins secs",
@@ -79,10 +82,8 @@ class PlanCuisinePolicyTest {
     }
 
     @Test
-    fun generatorRejectsOtherNonMainCoursesAndRequiresMainCourseLabel() {
+    fun generatorRejectsOtherNonMainCoursesAndRequiresEligibleCourseLabel() {
         listOf(
-            "حساء",
-            "شوربة",
             "مقبلات",
             "مقبّلات ساخنة",
             "سلطات ومقبلات",
@@ -93,7 +94,7 @@ class PlanCuisinePolicyTest {
         ).forEach { category ->
             assertFalse(
                 "Must not generate category: $category",
-                PlanCuisinePolicy.allowsMainDish(recipe(category = category))
+                PlanCuisinePolicy.allowsForGeneration(recipe(category = category))
             )
         }
     }
@@ -101,7 +102,7 @@ class PlanCuisinePolicyTest {
     @Test
     fun foreignCuisineRecipesRemainOutsideAutomaticGeneration() {
         assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
+            PlanCuisinePolicy.allowsForGeneration(
                 recipe(id = "foreign-recipe", category = "Main course")
             )
         )

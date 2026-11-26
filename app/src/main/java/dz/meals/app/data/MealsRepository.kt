@@ -290,7 +290,7 @@ class MealsRepository internal constructor(
         // enter generated plans. Settings will later supply the selected cuisines
         // through this centralized policy.
         // Automatic generation accepts only explicitly classified Algerian main dishes.
-        val generatorRecipes = recipes.filter(PlanCuisinePolicy::allowsMainDish)
+        val generatorRecipes = recipes.filter(PlanCuisinePolicy::allowsForGeneration)
         val validSlots = selectedMealSlots.intersect(MealSlots.ids.toSet())
         if (validSlots.isEmpty()) {
             return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)

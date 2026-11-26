@@ -11,7 +11,7 @@ object PlanCuisinePolicy {
     const val ALGERIAN_RECIPE_ID_PREFIX = "dz-algerian-dzirielle-"
 
     // These are the explicit main-course labels used by the Room v17 catalogue.
-    private val mainDishMarkers = listOf(
+    private val eligibleCourseMarkers = listOf(
         "main dish",
         "main dishes",
         "main course",
@@ -28,7 +28,14 @@ object PlanCuisinePolicy {
         "اطباق رئيسية",
         "الاطباق الرئيسية",
         "وجبة رئيسية",
-        "وجبات رئيسية"
+        "وجبات رئيسية",
+        "soup",
+        "soups",
+        "soupe",
+        "soupes",
+        "حساء",
+        "شوربة",
+        "شوربات"
     )
 
     // Course labels that should never enter an automatically generated plan.
@@ -44,7 +51,7 @@ object PlanCuisinePolicy {
         "شوكولاتة", "شكولاطة",
 
         "entree", "entrees", "starter", "starters", "appetizer", "appetizers",
-        "salade", "salades", "soup", "soups", "soupe", "boisson", "boissons",
+        "salade", "salades", "boisson", "boissons",
         "drink", "drinks", "juice", "juices", "jus", "smoothie", "cocktail",
         "سلطة", "سلطات", "شوربة", "حساء", "مقبلات", "مشروب", "مشروبات",
         "عصير", "عصائر",
@@ -67,11 +74,11 @@ object PlanCuisinePolicy {
         recipeId.startsWith(ALGERIAN_RECIPE_ID_PREFIX)
 
     /**
-     * Fail closed: an Algerian recipe must have an explicit main-dish course
-     * classification. Desserts, sweets, starters, soups, salads, sides,
-     * breads, breakfasts and drinks are excluded from automatic generation.
+     * Fail closed: an Algerian recipe must have an explicit main-dish or soup
+     * course classification. Desserts, sweets, starters, salads, breads,
+     * breakfasts and drinks are excluded from automatic generation.
      */
-    fun allowsMainDish(recipe: MealRecipe): Boolean {
+    fun allowsForGeneration(recipe: MealRecipe): Boolean {
         if (!allows(recipe)) return false
 
         val courseMetadata = listOf(recipe.category) + recipe.categories + recipe.tags
@@ -82,11 +89,11 @@ object PlanCuisinePolicy {
             return false
         }
 
-        return courseMetadata.any(::containsMainDishMarker)
+        return courseMetadata.any(::containsEligibleCourseMarker)
     }
 
-    private fun containsMainDishMarker(value: String): Boolean =
-        containsAnyPhrase(value, mainDishMarkers)
+    private fun containsEligibleCourseMarker(value: String): Boolean =
+        containsAnyPhrase(value, eligibleCourseMarkers)
 
     private fun containsNonMainDishMarker(value: String): Boolean =
         containsAnyPhrase(value, nonMainDishMarkers)
