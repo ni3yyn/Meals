@@ -13,6 +13,7 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
+- Recipe photos appear in browse, planner and selection cards only when the image has a verified reusable licence and complete attribution; imported image URLs without verified redistribution rights are not shown.
 - Seven-day planner with configurable breakfast/lunch/dinner slots, manual recipe assignment, serving adjustments and meal locking.
 - Regeneration preserves locked, cooked and manually selected/cleared slots by default; an explicit “fill empty slots only” option preserves all already-populated slots. A new run replaces only the meal slots selected for that run, leaving other slots and weeks intact.
 - Saved weeks display their own meal-slot selection rather than silently adopting the current defaults for future plans.
@@ -58,8 +59,9 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 ### Recipe discovery
 1. Search Arabic, French and catalogue aliases.
 2. Filter by curated categories.
-3. Read recipe ingredients and preparation instructions.
-4. Add a recipe to the next available meal slot.
+3. Browse recipe photos where a reusable licence and attribution have been verified.
+4. Read recipe ingredients and preparation instructions.
+5. Add a recipe to the next available meal slot.
 
 ### Pantry
 1. Search ingredients by Arabic, French or stored aliases, then select a canonical ingredient.

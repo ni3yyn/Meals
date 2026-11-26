@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsPressable
+import dz.meals.app.ui.components.MealsRecipeImage
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsIllustrationBadge
 import dz.meals.app.ui.components.MealsCheckbox
@@ -56,6 +57,7 @@ import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.hasVerifiedReusableImage
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.ui.theme.Border
@@ -499,6 +501,14 @@ fun PlanScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
+                                MealsRecipeImage(
+                                    imageUrl = recipe.takeIf { it.hasVerifiedReusableImage() }?.imageUrl.orEmpty(),
+                                    contentDescription = recipe.nameAr,
+                                    modifier = Modifier.size(58.dp),
+                                    imageWidth = 280,
+                                    cornerRadius = 12.dp,
+                                    placeholderIconSize = 25.dp
+                                )
                                 Column(
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -651,10 +661,13 @@ private fun SlotRow(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(9.dp)
                             ) {
-                                MealsIcon(
-                                    name = MealsIconName.Meal,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(34.dp)
+                                MealsRecipeImage(
+                                    imageUrl = recipe?.takeIf { it.hasVerifiedReusableImage() }?.imageUrl.orEmpty(),
+                                    contentDescription = recipe?.nameAr ?: title,
+                                    modifier = Modifier.size(82.dp),
+                                    imageWidth = 360,
+                                    cornerRadius = 15.dp,
+                                    placeholderIconSize = 32.dp
                                 )
                                 Column(
                                     modifier = Modifier.weight(1f),

@@ -596,7 +596,7 @@ class MealsRepository internal constructor(
 
                 val license = metadataValue("LicenseShortName")
                 val licenseUrl = metadataValue("LicenseUrl")
-                if (!isReusableCommonsImageLicense(license, licenseUrl)) continue
+                if (!isReusableRecipeImageLicense(license, licenseUrl)) continue
 
                 val artist = metadataValue("Artist")
                 val credit = metadataValue("Credit")
@@ -657,7 +657,7 @@ class MealsRepository internal constructor(
         require(image.sourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:")) {
             "رابط مصدر الصورة غير صالح."
         }
-        require(isReusableCommonsImageLicense(image.license, image.licenseUrl)) {
+        require(isReusableRecipeImageLicense(image.license, image.licenseUrl)) {
             "ترخيص هذه الصورة لا يسمح بإعادة استخدامها داخل التطبيق."
         }
         require(image.author.isNotBlank() && image.credit.isNotBlank()) {
@@ -1029,19 +1029,6 @@ private fun commonsImageTokens(value: String): Set<String> {
         .split(Regex("[^\\p{L}\\p{N}]+"))
         .filter { it.length >= 2 && it !in commonsImageStopWords }
         .toSet()
-}
-
-private fun isReusableCommonsImageLicense(name: String, url: String): Boolean {
-    val normalized = name.trim().lowercase()
-    val excludesCommercialOrDerivatives = Regex("\\b(?:nc|nd)\\b").containsMatchIn(normalized)
-    if (excludesCommercialOrDerivatives) return false
-    val permittedName = normalized.startsWith("cc by") ||
-        normalized.startsWith("cc0") ||
-        normalized.contains("public domain")
-    if (!permittedName) return false
-    return normalized.contains("public domain") ||
-        url.startsWith("https://creativecommons.org/licenses/") ||
-        url.startsWith("https://creativecommons.org/publicdomain/")
 }
 
 private fun String.stripCommonsMarkup(): String =

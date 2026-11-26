@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
+import dz.meals.app.data.hasVerifiedReusableImage
 import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.data.RecipeImageCandidate
 import dz.meals.app.data.scaleRecipeIngredientQuantity
@@ -73,6 +74,7 @@ import dz.meals.app.ui.components.MealsFilterChips
 import dz.meals.app.ui.components.MealsIconAction
 import dz.meals.app.ui.components.MealsLiquidGlassProgressBar
 import dz.meals.app.ui.components.MealsPrimaryButton
+import dz.meals.app.ui.components.MealsRecipeImage
 import dz.meals.app.ui.components.MealsPressable
 import dz.meals.app.ui.components.MealsSearchBar
 import dz.meals.app.ui.components.MealsSecondaryButton
@@ -102,34 +104,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 private val recipeCategories = listOf("الكل", "اقتصادي", "سريع", "تقليدي", "عائلي")
 
-
-/**
- * Route public recipe photos through a resizing/compression cache. This prevents
- * the client from requesting original-resolution recipe images directly.
- */
-private fun optimizedRecipeImageUrl(sourceUrl: String, width: Int): String {
-    if (!sourceUrl.startsWith("https://", ignoreCase = true)) return ""
-    if (sourceUrl.startsWith("https://images.weserv.nl/", ignoreCase = true)) return sourceUrl
-
-    val encodedUrl = buildString {
-        val hex = "0123456789ABCDEF"
-        sourceUrl.encodeToByteArray().forEach { byte ->
-            val value = byte.toInt() and 0xff
-            val isUnreserved = value in 0x41..0x5A ||
-                value in 0x61..0x7A ||
-                value in 0x30..0x39 ||
-                value == 0x2D || value == 0x2E || value == 0x5F || value == 0x7E
-            if (isUnreserved) {
-                append(value.toChar())
-            } else {
-                append('%')
-                append(hex[value ushr 4])
-                append(hex[value and 0x0F])
-            }
-        }
-    }
-    return "https://images.weserv.nl/?url=$encodedUrl&w=${width.coerceIn(240, 960)}&q=60&output=webp"
-}
 
 private val unitoolsIngredientFallbackNames = mapOf(
     "ackee" to ("فاكهة الأكي" to "Ackee"),
@@ -531,18 +505,14 @@ fun RecipesScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(11.dp)
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(42.dp)
-                                            .background(WarmSurface, RoundedCornerShape(14.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        MealsIcon(
-                                            MealsIconName.Meal,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(33.dp)
-                                        )
-                                    }
+                                    MealsRecipeImage(
+                                        imageUrl = recipe.takeIf { it.hasVerifiedReusableImage() }?.imageUrl.orEmpty(),
+                                        contentDescription = recipe.nameAr,
+                                        modifier = Modifier.size(82.dp),
+                                        imageWidth = 360,
+                                        cornerRadius = 15.dp,
+                                        placeholderIconSize = 32.dp
+                                    )
                                     Text(
                                         text = recipe.nameAr,
                                         modifier = Modifier.weight(1f),
@@ -635,7 +605,7 @@ fun RecipesScreen(
     LaunchedEffect(detail?.id, detail?.imageUrl, automaticImageRetryNonce) {
         val recipe = detail ?: return@LaunchedEffect
         val autoLoad = onAutoLoadRecipeImage ?: return@LaunchedEffect
-        if (recipe.imageUrl.startsWith("https://", ignoreCase = true)) return@LaunchedEffect
+        if (recipe.hasVerifiedReusableImage()) return@LaunchedEffect
         if (!attemptedAutomaticImageRecipeIds.add(recipe.id)) return@LaunchedEffect
 
         automaticImageLoadingRecipeId = recipe.id
@@ -764,7 +734,7 @@ fun RecipesScreen(
                                     verticalAlignment = Alignment.Top
                                 ) {
                                     AsyncImage(
-                                        model = optimizedRecipeImageUrl(candidate.imageUrl, width = 320),
+                                        model = candidate.imageUrl,
                                         contentDescription = candidate.title,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
@@ -834,16 +804,17 @@ fun RecipesScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (detail.imageUrl.startsWith("https://", ignoreCase = true)) {
+                    if (detail.hasVerifiedReusableImage()) {
                         item {
-                            AsyncImage(
-                                model = optimizedRecipeImageUrl(detail.imageUrl, width = 720),
+                            MealsRecipeImage(
+                                imageUrl = detail.imageUrl,
                                 contentDescription = detail.nameAr,
-                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(188.dp)
-                                    .clip(RoundedCornerShape(17.dp))
+                                    .height(188.dp),
+                                imageWidth = 720,
+                                cornerRadius = 17.dp,
+                                placeholderIconSize = 48.dp
                             )
                         }
                     } else {
@@ -900,7 +871,7 @@ fun RecipesScreen(
                         }
                     }
                     if (onSearchRecipeImages != null && onSaveRecipeImage != null) {
-                        val hasImage = detail.imageUrl.startsWith("https://", ignoreCase = true)
+                        val hasImage = detail.hasVerifiedReusableImage()
                         val autoFailed = automaticImageErrorRecipeId == detail.id
                         if (hasImage || onAutoLoadRecipeImage == null || autoFailed) {
                             item {
@@ -935,7 +906,8 @@ fun RecipesScreen(
                             }
                         }
                     }
-                    if (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank()) {
+                    if (detail.hasVerifiedReusableImage() &&
+                        (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank())) {
                         item {
                             Text(
                                 "الصورة: " + listOf(detail.imageCredit.ifBlank { detail.imageAuthor }, detail.imageLicense)
@@ -958,7 +930,7 @@ fun RecipesScreen(
                             )
                         }
                     }
-                    if (detail.imageLicenseUrl.isNotBlank()) {
+                    if (detail.hasVerifiedReusableImage() && detail.imageLicenseUrl.isNotBlank()) {
                         item {
                             Text(
                                 "عرض ترخيص الصورة: " + detail.imageLicense,

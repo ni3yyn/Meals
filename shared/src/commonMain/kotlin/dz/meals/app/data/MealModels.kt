@@ -100,6 +100,33 @@ data class MealRecipe(
     val imageCredit: String = ""
 )
 
+/**
+ * Returns true only for a reusable Wikimedia Commons image with complete attribution.
+ * Unverified catalogue URLs are deliberately not surfaced in the app.
+ */
+fun MealRecipe.hasVerifiedReusableImage(): Boolean {
+    if (!imageUrl.startsWith("https://upload.wikimedia.org/", ignoreCase = true)) return false
+    if (!imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true)) return false
+    if (imageAuthor.isBlank() || imageCredit.isBlank()) return false
+    return isReusableRecipeImageLicense(imageLicense, imageLicenseUrl)
+}
+
+/** The same licence rule is used both when saving an image and when deciding to display it. */
+fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
+    val normalized = name.trim().lowercase()
+    val tokens = normalized.split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
+    if (tokens.any { it == "nc" || it == "nd" }) return false
+
+    val permittedName = normalized.startsWith("cc by") ||
+        normalized.startsWith("cc0") ||
+        normalized.contains("public domain")
+    if (!permittedName) return false
+
+    return normalized.contains("public domain") ||
+        url.startsWith("https://creativecommons.org/licenses/") ||
+        url.startsWith("https://creativecommons.org/publicdomain/")
+}
+
 data class RecipeAttribution(
     val sourceTitle: String,
     val sourceUrl: String,
