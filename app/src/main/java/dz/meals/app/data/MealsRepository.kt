@@ -289,7 +289,7 @@ class MealsRepository internal constructor(
         // Temporary default: only the separately curated Algerian collection can
         // enter generated plans. Settings will later supply the selected cuisines
         // through this centralized policy.
-        val generatorRecipes = recipes.filter(PlanCuisinePolicy::allows)
+        // Automatic generation accepts only explicitly classified Algerian main dishes.\n        val generatorRecipes = recipes.filter(PlanCuisinePolicy::allowsMainDish)
         val validSlots = selectedMealSlots.intersect(MealSlots.ids.toSet())
         if (validSlots.isEmpty()) {
             return GenerationResult(false, "اختر وجبة واحدة على الأقل لتخطيط الأسبوع.", 0, weeklyBudgetDzd)
@@ -326,7 +326,7 @@ class MealsRepository internal constructor(
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
         if (allowed.isEmpty()) {
-            return GenerationResult(false, "لا توجد وصفات جزائرية متاحة بعد تطبيق قيود الحساسية والنمط الغذائي. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
+            return GenerationResult(false, "لا توجد أطباق رئيسية جزائرية متاحة بعد تطبيق قيود الحساسية والنمط الغذائي. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
         }
 
         val slots = (0 until 7).flatMap { day ->
