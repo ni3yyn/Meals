@@ -312,10 +312,15 @@ fun mealsRecipeIngredientQuantity(quantity: Double, unit: String, localeTag: Str
         return if (english) "to taste" else "حسب الحاجة"
     }
 
-    fun countedArabic(one: String, two: String, many: String): String = when {
+    fun countedArabic(
+        one: String,
+        two: String,
+        many: String,
+        fractional: String = one
+    ): String = when {
         quantity == 1.0 -> one
         quantity == 2.0 -> two
-        quantity > 0.0 && quantity % 1.0 != 0.0 -> "$number $one"
+        quantity > 0.0 && quantity % 1.0 != 0.0 -> "$number $fractional"
         else -> "$number $many"
     }
 
@@ -334,7 +339,7 @@ fun mealsRecipeIngredientQuantity(quantity: Double, unit: String, localeTag: Str
         } else "$number ${if (english) "ml" else "مل"}"
         "piece", "pieces", "pc", "pcs" -> if (english) {
             countedEnglish("piece", "pieces")
-        } else countedArabic("حبة", "حبتان", "حبات")
+        } else countedArabic("حبة", "حبتان", "حبات", fractional = "حبات")
         "tbsp", "tbs", "tbsps", "tablespoon", "tablespoons", "ملعقة كبيرة" -> if (english) {
             countedEnglish("tablespoon", "tablespoons")
         } else countedArabic("ملعقة كبيرة", "ملعقتان كبيرتان", "ملاعق كبيرة")
