@@ -45,10 +45,10 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 4. The setup can be dismissed and revisited from Settings. No account, phone number, location permission or network access is required.
 
 ### Weekly plan
-1. View seven days with the selected breakfast, lunch and/or dinner slots.
+1. Select a day from the horizontal seven-day chip rail; that day's configured meal cards appear directly in the planner.
 2. Generate a week using household servings, budget and strict allergy filtering.
 3. Lock meals that must remain unchanged.
-4. Replace or clear a slot, or change portion counts.
+4. Open a meal card to read its recipe; use the separate left-side actions to replace, lock or mark it cooked, and adjust servings on the card.
 5. Plan generation treats allergies and vegetarian/vegan patterns as hard constraints. Disliked ingredients and preferred cook time are soft ranking inputs.
 6. A configurable budget buffer is applied to the planner target.
 7. Each generated week records its engine version and price snapshot.
