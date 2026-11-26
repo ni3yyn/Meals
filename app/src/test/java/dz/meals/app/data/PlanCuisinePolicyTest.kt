@@ -28,6 +28,9 @@ class PlanCuisinePolicyTest {
                 recipe(category = "طبق رئيسي", categories = listOf("طبق جانبي"))
             )
         )
+        assertTrue(
+            PlanCuisinePolicy.allowsMainDish(recipe(category = "طبق رئيسي ومرافق"))
+        )
         assertFalse(
             PlanCuisinePolicy.allowsMainDish(
                 recipe(category = "تقليدي", categories = listOf("وصفة جزائرية"))
@@ -53,6 +56,11 @@ class PlanCuisinePolicyTest {
         assertFalse(
             PlanCuisinePolicy.allowsMainDish(
                 recipe(category = "طبق رئيسي", nameAr = "كيكة الشوكولاتة")
+            )
+        )
+        assertFalse(
+            PlanCuisinePolicy.allowsMainDish(
+                recipe(category = "Plat principal", nameFr = "Gâteaux algériens")
             )
         )
     }

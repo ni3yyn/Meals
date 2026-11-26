@@ -54,9 +54,10 @@ object PlanCuisinePolicy {
     // Title-only checks catch a dessert whose course metadata was accidentally mislabeled.
     // Avoid the generic adjective "حلو" here: dishes such as لحم حلو are main courses.
     private val dessertTitleMarkers = listOf(
-        "dessert", "patisserie", "gateau", "tarte", "cookie", "biscuit",
-        "confiserie", "pudding", "brownie", "cake", "muffin", "glace",
-        "sorbet", "viennoiserie", "حلويات", "حلوى", "حلوة", "كعك", "كيك",
+        "dessert", "desserts", "patisserie", "patisseries", "gateau", "gateaux",
+        "tarte", "tartes", "cookie", "cookies", "biscuit", "biscuits",
+        "confiserie", "confiseries", "pudding", "brownie", "cake", "muffin",
+        "glace", "glaces", "sorbet", "sorbets", "viennoiserie", "viennoiseries", "حلويات", "حلوى", "حلوة", "كعك", "كيك",
         "قاطو", "طورطة", "تارت", "بسكويت", "بسكوي"
     )
 
