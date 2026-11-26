@@ -101,8 +101,8 @@ fun PlanScreen(
     var selectedDayIndex by rememberSaveable(weekStartIso) { mutableStateOf(initialDayIndex) }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
     val dayChipListState = rememberLazyListState()
-    LaunchedEffect(weekStartIso, selectedDayIndex) {
-        dayChipListState.animateScrollToItem(selectedDayIndex)
+    LaunchedEffect(weekStartIso, initialDayIndex) {
+        dayChipListState.animateScrollToItem(initialDayIndex)
     }
     val recipesById = remember(snapshot.recipes) { snapshot.recipes.associateBy { it.id } }
     val eligibleRecipes = remember(snapshot.recipes, preferences.allergyIds) {
