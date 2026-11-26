@@ -11,7 +11,6 @@ import dz.meals.app.ui.components.MealsTextButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,14 +26,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.mealsSheetDismissAction
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -65,7 +61,6 @@ import dz.meals.app.data.PlannedMeal
 import dz.meals.app.ui.theme.Border
 import dz.meals.app.ui.theme.TextAccent
 import dz.meals.app.ui.theme.MutedInk
-import dz.meals.app.ui.theme.Paper
 import dz.meals.app.shared.format.formatArabicDate
 import dz.meals.app.shared.format.formatArabicWeekRange
 import dz.meals.app.shared.format.formatDzd
@@ -564,8 +559,7 @@ fun PlanScreen(
             }
         )
     }
-
-
+}
 
 @Composable
 private fun SlotRow(
