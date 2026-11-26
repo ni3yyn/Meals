@@ -5,6 +5,7 @@ import android.content.Context
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
+import coil3.disk.directory
 import coil3.memory.MemoryCache
 
 class MealsApplication : Application(), SingletonImageLoader.Factory {
@@ -21,7 +22,6 @@ class MealsApplication : Application(), SingletonImageLoader.Factory {
                     .maxSizePercent(0.04)
                     .build()
             }
-            .crossfade(180)
             .build()
 
     override fun onCreate() {
