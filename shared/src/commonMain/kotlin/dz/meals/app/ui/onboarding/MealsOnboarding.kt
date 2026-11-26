@@ -153,6 +153,9 @@ fun MealsOnboarding(
     onLanguageSelected: (String) -> Unit = {}
 ) {
     var budget by rememberSaveable { mutableStateOf(initial.weeklyBudgetDzd.coerceIn(500, 500_000)) }
+    var budgetSliderMax by rememberSaveable {
+        mutableStateOf(maxOf(60_000, initial.weeklyBudgetDzd.coerceIn(500, 500_000)))
+    }
     var servings by rememberSaveable { mutableStateOf(initial.householdServings.coerceIn(1, 12)) }
     var pendingFinish by remember { mutableStateOf<(() -> Unit)?>(null) }
 
@@ -364,12 +367,16 @@ fun MealsOnboarding(
                                         style = MaterialTheme.typography.headlineMedium,
                                         fontWeight = FontWeight.ExtraBold
                                     )
-                                    StepperButton("+") { budget = (budget + 500).coerceAtMost(500_000) }
+                                    StepperButton("+") {
+                                        val nextBudget = (budget + 500).coerceAtMost(500_000)
+                                        budget = nextBudget
+                                        budgetSliderMax = maxOf(budgetSliderMax, nextBudget)
+                                    }
                                 }
                                 Slider(
-                                    value = budget.coerceIn(3_000, 60_000).toFloat(),
+                                    value = budget.coerceIn(500, budgetSliderMax).toFloat(),
                                     onValueChange = { budget = (it / 500f).roundToInt() * 500 },
-                                    valueRange = 3_000f..60_000f,
+                                    valueRange = 500f..budgetSliderMax.toFloat(),
                                     colors = glassSliderColors()
                                 )
                                 FlowRow(

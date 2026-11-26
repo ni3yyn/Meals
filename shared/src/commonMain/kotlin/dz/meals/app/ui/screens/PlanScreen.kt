@@ -9,9 +9,8 @@ import dz.meals.app.ui.components.MealsIconButton
 import dz.meals.app.ui.components.MealsTextButton
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,14 +23,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.mealsSheetDismissAction
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -66,8 +68,11 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.shared.format.formatArabicDate
 import dz.meals.app.shared.format.formatArabicWeekRange
 import dz.meals.app.shared.format.formatDzd
+import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.plus
 
 @Composable
@@ -87,9 +92,18 @@ fun PlanScreen(
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
     val weekDays = remember { (0 until 7).toList() }
+    val today = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault())
+        .date
+    val todayIndexInWeek = today.toEpochDays() - weekStart.toEpochDays()
+    val initialDayIndex = todayIndexInWeek.takeIf { it in weekDays.indices } ?: 0
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
-    var selectedDayIndex by rememberSaveable(weekStartIso) { mutableStateOf(0) }
+    var selectedDayIndex by rememberSaveable(weekStartIso) { mutableStateOf(initialDayIndex) }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
+    val dayChipListState = rememberLazyListState()
+    LaunchedEffect(weekStartIso, selectedDayIndex) {
+        dayChipListState.animateScrollToItem(selectedDayIndex)
+    }
     val recipesById = remember(snapshot.recipes) { snapshot.recipes.associateBy { it.id } }
     val eligibleRecipes = remember(snapshot.recipes, preferences.allergyIds) {
         snapshot.recipes.filter {
@@ -306,12 +320,18 @@ fun PlanScreen(
                     Text("اختاري يوماً", color = MutedInk, style = MaterialTheme.typography.labelMedium)
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                LazyRow(
+                    state = dayChipListState,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    weekDays.forEach { day ->
+                    items(
+                        weekDays,
+                        key = { day -> "week-day-$day" },
+                        contentType = { "week-day-chip" }
+                    ) { day ->
                         val date = weekStart.plus(DatePeriod(days = day))
                         val weekday = formatArabicDate(date).substringBefore(' ')
                         val selected = selectedDayIndex == day
@@ -357,6 +377,25 @@ fun PlanScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.ExtraBold
                                     )
+                                    if (orderedMealSlots.isNotEmpty()) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            orderedMealSlots.forEach { slot ->
+                                                val hasRecipe =
+                                                    mealsByDayAndSlot[day to slot]?.recipeId != null
+                                                Box(
+                                                    Modifier
+                                                        .size(5.dp)
+                                                        .clip(CircleShape)
+                                                        .background(
+                                                            if (hasRecipe) TextAccent else Border.copy(alpha = 0.58f)
+                                                        )
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

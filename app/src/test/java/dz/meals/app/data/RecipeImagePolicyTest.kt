@@ -85,6 +85,44 @@ class RecipeImagePolicyTest {
     }
 
     @Test
+    fun acceptsPublicDomainMarkAndCcZeroWithOfficialUrls() {
+        assertTrue(
+            recipe(
+                license = "Public domain",
+                licenseUrl = "https://creativecommons.org/publicdomain/mark/1.0/"
+            ).hasVerifiedReusableImage()
+        )
+        assertTrue(
+            recipe(
+                license = "CC0 1.0",
+                licenseUrl = "https://creativecommons.org/publicdomain/zero/1.0/"
+            ).hasVerifiedReusableImage()
+        )
+    }
+
+    @Test
+    fun rejectsLicenceNameAndUrlMismatches() {
+        assertFalse(
+            recipe(
+                license = "CC BY 4.0",
+                licenseUrl = "https://creativecommons.org/licenses/by-sa/4.0/"
+            ).hasVerifiedReusableImage()
+        )
+        assertFalse(
+            recipe(
+                license = "CC BY-SA 4.0",
+                licenseUrl = "https://creativecommons.org/licenses/by/4.0/"
+            ).hasVerifiedReusableImage()
+        )
+        assertFalse(
+            recipe(
+                license = "Public domain",
+                licenseUrl = "https://example.com/publicdomain/mark/1.0/"
+            ).hasVerifiedReusableImage()
+        )
+    }
+
+    @Test
     fun rejectsUnknownLicenceEvenWhenSourceMetadataExists() {
         assertFalse(
             recipe(

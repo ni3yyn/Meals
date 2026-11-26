@@ -1,19 +1,26 @@
 package dz.meals.app.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.theme.WarmSurface
@@ -34,6 +41,12 @@ fun MealsRecipeImage(
     val resolvedUrl = remember(imageUrl, imageWidth) {
         optimizedRecipeImageUrl(imageUrl, imageWidth)
     }
+    var imageLoaded by remember(resolvedUrl) { mutableStateOf(false) }
+    val imageAlpha by animateFloatAsState(
+        targetValue = if (imageLoaded) 1f else 0f,
+        animationSpec = tween(durationMillis = 180),
+        label = "recipeImageReveal"
+    )
 
     Box(
         modifier = modifier
@@ -41,18 +54,34 @@ fun MealsRecipeImage(
             .background(WarmSurface),
         contentAlignment = Alignment.Center
     ) {
-        MealsIcon(
-            name = MealsIconName.Meal,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(placeholderIconSize)
-        )
         if (resolvedUrl.isNotBlank()) {
             AsyncImage(
                 model = resolvedUrl,
                 contentDescription = contentDescription,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = imageAlpha },
+                onState = { state ->
+                    imageLoaded = state is AsyncImagePainter.State.Success
+                }
             )
+        }
+        if (imageAlpha < 1f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(WarmSurface.copy(alpha = 1f - imageAlpha)),
+                contentAlignment = Alignment.Center
+            ) {
+                MealsIcon(
+                    name = MealsIconName.Meal,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(placeholderIconSize)
+                        .graphicsLayer { alpha = 1f - imageAlpha }
+                )
+            }
         }
     }
 }

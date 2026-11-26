@@ -117,14 +117,30 @@ fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
     val tokens = normalized.split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
     if (tokens.any { it == "nc" || it == "nd" }) return false
 
-    val permittedName = normalized.startsWith("cc by") ||
-        normalized.startsWith("cc0") ||
-        normalized.contains("public domain")
-    if (!permittedName) return false
+    val officialPrefix = "https://creativecommons.org/"
+    val cleanUrl = url.trim().lowercase().substringBefore('#').substringBefore('?')
+    if (!cleanUrl.startsWith(officialPrefix)) return false
 
-    return normalized.contains("public domain") ||
-        url.startsWith("https://creativecommons.org/licenses/") ||
-        url.startsWith("https://creativecommons.org/publicdomain/")
+    val path = cleanUrl.removePrefix(officialPrefix)
+        .split('/')
+        .filter { it.isNotBlank() }
+    if (path.size < 3 || !path[2].matches(Regex("[0-9]+(?:\\.[0-9]+)?"))) return false
+
+    val hasAttribution = "by" in tokens || "attribution" in tokens
+    val hasShareAlike = "sa" in tokens || "sharealike" in tokens
+    return when (path[0]) {
+        "licenses" -> when (path[1]) {
+            "by" -> hasAttribution && !hasShareAlike
+            "by-sa" -> hasAttribution && hasShareAlike
+            else -> false
+        }
+        "publicdomain" -> when (path[1]) {
+            "zero" -> "cc0" in tokens || "zero" in tokens
+            "mark" -> "public" in tokens && "domain" in tokens
+            else -> false
+        }
+        else -> false
+    }
 }
 
 data class RecipeAttribution(
