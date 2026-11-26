@@ -5,6 +5,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.LayoutDirection
 import dz.meals.app.shared.format.prettyQuantity
 import kotlin.math.abs
+import kotlin.math.roundToLong
 
 /**
  * The active app language, independent of the device language.
@@ -288,19 +289,33 @@ fun isLogicalForwardSwipe(
  * catalogue includes cooking units beyond the pantry's base units, so never
  * leak raw source labels such as "sprig" or "toTaste" into the UI.
  */
+private fun Double.prettyCookingMeasureQuantity(): String {
+    val roundedHundredths = (this * 100.0).roundToLong()
+    val sign = if (roundedHundredths < 0L) "-" else ""
+    val absolute = abs(roundedHundredths)
+    val whole = absolute / 100L
+    val fraction = (absolute % 100L).toString().padStart(2, '0').trimEnd('0')
+    return if (fraction.isEmpty()) "$sign$whole" else "$sign$whole.$fraction"
+}
+
 fun mealsRecipeIngredientQuantity(quantity: Double, unit: String, localeTag: String): String {
     if (!quantity.isFinite()) return "—"
     val normalized = unit.trim().lowercase()
     val english = isMealsEnglish(localeTag)
-    val number = quantity.prettyQuantity()
+    val isSpoonMeasure = normalized in setOf(
+        "spoon", "ملعقة", "tbsp", "tbs", "tbsps", "tablespoon", "tablespoons", "ملعقة كبيرة",
+        "tsp", "tsps", "teaspoon", "teaspoons", "ملعقة صغيرة"
+    )
+    val number = if (isSpoonMeasure) quantity.prettyCookingMeasureQuantity() else quantity.prettyQuantity()
 
     if (normalized in setOf("totaste", "to_taste", "to taste", "حسب الحاجة")) {
         return if (english) "to taste" else "حسب الحاجة"
     }
 
-    fun countedArabic(one: String, two: String, many: String): String = when (quantity) {
-        1.0 -> one
-        2.0 -> two
+    fun countedArabic(one: String, two: String, many: String): String = when {
+        quantity == 1.0 -> one
+        quantity == 2.0 -> two
+        quantity > 0.0 && quantity % 1.0 != 0.0 -> "$number $one"
         else -> "$number $many"
     }
 
@@ -323,6 +338,13 @@ fun mealsRecipeIngredientQuantity(quantity: Double, unit: String, localeTag: Str
         "tsp", "tsps", "teaspoon", "teaspoons", "ملعقة صغيرة" -> if (english) {
             countedEnglish("teaspoon", "teaspoons")
         } else countedArabic("ملعقة صغيرة", "ملعقتان صغيرتان", "ملاعق صغيرة")
+        // The legacy import uses "spoon" for French "à thé" (teaspoon).
+        "spoon" -> if (english) {
+            countedEnglish("teaspoon", "teaspoons")
+        } else countedArabic("ملعقة صغيرة", "ملعقتان صغيرتان", "ملاعق صغيرة")
+        "ملعقة" -> if (english) {
+            countedEnglish("spoon", "spoons")
+        } else countedArabic("ملعقة", "ملعقتان", "ملاعق")
         "cup", "cups", "كوب" -> if (english) {
             countedEnglish("cup", "cups")
         } else countedArabic("كوب", "كوبان", "أكواب")
@@ -364,6 +386,8 @@ fun mealsUnitLabel(unit: String, localeTag: String): String {
             "totaste", "to_taste" -> "to taste"
             "tbsp" -> "tbsp"
             "tsp" -> "tsp"
+            "spoon" -> "tsp"
+            "ملعقة" -> "spoon"
             else -> unit
         }
     } else {
@@ -377,6 +401,7 @@ fun mealsUnitLabel(unit: String, localeTag: String): String {
             "totaste", "to_taste" -> "حسب الحاجة"
             "tbsp" -> "ملعقة كبيرة"
             "tsp" -> "ملعقة صغيرة"
+            "spoon" -> "ملعقة صغيرة"
             else -> unit
         }
     }

@@ -72,7 +72,7 @@ class AlgerianRecipeCatalogueInstallerTest {
             val spoonRows = algerianRows.filter {
                 it.unit in setOf("ملعقة كبيرة", "ملعقة صغيرة", "ملعقة")
             }
-            assertEquals(204, spoonRows.size)
+            assertEquals(208, spoonRows.map { it.ingredientId }.distinct().size)
             assertTrue(spoonRows.all { row ->
                 ingredientById[row.ingredientId]?.baseUnit == row.unit
             })

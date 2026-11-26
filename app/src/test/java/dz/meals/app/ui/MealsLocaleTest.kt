@@ -11,6 +11,7 @@ import dz.meals.app.ui.theme.logicalStartRevealSign
 import dz.meals.app.ui.theme.mealsLayoutDirection
 import dz.meals.app.ui.theme.mealsText
 import dz.meals.app.ui.theme.mealsUnitLabel
+import dz.meals.app.ui.theme.mealsRecipeIngredientQuantity
 import dz.meals.app.ui.theme.normalizeMealsLocaleTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,6 +19,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MealsLocaleTest {
+    @Test
+    fun fractionalCookingMeasuresKeepTheirUnitAndPrecision() {
+        assertEquals("0.25 ملعقة صغيرة", mealsRecipeIngredientQuantity(0.25, "ملعقة صغيرة", "ar"))
+        assertEquals("0.5 ملعقة كبيرة", mealsRecipeIngredientQuantity(0.5, "ملعقة كبيرة", "ar"))
+        assertEquals("0.25 ملعقة", mealsRecipeIngredientQuantity(0.25, "ملعقة", "ar"))
+        assertEquals("ملعقة صغيرة", mealsRecipeIngredientQuantity(1.0, "spoon", "ar"))
+        assertEquals("0.25 teaspoon", mealsRecipeIngredientQuantity(0.25, "spoon", "en"))
+        assertEquals("0.3 حبات", mealsRecipeIngredientQuantity(0.3, "piece", "ar"))
+    }
+
     @Test
     fun supportedLanguageTagsNormalizeWithoutDependingOnDeviceLocale() {
         assertEquals(DEFAULT_MEALS_LOCALE_TAG, normalizeMealsLocaleTag("ar"))
