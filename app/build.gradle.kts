@@ -235,6 +235,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     implementation(project(":shared"))
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
