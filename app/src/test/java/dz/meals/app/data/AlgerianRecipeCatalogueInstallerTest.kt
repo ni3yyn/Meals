@@ -65,6 +65,21 @@ class AlgerianRecipeCatalogueInstallerTest {
             assertEquals(2_175, dao.getRecipeIngredients().count {
                 it.recipeId.startsWith(AlgerianRecipeCatalogueInstaller.RECIPE_ID_PREFIX)
             })
+            val algerianRows = dao.getRecipeIngredients().filter {
+                it.recipeId.startsWith(AlgerianRecipeCatalogueInstaller.RECIPE_ID_PREFIX)
+            }
+            val ingredientById = dao.getIngredients().associateBy { it.id }
+            val spoonRows = algerianRows.filter {
+                it.unit in setOf("ملعقة كبيرة", "ملعقة صغيرة", "ملعقة")
+            }
+            assertEquals(204, spoonRows.size)
+            assertTrue(spoonRows.all { row ->
+                ingredientById[row.ingredientId]?.baseUnit == row.unit
+            })
+            assertTrue(algerianRows.none { row ->
+                row.unit == "piece" &&
+                    ingredientById[row.ingredientId]?.nameAr?.startsWith("ملعقة") == true
+            })
             assertEquals(1_672, dao.getRecipeSteps().count {
                 it.recipeId.startsWith(AlgerianRecipeCatalogueInstaller.RECIPE_ID_PREFIX)
             })

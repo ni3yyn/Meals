@@ -365,7 +365,7 @@ class AlgerianRecipeCatalogueInstaller internal constructor(
         const val RECIPE_ID_PREFIX = PlanCuisinePolicy.ALGERIAN_RECIPE_ID_PREFIX
         const val EXPECTED_RECIPE_COUNT = 187
         const val ROOM_SCHEMA_VERSION = 17
-        const val REVISION = "99fca3fd4df7ff061d37779ecbb79210a980320da0f17d84cd6e0577b73c6dad"
+        const val REVISION = "8a4c2b578a7129cb1b1c9da8b49a492fee920b12563da48345ecf8359e872bbe"
 
         private const val FORMAT = "midati-room-entity-import"
         private const val FORMAT_VERSION = 1
