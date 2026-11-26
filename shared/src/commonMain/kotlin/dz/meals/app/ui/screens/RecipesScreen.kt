@@ -64,6 +64,10 @@ import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.hasVerifiedReusableImage
+import dz.meals.app.data.recipeImageCredit
+import dz.meals.app.data.recipeImageLicense
+import dz.meals.app.data.recipeImageLicenseUrl
+import dz.meals.app.data.recipeImageSourceUrl
 import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.data.RecipeImageCandidate
 import dz.meals.app.data.scaleRecipeIngredientQuantity
@@ -906,40 +910,46 @@ fun RecipesScreen(
                             }
                         }
                     }
-                    if (detail.hasVerifiedReusableImage() &&
-                        (detail.imageAuthor.isNotBlank() || detail.imageLicense.isNotBlank())) {
-                        item {
-                            Text(
-                                "الصورة: " + listOf(detail.imageCredit.ifBlank { detail.imageAuthor }, detail.imageLicense)
-                                    .filter { it.isNotBlank() }
-                                    .joinToString(" · "),
-                                color = MutedInk,
-                                style = MaterialTheme.typography.labelSmall
-                            )
+                    if (detail.hasVerifiedReusableImage()) {
+                        val imageCredit = detail.recipeImageCredit()
+                        val imageLicense = detail.recipeImageLicense()
+                        val imageSourceUrl = detail.recipeImageSourceUrl()
+                        val imageLicenseUrl = detail.recipeImageLicenseUrl()
+
+                        if (imageCredit.isNotBlank() || imageLicense.isNotBlank()) {
+                            item {
+                                Text(
+                                    "الصورة: " + listOf(imageCredit, imageLicense)
+                                        .filter { it.isNotBlank() }
+                                        .joinToString(" · "),
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
                         }
-                    }
-                    if (detail.imageSourcePageUrl.isNotBlank()) {
-                        item {
-                            Text(
-                                "فتح مصدر الصورة",
-                                color = dz.meals.app.ui.theme.TextAccent,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.clickable {
-                                    runCatching { uriHandler.openUri(detail.imageSourcePageUrl) }
-                                }
-                            )
+                        if (imageSourceUrl.isNotBlank()) {
+                            item {
+                                Text(
+                                    "فتح مصدر الصورة",
+                                    color = dz.meals.app.ui.theme.TextAccent,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.clickable {
+                                        runCatching { uriHandler.openUri(imageSourceUrl) }
+                                    }
+                                )
+                            }
                         }
-                    }
-                    if (detail.hasVerifiedReusableImage() && detail.imageLicenseUrl.isNotBlank()) {
-                        item {
-                            Text(
-                                "عرض ترخيص الصورة: " + detail.imageLicense,
-                                color = MutedInk,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.clickable {
-                                    runCatching { uriHandler.openUri(detail.imageLicenseUrl) }
-                                }
-                            )
+                        if (imageLicenseUrl.isNotBlank() && imageLicense.isNotBlank()) {
+                            item {
+                                Text(
+                                    "عرض ترخيص الصورة: $imageLicense",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.clickable {
+                                        runCatching { uriHandler.openUri(imageLicenseUrl) }
+                                    }
+                                )
+                            }
                         }
                     }
                     item { Text(detail.descriptionAr, color = MutedInk) }

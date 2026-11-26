@@ -38,10 +38,12 @@ fun MealsRecipeImage(
     cornerRadius: Dp = 14.dp,
     placeholderIconSize: Dp = 30.dp
 ) {
-    val resolvedUrl = remember(imageUrl, imageWidth) {
-        optimizedRecipeImageUrl(imageUrl, imageWidth)
+    val directUrl = remember(imageUrl) {
+        imageUrl.trim().takeIf { it.startsWith("https://", ignoreCase = true) }.orEmpty()
     }
-    var imageLoaded by remember(resolvedUrl) { mutableStateOf(false) }
+    var fallbackUrl by remember(directUrl) { mutableStateOf<String?>(null) }
+    var imageLoaded by remember(directUrl) { mutableStateOf(false) }
+    val requestUrl = fallbackUrl ?: directUrl
     val imageAlpha by animateFloatAsState(
         targetValue = if (imageLoaded) 1f else 0f,
         animationSpec = tween(durationMillis = 180),
@@ -54,16 +56,26 @@ fun MealsRecipeImage(
             .background(WarmSurface),
         contentAlignment = Alignment.Center
     ) {
-        if (resolvedUrl.isNotBlank()) {
+        if (requestUrl.isNotBlank()) {
             AsyncImage(
-                model = resolvedUrl,
+                model = requestUrl,
                 contentDescription = contentDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { alpha = imageAlpha },
                 onState = { state ->
-                    imageLoaded = state is AsyncImagePainter.State.Success
+                    when (state) {
+                        is AsyncImagePainter.State.Success -> imageLoaded = true
+                        is AsyncImagePainter.State.Error -> {
+                            imageLoaded = false
+                            if (fallbackUrl == null) {
+                                fallbackUrl = proxyFallbackRecipeImageUrl(directUrl, imageWidth)
+                                    .takeIf { it.isNotBlank() }
+                            }
+                        }
+                        else -> imageLoaded = false
+                    }
                 }
             )
         }
@@ -86,9 +98,9 @@ fun MealsRecipeImage(
     }
 }
 
-private fun optimizedRecipeImageUrl(sourceUrl: String, width: Int): String {
+private fun proxyFallbackRecipeImageUrl(sourceUrl: String, width: Int): String {
     if (!sourceUrl.startsWith("https://", ignoreCase = true)) return ""
-    if (sourceUrl.startsWith("https://images.weserv.nl/", ignoreCase = true)) return sourceUrl
+    if (sourceUrl.startsWith("https://images.weserv.nl/", ignoreCase = true)) return ""
 
     val encodedUrl = buildString {
         val hex = "0123456789ABCDEF"
@@ -107,5 +119,5 @@ private fun optimizedRecipeImageUrl(sourceUrl: String, width: Int): String {
             }
         }
     }
-    return "https://images.weserv.nl/?url=$encodedUrl&w=${width.coerceIn(240, 960)}&q=60&output=webp"
+    return "https://images.weserv.nl/?url=$encodedUrl&w=${width.coerceIn(240, 960)}&q=75&output=webp"
 }

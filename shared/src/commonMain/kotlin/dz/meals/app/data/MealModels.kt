@@ -101,17 +101,91 @@ data class MealRecipe(
 )
 
 /**
- * Returns true only for a reusable Wikimedia Commons image with complete attribution.
- * Unverified catalogue URLs are deliberately not surfaced in the app.
+ * Recipe images are enabled only for catalogue sources whose image rights and
+ * attribution are represented in the imported record, or for verified Commons
+ * image overrides selected by the user. Unknown sources stay hidden.
  */
 fun MealRecipe.hasVerifiedReusableImage(): Boolean {
-    if (!imageUrl.startsWith("https://upload.wikimedia.org/", ignoreCase = true)) return false
-    if (!imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true)) return false
-    if (imageAuthor.isBlank() || imageCredit.isBlank()) return false
-    return isReusableRecipeImageLicense(imageLicense, imageLicenseUrl)
+    if (!imageUrl.startsWith("https://", ignoreCase = true)) return false
+
+    // User-selected Commons overrides carry their own image-level licence and credit.
+    if (isHttpsImageAtHost(imageUrl, "upload.wikimedia.org", "/")) {
+        return imageSourcePageUrl.startsWith(
+            "https://commons.wikimedia.org/wiki/File:",
+            ignoreCase = true
+        ) &&
+            imageAuthor.isNotBlank() &&
+            imageCredit.isNotBlank() &&
+            isReusableRecipeImageLicense(imageLicense, imageLicenseUrl)
+    }
+
+    val source = attribution ?: return false
+    return when {
+        id.startsWith("focus:") -> {
+            isHttpsImageAtHost(
+                imageUrl,
+                "ylushaayhmufwdmuqafv.supabase.co",
+                "/storage/v1/object/public/focus-recipes/"
+            ) &&
+                isHttpsImageAtHost(source.sourceUrl, "focusathletics.app", "/recetas/") &&
+                source.sourceTitle.startsWith("Focus Recipes") &&
+                source.credit.startsWith("Focus Recipes") &&
+                source.sourceLicense == "CC BY 4.0" &&
+                source.license == "CC BY 4.0" &&
+                source.licenseUrl == "https://creativecommons.org/licenses/by/4.0/" &&
+                isReusableRecipeImageLicense(source.license, source.licenseUrl)
+        }
+
+        id.startsWith("unitools:") -> {
+            val photoLicenseUrl = imageLicenseUrl.ifBlank {
+                canonicalRecipeImageLicenseUrl(imageLicense).orEmpty()
+            }
+            val photoNeedsAuthor = imageLicense.trim().startsWith("CC BY", ignoreCase = true)
+            isHttpsImageAtHost(imageUrl, "theunitools.com", "/recipes/") &&
+                isHttpsImageAtHost(source.sourceUrl, "theunitools.com", "/en/data") &&
+                source.sourceTitle.startsWith("UniTools") &&
+                source.credit.startsWith("UniTools") &&
+                source.sourceLicense == "CC BY-SA 4.0" &&
+                source.license == "CC BY-SA 4.0" &&
+                source.licenseUrl == "https://creativecommons.org/licenses/by-sa/4.0/" &&
+                isReusableRecipeImageLicense(source.license, source.licenseUrl) &&
+                isReusableRecipeImageLicense(imageLicense, photoLicenseUrl) &&
+                (!photoNeedsAuthor || imageAuthor.isNotBlank())
+        }
+
+        else -> false
+    }
 }
 
-/** The same licence rule is used both when saving an image and when deciding to display it. */
+/** The URL host and path must both match; lookalike domains are never accepted. */
+private fun isHttpsImageAtHost(url: String, expectedHost: String, expectedPathPrefix: String): Boolean {
+    val normalized = url.trim()
+    if (!normalized.startsWith("https://", ignoreCase = true)) return false
+    val remainder = normalized.substringAfter("https://", missingDelimiterValue = "")
+    val pathStart = remainder.indexOf('/')
+    if (pathStart <= 0) return false
+    val authority = remainder.substring(0, pathStart)
+    val path = remainder.substring(pathStart).substringBefore('?').substringBefore('#')
+    return authority.equals(expectedHost, ignoreCase = true) &&
+        path.startsWith(expectedPathPrefix, ignoreCase = true)
+}
+
+/** Converts a known Creative Commons short name to its canonical public licence URL. */
+fun canonicalRecipeImageLicenseUrl(name: String): String? {
+    val normalized = name.trim().uppercase()
+    if (normalized == "CC0" || normalized == "CC0 1.0") {
+        return "https://creativecommons.org/publicdomain/zero/1.0/"
+    }
+    if (normalized == "PUBLIC DOMAIN") {
+        return "https://creativecommons.org/publicdomain/mark/1.0/"
+    }
+    val match = Regex("^CC BY(-SA)? (1\\.0|2\\.0|2\\.5|3\\.0|4\\.0)$")
+        .matchEntire(normalized) ?: return null
+    val licenceType = if (match.groupValues[1].isBlank()) "by" else "by-sa"
+    return "https://creativecommons.org/licenses/$licenceType/${match.groupValues[2]}/"
+}
+
+/** The same licence rule is used when saving, displaying and attributing an image. */
 fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
     val normalized = name.trim().lowercase()
     val tokens = normalized.split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
@@ -142,6 +216,35 @@ fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
         else -> false
     }
 }
+
+/** Image rights shown alongside the photo, respecting per-photo overrides. */
+fun MealRecipe.recipeImageCredit(): String = when {
+    imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
+        imageCredit.ifBlank { imageAuthor }
+    id.startsWith("focus:") -> attribution?.credit.orEmpty()
+    id.startsWith("unitools:") -> imageAuthor.ifBlank { attribution?.credit.orEmpty() }
+    else -> ""
+}
+
+fun MealRecipe.recipeImageLicense(): String = when {
+    imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
+        imageLicense
+    id.startsWith("focus:") -> attribution?.license.orEmpty()
+    id.startsWith("unitools:") -> imageLicense
+    else -> ""
+}
+
+fun MealRecipe.recipeImageLicenseUrl(): String = when {
+    imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
+        imageLicenseUrl
+    id.startsWith("focus:") -> attribution?.licenseUrl.orEmpty()
+    id.startsWith("unitools:") ->
+        imageLicenseUrl.ifBlank { canonicalRecipeImageLicenseUrl(imageLicense).orEmpty() }
+    else -> ""
+}
+
+fun MealRecipe.recipeImageSourceUrl(): String =
+    imageSourcePageUrl.ifBlank { attribution?.sourceUrl.orEmpty() }
 
 data class RecipeAttribution(
     val sourceTitle: String,

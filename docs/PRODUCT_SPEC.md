@@ -13,7 +13,7 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 - Ingredient catalogue with stable IDs, Arabic/French labels, common Arabic/French/Darija aliases and base units.
 - Seed-catalogue validation checks unique IDs, ingredient existence, normalized units, positive amounts and allergen metadata coverage.
 - Search by Arabic/French recipe name, description and ingredient aliases.
-- Recipe photos appear in browse, planner and selection cards only when the image has a verified reusable licence and complete attribution; imported image URLs without verified redistribution rights are not shown.
+- Recipe photos appear in browse, planner and selection cards for the licensed Focus and UniTools catalogue sources and verified Wikimedia Commons overrides; the original source URL is tried first, with the image proxy used only after a direct-load failure. Unverified image sources remain hidden.
 - Seven-day planner with configurable breakfast/lunch/dinner slots, manual recipe assignment, serving adjustments and meal locking.
 - Regeneration preserves locked, cooked and manually selected/cleared slots by default; an explicit “fill empty slots only” option preserves all already-populated slots. A new run replaces only the meal slots selected for that run, leaving other slots and weeks intact.
 - Saved weeks display their own meal-slot selection rather than silently adopting the current defaults for future plans.
