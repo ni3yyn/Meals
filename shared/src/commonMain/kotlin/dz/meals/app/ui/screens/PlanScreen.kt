@@ -68,7 +68,7 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.shared.format.formatArabicDate
 import dz.meals.app.shared.format.formatArabicWeekRange
 import dz.meals.app.shared.format.formatDzd
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -96,7 +96,7 @@ fun PlanScreen(
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
     val todayIndexInWeek = today.toEpochDays() - weekStart.toEpochDays()
-    val initialDayIndex = todayIndexInWeek.takeIf { it in weekDays.indices } ?: 0
+    val initialDayIndex = todayIndexInWeek.takeIf { it in 0L..6L }?.toInt() ?: 0
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
     var selectedDayIndex by rememberSaveable(weekStartIso) { mutableStateOf(initialDayIndex) }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
