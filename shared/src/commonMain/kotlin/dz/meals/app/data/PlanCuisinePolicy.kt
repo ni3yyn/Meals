@@ -64,7 +64,8 @@ object PlanCuisinePolicy {
         "dessert", "desserts", "patisserie", "patisseries", "gateau", "gateaux",
         "tarte", "tartes", "cookie", "cookies", "biscuit", "biscuits",
         "confiserie", "confiseries", "pudding", "brownie", "cake", "muffin",
-        "glace", "glaces", "sorbet", "sorbets", "viennoiserie", "viennoiseries", "حلويات", "حلوى", "حلوة", "كعك", "كيك",
+        "glace", "glaces", "sorbet", "sorbets", "viennoiserie", "viennoiseries",
+        "حلويات", "حلوى", "حلوة", "كعك", "كيك", "كيكة", "كيكات", "كعكة", "كعكات",
         "قاطو", "طورطة", "تارت", "بسكويت", "بسكوي"
     )
 
