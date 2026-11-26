@@ -55,7 +55,7 @@ class PreferencesStore(context: Context) {
                 preferredShop = values[Keys.preferredShop] ?: "",
                 householdServings = values[Keys.householdServings] ?: 3,
                 allergyIds = values[Keys.allergyIds] ?: emptySet(),
-                mealSlots = (values[Keys.mealSlots] ?: setOf("breakfast", "lunch", "dinner"))
+                mealSlots = (values[Keys.mealSlots] ?: setOf("lunch", "dinner"))
                     .intersect(setOf("breakfast", "lunch", "dinner")),
                 dislikedIngredientIds = (values[Keys.dislikedIngredientIds] ?: emptySet())
                     .mapTo(linkedSetOf(), foodIdentityResolver::canonicalId),
@@ -75,7 +75,7 @@ class PreferencesStore(context: Context) {
         wilaya: String,
         householdServings: Int,
         allergyIds: Set<String>,
-        mealSlots: Set<String> = setOf("breakfast", "lunch", "dinner"),
+        mealSlots: Set<String> = setOf("lunch", "dinner"),
         dislikedIngredientIds: Set<String> = emptySet(),
         dietPattern: String = "none",
         maxCookingMinutes: Int = 60,

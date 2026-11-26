@@ -40,7 +40,7 @@ This is a native Android app for Algeria. It runs as a local-only app and starts
 
 ### First launch
 1. Seed the local recipe and ingredient catalogue into Room on first run.
-2. Show a first-run setup for budget, wilaya, household portions, meal slots, allergies and dietary preferences.
+2. Show a three-screen first-run setup for weekly budget and household size. New installations default to lunch and dinner; optional dietary, allergy, cooking-time, ingredient and local-shopping preferences are not required to enter the app.
 3. Save setup completion locally, then open the weekly plan.
 4. The setup can be dismissed and revisited from Settings. No account, phone number, location permission or network access is required.
 

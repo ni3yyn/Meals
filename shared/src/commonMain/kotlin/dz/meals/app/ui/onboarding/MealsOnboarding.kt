@@ -1,9 +1,7 @@
 package dz.meals.app.ui.onboarding
 
 import dz.meals.app.ui.components.MealsText as Text
-import dz.meals.app.ui.theme.LocalMealsLocaleTag
 import dz.meals.app.ui.theme.isLogicalForwardSwipe
-import dz.meals.app.ui.theme.mealsText
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -85,7 +83,6 @@ import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MEALS_BACKGROUND_CLASSIC
 import dz.meals.app.data.MEALS_BACKGROUND_PINK
 import dz.meals.app.data.MEALS_BACKGROUND_BLUE
-import dz.meals.app.data.IngredientMaster
 import dz.meals.app.shared.format.formatDzd
 import dz.meals.app.shared.generated.resources.Res
 import dz.meals.app.shared.generated.resources.meals_kitchen_background
@@ -93,15 +90,12 @@ import dz.meals.app.shared.generated.resources.meals_kitchen_background_pink
 import dz.meals.app.shared.generated.resources.meals_kitchen_background_blue
 import dz.meals.app.ui.components.MealsAnimatedCount
 import dz.meals.app.ui.components.MealsCard
-import dz.meals.app.ui.components.MealsCheckRow
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsGlassDot
 import dz.meals.app.ui.components.MealsLiquidGlassProgressBar
 import dz.meals.app.ui.components.MealsIconButton
-import dz.meals.app.ui.components.MealsLiquidGlassTextField
 import dz.meals.app.ui.components.MealsPressable
 import dz.meals.app.ui.components.MealsPrimaryButton
-import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.ui.icons.MealsIcon
 import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.theme.Cream
@@ -121,23 +115,13 @@ import kotlin.math.sin
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** Everything the first-run flow collects; mirrors the arguments of `saveSettings`. */
+/** The two essential values collected during first-run setup. */
 data class MealsOnboardingResult(
     val weeklyBudgetDzd: Int,
-    val wilaya: String,
-    val householdServings: Int,
-    val allergyIds: Set<String>,
-    val mealSlots: Set<String>,
-    val dislikedIngredientIds: Set<String>,
-    val dietPattern: String,
-    val maxCookingMinutes: Int,
-    val budgetBufferPercent: Int,
-    val commune: String,
-    val shoppingChannel: String,
-    val preferredShop: String
+    val householdServings: Int
 )
 
-private const val PageCount = 8
+private const val PageCount = 3
 private const val LastPage = PageCount - 1
 
 /** A small floating glass bubble that orbits the hero illustration. */
@@ -162,30 +146,14 @@ private class Satellite(
 @Composable
 fun MealsOnboarding(
     initial: AppPreferences,
-    ingredients: List<IngredientMaster>,
-    onQuickStart: (budget: Int, servings: Int) -> Unit,
     onFinish: (MealsOnboardingResult) -> Unit,
     modifier: Modifier = Modifier,
     backHandler: @Composable (enabled: Boolean, onBack: () -> Unit) -> Unit = { _, _ -> },
     appLanguage: String = initial.appLanguage,
     onLanguageSelected: (String) -> Unit = {}
 ) {
-    val appLocaleTag = LocalMealsLocaleTag.current
-    var budget by rememberSaveable { mutableStateOf(initial.weeklyBudgetDzd.coerceAtLeast(500)) }
+    var budget by rememberSaveable { mutableStateOf(initial.weeklyBudgetDzd.coerceIn(500, 500_000)) }
     var servings by rememberSaveable { mutableStateOf(initial.householdServings.coerceIn(1, 12)) }
-    var wilaya by rememberSaveable { mutableStateOf(initial.wilaya) }
-    var commune by rememberSaveable { mutableStateOf(initial.commune) }
-    var channel by rememberSaveable { mutableStateOf(initial.shoppingChannel) }
-    var shop by rememberSaveable { mutableStateOf(initial.preferredShop) }
-    var diet by rememberSaveable { mutableStateOf(initial.dietPattern) }
-    var maxMinutes by rememberSaveable { mutableStateOf(initial.maxCookingMinutes.coerceIn(10, 240)) }
-    var buffer by rememberSaveable { mutableStateOf(initial.budgetBufferPercent.coerceIn(0, 30)) }
-    var noKnownAllergies by rememberSaveable { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf("") }
-    // Sets are kept in plain state: they are small and only matter during this one session.
-    var slots by remember { mutableStateOf(initial.mealSlots) }
-    var allergies by remember { mutableStateOf(initial.allergyIds) }
-    var dislikes by remember { mutableStateOf(initial.dislikedIngredientIds) }
     var pendingFinish by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     // One frame clock drives every floating bubble and vector illustration.
@@ -218,10 +186,8 @@ fun MealsOnboarding(
     }
 
     val valid = when (current) {
-        1 -> budget > 0
+        1 -> budget >= 500
         2 -> servings in 1..12
-        3 -> slots.isNotEmpty()
-        5 -> maxMinutes in 10..240 && buffer in 0..30
         else -> true
     }
 
@@ -362,7 +328,7 @@ fun MealsOnboarding(
                             0 -> StepLayout(
                                 pageOffset = pageOffset,
                                 title = "أهلاً بك في Midati",
-                                subtitle = "نرتّب لكِ وجبات الأسبوع وقائمة التسوق حسب ميزانية أسرتك.",
+                                subtitle = "نساعدك على تنظيم وجبات الأسبوع وقائمة التسوق بما يناسب ميزانية الأسرة.",
                                 art = MealsArt.Bowl,
                                 satellites = listOf(
                                     Satellite(-0.42f, -0.30f, 0.24f, 0.10f, MealsIconName.Plan),
@@ -370,9 +336,9 @@ fun MealsOnboarding(
                                     Satellite(0.36f, -0.42f, 0.16f, 0.30f, MealsIconName.Cookbook)
                                 )
                             ) {
-                                InfoRow(MealsIconName.Lock, "بدون حساب أو رقم هاتف", "تبقى تفضيلاتك على هذا الجهاز فقط.")
-                                InfoRow(MealsIconName.Check, "يعمل بدون إنترنت", "الخطة وقائمة التسوق متاحتان دائماً.")
-                                InfoRow(MealsIconName.Wallet, "ضمن ميزانيتك", "نختار الوصفات بما يناسب ما تريدين إنفاقه.")
+                                InfoRow(MealsIconName.Lock, "بدون حساب أو رقم هاتف", "تُحفظ تفضيلاتك على هذا الجهاز فقط.")
+                                InfoRow(MealsIconName.Check, "يعمل بدون إنترنت", "الخطة وقائمة التسوق متاحتان حتى دون اتصال.")
+                                InfoRow(MealsIconName.Wallet, "ضمن ميزانيتك", "نقترح وصفات تناسب ميزانيتك.")
                             }
 
                             1 -> StepLayout(
@@ -418,8 +384,8 @@ fun MealsOnboarding(
 
                             2 -> StepLayout(
                                 pageOffset = pageOffset,
-                                title = "كم شخصاً نطبخ له؟",
-                                subtitle = "نضبط الكميات وقائمة التسوق على عدد الحصص.",
+                                title = "كم فرداً في الأسرة؟",
+                                subtitle = "نضبط كميات الوصفات وقائمة التسوق وفقاً لعدد أفراد الأسرة.",
                                 art = MealsArt.Family,
                                 artCount = servings,
                                 satellites = listOf(
@@ -440,225 +406,14 @@ fun MealsOnboarding(
                                             style = MaterialTheme.typography.displayMedium,
                                             fontWeight = FontWeight.ExtraBold
                                         )
-                                        Text("أشخاص نطبخ لهم عادةً", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                                        Text(
+                                            "أفراد الأسرة",
+                                            color = MutedInk,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
                                     }
                                     StepperButton("+") { servings = (servings + 1).coerceAtMost(12) }
                                 }
-                                MealsCheckRow(
-                                    title = "لا توجد حساسية غذائية معروفة",
-                                    supportingText = "إن وُجدت حساسية أو كان هناك شك، تابعي الخطوات التالية.",
-                                    checked = noKnownAllergies,
-                                    onCheckedChange = { noKnownAllergies = it }
-                                )
-                                if (noKnownAllergies) {
-                                    MealsSecondaryButton(
-                                        label = "إعداد سريع بالقيم الافتراضية",
-                                        onClick = { pendingFinish = { onQuickStart(budget, servings) } },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        enabled = budget > 0 && servings in 1..12
-                                    )
-                                }
-                            }
-
-                            3 -> StepLayout(
-                                pageOffset = pageOffset,
-                                title = "ما الوجبات التي نخطط لها؟",
-                                subtitle = "اختاري ما تحتاجينه فقط، ويمكنك تغييره لاحقاً.",
-                                art = MealsArt.Lunch,
-                                satellites = listOf(
-                                    Satellite(-0.44f, -0.26f, 0.26f, 0.10f, art = MealsArt.Breakfast),
-                                    Satellite(0.44f, 0.26f, 0.26f, 0.55f, art = MealsArt.Dinner)
-                                )
-                            ) {
-                                SlotTile(MealsArt.Breakfast, "الفطور", "وجبة الصباح", "breakfast" in slots) {
-                                    slots = if ("breakfast" in slots) slots - "breakfast" else slots + "breakfast"
-                                }
-                                SlotTile(MealsArt.Lunch, "الغداء", "الوجبة الرئيسية", "lunch" in slots) {
-                                    slots = if ("lunch" in slots) slots - "lunch" else slots + "lunch"
-                                }
-                                SlotTile(MealsArt.Dinner, "العشاء", "وجبة المساء", "dinner" in slots) {
-                                    slots = if ("dinner" in slots) slots - "dinner" else slots + "dinner"
-                                }
-                            }
-
-                            4 -> StepLayout(
-                                pageOffset = pageOffset,
-                                title = "هل هناك ما يجب تجنبه؟",
-                                subtitle = "نستبعد الوصفات التي قد لا تناسب عائلتك.",
-                                art = MealsArt.Allergy,
-                                satellites = listOf(
-                                    Satellite(-0.42f, 0.30f, 0.20f, 0.20f, MealsIconName.Info),
-                                    Satellite(0.44f, -0.28f, 0.20f, 0.60f, MealsIconName.Check)
-                                )
-                            ) {
-                                Text("الحساسية الغذائية", style = MaterialTheme.typography.titleMedium, color = Ink)
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    listOf(
-                        "gluten" to "الغلوتين",
-                        "egg" to "البيض",
-                        "milk" to "الحليب",
-                        "tree_nuts" to "المكسرات",
-                        "celery" to "الكرفس",
-                        "sulphites" to "الكبريتيت",
-                        "fish" to "السمك",
-                        "mustard" to "الخردل",
-                        "crustaceans" to "القشريات",
-                        "soy" to "فول الصويا",
-                        "sesame" to "السمسم",
-                        "molluscs" to "الرخويات",
-                        "peanuts" to "الفول السوداني"
-                    ).forEach { (id, label) ->
-                                        BubbleChip(label, id in allergies) {
-                                            allergies = if (id in allergies) allergies - id else allergies + id
-                                        }
-                                    }
-                                }
-                                Text("النمط الغذائي", style = MaterialTheme.typography.titleMedium, color = Ink)
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    listOf("none" to "عادي", "vegetarian" to "نباتي", "vegan" to "نباتي صرف").forEach { (id, label) ->
-                                        BubbleChip(label, diet == id) { diet = id }
-                                    }
-                                }
-                            }
-
-                            5 -> StepLayout(
-                                pageOffset = pageOffset,
-                                title = "كم تفضلين أن تطبخي؟",
-                                subtitle = "نختار وصفات تناسب وقتك وميزانيتك.",
-                                art = MealsArt.Clock,
-                                satellites = listOf(
-                                    Satellite(-0.42f, -0.28f, 0.22f, 0.15f, MealsIconName.Clock),
-                                    Satellite(0.44f, 0.30f, 0.20f, 0.60f, MealsIconName.Meal)
-                                )
-                            ) {
-                                Text("أقصى وقت للطبخ", style = MaterialTheme.typography.titleMedium, color = Ink)
-                                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    MealsAnimatedCount(
-                                        value = maxMinutes.toString(),
-                                        color = Ink,
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.ExtraBold
-                                    )
-                                    Text("دقيقة", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-                                }
-                                Slider(
-                                    value = maxMinutes.toFloat(),
-                                    onValueChange = { maxMinutes = ((it / 5f).roundToInt() * 5).coerceIn(10, 240) },
-                                    valueRange = 10f..240f,
-                                    colors = glassSliderColors()
-                                )
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    listOf(20, 30, 45, 60, 90).forEach { m ->
-                                        BubbleChip("$m د", maxMinutes == m) { maxMinutes = m }
-                                    }
-                                }
-                                Text("هامش أمان الميزانية", style = MaterialTheme.typography.titleMedium, color = Ink)
-                                Text(
-                                    "نحتفظ بنسبة $buffer% كاحتياط حتى لا تتجاوزي ميزانيتك.",
-                                    color = MutedInk,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Slider(
-                                    value = buffer.toFloat(),
-                                    onValueChange = { buffer = it.roundToInt().coerceIn(0, 30) },
-                                    valueRange = 0f..30f,
-                                    colors = glassSliderColors()
-                                )
-                            }
-
-                            6 -> StepLayout(
-                                pageOffset = pageOffset,
-                                title = "مكونات تفضلين تقليلها؟",
-                                subtitle = "اختياري، وهي تفضيلات مرنة وليست قيود حساسية.",
-                                art = MealsArt.Basket,
-                                satellites = listOf(
-                                    Satellite(-0.42f, 0.30f, 0.20f, 0.25f, MealsIconName.Search),
-                                    Satellite(0.44f, -0.28f, 0.20f, 0.65f, MealsIconName.Pantry)
-                                )
-                            ) {
-                                MealsLiquidGlassTextField(
-                                    value = query,
-                                    onValueChange = { query = it },
-                                    label = { Text("ابحثي عن مكوّن") }
-                                )
-                                val visible = remember(query, ingredients, dislikes, appLocaleTag) {
-                                    val matches = ingredients.filter { ing ->
-                                        !ing.id.startsWith("orc-ing-") && (
-                                            query.isBlank() ||
-                                                ing.nameAr.contains(query, true) ||
-                                                    mealsText(ing.nameAr, appLocaleTag).contains(query, true) ||
-                                                ing.nameFr.contains(query, true) ||
-                                                ing.aliases.any { it.contains(query, true) }
-                                        )
-                                    }
-                                    (matches.filter { it.id in dislikes } + matches.filter { it.id !in dislikes }).take(18)
-                                }
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    visible.forEach { ing ->
-                                        BubbleChip(ing.nameAr, ing.id in dislikes) {
-                                            dislikes = if (ing.id in dislikes) dislikes - ing.id else dislikes + ing.id
-                                        }
-                                    }
-                                }
-                                if (dislikes.isNotEmpty()) {
-                                    Text(
-                                        "تم اختيار ${dislikes.size}",
-                                        color = TextAccent,
-                                        style = MaterialTheme.typography.labelMedium
-                                    )
-                                }
-                            }
-
-                            else -> StepLayout(
-                                pageOffset = pageOffset,
-                                title = "أين تتسوقين عادة؟",
-                                subtitle = "تساعدنا على تنظيم قائمة التسوق. لا نستخدم موقعك تلقائياً.",
-                                art = MealsArt.Market,
-                                satellites = listOf(
-                                    Satellite(-0.42f, -0.28f, 0.22f, 0.10f, MealsIconName.Basket),
-                                    Satellite(0.44f, 0.30f, 0.18f, 0.55f, MealsIconName.Wallet)
-                                )
-                            ) {
-                                MealsLiquidGlassTextField(
-                                    value = wilaya,
-                                    onValueChange = { wilaya = it.take(40) },
-                                    label = { Text("الولاية") }
-                                )
-                                MealsLiquidGlassTextField(
-                                    value = commune,
-                                    onValueChange = { commune = it.take(60) },
-                                    label = { Text("البلدية (اختياري)") }
-                                )
-                                Text("مكان التسوق المعتاد", style = MaterialTheme.typography.titleMedium, color = Ink)
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    listOf(
-                                        "market" to "السوق", "grocery" to "بقالة", "supermarket" to "متجر كبير",
-                                        "butcher" to "ملحمة", "poultry" to "دجاج", "fishmonger" to "سمك",
-                                        "bakery" to "مخبزة", "other" to "أخرى"
-                                    ).forEach { (id, label) ->
-                                        BubbleChip(label, channel == id) { channel = id }
-                                    }
-                                }
-                                MealsLiquidGlassTextField(
-                                    value = shop,
-                                    onValueChange = { shop = it.take(80) },
-                                    label = { Text("اسم المحل المفضل (اختياري)") }
-                                )
                             }
                         }
                     }
@@ -666,7 +421,7 @@ fun MealsOnboarding(
                     MealsPrimaryButton(
                         label = when (current) {
                             0 -> "هيا نبدأ"
-                            LastPage -> "حفظ وابدأ"
+                            LastPage -> "ابدأ التخطيط"
                             else -> "التالي"
                         },
                         onClick = {
@@ -675,17 +430,7 @@ fun MealsOnboarding(
                             } else {
                                 val result = MealsOnboardingResult(
                                     weeklyBudgetDzd = budget,
-                                    wilaya = wilaya.ifBlank { initial.wilaya },
-                                    householdServings = servings,
-                                    allergyIds = allergies,
-                                    mealSlots = slots,
-                                    dislikedIngredientIds = dislikes,
-                                    dietPattern = diet,
-                                    maxCookingMinutes = maxMinutes,
-                                    budgetBufferPercent = buffer,
-                                    commune = commune,
-                                    shoppingChannel = channel,
-                                    preferredShop = shop
+                                    householdServings = servings
                                 )
                                 pendingFinish = { onFinish(result) }
                             }

@@ -121,7 +121,7 @@ data class AppPreferences(
     val wilaya: String = "الجزائر",
     val householdServings: Int = 3,
     val allergyIds: Set<String> = emptySet(),
-    val mealSlots: Set<String> = setOf("breakfast", "lunch", "dinner"),
+    val mealSlots: Set<String> = setOf("lunch", "dinner"),
     val dislikedIngredientIds: Set<String> = emptySet(),
     val dietPattern: String = "none",
     val maxCookingMinutes: Int = 60,

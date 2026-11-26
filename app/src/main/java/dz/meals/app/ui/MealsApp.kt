@@ -744,45 +744,25 @@ private fun MealsAppContent(
         ) {
             MealsOnboarding(
                 initial = preferences,
-                ingredients = snapshot.ingredients,
                 appLanguage = appLanguage,
                 onLanguageSelected = { languageTag ->
                     requestLanguageChange(languageTag)
                 },
-                onQuickStart = { budget, servings ->
-                    scope.launch {
-                        preferencesStore.saveSettings(
-                            budget,
-                            preferences.wilaya,
-                            servings,
-                            emptySet(),
-                            preferences.mealSlots,
-                            emptySet(),
-                            "none",
-                            preferences.maxCookingMinutes,
-                            preferences.budgetBufferPercent,
-                            preferences.commune,
-                            preferences.shoppingChannel,
-                            preferences.preferredShop
-                        )
-                        refresh()
-                    }
-                },
                 onFinish = { result ->
                     scope.launch {
                         preferencesStore.saveSettings(
-                            result.weeklyBudgetDzd,
-                            result.wilaya,
-                            result.householdServings,
-                            result.allergyIds,
-                            result.mealSlots,
-                            result.dislikedIngredientIds,
-                            result.dietPattern,
-                            result.maxCookingMinutes,
-                            result.budgetBufferPercent,
-                            result.commune,
-                            result.shoppingChannel,
-                            result.preferredShop
+                            weeklyBudgetDzd = result.weeklyBudgetDzd,
+                            wilaya = preferences.wilaya,
+                            householdServings = result.householdServings,
+                            allergyIds = preferences.allergyIds,
+                            mealSlots = preferences.mealSlots,
+                            dislikedIngredientIds = preferences.dislikedIngredientIds,
+                            dietPattern = preferences.dietPattern,
+                            maxCookingMinutes = preferences.maxCookingMinutes,
+                            budgetBufferPercent = preferences.budgetBufferPercent,
+                            commune = preferences.commune,
+                            shoppingChannel = preferences.shoppingChannel,
+                            preferredShop = preferences.preferredShop
                         )
                         refresh()
                     }
