@@ -114,9 +114,9 @@ fun MealRecipe.hasVerifiedReusableImage(): Boolean {
             "https://commons.wikimedia.org/wiki/File:",
             ignoreCase = true
         ) &&
-            imageAuthor.isNotBlank() &&
-            imageCredit.isNotBlank() &&
-            isReusableRecipeImageLicense(imageLicense, imageLicenseUrl)
+            isReusableRecipeImageLicense(imageLicense, imageLicenseUrl) &&
+            (!recipeImageLicenseRequiresAttribution(imageLicense) ||
+                (imageAuthor.isNotBlank() && imageCredit.isNotBlank()))
     }
 
     val source = attribution ?: return false
@@ -183,6 +183,12 @@ fun canonicalRecipeImageLicenseUrl(name: String): String? {
         .matchEntire(normalized) ?: return null
     val licenceType = if (match.groupValues[1].isBlank()) "by" else "by-sa"
     return "https://creativecommons.org/licenses/$licenceType/${match.groupValues[2]}/"
+}
+
+/** CC BY and CC BY-SA require author credit; CC0 and Public Domain Mark do not. */
+fun recipeImageLicenseRequiresAttribution(name: String): Boolean {
+    val canonicalUrl = canonicalRecipeImageLicenseUrl(name) ?: return false
+    return canonicalUrl.contains("/licenses/by", ignoreCase = true)
 }
 
 /** The display name must resolve to the exact canonical Creative Commons URL. */

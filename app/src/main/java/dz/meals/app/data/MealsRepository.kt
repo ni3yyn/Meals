@@ -1,6 +1,7 @@
 package dz.meals.app.data
 
 import android.content.Context
+import android.util.Log
 import androidx.room.withTransaction
 import dz.meals.app.data.local.CookedMealDeductionEntity
 import dz.meals.app.data.local.FavoriteRecipeEntity
@@ -28,7 +29,9 @@ import dz.meals.app.domain.isRecipeAllowed
 import dz.meals.app.domain.pricesForSavedPlan
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -49,10 +52,15 @@ class MealsRepository internal constructor(
     private val database = databaseOverride ?: MealsDatabase.getInstance(appContext)
     private val dao: MealsDao = database.mealsDao()
     private val foodIdentityResolver = FoodIdentityResolver(appContext)
+    private val recipeImageDiscoveryPreferences =
+        appContext.getSharedPreferences("recipe_image_discovery", Context.MODE_PRIVATE)
+    private val recipeImageDiscoveryMutex = Mutex()
+    private val commonsSearchMutex = Mutex()
     private val commonsClient = OkHttpClient.Builder()
-        .callTimeout(35, java.util.concurrent.TimeUnit.SECONDS)
-        .connectTimeout(12, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
+        .callTimeout(24, java.util.concurrent.TimeUnit.SECONDS)
+        .connectTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(16, java.util.concurrent.TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
     private val initializationMutex = Mutex()
     private val catalogueCacheMutex = Mutex()
@@ -539,98 +547,169 @@ class MealsRepository internal constructor(
         recipe: MealRecipe,
         query: String
     ): List<RecipeImageCandidate> = withContext(Dispatchers.IO) {
-        val typedTerm = query.trim().take(100)
-        require(typedTerm.isNotBlank()) { "أدخلي اسم الطبق للبحث عن صورة." }
-        val sourceName = recipe.nameFr.trim().takeIf {
-            it.isNotBlank() && !it.equals(recipe.nameAr, ignoreCase = true) &&
-                !typedTerm.contains(it, ignoreCase = true)
-        }.orEmpty()
-        val searchTerm = listOf(typedTerm, sourceName).filter { it.isNotBlank() }.distinct().joinToString(" ").take(140)
+        commonsSearchMutex.withLock {
+            val typedTerm = query.trim().take(100)
+            require(typedTerm.isNotBlank()) { "أدخلي اسم الطبق للبحث عن صورة." }
 
-        val requestUrl = "https://commons.wikimedia.org/w/api.php".toHttpUrl().newBuilder()
-            .addQueryParameter("action", "query")
-            .addQueryParameter("format", "json")
-            .addQueryParameter("formatversion", "2")
-            .addQueryParameter("generator", "search")
-            .addQueryParameter("gsrsearch", "$searchTerm filetype:bitmap")
-            .addQueryParameter("gsrnamespace", "6")
-            .addQueryParameter("gsrlimit", "18")
-            .addQueryParameter("prop", "imageinfo")
-            .addQueryParameter("iiprop", "url|extmetadata|size|mime")
-            .addQueryParameter("iiurlwidth", "640")
-            .addQueryParameter(
-                "iiextmetadatafilter",
-                "Artist|Credit|LicenseShortName|LicenseUrl|Copyrighted"
-            )
-            .build()
-        val request = Request.Builder()
-            .url(requestUrl)
-            .header("Accept", "application/json")
-            .header("User-Agent", "Midati-Android/1.0 (https://github.com/ni3yyn/Meals)")
-            .build()
+            // Search the supplied term plus one independent recipe-name variant.
+            // Combining languages into one long query was reducing Commons recall.
+            val searchTerms = buildList {
+                add(typedTerm)
+                listOf(recipe.nativeName, recipe.nameFr, recipe.nameAr).forEach { variant ->
+                    val normalized = variant.trim().take(100)
+                    if (normalized.isNotBlank() && none { it.equals(normalized, ignoreCase = true) }) {
+                        add(normalized)
+                    }
+                }
+            }.take(2)
 
-        val body = commonsClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("تعذر البحث في Wikimedia Commons (HTTP ${response.code}).")
-            }
-            response.body?.string() ?: throw IOException("لم تصل نتائج البحث عن الصور.")
-        }
-        val pages = JSONObject(body).optJSONObject("query")?.optJSONArray("pages")
-            ?: return@withContext emptyList()
+            val accepted = linkedMapOf<String, RecipeImageCandidate>()
+            var successfulRequests = 0
+            var failedRequests = 0
+            var scannedPages = 0
+            var rejectedByLicence = 0
+            var rejectedByAttribution = 0
+            var rejectedByFormatOrSize = 0
+            var lastFailure: IOException? = null
 
-        buildList {
-            for (index in 0 until pages.length()) {
-                val page = pages.optJSONObject(index) ?: continue
-                val title = page.optString("title").trim()
-                if (!title.startsWith("File:", ignoreCase = true)) continue
-                val info = page.optJSONArray("imageinfo")?.optJSONObject(0) ?: continue
-                val mime = info.optString("mime")
-                if (!mime.startsWith("image/")) continue
-                val width = info.optInt("width")
-                val height = info.optInt("height")
-                if (width < 320 || height < 220) continue
+            for (term in searchTerms) {
+                try {
+                    val requestUrl = "https://commons.wikimedia.org/w/api.php".toHttpUrl().newBuilder()
+                        .addQueryParameter("action", "query")
+                        .addQueryParameter("format", "json")
+                        .addQueryParameter("formatversion", "2")
+                        .addQueryParameter("generator", "search")
+                        .addQueryParameter("gsrsearch", "$term filetype:bitmap")
+                        .addQueryParameter("gsrnamespace", "6")
+                        .addQueryParameter("gsrlimit", "50")
+                        .addQueryParameter("prop", "imageinfo")
+                        .addQueryParameter("iiprop", "url|extmetadata|size|mime")
+                        .addQueryParameter("iiurlwidth", "720")
+                        .addQueryParameter(
+                            "iiextmetadatafilter",
+                            "Artist|Credit|LicenseShortName|LicenseUrl|Copyrighted"
+                        )
+                        .build()
+                    val request = Request.Builder()
+                        .url(requestUrl)
+                        .header("Accept", "application/json")
+                        .header("Accept-Language", "en,fr;q=0.9,ar;q=0.8")
+                        .header("User-Agent", "Midati-Android/1.0 (https://github.com/ni3yyn/Meals)")
+                        .build()
 
-                val metadata = info.optJSONObject("extmetadata") ?: continue
-                fun metadataValue(key: String): String =
-                    metadata.optJSONObject(key)?.optString("value").orEmpty().stripCommonsMarkup()
+                    val body = commonsClient.newCall(request).execute().use { response ->
+                        if (!response.isSuccessful) {
+                            throw IOException("Wikimedia Commons returned HTTP ${response.code}.")
+                        }
+                        response.body?.string()
+                            ?: throw IOException("Wikimedia Commons returned an empty response.")
+                    }
+                    successfulRequests++
+                    val pages = JSONObject(body).optJSONObject("query")?.optJSONArray("pages")
+                        ?: continue
+                    scannedPages += pages.length()
 
-                val license = metadataValue("LicenseShortName")
-                val licenseUrl = metadataValue("LicenseUrl")
-                if (!isReusableRecipeImageLicense(license, licenseUrl)) continue
+                    for (index in 0 until pages.length()) {
+                        val page = pages.optJSONObject(index) ?: continue
+                        val title = page.optString("title").trim()
+                        if (!title.startsWith("File:", ignoreCase = true)) continue
 
-                val artist = metadataValue("Artist")
-                val credit = metadataValue("Credit")
-                val author = artist.ifBlank { credit }
-                if (author.isBlank()) continue
+                        val info = page.optJSONArray("imageinfo")?.optJSONObject(0) ?: continue
+                        val mime = info.optString("mime").trim().lowercase()
+                        val supportedRaster = mime == "image/jpeg" ||
+                            mime == "image/png" || mime == "image/webp" || mime == "image/gif"
+                        val width = info.optInt("width")
+                        val height = info.optInt("height")
+                        if (!supportedRaster || width < 200 || height < 140) {
+                            rejectedByFormatOrSize++
+                            continue
+                        }
 
-                // Never fall back to imageinfo.url: that is the full-resolution original.
-                // A Commons result without a generated thumbnail is not safe to display.
-                val imageUrl = info.optString("thumburl").trim()
-                val sourcePageUrl = info.optString("descriptionurl")
-                if (!imageUrl.startsWith("https://upload.wikimedia.org/")) continue
-                if (!sourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:")) continue
+                        val metadata = info.optJSONObject("extmetadata") ?: continue
+                        fun metadataValue(key: String): String =
+                            metadata.optJSONObject(key)?.optString("value").orEmpty().stripCommonsMarkup()
 
-                add(
-                    RecipeImageCandidate(
-                        title = title.removePrefix("File:"),
-                        imageUrl = imageUrl,
-                        sourcePageUrl = sourcePageUrl,
-                        author = author,
-                        credit = credit.ifBlank { author },
-                        license = license,
-                        licenseUrl = licenseUrl,
-                        width = width,
-                        height = height
+                        val license = metadataValue("LicenseShortName")
+                        // Commons sometimes provides a recognised short name but omits
+                        // LicenseUrl. Reconstruct only known canonical CC URLs; mismatches
+                        // are still rejected by the same exact-name/URL policy.
+                        val licenseUrl = metadataValue("LicenseUrl").ifBlank {
+                            canonicalRecipeImageLicenseUrl(license).orEmpty()
+                        }
+                        if (!isReusableRecipeImageLicense(license, licenseUrl)) {
+                            rejectedByLicence++
+                            continue
+                        }
+
+                        val artist = metadataValue("Artist")
+                        val credit = metadataValue("Credit")
+                        val author = artist.ifBlank { credit }
+                        val creditLine = credit.ifBlank { artist }
+                        if (recipeImageLicenseRequiresAttribution(license) &&
+                            (author.isBlank() || creditLine.isBlank())
+                        ) {
+                            rejectedByAttribution++
+                            continue
+                        }
+
+                        // Only use Wikimedia's generated thumbnail, never its original
+                        // full-resolution file URL.
+                        val imageUrl = info.optString("thumburl").trim()
+                        val sourcePageUrl = info.optString("descriptionurl").trim()
+                        if (!imageUrl.startsWith("https://upload.wikimedia.org/", ignoreCase = true)) {
+                            rejectedByFormatOrSize++
+                            continue
+                        }
+                        if (!sourcePageUrl.startsWith(
+                                "https://commons.wikimedia.org/wiki/File:",
+                                ignoreCase = true
+                            )
+                        ) continue
+
+                        accepted.putIfAbsent(
+                            imageUrl,
+                            RecipeImageCandidate(
+                                title = title.substringAfter(':', title),
+                                imageUrl = imageUrl,
+                                sourcePageUrl = sourcePageUrl,
+                                author = author,
+                                credit = creditLine,
+                                license = license,
+                                licenseUrl = licenseUrl,
+                                width = width,
+                                height = height
+                            )
+                        )
+                    }
+                    if (accepted.size >= 30) break
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    failedRequests++
+                    lastFailure = if (error is IOException) error else IOException(
+                        "Wikimedia Commons response could not be processed.",
+                        error
                     )
-                )
+                    Log.w(
+                        RECIPE_IMAGE_LOG_TAG,
+                        "commons_search_failed variant=${searchTerms.indexOf(term) + 1} reason=${error.message?.take(120)}"
+                    )
+                }
             }
-        }.take(18)
+
+            Log.d(
+                RECIPE_IMAGE_LOG_TAG,
+                "commons_search requests=${successfulRequests + failedRequests} scanned=$scannedPages accepted=${accepted.size} rejected_license=$rejectedByLicence rejected_attribution=$rejectedByAttribution rejected_format=$rejectedByFormatOrSize"
+            )
+            if (successfulRequests == 0 && lastFailure != null) throw lastFailure
+            accepted.values.take(30)
+        }
     }
 
     /**
-     * Finds and saves a high-confidence Commons match without opening the manual picker.
-     * If the filename does not meaningfully match one of the recipe's known names, no
-     * override is written and the caller can offer manual search instead.
+     * Searches multiple recipe-name variants and persists only a meaningful match.
+     * The score threshold allows Commons file names to include descriptive words,
+     * while still requiring overlap with a recognised recipe name.
      */
     suspend fun automaticallyFindAndSaveRecipeImage(recipe: MealRecipe): RecipeImageCandidate {
         val query = sequenceOf(recipe.nativeName, recipe.nameFr, recipe.nameAr)
@@ -641,26 +720,91 @@ class MealsRepository internal constructor(
         val candidates = searchCommonsRecipeImages(recipe, query)
         val bestMatch = candidates
             .map { candidate -> candidate to commonsRecipeImageMatchScore(recipe, candidate) }
-            .filter { (_, score) -> score >= 0.5 }
+            .filter { (_, score) -> score >= 0.38 }
             .maxByOrNull { (_, score) -> score }
             ?.first
-            ?: throw IOException("لم نعثر على صورة مرخّصة يمكن مطابقتها بثقة. يمكنك البحث يدوياً.")
+            ?: throw NoMatchingRecipeImageException()
 
         saveRecipeImage(recipe.id, bestMatch)
         return bestMatch
     }
 
+    /**
+     * Performs a small, serial background pass when the recipe library is opened.
+     * Successful photos are persisted in Room; failed/no-match attempts are cooled
+     * down so app navigation cannot repeatedly hammer Wikimedia.
+     */
+    suspend fun discoverMissingRecipeImages(
+        recipes: List<MealRecipe>,
+        maxAttempts: Int = 3
+    ): Int = withContext(Dispatchers.IO) {
+        recipeImageDiscoveryMutex.withLock {
+            val now = System.currentTimeMillis()
+            val eligible = recipes
+                .asSequence()
+                .distinctBy { it.id }
+                .filterNot { it.hasVerifiedReusableImage() }
+                .filter { it.id.isNotBlank() }
+                .filter { recipe ->
+                    recipeImageDiscoveryPreferences.getLong(
+                        recipeImageDiscoveryKey(recipe.id),
+                        0L
+                    ) <= now
+                }
+                .take(maxAttempts.coerceIn(1, 4))
+                .toList()
+
+            var savedCount = 0
+            for (recipe in eligible) {
+                val key = recipeImageDiscoveryKey(recipe.id)
+                recipeImageDiscoveryPreferences.edit()
+                    .putLong(key, System.currentTimeMillis() + IMAGE_DISCOVERY_IN_PROGRESS_COOLDOWN_MS)
+                    .apply()
+                try {
+                    automaticallyFindAndSaveRecipeImage(recipe)
+                    recipeImageDiscoveryPreferences.edit().remove(key).apply()
+                    savedCount++
+                    Log.i(RECIPE_IMAGE_LOG_TAG, "automatic_image_saved recipe_id=${recipe.id}")
+                } catch (cancelled: CancellationException) {
+                    recipeImageDiscoveryPreferences.edit().remove(key).apply()
+                    throw cancelled
+                } catch (error: Exception) {
+                    val cooldown = if (error is NoMatchingRecipeImageException) {
+                        IMAGE_DISCOVERY_NO_MATCH_COOLDOWN_MS
+                    } else {
+                        IMAGE_DISCOVERY_NETWORK_ERROR_COOLDOWN_MS
+                    }
+                    recipeImageDiscoveryPreferences.edit()
+                        .putLong(key, System.currentTimeMillis() + cooldown)
+                        .apply()
+                    Log.w(
+                        RECIPE_IMAGE_LOG_TAG,
+                        "automatic_image_failed recipe_id=${recipe.id} retry_after_ms=$cooldown reason=${error.message?.take(160)}"
+                    )
+                }
+                delay(250)
+            }
+            savedCount
+        }
+    }
+
     suspend fun saveRecipeImage(recipeId: String, image: RecipeImageCandidate) {
-        require(image.imageUrl.startsWith("https://upload.wikimedia.org/")) {
+        require(image.imageUrl.startsWith("https://upload.wikimedia.org/", ignoreCase = true)) {
             "رابط الصورة غير موثوق."
         }
-        require(image.sourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:")) {
+        require(image.sourcePageUrl.startsWith(
+            "https://commons.wikimedia.org/wiki/File:",
+            ignoreCase = true
+        )) {
             "رابط مصدر الصورة غير صالح."
         }
         require(isReusableRecipeImageLicense(image.license, image.licenseUrl)) {
             "ترخيص هذه الصورة لا يسمح بإعادة استخدامها داخل التطبيق."
         }
-        require(image.author.isNotBlank() && image.credit.isNotBlank()) {
+        require(
+            !recipeImageLicenseRequiresAttribution(image.license) ||
+                (image.author.isNotBlank() && image.credit.isNotBlank())
+        ) {
             "تفتقد الصورة إلى بيانات النسب المطلوبة."
         }
         require(dao.getRecipes().any { it.id == recipeId }) { "الوصفة غير موجودة." }
@@ -993,6 +1137,17 @@ class MealsRepository internal constructor(
         }
     }
 }
+
+private const val RECIPE_IMAGE_LOG_TAG = "MidatiRecipeImages"
+private const val IMAGE_DISCOVERY_IN_PROGRESS_COOLDOWN_MS = 30L * 60L * 1000L
+private const val IMAGE_DISCOVERY_NETWORK_ERROR_COOLDOWN_MS = 30L * 60L * 1000L
+private const val IMAGE_DISCOVERY_NO_MATCH_COOLDOWN_MS = 24L * 60L * 60L * 1000L
+
+private fun recipeImageDiscoveryKey(recipeId: String): String =
+    "retry_after:" + recipeId.hashCode().toUInt().toString(16)
+
+private class NoMatchingRecipeImageException :
+    IOException("لم نعثر على صورة مرخّصة يمكن مطابقتها بثقة.")
 
 private val commonsImageStopWords = setOf(
     "recipe", "recipes", "dish", "food", "image", "photo", "picture", "cuisine",

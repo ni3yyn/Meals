@@ -71,7 +71,6 @@ import dz.meals.app.data.recipeImageSourceUrl
 import dz.meals.app.data.PlanCuisinePolicy
 import dz.meals.app.data.RecipeImageCandidate
 import dz.meals.app.data.scaleRecipeIngredientQuantity
-import coil3.compose.AsyncImage
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsFilterChips
@@ -155,6 +154,7 @@ fun RecipesScreen(
     onSearchRecipeImages: (suspend (MealRecipe, String) -> List<RecipeImageCandidate>)? = null,
     onSaveRecipeImage: ((String, RecipeImageCandidate) -> Unit)? = null,
     onAutoLoadRecipeImage: (suspend (MealRecipe) -> Unit)? = null,
+    onDiscoverRecipeImages: (suspend (List<MealRecipe>) -> Unit)? = null,
     onOpenRecipeCorpusTester: (() -> Unit)? = null,
     catalogueProgress: Float? = null,
     catalogueStatusMessage: String? = null,
@@ -179,6 +179,12 @@ fun RecipesScreen(
     var automaticImageRetryNonce by remember { mutableStateOf(0) }
     val attemptedAutomaticImageRecipeIds = remember { mutableSetOf<String>() }
     val imageSearchScope = rememberCoroutineScope()
+
+    LaunchedEffect(recipes.size) {
+        if (recipes.isNotEmpty()) {
+            onDiscoverRecipeImages?.invoke(recipes)
+        }
+    }
     var isCookingMode by rememberSaveable { mutableStateOf(false) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
     var recipeServings by rememberSaveable { mutableStateOf(2) }
@@ -737,14 +743,14 @@ fun RecipesScreen(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     verticalAlignment = Alignment.Top
                                 ) {
-                                    AsyncImage(
-                                        model = candidate.imageUrl,
+                                    MealsRecipeImage(
+                                        imageUrl = candidate.imageUrl,
                                         contentDescription = candidate.title,
-                                        contentScale = ContentScale.Crop,
                                         modifier = Modifier
                                             .width(112.dp)
-                                            .height(112.dp)
-                                            .clip(RoundedCornerShape(12.dp))
+                                            .height(112.dp),
+                                        cornerRadius = 12.dp,
+                                        placeholderIconSize = 24.dp
                                     )
                                     Column(
                                         modifier = Modifier.weight(1f),

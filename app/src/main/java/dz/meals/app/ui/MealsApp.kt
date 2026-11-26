@@ -609,6 +609,13 @@ private fun MealsAppContent(
                             repository.automaticallyFindAndSaveRecipeImage(recipe)
                             refresh()
                         },
+                        onDiscoverRecipeImages = { recipes ->
+                            val discovered = repository.discoverMissingRecipeImages(
+                                recipes = recipes,
+                                maxAttempts = 3
+                            )
+                            if (discovered > 0) refresh()
+                        },
                         onSaveRecipeImage = { recipeId, image ->
                             scope.launch {
                                 try {

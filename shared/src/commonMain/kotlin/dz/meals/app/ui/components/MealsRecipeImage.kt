@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,24 +26,22 @@ import dz.meals.app.ui.icons.MealsIconName
 import dz.meals.app.ui.theme.WarmSurface
 
 /**
- * Shared recipe-photo surface. Requests are resized before reaching the device,
- * and a quiet branded placeholder remains visible while an image loads or fails.
+ * Shared recipe-photo surface. Loads source thumbnails directly, without an
+ * external proxy, and uses the persistent Coil disk cache configured by Android.
  */
 @Composable
 fun MealsRecipeImage(
     imageUrl: String,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    imageWidth: Int = 360,
+    @Suppress("UNUSED_PARAMETER") imageWidth: Int = 360,
     cornerRadius: Dp = 14.dp,
     placeholderIconSize: Dp = 30.dp
 ) {
     val directUrl = remember(imageUrl) {
         imageUrl.trim().takeIf { it.startsWith("https://", ignoreCase = true) }.orEmpty()
     }
-    var fallbackUrl by remember(directUrl) { mutableStateOf<String?>(null) }
     var imageLoaded by remember(directUrl) { mutableStateOf(false) }
-    val requestUrl = fallbackUrl ?: directUrl
     val imageAlpha by animateFloatAsState(
         targetValue = if (imageLoaded) 1f else 0f,
         animationSpec = tween(durationMillis = 180),
@@ -56,9 +54,9 @@ fun MealsRecipeImage(
             .background(WarmSurface),
         contentAlignment = Alignment.Center
     ) {
-        if (requestUrl.isNotBlank()) {
+        if (directUrl.isNotBlank()) {
             AsyncImage(
-                model = requestUrl,
+                model = directUrl,
                 contentDescription = contentDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -69,10 +67,8 @@ fun MealsRecipeImage(
                         is AsyncImagePainter.State.Success -> imageLoaded = true
                         is AsyncImagePainter.State.Error -> {
                             imageLoaded = false
-                            if (fallbackUrl == null) {
-                                fallbackUrl = proxyFallbackRecipeImageUrl(directUrl, imageWidth)
-                                    .takeIf { it.isNotBlank() }
-                            }
+                            val host = directUrl.substringAfter("://").substringBefore("/")
+                            println("MidatiRecipeImages: thumbnail_load_failed host=$host")
                         }
                         else -> imageLoaded = false
                     }
@@ -96,28 +92,4 @@ fun MealsRecipeImage(
             }
         }
     }
-}
-
-private fun proxyFallbackRecipeImageUrl(sourceUrl: String, width: Int): String {
-    if (!sourceUrl.startsWith("https://", ignoreCase = true)) return ""
-    if (sourceUrl.startsWith("https://images.weserv.nl/", ignoreCase = true)) return ""
-
-    val encodedUrl = buildString {
-        val hex = "0123456789ABCDEF"
-        sourceUrl.encodeToByteArray().forEach { byte ->
-            val value = byte.toInt() and 0xff
-            val isUnreserved = value in 0x41..0x5A ||
-                value in 0x61..0x7A ||
-                value in 0x30..0x39 ||
-                value == 0x2D || value == 0x2E || value == 0x5F || value == 0x7E
-            if (isUnreserved) {
-                append(value.toChar())
-            } else {
-                append('%')
-                append(hex[value ushr 4])
-                append(hex[value and 0x0F])
-            }
-        }
-    }
-    return "https://images.weserv.nl/?url=$encodedUrl&w=${width.coerceIn(240, 960)}&q=75&output=webp"
 }

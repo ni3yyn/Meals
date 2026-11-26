@@ -86,6 +86,34 @@ class RecipeImagePolicyTest {
     }
 
     @Test
+    fun allowsAttributionFreeCommonsImagesWithoutInventingAnAuthor() {
+        assertTrue(
+            recipe(
+                license = "CC0 1.0",
+                licenseUrl = "https://creativecommons.org/publicdomain/zero/1.0/",
+                author = "",
+                credit = ""
+            ).hasVerifiedReusableImage()
+        )
+        assertTrue(
+            recipe(
+                license = "Public domain",
+                licenseUrl = "https://creativecommons.org/publicdomain/mark/1.0/",
+                author = "",
+                credit = ""
+            ).hasVerifiedReusableImage()
+        )
+    }
+
+    @Test
+    fun requiresAttributionOnlyForAttributionBasedLicences() {
+        assertTrue(recipeImageLicenseRequiresAttribution("CC BY 4.0"))
+        assertTrue(recipeImageLicenseRequiresAttribution("CC BY-SA 4.0"))
+        assertFalse(recipeImageLicenseRequiresAttribution("CC0 1.0"))
+        assertFalse(recipeImageLicenseRequiresAttribution("Public domain"))
+    }
+
+    @Test
     fun acceptsPublicDomainMarkAndCcZeroWithOfficialUrls() {
         assertTrue(
             recipe(
