@@ -319,8 +319,11 @@ fun mealsRecipeIngredientQuantity(quantity: Double, unit: String, localeTag: Str
         else -> "$number $many"
     }
 
-    fun countedEnglish(one: String, many: String): String =
-        "$number " + if (quantity == 1.0) one else many
+    fun countedEnglish(one: String, many: String): String {
+        // English uses the singular for fractional amounts below one (0.25 teaspoon).
+        val useSingular = quantity == 1.0 || (quantity > 0.0 && quantity < 1.0)
+        return "$number " + if (useSingular) one else many
+    }
 
     return when (normalized) {
         "g" -> if (abs(quantity) >= 1000.0) {
