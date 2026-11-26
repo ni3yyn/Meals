@@ -553,7 +553,8 @@ private fun MealsAppContent(
                     modifier = Modifier.fillMaxSize()
                 ) { targetTab ->
                     when (targetTab) {
-                    AppTab.Plan -> PlanScreen(
+                    AppTab.Plan -> {
+                    PlanScreen(
                         weekStartIso = weekStartIso,
                         preferences = preferences,
                         snapshot = snapshot,
@@ -591,12 +592,56 @@ private fun MealsAppContent(
                         onToggleCooked = { id -> perform { repository.toggleMealCooked(id, weekStartIso) } },
                         onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
                         onOpenRecipe = { recipeId ->
+                            // Keep the current Plan tab visible and present recipe details above it.
                             recipeIdToOpenFromPlan = recipeId
-                            selectedTab = AppTab.Recipes
                         },
                         onPreviousWeek = { weekStartIso = LocalDate.parse(weekStartIso).minusWeeks(1).toString() },
                         onNextWeek = { weekStartIso = LocalDate.parse(weekStartIso).plusWeeks(1).toString() },
                     )
+                    if (recipeIdToOpenFromPlan != null) {
+                        RecipesScreen(
+                            recipes = snapshot.recipes,
+                            ingredients = snapshot.ingredients,
+                            allergyIds = preferences.allergyIds,
+                            favoriteRecipeIds = snapshot.favoriteRecipeIds,
+                            onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
+                            onAddRecipe = { id ->
+                                recipeIdToOpenFromPlan = null
+                                generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
+                                perform {
+                                    repository.addRecipeToNextSlot(
+                                        weekStartIso,
+                                        id,
+                                        preferences.householdServings
+                                    )
+                                }
+                            },
+                            onSearchRecipeImages = { recipe, query ->
+                                repository.searchCommonsRecipeImages(recipe, query)
+                            },
+                            onAutoLoadRecipeImage = { recipe ->
+                                repository.automaticallyFindAndSaveRecipeImage(recipe)
+                                refresh()
+                            },
+                            onSaveRecipeImage = { recipeId, image ->
+                                scope.launch {
+                                    try {
+                                        repository.saveRecipeImage(recipeId, image)
+                                        refresh()
+                                        generationMessage = "تم حفظ صورة الوصفة مع بيانات الترخيص"
+                                    } catch (error: Exception) {
+                                        snackbarHostState.showSnackbar(
+                                            error.message ?: "تعذر حفظ صورة الوصفة."
+                                        )
+                                    }
+                                }
+                            },
+                            openRecipeId = recipeIdToOpenFromPlan,
+                            onDismissRecipe = { recipeIdToOpenFromPlan = null },
+                            detailOverlayOnly = true
+                        )
+                    }
+                    }
                     AppTab.Recipes -> RecipesScreen(
                         recipes = snapshot.recipes,
                         ingredients = snapshot.ingredients,

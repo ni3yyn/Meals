@@ -161,7 +161,9 @@ fun RecipesScreen(
     catalogueError: String? = null,
     onRetryCatalogue: (() -> Unit)? = null,
     openRecipeId: String? = null,
-    onOpenRecipeHandled: ((String) -> Unit)? = null
+    onOpenRecipeHandled: ((String) -> Unit)? = null,
+    onDismissRecipe: (() -> Unit)? = null,
+    detailOverlayOnly: Boolean = false
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
@@ -180,8 +182,8 @@ fun RecipesScreen(
     val attemptedAutomaticImageRecipeIds = remember { mutableSetOf<String>() }
     val imageSearchScope = rememberCoroutineScope()
 
-    LaunchedEffect(recipes.size) {
-        if (recipes.isNotEmpty()) {
+    LaunchedEffect(recipes.size, detailOverlayOnly) {
+        if (!detailOverlayOnly && recipes.isNotEmpty()) {
             onDiscoverRecipeImages?.invoke(recipes)
         }
     }
@@ -311,6 +313,7 @@ fun RecipesScreen(
 
     val browsePage = Triple(showFavorites, showAlgerianOnly, category)
 
+    if (!detailOverlayOnly) {
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
@@ -610,6 +613,8 @@ fun RecipesScreen(
         }
     }
 
+    }
+
     val detail = selectedRecipeId?.let { id -> recipes.firstOrNull { it.id == id } }
 
     LaunchedEffect(detail?.id, detail?.imageUrl, automaticImageRetryNonce) {
@@ -639,7 +644,10 @@ fun RecipesScreen(
 
     if (detail != null) {
         MealsBottomSheet(
-            onDismissRequest = { selectedRecipeId = null },
+            onDismissRequest = {
+                selectedRecipeId = null
+                onDismissRecipe?.invoke()
+            },
             title = { Text(if (imageSearchOpen) "اختيار صورة للوصفة" else detail.nameAr) },
             subtitle = when {
                 imageSearchOpen -> "صور مرخّصة ومناسبة للوصفة"

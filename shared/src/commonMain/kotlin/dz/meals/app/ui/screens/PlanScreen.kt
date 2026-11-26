@@ -346,18 +346,18 @@ fun PlanScreen(
                             MealsCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 containerColor = if (selected) {
-                                    dz.meals.app.ui.theme.WarmSurface.copy(alpha = 0.94f)
+                                    dz.meals.app.ui.theme.Paper.copy(alpha = 0.99f)
                                 } else {
-                                    androidx.compose.ui.graphics.Color.White.copy(alpha = 0.34f)
+                                    androidx.compose.ui.graphics.Color.White.copy(alpha = 0.22f)
                                 },
                                 borderColor = if (selected) {
-                                    androidx.compose.ui.graphics.Color.White.copy(alpha = 0.96f)
+                                    TextAccent.copy(alpha = 0.62f)
                                 } else {
-                                    Border.copy(alpha = 0.62f)
+                                    Border.copy(alpha = 0.48f)
                                 },
                                 contentPadding = 9.dp,
                                 shape = RoundedCornerShape(18.dp),
-                                shadowElevation = if (selected) 2.dp else 0.dp
+                                shadowElevation = if (selected) 3.dp else 0.dp
                             ) {
                                 Column(
                                     modifier = Modifier.fillMaxWidth(),
@@ -373,7 +373,7 @@ fun PlanScreen(
                                     )
                                     Text(
                                         date.day.toString(),
-                                        color = dz.meals.app.ui.theme.Ink,
+                                        color = if (selected) TextAccent else dz.meals.app.ui.theme.Ink,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.ExtraBold
                                     )
