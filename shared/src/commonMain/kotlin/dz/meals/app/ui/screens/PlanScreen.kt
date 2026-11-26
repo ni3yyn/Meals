@@ -77,6 +77,7 @@ fun PlanScreen(
     onToggleLock: (String) -> Unit,
     onToggleCooked: (String) -> Unit,
     onAdjustServings: (String, Int) -> Unit,
+    onOpenRecipe: (String) -> Unit,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
 ) {
@@ -560,6 +561,7 @@ fun PlanScreen(
                                         meal = breakfast,
                                         recipe = breakfast?.recipeId?.let(recipesById::get),
                                         onChooseRecipe = { editingMealSlot = "breakfast" },
+                                        onOpenRecipe = { breakfast?.recipeId?.let(onOpenRecipe) },
                                         onToggleLock = { breakfast?.let { onToggleLock(it.id) } },
                                         onToggleCooked = {
                                             breakfast?.let { meal ->
@@ -577,6 +579,7 @@ fun PlanScreen(
                                         meal = lunch,
                                         recipe = lunch?.recipeId?.let(recipesById::get),
                                         onChooseRecipe = { editingMealSlot = "lunch" },
+                                        onOpenRecipe = { lunch?.recipeId?.let(onOpenRecipe) },
                                         onToggleLock = { lunch?.let { onToggleLock(it.id) } },
                                         onToggleCooked = {
                                             lunch?.let { meal ->
@@ -594,6 +597,7 @@ fun PlanScreen(
                                         meal = dinner,
                                         recipe = dinner?.recipeId?.let(recipesById::get),
                                         onChooseRecipe = { editingMealSlot = "dinner" },
+                                        onOpenRecipe = { dinner?.recipeId?.let(onOpenRecipe) },
                                         onToggleLock = { dinner?.let { onToggleLock(it.id) } },
                                         onToggleCooked = {
                                             dinner?.let { meal ->
@@ -652,6 +656,7 @@ private fun SlotRow(
     meal: PlannedMeal?,
     recipe: MealRecipe?,
     onChooseRecipe: () -> Unit,
+    onOpenRecipe: () -> Unit,
     onToggleLock: () -> Unit,
     onToggleCooked: () -> Unit,
     onAdjustServings: (Int) -> Unit
@@ -665,29 +670,42 @@ private fun SlotRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            MealsIcon(
-                name = MealsIconName.Meal,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp)
-            )
-            Column(
+            MealsPressable(
+                onClick = onOpenRecipe,
+                enabled = recipe != null,
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Text(
-                    title,
-                    color = TextAccent,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    recipe?.nameAr ?: "لم تُحدّد بعد",
-                    color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    MealsIcon(
+                        name = MealsIconName.Meal,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                    ) {
+                        Text(
+                            title,
+                            color = TextAccent,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            recipe?.nameAr ?: "لم تُحدّد بعد",
+                            color = if (recipe == null) MutedInk else dz.meals.app.ui.theme.Ink,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
             if (meal != null && recipe != null) {
                 MealsIconButton(

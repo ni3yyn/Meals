@@ -181,7 +181,9 @@ fun RecipesScreen(
     catalogueProgress: Float? = null,
     catalogueStatusMessage: String? = null,
     catalogueError: String? = null,
-    onRetryCatalogue: (() -> Unit)? = null
+    onRetryCatalogue: (() -> Unit)? = null,
+    openRecipeId: String? = null,
+    onOpenRecipeHandled: ((String) -> Unit)? = null
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
@@ -283,6 +285,14 @@ fun RecipesScreen(
         automaticImageLoadingRecipeId = null
         automaticImageError = null
         automaticImageErrorRecipeId = null
+    }
+
+    LaunchedEffect(openRecipeId, recipes) {
+        val requestedRecipeId = openRecipeId ?: return@LaunchedEffect
+        if (recipes.any { it.id == requestedRecipeId }) {
+            selectedRecipeId = requestedRecipeId
+            onOpenRecipeHandled?.invoke(requestedRecipeId)
+        }
     }
 
     fun openManualImageSearch(recipe: MealRecipe) {

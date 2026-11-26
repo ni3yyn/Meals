@@ -264,6 +264,7 @@ private fun MealsAppContent(
     var recipeCorpusTranslating by remember { mutableStateOf<Set<String>>(emptySet()) }
     var recipeCorpusTranslationErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Plan) }
+    var recipeIdToOpenFromPlan by remember { mutableStateOf<String?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showHouseholdSettings by rememberSaveable { mutableStateOf(false) }
     val settingsOverlayVisible = showSettings || showHouseholdSettings
@@ -589,6 +590,10 @@ private fun MealsAppContent(
                         onToggleLock = { id -> perform { repository.toggleMealLock(id, weekStartIso) } },
                         onToggleCooked = { id -> perform { repository.toggleMealCooked(id, weekStartIso) } },
                         onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
+                        onOpenRecipe = { recipeId ->
+                            recipeIdToOpenFromPlan = recipeId
+                            selectedTab = AppTab.Recipes
+                        },
                         onPreviousWeek = { weekStartIso = LocalDate.parse(weekStartIso).minusWeeks(1).toString() },
                         onNextWeek = { weekStartIso = LocalDate.parse(weekStartIso).plusWeeks(1).toString() },
                     )
@@ -628,6 +633,12 @@ private fun MealsAppContent(
                                 )
                             }
                             selectedTab = AppTab.Plan
+                        },
+                        openRecipeId = recipeIdToOpenFromPlan,
+                        onOpenRecipeHandled = { recipeId ->
+                            if (recipeIdToOpenFromPlan == recipeId) {
+                                recipeIdToOpenFromPlan = null
+                            }
                         },
                         catalogueProgress = when (cataloguePhase) {
                             RecipeCataloguePhase.IMPORTING_ALGERIAN ->
