@@ -17,11 +17,7 @@ class PlanCuisinePolicyTest {
 
     @Test
     fun generatorRequiresAnExplicitMainDishCourseType() {
-        assertTrue(
-            PlanCuisinePolicy.allowsMainDish(
-                recipe(category = "طبق رئيسي")
-            )
-        )
+        assertTrue(PlanCuisinePolicy.allowsMainDish(recipe(category = "طبق رئيسي")))
         assertTrue(
             PlanCuisinePolicy.allowsMainDish(
                 recipe(category = "Family recipe", categories = listOf("Plats principaux"))
@@ -29,7 +25,7 @@ class PlanCuisinePolicyTest {
         )
         assertTrue(
             PlanCuisinePolicy.allowsMainDish(
-                recipe(category = "تقليدي", tags = listOf("أطباق مالحة"))
+                recipe(category = "طبق رئيسي", categories = listOf("طبق جانبي"))
             )
         )
         assertFalse(
@@ -40,38 +36,58 @@ class PlanCuisinePolicyTest {
     }
 
     @Test
-    fun generatorRejectsDessertsAndSweetsEvenWhenOtherMetadataSaysMainDish() {
+    fun generatorRejectsDessertsAndSweetsFromCourseMetadata() {
+        assertFalse(PlanCuisinePolicy.allowsMainDish(recipe(category = "حلويات صغيرة")))
+        assertFalse(PlanCuisinePolicy.allowsMainDish(recipe(category = "حلويات جافة صغيرة")))
+        assertFalse(PlanCuisinePolicy.allowsMainDish(recipe(category = "Dessert")))
         assertFalse(
             PlanCuisinePolicy.allowsMainDish(
-                recipe(category = "حلويات")
+                recipe(category = "طبق رئيسي", categories = listOf("حلوى للقهوة"))
             )
         )
         assertFalse(
             PlanCuisinePolicy.allowsMainDish(
-                recipe(category = "Dessert")
+                recipe(category = "Plat principal", nameFr = "Gâteau au chocolat")
             )
         )
         assertFalse(
+            PlanCuisinePolicy.allowsMainDish(
+                recipe(category = "طبق رئيسي", nameAr = "كيكة الشوكولاتة")
+            )
+        )
+    }
+
+    @Test
+    fun sweetProfiledAlgerianMainDishesAreNotMistakenForDesserts() {
+        assertTrue(
             PlanCuisinePolicy.allowsMainDish(
                 recipe(
-                    category = "Plat principal",
-                    nameFr = "Gâteau au chocolat"
+                    nameAr = "لحم حلو بالبرقوق المجفف والمشمش والزبيب",
+                    nameFr = "Lham Lahlou aux pruneaux, abricots et raisins secs",
+                    category = "طبق رئيسي"
                 )
             )
         )
-        assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
-                recipe(
-                    category = "طبق رئيسي",
-                    nameAr = "كيكة الشوكولاتة"
-                )
+    }
+
+    @Test
+    fun generatorRejectsOtherNonMainCoursesAndRequiresMainCourseLabel() {
+        listOf(
+            "حساء",
+            "شوربة",
+            "مقبلات",
+            "مقبّلات ساخنة",
+            "سلطات ومقبلات",
+            "خبز",
+            "وجبة خفيفة",
+            "فطور وخبز",
+            "مرافق"
+        ).forEach { category ->
+            assertFalse(
+                "Must not generate category: $category",
+                PlanCuisinePolicy.allowsMainDish(recipe(category = category))
             )
-        )
-        assertFalse(
-            PlanCuisinePolicy.allowsMainDish(
-                recipe(category = "Plat", categories = listOf("Entrées"))
-            )
-        )
+        }
     }
 
     @Test
@@ -87,8 +103,6 @@ class PlanCuisinePolicyTest {
         id: String = "dz-algerian-dzirielle-test",
         nameAr: String = "طبق",
         nameFr: String = "Plat",
-        descriptionAr: String = "",
-        descriptionFr: String = "",
         category: String,
         categories: List<String> = emptyList(),
         tags: List<String> = emptyList()
@@ -96,8 +110,8 @@ class PlanCuisinePolicyTest {
         id = id,
         nameAr = nameAr,
         nameFr = nameFr,
-        descriptionAr = descriptionAr,
-        descriptionFr = descriptionFr,
+        descriptionAr = "",
+        descriptionFr = "",
         category = category,
         region = "",
         durationMinutes = 30,

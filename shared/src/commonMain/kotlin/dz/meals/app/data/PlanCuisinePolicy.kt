@@ -1,15 +1,16 @@
 package dz.meals.app.data
 
 /**
- * Shared classification helpers for the curated Algerian recipe collection.
+ * Shared classification helpers for automatic plan generation.
  *
- * TEMPORARY DEFAULT: automatic plan generation currently uses the dedicated
- * Algerian Dzirielle collection. Cuisine selection will later come from
- * Settings. Manual recipe selection and add-to-plan remain unrestricted.
+ * TEMPORARY DEFAULT: the generator currently uses the dedicated Algerian
+ * Dzirielle collection. Cuisine selection will later come from Settings.
+ * Manual recipe selection and add-to-plan remain unrestricted.
  */
 object PlanCuisinePolicy {
     const val ALGERIAN_RECIPE_ID_PREFIX = "dz-algerian-dzirielle-"
 
+    // These are the explicit main-course labels used by the Room v17 catalogue.
     private val mainDishMarkers = listOf(
         "main dish",
         "main dishes",
@@ -18,46 +19,45 @@ object PlanCuisinePolicy {
         "main meal",
         "main meals",
         "mains",
-        "plat",
-        "plats",
         "plat principal",
         "plats principaux",
         "plat de resistance",
         "plats de resistance",
-        "plat sale",
-        "plats sales",
-        "recette salee",
-        "recettes salees",
-        "طبق",
-        "الطبق الرئيسي",
-        "اطباق",
-        "الاطباق",
         "طبق رئيسي",
+        "الطبق الرئيسي",
         "اطباق رئيسية",
         "الاطباق الرئيسية",
         "وجبة رئيسية",
-        "وجبات رئيسية",
-        "اطباق مالحة",
-        "وصفات مالحة",
-        "اكلات مالحة"
+        "وجبات رئيسية"
     )
 
+    // Course labels that should never enter an automatically generated plan.
     private val nonMainDishMarkers = listOf(
-        // Desserts and sweet dishes.
-        "dessert", "desserts", "sweet", "sweets", "sucre",
-        "patisserie", "gateau", "tarte", "cookie", "biscuit",
-        "confiserie", "douceur", "chocolat", "pudding", "brownie",
-        "cake", "muffin", "glace", "sorbet", "viennoiserie",
+        "dessert", "desserts", "sweet", "sweets", "sucre", "sucree", "sucres", "sucrees",
+        "patisserie", "patisseries", "gateau", "gateaux", "tarte", "tartes",
+        "cookie", "cookies", "biscuit", "biscuits", "confiserie", "confiseries",
+        "douceur", "douceurs", "pudding", "brownie", "cake", "muffin",
+        "glace", "glaces", "sorbet", "sorbets", "viennoiserie", "viennoiseries",
         "crepe sucree",
-        "حلويات", "حلوى", "تحلية", "تحليات", "حلاوة", "حلو",
-        "حلوة", "كعك", "كيك", "قاطو", "طورطة", "تارت",
-        "بسكويت", "بسكوي", "شوكولاتة", "شكولاطة",
+        "حلويات", "حلوى", "تحلية", "تحليات", "حلاوة", "حلوة",
+        "كعك", "كيك", "قاطو", "طورطة", "تارت", "بسكويت", "بسكوي",
+        "شوكولاتة", "شكولاطة",
 
-        // Other courses and drinks are not main dishes.
-        "entree", "entrees", "starter", "starters", "appetizer", "appetizers", "salade", "salades", "soup", "soups", "soupe",
-        "boisson", "boissons", "drink", "drinks", "juice", "juices", "jus", "smoothie", "cocktail",
-        "سلطة", "سلطات", "شوربة", "حساء", "مقبلات",
-        "مشروب", "مشروبات", "عصير", "عصائر"
+        "entree", "entrees", "starter", "starters", "appetizer", "appetizers",
+        "salade", "salades", "soup", "soups", "soupe", "boisson", "boissons",
+        "drink", "drinks", "juice", "juices", "jus", "smoothie", "cocktail",
+        "سلطة", "سلطات", "شوربة", "حساء", "مقبلات", "مشروب", "مشروبات",
+        "عصير", "عصائر",
+        "وجبة خفيفة", "وجبات خفيفة", "فطور", "خبز", "مرافق", "مرافقات"
+    )
+
+    // Title-only checks catch a dessert whose course metadata was accidentally mislabeled.
+    // Avoid the generic adjective "حلو" here: dishes such as لحم حلو are main courses.
+    private val dessertTitleMarkers = listOf(
+        "dessert", "patisserie", "gateau", "tarte", "cookie", "biscuit",
+        "confiserie", "pudding", "brownie", "cake", "muffin", "glace",
+        "sorbet", "viennoiserie", "حلويات", "حلوى", "حلوة", "كعك", "كيك",
+        "قاطو", "طورطة", "تارت", "بسكويت", "بسكوي"
     )
 
     fun allows(recipe: MealRecipe): Boolean = allowsRecipeId(recipe.id)
@@ -66,23 +66,18 @@ object PlanCuisinePolicy {
         recipeId.startsWith(ALGERIAN_RECIPE_ID_PREFIX)
 
     /**
-     * Automatic generation is deliberately fail-closed: a recipe must carry
-     * an explicit main-dish type in its course metadata. A generic label such
-     * as "traditional" or "quick" is not enough to qualify it.
+     * Fail closed: an Algerian recipe must have an explicit main-dish course
+     * classification. Desserts, sweets, starters, soups, salads, sides,
+     * breads, breakfasts and drinks are excluded from automatic generation.
      */
     fun allowsMainDish(recipe: MealRecipe): Boolean {
         if (!allows(recipe)) return false
 
         val courseMetadata = listOf(recipe.category) + recipe.categories + recipe.tags
-        val searchableText = listOf(
-            recipe.nameAr,
-            recipe.nameFr,
-            recipe.nativeName,
-            recipe.descriptionAr,
-            recipe.descriptionFr
-        )
+        if (courseMetadata.any(::containsNonMainDishMarker)) return false
 
-        if ((courseMetadata + searchableText).any(::containsNonMainDishMarker)) {
+        val dishNames = listOf(recipe.nameAr, recipe.nameFr, recipe.nativeName)
+        if (dishNames.any { name -> containsAnyPhrase(name, dessertTitleMarkers) }) {
             return false
         }
 
