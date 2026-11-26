@@ -741,7 +741,7 @@ class MealsRepository internal constructor(
         val requestUrl = "https://api.openverse.org/v1/images/".toHttpUrl().newBuilder()
             .addQueryParameter("q", query.take(180))
             .addQueryParameter("page_size", "20")
-            .addQueryParameter("license", "cc0,by,by-sa")
+            .addQueryParameter("license", "cc0,by,by-sa,pdm")
             .addQueryParameter("category", "photograph")
             .addQueryParameter("mature", "false")
             .addQueryParameter("filter_dead", "true")
@@ -767,6 +767,7 @@ class MealsRepository internal constructor(
                     "cc0" -> "CC0 1.0"
                     "by" -> "CC BY ${version.ifBlank { "4.0" }}"
                     "by-sa" -> "CC BY-SA ${version.ifBlank { "4.0" }}"
+                    "pdm" -> "Public domain"
                     else -> continue
                 }
                 val licenseUrl = item.optString("license_url").trim().ifBlank {
