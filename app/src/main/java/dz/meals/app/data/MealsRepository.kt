@@ -709,11 +709,13 @@ class MealsRepository internal constructor(
 
             // Commons has incomplete metadata for some otherwise useful files.
             // Openverse provides a second image index with structured attribution.
+            var openverseFailure: Exception? = null
             val openverseResults = try {
                 searchOpenverseRecipeImages(typedTerm)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                openverseFailure = error
                 Log.w(RECIPE_IMAGE_LOG_TAG, "openverse_search_failed reason=${error.message?.take(120)}")
                 emptyList()
             }
@@ -725,8 +727,11 @@ class MealsRepository internal constructor(
                 RECIPE_IMAGE_LOG_TAG,
                 "image_search commons=${commonsResults.size} openverse=${openverseResults.size} total=${combined.size}"
             )
-            if (combined.isEmpty() && successfulRequests == 0 && lastFailure != null) {
-                throw lastFailure
+            if (combined.isEmpty()) {
+                if (successfulRequests == 0 && lastFailure != null) throw lastFailure
+                if (openverseFailure != null) {
+                    throw IOException("تعذر الاتصال بمصادر الصور حالياً.", openverseFailure)
+                }
             }
             combined
         }
