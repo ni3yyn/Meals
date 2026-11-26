@@ -123,6 +123,22 @@ class RecipeImagePolicyTest {
     }
 
     @Test
+    fun rejectsLookalikeCreativeCommonsHostsAndMalformedLicencePaths() {
+        assertFalse(
+            recipe(
+                license = "CC BY 4.0",
+                licenseUrl = "https://creativecommons.org.attacker.example/licenses/by/4.0/"
+            ).hasVerifiedReusableImage()
+        )
+        assertFalse(
+            recipe(
+                license = "CC BY 4.0",
+                licenseUrl = "https://creativecommons.org/licenses/by/latest/"
+            ).hasVerifiedReusableImage()
+        )
+    }
+
+    @Test
     fun rejectsUnknownLicenceEvenWhenSourceMetadataExists() {
         assertFalse(
             recipe(
