@@ -167,6 +167,27 @@ fun MealRecipe.hasVerifiedReusableImage(): Boolean {
     }
 }
 
+/**
+ * Whether a recipe has a safe direct image URL for display.
+ *
+ * Most catalogues still require a verified reusable-image policy. The curated
+ * Algerian starter is different: its photo records are direct Dzirielle-hosted
+ * WebP URLs with a matching Dzirielle recipe page and provider credit. These
+ * can be displayed in-app without copying or relabelling their licence.
+ */
+fun MealRecipe.hasDisplayableRecipeImage(): Boolean =
+    hasVerifiedReusableImage() || hasDzirielleHostedImage()
+
+private fun MealRecipe.hasDzirielleHostedImage(): Boolean {
+    val source = attribution ?: return false
+    val imagePath = imageUrl.substringBefore('?').substringBefore('#')
+    return id.startsWith("dz-algerian-dzirielle-") &&
+        isHttpsImageAtHost(imageUrl, "www.dzirielle.com", "/saveurs/") &&
+        imagePath.endsWith(".webp", ignoreCase = true) &&
+        isHttpsImageAtHost(source.sourceUrl, "www.dzirielle.com", "/recette/") &&
+        source.credit.equals("Dzirielle", ignoreCase = true)
+}
+
 /** The URL host and path must both match; lookalike domains are never accepted. */
 private fun isHttpsImageAtHost(url: String, expectedHost: String, expectedPathPrefix: String): Boolean {
     val normalized = url.trim()
@@ -210,6 +231,7 @@ fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
 
 /** Image rights shown alongside the photo, respecting per-photo overrides. */
 fun MealRecipe.recipeImageCredit(): String = when {
+    hasDzirielleHostedImage() -> attribution?.credit.orEmpty()
     imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
         imageCredit.ifBlank { imageAuthor }
     isHttpsImageAtHost(imageUrl, "api.openverse.org", "/v1/images/") ->

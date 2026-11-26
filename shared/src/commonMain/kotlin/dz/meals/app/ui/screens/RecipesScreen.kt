@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
-import dz.meals.app.data.hasVerifiedReusableImage
+import dz.meals.app.data.hasDisplayableRecipeImage
 import dz.meals.app.data.recipeImageCredit
 import dz.meals.app.data.recipeImageLicense
 import dz.meals.app.data.recipeImageLicenseUrl
@@ -516,7 +516,7 @@ fun RecipesScreen(
                                     horizontalArrangement = Arrangement.spacedBy(11.dp)
                                 ) {
                                     MealsRecipeImage(
-                                        imageUrl = recipe.takeIf { it.hasVerifiedReusableImage() }?.imageUrl.orEmpty(),
+                                        imageUrl = recipe.takeIf { it.hasDisplayableRecipeImage() }?.imageUrl.orEmpty(),
                                         contentDescription = recipe.nameAr,
                                         modifier = Modifier.size(82.dp),
                                         imageWidth = 360,
@@ -615,7 +615,7 @@ fun RecipesScreen(
     LaunchedEffect(detail?.id, detail?.imageUrl, automaticImageRetryNonce) {
         val recipe = detail ?: return@LaunchedEffect
         val autoLoad = onAutoLoadRecipeImage ?: return@LaunchedEffect
-        if (recipe.hasVerifiedReusableImage()) return@LaunchedEffect
+        if (recipe.hasDisplayableRecipeImage()) return@LaunchedEffect
         if (!attemptedAutomaticImageRecipeIds.add(recipe.id)) return@LaunchedEffect
 
         automaticImageLoadingRecipeId = recipe.id
@@ -814,7 +814,7 @@ fun RecipesScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (detail.hasVerifiedReusableImage()) {
+                    if (detail.hasDisplayableRecipeImage()) {
                         item {
                             MealsRecipeImage(
                                 imageUrl = detail.imageUrl,
@@ -881,7 +881,7 @@ fun RecipesScreen(
                         }
                     }
                     if (onSearchRecipeImages != null && onSaveRecipeImage != null) {
-                        val hasImage = detail.hasVerifiedReusableImage()
+                        val hasImage = detail.hasDisplayableRecipeImage()
                         val autoFailed = automaticImageErrorRecipeId == detail.id
                         if (hasImage || onAutoLoadRecipeImage == null || autoFailed) {
                             item {
@@ -916,7 +916,7 @@ fun RecipesScreen(
                             }
                         }
                     }
-                    if (detail.hasVerifiedReusableImage()) {
+                    if (detail.hasDisplayableRecipeImage()) {
                         val imageCredit = detail.recipeImageCredit()
                         val imageLicense = detail.recipeImageLicense()
                         val imageSourceUrl = detail.recipeImageSourceUrl()

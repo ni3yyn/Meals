@@ -294,8 +294,8 @@ class RecipeImagePolicyTest {
     }
 
     @Test
-    fun rejectsPhotosFromUnverifiedDzirielleSource() {
-        val unverified = recipe(
+    fun displaysDirectDzirielleImagesWithProviderCreditButDoesNotMarkTheirLicenceVerified() {
+        val dzirielle = recipe(
             license = "not_verified",
             licenseUrl = "",
             imageUrl = "https://www.dzirielle.com/saveurs/test.webp",
@@ -303,8 +303,9 @@ class RecipeImagePolicyTest {
             author = "",
             credit = ""
         ).copy(
+            id = "dz-algerian-dzirielle-test",
             attribution = RecipeAttribution(
-                sourceTitle = "Dzirielle",
+                sourceTitle = "Test Algerian recipe",
                 sourceUrl = "https://www.dzirielle.com/recette/test",
                 revisionUrl = "",
                 historyUrl = "",
@@ -315,7 +316,54 @@ class RecipeImagePolicyTest {
                 changes = ""
             )
         )
-        assertFalse(unverified.hasVerifiedReusableImage())
+        assertTrue(dzirielle.hasDisplayableRecipeImage())
+        assertFalse(dzirielle.hasVerifiedReusableImage())
+        assertEquals("Dzirielle", dzirielle.recipeImageCredit())
+        assertEquals("", dzirielle.recipeImageLicense())
+        assertEquals("https://www.dzirielle.com/recette/test", dzirielle.recipeImageSourceUrl())
+    }
+
+    @Test
+    fun rejectsDzirielleLookalikeHostsAndUnrelatedRecipePages() {
+        val attribution = RecipeAttribution(
+            sourceTitle = "Test Algerian recipe",
+            sourceUrl = "https://www.dzirielle.com/recette/test",
+            revisionUrl = "",
+            historyUrl = "",
+            credit = "Dzirielle",
+            sourceLicense = "not_verified",
+            license = "not_verified",
+            licenseUrl = "",
+            changes = ""
+        )
+        val validBase = recipe(
+            license = "not_verified",
+            licenseUrl = "",
+            imageUrl = "https://www.dzirielle.com/saveurs/test.webp",
+            sourcePageUrl = "",
+            author = "",
+            credit = ""
+        ).copy(id = "dz-algerian-dzirielle-test", attribution = attribution)
+
+        assertFalse(
+            validBase.copy(
+                imageUrl = "https://www.dzirielle.com.attacker.example/saveurs/test.webp"
+            ).hasDisplayableRecipeImage()
+        )
+        assertFalse(
+            validBase.copy(
+                imageUrl = "https://images.example.com/saveurs/test.webp"
+            ).hasDisplayableRecipeImage()
+        )
+        assertFalse(
+            validBase.copy(
+                attribution = attribution.copy(sourceUrl = "https://dzirielle.com.attacker.example/recette/test")
+            ).hasDisplayableRecipeImage()
+        )
+        assertFalse(
+            validBase.copy(imageUrl = "https://www.dzirielle.com/saveurs/test.jpg")
+                .hasDisplayableRecipeImage()
+        )
     }
 
     @Test
