@@ -119,6 +119,16 @@ fun MealRecipe.hasVerifiedReusableImage(): Boolean {
                 (imageAuthor.isNotBlank() && imageCredit.isNotBlank()))
     }
 
+    // Openverse-proxied thumbnails are stable image URLs; the original provider
+    // landing page and the individual image licence remain attached for credit.
+    if (isHttpsImageAtHost(imageUrl, "api.openverse.org", "/v1/images/")) {
+        return imageSourcePageUrl.startsWith("https://", ignoreCase = true) &&
+            !isHttpsImageAtHost(imageSourcePageUrl, "api.openverse.org", "/") &&
+            isReusableRecipeImageLicense(imageLicense, imageLicenseUrl) &&
+            (!recipeImageLicenseRequiresAttribution(imageLicense) ||
+                (imageAuthor.isNotBlank() && imageCredit.isNotBlank()))
+    }
+
     val source = attribution ?: return false
     return when {
         id.startsWith("focus:") -> {
@@ -202,6 +212,8 @@ fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
 fun MealRecipe.recipeImageCredit(): String = when {
     imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
         imageCredit.ifBlank { imageAuthor }
+    isHttpsImageAtHost(imageUrl, "api.openverse.org", "/v1/images/") ->
+        imageCredit.ifBlank { imageAuthor }
     id.startsWith("focus:") -> attribution?.credit.orEmpty()
     id.startsWith("unitools:") -> imageAuthor.ifBlank { attribution?.credit.orEmpty() }
     else -> ""
@@ -210,6 +222,7 @@ fun MealRecipe.recipeImageCredit(): String = when {
 fun MealRecipe.recipeImageLicense(): String = when {
     imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
         imageLicense
+    isHttpsImageAtHost(imageUrl, "api.openverse.org", "/v1/images/") -> imageLicense
     id.startsWith("focus:") -> attribution?.license.orEmpty()
     id.startsWith("unitools:") -> imageLicense
     else -> ""
@@ -218,6 +231,7 @@ fun MealRecipe.recipeImageLicense(): String = when {
 fun MealRecipe.recipeImageLicenseUrl(): String = when {
     imageSourcePageUrl.startsWith("https://commons.wikimedia.org/wiki/File:", ignoreCase = true) ->
         imageLicenseUrl
+    isHttpsImageAtHost(imageUrl, "api.openverse.org", "/v1/images/") -> imageLicenseUrl
     id.startsWith("focus:") -> attribution?.licenseUrl.orEmpty()
     id.startsWith("unitools:") ->
         imageLicenseUrl.ifBlank { canonicalRecipeImageLicenseUrl(imageLicense).orEmpty() }

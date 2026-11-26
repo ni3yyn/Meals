@@ -299,7 +299,7 @@ fun RecipesScreen(
             try {
                 imageSearchResults = search(recipe, term)
                 if (imageSearchResults.isEmpty()) {
-                    imageSearchError = "لم نعثر على صور مرخّصة تطابق هذا البحث. جرّب اسماً آخر."
+                    imageSearchError = "لم نعثر على صور مناسبة في المصادر المتاحة. جرّب اسماً آخر."
                 }
             } catch (error: Exception) {
                 imageSearchError = error.message ?: "تعذر البحث عن الصور حالياً."
@@ -680,7 +680,7 @@ fun RecipesScreen(
                     ) {
                         item {
                             Text(
-                                "ابحث في Wikimedia Commons عن صورة لهذا الطبق. نعرض الصور ذات تراخيص إعادة الاستخدام الواضحة فقط.",
+                                "ابحث في Wikimedia Commons وOpenverse عن صورة لهذا الطبق مع بيانات المصدر والاعتماد.",
                                 color = MutedInk,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -714,7 +714,7 @@ fun RecipesScreen(
                         if (imageSearchLoading) {
                             item {
                                 Text(
-                                    "نبحث في صور Wikimedia Commons ونراجع تراخيصها…",
+                                    "نبحث في مصادر الصور المفتوحة ونراجع بياناتها…",
                                     color = MutedInk,
                                     style = MaterialTheme.typography.bodySmall
                                 )

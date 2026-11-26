@@ -581,7 +581,8 @@ class MealsRepository internal constructor(
                         .addQueryParameter("generator", "search")
                         .addQueryParameter("gsrsearch", "$term filetype:bitmap")
                         .addQueryParameter("gsrnamespace", "6")
-                        .addQueryParameter("gsrlimit", "50")
+                        // extmetadata is expensive; keep the per-query batch bounded.
+                        .addQueryParameter("gsrlimit", "20")
                         .addQueryParameter("prop", "imageinfo")
                         .addQueryParameter("iiprop", "url|extmetadata|size|mime")
                         .addQueryParameter("iiurlwidth", "720")
@@ -626,14 +627,16 @@ class MealsRepository internal constructor(
                         }
 
                         val metadata = info.optJSONObject("extmetadata") ?: continue
+                        fun metadataRawValue(key: String): String =
+                            metadata.optJSONObject(key)?.optString("value").orEmpty()
                         fun metadataValue(key: String): String =
-                            metadata.optJSONObject(key)?.optString("value").orEmpty().stripCommonsMarkup()
+                            metadataRawValue(key).stripCommonsMarkup()
 
                         val license = metadataValue("LicenseShortName")
-                        // Commons sometimes provides a recognised short name but omits
-                        // LicenseUrl. Reconstruct only known canonical CC URLs; mismatches
-                        // are still rejected by the same exact-name/URL policy.
-                        val licenseUrl = metadataValue("LicenseUrl").ifBlank {
+                        // Commons extmetadata is HTML-formatted. Preserve the LicenseUrl
+                        // anchor href before stripping tags, otherwise only its link label
+                        // survives and the exact licence comparison rejects every result.
+                        val licenseUrl = extractCommonsLicenseUrl(metadataRawValue("LicenseUrl")).ifBlank {
                             canonicalRecipeImageLicenseUrl(license).orEmpty()
                         }
                         if (!isReusableRecipeImageLicense(license, licenseUrl)) {
@@ -701,9 +704,100 @@ class MealsRepository internal constructor(
                 RECIPE_IMAGE_LOG_TAG,
                 "commons_search requests=${successfulRequests + failedRequests} scanned=$scannedPages accepted=${accepted.size} rejected_license=$rejectedByLicence rejected_attribution=$rejectedByAttribution rejected_format=$rejectedByFormatOrSize"
             )
-            if (successfulRequests == 0 && lastFailure != null) throw lastFailure
-            accepted.values.take(30)
+            val commonsResults = accepted.values.take(30)
+            if (commonsResults.size >= 8) return@withLock commonsResults
+
+            // Commons has incomplete metadata for some otherwise useful files.
+            // Openverse provides a second image index with structured attribution.
+            val openverseResults = try {
+                searchOpenverseRecipeImages(typedTerm)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w(RECIPE_IMAGE_LOG_TAG, "openverse_search_failed reason=${error.message?.take(120)}")
+                emptyList()
+            }
+
+            val combined = (commonsResults + openverseResults)
+                .distinctBy { it.imageUrl }
+                .take(30)
+            Log.d(
+                RECIPE_IMAGE_LOG_TAG,
+                "image_search commons=${commonsResults.size} openverse=${openverseResults.size} total=${combined.size}"
+            )
+            if (combined.isEmpty() && successfulRequests == 0 && lastFailure != null) {
+                throw lastFailure
+            }
+            combined
         }
+    }
+
+    private fun searchOpenverseRecipeImages(query: String): List<RecipeImageCandidate> {
+        val requestUrl = "https://api.openverse.org/v1/images/".toHttpUrl().newBuilder()
+            .addQueryParameter("q", query.take(180))
+            .addQueryParameter("page_size", "20")
+            .addQueryParameter("license", "cc0,by,by-sa")
+            .addQueryParameter("category", "photograph")
+            .addQueryParameter("mature", "false")
+            .addQueryParameter("filter_dead", "true")
+            .build()
+        val request = Request.Builder()
+            .url(requestUrl)
+            .header("Accept", "application/json")
+            .header("User-Agent", "Midati-Android/1.0 (https://github.com/ni3yyn/Meals)")
+            .build()
+        val body = commonsClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("Openverse returned HTTP ${response.code}.")
+            }
+            response.body?.string() ?: throw IOException("Openverse returned an empty response.")
+        }
+        val results = JSONObject(body).optJSONArray("results") ?: return emptyList()
+        return buildList {
+            for (index in 0 until results.length()) {
+                val item = results.optJSONObject(index) ?: continue
+                val code = item.optString("license").trim().lowercase()
+                val version = item.optString("license_version").trim()
+                val license = when (code) {
+                    "cc0" -> "CC0 1.0"
+                    "by" -> "CC BY ${version.ifBlank { "4.0" }}"
+                    "by-sa" -> "CC BY-SA ${version.ifBlank { "4.0" }}"
+                    else -> continue
+                }
+                val licenseUrl = item.optString("license_url").trim().ifBlank {
+                    canonicalRecipeImageLicenseUrl(license).orEmpty()
+                }
+                if (!isReusableRecipeImageLicense(license, licenseUrl)) continue
+
+                // Prefer Openverse's own resized thumbnail URL rather than the
+                // provider's original image. It is stable and sized for app cards.
+                val imageUrl = item.optString("thumbnail").trim()
+                val sourcePageUrl = item.optString("foreign_landing_url").trim()
+                if (!imageUrl.startsWith("https://api.openverse.org/v1/images/")) continue
+                if (!sourcePageUrl.startsWith("https://", ignoreCase = true)) continue
+
+                val author = item.optString("creator").trim()
+                val attribution = item.optString("attribution").trim()
+                val credit = attribution.ifBlank { author }
+                if (recipeImageLicenseRequiresAttribution(license) &&
+                    (author.isBlank() || credit.isBlank())
+                ) continue
+
+                add(
+                    RecipeImageCandidate(
+                        title = item.optString("title").trim().ifBlank { query },
+                        imageUrl = imageUrl,
+                        sourcePageUrl = sourcePageUrl,
+                        author = author.ifBlank { credit },
+                        credit = credit,
+                        license = license,
+                        licenseUrl = licenseUrl,
+                        width = item.optInt("width"),
+                        height = item.optInt("height")
+                    )
+                )
+            }
+        }.take(20)
     }
 
     /**
@@ -789,14 +883,20 @@ class MealsRepository internal constructor(
     }
 
     suspend fun saveRecipeImage(recipeId: String, image: RecipeImageCandidate) {
-        require(image.imageUrl.startsWith("https://upload.wikimedia.org/", ignoreCase = true)) {
-            "رابط الصورة غير موثوق."
-        }
-        require(image.sourcePageUrl.startsWith(
+        val isCommonsImage = image.imageUrl.startsWith(
+            "https://upload.wikimedia.org/",
+            ignoreCase = true
+        ) && image.sourcePageUrl.startsWith(
             "https://commons.wikimedia.org/wiki/File:",
             ignoreCase = true
-        )) {
-            "رابط مصدر الصورة غير صالح."
+        )
+        val isOpenverseImage = image.imageUrl.startsWith(
+            "https://api.openverse.org/v1/images/",
+            ignoreCase = true
+        ) && image.sourcePageUrl.startsWith("https://", ignoreCase = true) &&
+            !image.sourcePageUrl.startsWith("https://api.openverse.org/", ignoreCase = true)
+        require(isCommonsImage || isOpenverseImage) {
+            "رابط الصورة أو صفحة مصدرها غير موثوق."
         }
         require(isReusableRecipeImageLicense(image.license, image.licenseUrl)) {
             "ترخيص هذه الصورة لا يسمح بإعادة استخدامها داخل التطبيق."
@@ -1184,6 +1284,23 @@ private fun commonsImageTokens(value: String): Set<String> {
         .split(Regex("[^\\p{L}\\p{N}]+"))
         .filter { it.length >= 2 && it !in commonsImageStopWords }
         .toSet()
+}
+
+/**
+ * LicenseUrl values from CommonsMetadata may be HTML anchors. Return the actual
+ * href (or a plain URL), not the visible link text.
+ */
+internal fun extractCommonsLicenseUrl(htmlValue: String): String {
+    val href = Regex("""(?i)href\s*=\s*["']([^"']+)["']""")
+        .find(htmlValue)?.groupValues?.get(1)
+    val plainUrl = Regex("""https://creativecommons\.org/[^\s"'<>]+""")
+        .find(htmlValue)?.value
+    return (href ?: plainUrl)
+        ?.replace("&amp;", "&", ignoreCase = true)
+        ?.substringBefore('#')
+        ?.substringBefore('?')
+        ?.takeIf { it.startsWith("https://creativecommons.org/", ignoreCase = true) }
+        .orEmpty()
 }
 
 private fun String.stripCommonsMarkup(): String =

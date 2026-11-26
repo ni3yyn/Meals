@@ -86,6 +86,50 @@ class RecipeImagePolicyTest {
     }
 
     @Test
+    fun extractsCommonsLicenseUrlFromHtmlAnchorInsteadOfVisibleLabel() {
+        assertEquals(
+            "https://creativecommons.org/licenses/by-sa/4.0/",
+            extractCommonsLicenseUrl(
+                """<a href="https://creativecommons.org/licenses/by-sa/4.0/" class="external">CC BY-SA 4.0</a>"""
+            )
+        )
+        assertEquals(
+            "https://creativecommons.org/publicdomain/zero/1.0/",
+            extractCommonsLicenseUrl("https://creativecommons.org/publicdomain/zero/1.0/")
+        )
+        assertEquals("", extractCommonsLicenseUrl("<span>CC BY-SA 4.0</span>"))
+    }
+
+    @Test
+    fun acceptsOpenverseThumbnailsWithProviderCreditAndLicence() {
+        val openverse = recipe(
+            imageUrl = "https://api.openverse.org/v1/images/123e4567-e89b-12d3-a456-426614174000/thumb/",
+            sourcePageUrl = "https://flickr.com/photos/example/123",
+            license = "CC BY-SA 4.0",
+            licenseUrl = "https://creativecommons.org/licenses/by-sa/4.0/"
+        )
+        assertTrue(openverse.hasVerifiedReusableImage())
+        assertEquals("Photographer / Wikimedia Commons", openverse.recipeImageCredit())
+        assertEquals("CC BY-SA 4.0", openverse.recipeImageLicense())
+    }
+
+    @Test
+    fun rejectsLookalikeOpenverseHostsAndMissingProviderSource() {
+        assertFalse(
+            recipe(
+                imageUrl = "https://api.openverse.org.attacker.example/v1/images/123/thumb/",
+                sourcePageUrl = "https://flickr.com/photos/example/123"
+            ).hasVerifiedReusableImage()
+        )
+        assertFalse(
+            recipe(
+                imageUrl = "https://api.openverse.org/v1/images/123/thumb/",
+                sourcePageUrl = ""
+            ).hasVerifiedReusableImage()
+        )
+    }
+
+    @Test
     fun allowsAttributionFreeCommonsImagesWithoutInventingAnAuthor() {
         assertTrue(
             recipe(
