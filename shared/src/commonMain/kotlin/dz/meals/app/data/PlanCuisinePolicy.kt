@@ -47,7 +47,7 @@ object PlanCuisinePolicy {
         "glace", "glaces", "sorbet", "sorbets", "viennoiserie", "viennoiseries",
         "crepe sucree",
         "حلويات", "حلوى", "تحلية", "تحليات", "حلاوة", "حلوة",
-        "كعك", "كيك", "قاطو", "طورطة", "تارت", "بسكويت", "بسكوي",
+        "كعك", "كيك", "قاطو", "كيكة", "كيكات", "كعكة", "كعكات", "طورطة", "تارت", "بسكويت", "بسكوي",
         "شوكولاتة", "شكولاطة",
 
         "entree", "entrees", "starter", "starters", "appetizer", "appetizers",
