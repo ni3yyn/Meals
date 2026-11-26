@@ -54,8 +54,8 @@ object PlanCuisinePolicy {
         "بسكويت", "بسكوي", "شوكولاتة", "شكولاطة",
 
         // Other courses and drinks are not main dishes.
-        "entree", "starter", "appetizer", "salade", "soup", "soupe",
-        "boisson", "drink", "juice", "jus", "smoothie", "cocktail",
+        "entree", "entrees", "starter", "starters", "appetizer", "appetizers", "salade", "salades", "soup", "soups", "soupe",
+        "boisson", "boissons", "drink", "drinks", "juice", "juices", "jus", "smoothie", "cocktail",
         "سلطة", "سلطات", "شوربة", "حساء", "مقبلات",
         "مشروب", "مشروبات", "عصير", "عصائر"
     )
