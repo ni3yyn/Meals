@@ -48,7 +48,7 @@ object PlanCuisinePolicy {
         "drink", "drinks", "juice", "juices", "jus", "smoothie", "cocktail",
         "سلطة", "سلطات", "شوربة", "حساء", "مقبلات", "مشروب", "مشروبات",
         "عصير", "عصائر",
-        "وجبة خفيفة", "وجبات خفيفة", "فطور", "خبز", "مرافق", "مرافقات"
+        "وجبة خفيفة", "وجبات خفيفة", "فطور", "خبز"
     )
 
     // Title-only checks catch a dessert whose course metadata was accidentally mislabeled.
