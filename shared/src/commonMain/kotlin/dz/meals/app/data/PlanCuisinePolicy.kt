@@ -53,7 +53,7 @@ object PlanCuisinePolicy {
         "entree", "entrees", "starter", "starters", "appetizer", "appetizers",
         "salade", "salades", "boisson", "boissons",
         "drink", "drinks", "juice", "juices", "jus", "smoothie", "cocktail",
-        "سلطة", "سلطات", "شوربة", "حساء", "مقبلات", "مشروب", "مشروبات",
+        "سلطة", "سلطات", "مقبلات", "مشروب", "مشروبات",
         "عصير", "عصائر",
         "وجبة خفيفة", "وجبات خفيفة", "فطور", "خبز"
     )
