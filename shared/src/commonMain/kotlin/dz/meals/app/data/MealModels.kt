@@ -185,36 +185,11 @@ fun canonicalRecipeImageLicenseUrl(name: String): String? {
     return "https://creativecommons.org/licenses/$licenceType/${match.groupValues[2]}/"
 }
 
-/** The same licence rule is used when saving, displaying and attributing an image. */
+/** The display name must resolve to the exact canonical Creative Commons URL. */
 fun isReusableRecipeImageLicense(name: String, url: String): Boolean {
-    val normalized = name.trim().lowercase()
-    val tokens = normalized.split(Regex("[^a-z0-9]+")).filter { it.isNotBlank() }
-    if (tokens.any { it == "nc" || it == "nd" }) return false
-
-    val officialPrefix = "https://creativecommons.org/"
-    val cleanUrl = url.trim().lowercase().substringBefore('#').substringBefore('?')
-    if (!cleanUrl.startsWith(officialPrefix)) return false
-
-    val path = cleanUrl.removePrefix(officialPrefix)
-        .split('/')
-        .filter { it.isNotBlank() }
-    if (path.size < 3 || !path[2].matches(Regex("[0-9]+(?:\\.[0-9]+)?"))) return false
-
-    val hasAttribution = "by" in tokens || "attribution" in tokens
-    val hasShareAlike = "sa" in tokens || "sharealike" in tokens
-    return when (path[0]) {
-        "licenses" -> when (path[1]) {
-            "by" -> hasAttribution && !hasShareAlike
-            "by-sa" -> hasAttribution && hasShareAlike
-            else -> false
-        }
-        "publicdomain" -> when (path[1]) {
-            "zero" -> "cc0" in tokens || "zero" in tokens
-            "mark" -> "public" in tokens && "domain" in tokens
-            else -> false
-        }
-        else -> false
-    }
+    val canonicalUrl = canonicalRecipeImageLicenseUrl(name) ?: return false
+    val suppliedUrl = url.trim().lowercase().substringBefore('#').substringBefore('?')
+    return suppliedUrl == canonicalUrl
 }
 
 /** Image rights shown alongside the photo, respecting per-photo overrides. */
