@@ -163,7 +163,8 @@ fun RecipesScreen(
     openRecipeId: String? = null,
     onOpenRecipeHandled: ((String) -> Unit)? = null,
     onDismissRecipe: (() -> Unit)? = null,
-    detailOverlayOnly: Boolean = false
+    detailOverlayOnly: Boolean = false,
+    defaultServings: Int = 3
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("الكل") }
@@ -189,7 +190,7 @@ fun RecipesScreen(
     }
     var isCookingMode by rememberSaveable { mutableStateOf(false) }
     var cookingStepIndex by rememberSaveable { mutableStateOf(0) }
-    var recipeServings by rememberSaveable { mutableStateOf(2) }
+    var recipeServings by rememberSaveable(defaultServings) { mutableStateOf(defaultServings.coerceIn(1, 12)) }
     var cookingCompleted by rememberSaveable { mutableStateOf(false) }
     var cookingStepDirection by rememberSaveable { mutableStateOf(1) }
     var browseDirection by rememberSaveable { mutableStateOf(1) }
@@ -258,10 +259,10 @@ fun RecipesScreen(
         }
     }
 
-    LaunchedEffect(selectedRecipeId) {
+    LaunchedEffect(selectedRecipeId, defaultServings) {
         imageSearchOpen = false
         isCookingMode = false
-        recipeServings = recipes.firstOrNull { it.id == selectedRecipeId }?.baseServings?.coerceIn(1, 12) ?: 2
+        recipeServings = defaultServings.coerceIn(1, 12)
         cookingCompleted = false
         cookingStepIndex = 0
         imageSearchQuery = ""
@@ -558,7 +559,7 @@ fun RecipesScreen(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Text(
-                                        recipe.baseServings.toString() + " حصص",
+                                        defaultServings.coerceIn(1, 12).toString() + " حصص",
                                         color = MutedInk,
                                         style = MaterialTheme.typography.bodySmall
                                     )

@@ -604,6 +604,7 @@ private fun MealsAppContent(
                             ingredients = snapshot.ingredients,
                             allergyIds = preferences.allergyIds,
                             favoriteRecipeIds = snapshot.favoriteRecipeIds,
+                            defaultServings = preferences.householdServings,
                             onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                             onAddRecipe = { id ->
                                 recipeIdToOpenFromPlan = null
@@ -647,6 +648,7 @@ private fun MealsAppContent(
                         ingredients = snapshot.ingredients,
                         allergyIds = preferences.allergyIds,
                         favoriteRecipeIds = snapshot.favoriteRecipeIds,
+                        defaultServings = preferences.householdServings,
                         onSearchRecipeImages = { recipe, query ->
                             repository.searchCommonsRecipeImages(recipe, query)
                         },

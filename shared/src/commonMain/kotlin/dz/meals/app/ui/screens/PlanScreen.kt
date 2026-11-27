@@ -61,7 +61,7 @@ import dz.meals.app.ui.components.MealsPrimaryButton
 import dz.meals.app.ui.components.MealsSecondaryButton
 import dz.meals.app.data.AppPreferences
 import dz.meals.app.data.MealRecipe
-import dz.meals.app.data.hasVerifiedReusableImage
+import dz.meals.app.data.hasDisplayableRecipeImage
 import dz.meals.app.data.MealsSnapshot
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.ui.theme.Border
@@ -536,7 +536,7 @@ fun PlanScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 MealsRecipeImage(
-                                    imageUrl = recipe.takeIf { it.hasVerifiedReusableImage() }?.imageUrl.orEmpty(),
+                                    imageUrl = recipe.takeIf { it.hasDisplayableRecipeImage() }?.imageUrl.orEmpty(),
                                     contentDescription = recipe.nameAr,
                                     modifier = Modifier.size(58.dp),
                                     imageWidth = 280,
@@ -556,7 +556,7 @@ fun PlanScreen(
                                     )
                                     Text(
                                         recipe.durationMinutes.toString() + " دقيقة · " +
-                                            recipe.baseServings + " حصص",
+                                            preferences.householdServings.toString() + " حصص",
                                         color = MutedInk,
                                         style = MaterialTheme.typography.bodySmall
                                     )
@@ -696,7 +696,7 @@ private fun SlotRow(
                                 horizontalArrangement = Arrangement.spacedBy(9.dp)
                             ) {
                                 MealsRecipeImage(
-                                    imageUrl = recipe?.takeIf { it.hasVerifiedReusableImage() }?.imageUrl.orEmpty(),
+                                    imageUrl = recipe?.takeIf { it.hasDisplayableRecipeImage() }?.imageUrl.orEmpty(),
                                     contentDescription = recipe?.nameAr ?: title,
                                     modifier = Modifier.size(82.dp),
                                     imageWidth = 360,
