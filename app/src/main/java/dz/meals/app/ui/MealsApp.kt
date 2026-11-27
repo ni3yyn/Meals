@@ -1793,7 +1793,7 @@ private fun HouseholdPreferencesDialog(
                     Text("استهلاك اللحوم والدجاج", style = MaterialTheme.typography.titleMedium)
                     listOf(
                         "regular" to "عادي",
-                        "none" to "بدون لحم",
+                        "none" to "بدون لحوم أو سمك",
                         "chicken_only" to "الدجاج فقط",
                         "monthly_limit" to "كمية شهرية"
                     ).forEach { (value, label) ->

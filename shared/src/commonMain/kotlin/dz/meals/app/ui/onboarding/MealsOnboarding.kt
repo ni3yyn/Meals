@@ -115,7 +115,7 @@ import kotlin.math.sin
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** The two essential values collected during first-run setup. */
+/** Core first-run values and the household's food-consumption preferences. */
 data class MealsOnboardingResult(
     val weeklyBudgetDzd: Int,
     val householdServings: Int,
@@ -442,7 +442,7 @@ fun MealsOnboarding(
                                 ) {
                                     listOf(
                                         "regular" to "عادي",
-                                        "none" to "بدون لحم",
+                                        "none" to "بدون لحوم أو سمك",
                                         "chicken_only" to "الدجاج فقط",
                                         "monthly_limit" to "كمية شهرية"
                                     ).forEach { (value, label) ->
