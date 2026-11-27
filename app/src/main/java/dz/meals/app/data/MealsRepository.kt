@@ -358,7 +358,7 @@ class MealsRepository internal constructor(
         }
         val allowed = generatorRecipes.filter { recipe ->
             isRecipeAllowed(recipe, ingredientTaxonomyById, allergyIds, dietPattern) &&
-                isRecipeAllowedByMeatPreference(recipe, ingredientTaxonomyById, normalizedMeatPreference) &&
+                isRecipeAllowedByMeatPreference(recipe, ingredientTaxonomyById, normalizedMeatPreference, ingredientsById) &&
                 (normalizedMeatPreference != "monthly_limit" ||
                     recipeMeatQuantityGrams(recipe, householdServings, ingredientTaxonomyById) != null)
         }

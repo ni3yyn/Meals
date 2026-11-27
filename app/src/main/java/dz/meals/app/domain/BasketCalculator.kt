@@ -117,16 +117,16 @@ private val animalOrganPhrases = listOf(
 
 private fun normalizeIngredientKeywordText(value: String): String =
     Normalizer.normalize(value.lowercase(), Normalizer.Form.NFD)
-        .replace(Regex("\\\\p{M}+"), "")
+        .replace(Regex("\\p{M}+"), "")
         .replace("œ", "oe")
         .replace("æ", "ae")
         .replace('أ', 'ا')
         .replace('إ', 'ا')
         .replace('آ', 'ا')
         .replace('ى', 'ي')
-        .replace(Regex("[^\\\\p{L}\\\\p{N}]+"), " ")
+        .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
         .trim()
-        .replace(Regex("\\\\s+"), " ")
+        .replace(Regex("\\s+"), " ")
 
 private fun IngredientMaster.containsMeatOrOffalName(): Boolean {
     val searchableText = listOf(nameAr, nameFr, nameEn)
