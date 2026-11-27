@@ -74,7 +74,6 @@ private val animalFleshCategoryIds = meatAndPoultryCategoryIds + "foodcat-seafoo
 // were excluding many dishes that users still consider acceptable.
 private val arabicMeatAndOffalWords = setOf(
     "لحم", "لحوم", "لحمة",
-    "غنم", "خروف", "كبش", "عجل", "بقر", "بقري",
     "كبد", "كبدة", "كلاوي", "كلية", "كلى", "كرشة", "كرش",
     "طحال", "مخ", "دماغ", "رئة", "رئات", "قانصة", "قوانص",
     "احشاء", "مصارين", "امعاء",
@@ -83,7 +82,6 @@ private val arabicMeatAndOffalWords = setOf(
 
 private val meatAndOffalWords = setOf(
     "meat", "meats", "viande", "viandes",
-    "agneau", "mouton", "boeuf", "veau", "porc",
     "beef", "veal", "lamb", "mutton", "pork", "venison",
     "gigot", "cotelette", "cotelettes", "steak",
     "abats", "foie", "foies", "rognon", "rognons",
@@ -96,9 +94,15 @@ private val meatAndOffalWords = setOf(
     "testicule", "testicules"
 )
 
-// Some organ names are ambiguous on their own (for example, artichoke hearts).
-// Match these only when the ingredient also names an animal.
-private val animalOrganPhrases = listOf(
+// Match ambiguous cuts and organs only when the ingredient identifies the animal.
+// This avoids false positives such as sheep's milk or artichoke hearts.
+private val meatOrOffalPhrases = listOf(
+    "فخذ خروف", "فخذ الغنم", "فخذ غنم", "كتف خروف", "كتف الغنم", "كتف غنم",
+    "قطع خروف", "قطع غنم", "موزة خروف", "موزة عجل", "ريش خروف",
+    "gigot d agneau", "gigot de mouton", "epaule d agneau", "epaule de mouton",
+    "epaule de boeuf", "cotelettes d agneau", "cotelettes de mouton",
+    "agneau coupe", "mouton coupe", "morceaux d agneau", "morceaux de mouton",
+    "morceaux de boeuf", "morceaux de veau", "boeuf coupe", "veau coupe",
     "قلب دجاج", "قلب الدجاج", "قلوب دجاج", "قلوب الدجاج",
     "قلب غنم", "قلوب غنم", "قلب خروف", "قلوب خروف",
     "قلب عجل", "قلوب عجل", "قلب بقر", "قلوب بقر",
@@ -146,7 +150,7 @@ private fun IngredientMaster.containsMeatOrOffalName(): Boolean {
         }
         val hasOtherMeatOrOffalWord = tokens.any { it in meatAndOffalWords }
         val paddedText = " $normalized "
-        val hasAnimalOrganPhrase = animalOrganPhrases.any { phrase ->
+        val hasAnimalOrganPhrase = meatOrOffalPhrases.any { phrase ->
             paddedText.contains(" $phrase ")
         }
         hasArabicMeatOrOffalWord || hasOtherMeatOrOffalWord || hasAnimalOrganPhrase

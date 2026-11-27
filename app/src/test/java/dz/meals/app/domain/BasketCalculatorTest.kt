@@ -232,6 +232,14 @@ class BasketCalculatorTest {
             id = "animal-heart-meal",
             ingredients = listOf(RecipeIngredient("animal-heart", 100.0, "g"))
         )
+        val lambCut = recipe.copy(
+            id = "lamb-cut-meal",
+            ingredients = listOf(RecipeIngredient("lamb-cut", 300.0, "g"))
+        )
+        val sheepDairy = recipe.copy(
+            id = "sheep-dairy-meal",
+            ingredients = listOf(RecipeIngredient("sheep-dairy", 100.0, "g"))
+        )
 
         // Deliberately give chickpeas and artichoke hearts misleading meat
         // categories: "none" must use the actual ingredient name, not taxonomy.
@@ -249,13 +257,17 @@ class BasketCalculatorTest {
             "fish" to ingredientMaster("fish", "سمك", "poisson"),
             "chickpeas" to ingredientMaster("chickpeas", "الحمص", "pois chiches"),
             "artichoke-hearts" to ingredientMaster("artichoke-hearts", "قلوب خرشوف", "coeurs d'artichauts"),
-            "animal-heart" to ingredientMaster("animal-heart", "قلب دجاج", "coeur de poulet")
+            "animal-heart" to ingredientMaster("animal-heart", "قلب دجاج", "coeur de poulet"),
+            "lamb-cut" to ingredientMaster("lamb-cut", "فخذ خروف", "gigot d'agneau"),
+            "sheep-dairy" to ingredientMaster("sheep-dairy", "لبن غنم", "lait de mouton")
         )
 
         assertTrue(!isRecipeAllowedByMeatPreference(meat, taxonomy, "none", names))
         assertTrue(!isRecipeAllowedByMeatPreference(liver, taxonomy, "none", names))
         assertTrue(!isRecipeAllowedByMeatPreference(tongue, taxonomy, "none", names))
         assertTrue(!isRecipeAllowedByMeatPreference(animalHeart, taxonomy, "none", names))
+        assertTrue(!isRecipeAllowedByMeatPreference(lambCut, taxonomy, "none", names))
+        assertTrue(isRecipeAllowedByMeatPreference(sheepDairy, taxonomy, "none", names))
         assertTrue(isRecipeAllowedByMeatPreference(chicken, taxonomy, "none", names))
         assertTrue(isRecipeAllowedByMeatPreference(fish, taxonomy, "none", names))
         assertTrue(isRecipeAllowedByMeatPreference(chickpeas, taxonomy, "none", names))
