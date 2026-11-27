@@ -50,6 +50,7 @@ fun MealsSelectionGlass(
     modifier: Modifier = Modifier,
     selected: Boolean,
     prominent: Boolean = false,
+    emphasizeSelectedFace: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val hazeState = LocalMealsCardHazeState.current ?: LocalMealsHazeState.current
@@ -61,6 +62,14 @@ fun MealsSelectionGlass(
                 0.18f to Color(0xFFFFFEFC).copy(alpha = 0.78f),
                 0.62f to Color(0xFFFFFCF7).copy(alpha = 0.68f),
                 1f to Color(0xFFF1EBE3).copy(alpha = 0.62f)
+            )
+        )
+        selected && emphasizeSelectedFace -> Brush.verticalGradient(
+            colorStops = arrayOf(
+                0f to Color.White.copy(alpha = 0.86f),
+                0.18f to Color(0xFFFFFEFC).copy(alpha = 0.82f),
+                0.62f to Color(0xFFFFFCF7).copy(alpha = 0.76f),
+                1f to Color(0xFFF1EBE3).copy(alpha = 0.70f)
             )
         )
         selected -> Brush.verticalGradient(

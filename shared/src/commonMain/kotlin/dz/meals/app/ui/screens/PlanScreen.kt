@@ -309,18 +309,11 @@ fun PlanScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "أيام الأسبوع",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Text("اختاري يوماً", color = MutedInk, style = MaterialTheme.typography.labelMedium)
-                }
+                Text(
+                    "اختاري يوماً",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.labelMedium
+                )
 
                 LazyRow(
                     state = dayChipListState,
@@ -352,7 +345,8 @@ fun PlanScreen(
                                     scaleX = chipScale.value
                                     scaleY = chipScale.value
                                 },
-                            selected = selected
+                            selected = selected,
+                            emphasizeSelectedFace = true
                         ) {
                             MealsPressable(
                                 onClick = {
