@@ -50,6 +50,11 @@
   },
   "machineNameTranslations": {
     "provider": "Google Apps Script LanguageApp + Midati reviewed translations",
+    "providers": [
+      "Google Apps Script LanguageApp",
+      "Midati reviewed translation",
+      "Midati reviewed translations"
+    ],
     "appliedByLanguage": {
       "ar": 3435,
       "en": 1,
