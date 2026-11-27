@@ -39,6 +39,7 @@ import java.io.IOException
 import java.text.Normalizer
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.random.Random
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -342,43 +343,233 @@ class MealsRepository internal constructor(
             MealSlots.ids.filter { it in validSlots }.map { slot -> "$weekStartIso-$day-$slot" to (day to slot) }
         }
         val targetBudget = weeklyBudgetDzd * (100 - budgetBufferPercent.coerceIn(0, 30)) / 100.0
-        val chosen = locked.associateBy { it.id }.toMutableMap()
-        val repeats = locked.mapNotNull { it.recipeId }.groupingBy { it }.eachCount().toMutableMap()
+        val previousRun = dao.getPlanRun(weekStartIso)
+        val previousGeneratedRecipes = existingMeals
+            .filterNot { shouldPreserveMeal(it, fillEmptyOnly) }
+            .mapNotNull { meal -> meal.recipeId?.let { meal.id to it } }
+            .toMap()
+        val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
 
-        slots.forEach { (id, position) ->
-            if (id in chosen) return@forEach
-            val (day, slot) = position
-            val candidates = allowed
-                .filter { (repeats[it.id] ?: 0) < 4 }
-                .filter { recipe -> chosen.values.none { it.dayIndex == day && it.recipeId == recipe.id } }
-            val candidate = candidates.minByOrNull { recipe ->
-                val trial = chosen.values.toList() + PlannedMeal(
-                    id, weekStartIso, day, slot, recipe.id, householdServings.coerceIn(1, 12), false
+        // Search is bounded and local: every pass evaluates the entire basket,
+        // so shared ingredients and rounded purchase packs are considered together.
+        // Existing generated meals are rotation history, not locks. User-edited,
+        // cooked and locked meals remain preserved by the existing policy.
+        val chosen = withContext(Dispatchers.Default) {
+            data class RecipeSignature(
+                val proteinGroups: Set<String>,
+                val proteinIngredientIds: Set<String>
+            )
+
+            val proteinCategoryIds = setOf(
+                "foodcat-meat",
+                "foodcat-poultry",
+                "foodcat-seafood",
+                "foodcat-eggs",
+                "foodcat-legumes"
+            )
+            val signatures = allowed.associate { recipe ->
+                val proteinIngredients = recipe.ingredients
+                    .asSequence()
+                    .filter { !it.optional && it.quantityBase > 0.0 }
+                    .mapNotNull { ingredient ->
+                        val categoryId = ingredientTaxonomyById[ingredient.ingredientId]?.categoryId
+                            ?: return@mapNotNull null
+                        if (categoryId in proteinCategoryIds) ingredient to categoryId else null
+                    }
+                    .sortedByDescending { it.first.quantityBase }
+                    .take(2)
+                    .toList()
+                recipe.id to RecipeSignature(
+                    proteinGroups = proteinIngredients.mapTo(linkedSetOf()) { it.second },
+                    proteinIngredientIds = proteinIngredients.mapTo(linkedSetOf()) { it.first.ingredientId }
                 )
+            }
+            val recipesById = recipes.associateBy { it.id }
+            val lockedIds = locked.mapTo(hashSetOf()) { it.id }
+            val rotationPenalty = (weeklyBudgetDzd * 0.24).coerceIn(1_800.0, 5_200.0)
+
+            fun scorePlan(candidateMeals: List<PlannedMeal>, tieBreak: Double = 0.0): Double {
                 val basket = calculateBasket(
-                    trial,
+                    candidateMeals,
                     recipes,
                     pantry,
                     prices,
                     selectedWilaya = selectedWilaya,
                     foodTaxonomyByIngredientId = ingredientTaxonomyById
                 )
-                val repeatPenalty = (repeats[recipe.id] ?: 0) * 420.0
-                val overBudgetPenalty = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0) * 3.0
-                val preferencePenalty = softPreferencePenalty(recipe, canonicalDislikedIngredientIds, maxCookingMinutes)
-                basket.purchaseOutlayDzd + repeatPenalty + overBudgetPenalty + preferencePenalty
-            } ?: allowed.minBy { it.id }
+                val mealsWithRecipes = candidateMeals.mapNotNull { meal ->
+                    meal.recipeId?.let { recipeId ->
+                        recipesById[recipeId]?.let { meal to it }
+                    }
+                }
+                val repeatedRecipeCount = mealsWithRecipes
+                    .groupingBy { it.second.id }
+                    .eachCount()
+                    .values
+                    .sumOf { (it - 1).coerceAtLeast(0) }
+                var adjacentSimilarityPenalty = 0.0
+                for (firstIndex in mealsWithRecipes.indices) {
+                    for (secondIndex in firstIndex + 1 until mealsWithRecipes.size) {
+                        val (firstMeal, firstRecipe) = mealsWithRecipes[firstIndex]
+                        val (secondMeal, secondRecipe) = mealsWithRecipes[secondIndex]
+                        if (kotlin.math.abs(firstMeal.dayIndex - secondMeal.dayIndex) > 1) continue
+                        val firstSignature = signatures[firstRecipe.id] ?: continue
+                        val secondSignature = signatures[secondRecipe.id] ?: continue
+                        val sharedProteinGroups =
+                            firstSignature.proteinGroups.intersect(secondSignature.proteinGroups).size
+                        val sharedProteinIngredients =
+                            firstSignature.proteinIngredientIds.intersect(secondSignature.proteinIngredientIds).size
+                        adjacentSimilarityPenalty += sharedProteinGroups * 560.0
+                        adjacentSimilarityPenalty += sharedProteinIngredients * 320.0
+                    }
+                }
 
-            chosen[id] = PlannedMeal(
-                id = id,
-                weekStartIso = weekStartIso,
-                dayIndex = day,
-                mealSlot = slot,
-                recipeId = candidate.id,
-                servings = householdServings.coerceIn(1, 12),
-                locked = false
-            )
-            repeats[candidate.id] = (repeats[candidate.id] ?: 0) + 1
+                val overBuffer = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0)
+                val overBudget = (basket.purchaseOutlayDzd - weeklyBudgetDzd).coerceAtLeast(0.0)
+                val previousMatches = candidateMeals.count { meal ->
+                    meal.recipeId != null && previousGeneratedRecipes[meal.id] == meal.recipeId
+                }
+                val preferencePenalty = mealsWithRecipes.sumOf { (_, recipe) ->
+                    softPreferencePenalty(recipe, canonicalDislikedIngredientIds, maxCookingMinutes)
+                }
+                val favoriteReward = mealsWithRecipes.count { (_, recipe) ->
+                    recipe.id in favoriteRecipeIds
+                } * 240.0
+
+                return basket.purchaseOutlayDzd +
+                    overBuffer * 2.25 +
+                    overBudget * 4.0 +
+                    basket.unknownPriceCount * 350.0 +
+                    repeatedRecipeCount * 1_250.0 +
+                    adjacentSimilarityPenalty +
+                    previousMatches * rotationPenalty +
+                    preferencePenalty -
+                    favoriteReward +
+                    tieBreak
+            }
+
+            val searchAttempts = when {
+                slots.size >= 18 -> 6
+                slots.size >= 12 -> 8
+                else -> 10
+            }
+            val seed = System.currentTimeMillis() xor
+                (previousRun?.generatedAtEpochMillis ?: 0L) xor
+                weekStartIso.hashCode().toLong()
+            var bestPlan: List<PlannedMeal>? = null
+            var bestScore = Double.POSITIVE_INFINITY
+
+            repeat(searchAttempts) { attempt ->
+                val random = Random(seed + attempt.toLong() * 104_729L)
+                val dayOffset = random.nextInt(7)
+                val dayOrder = (0 until 7).drop(dayOffset) + (0 until 7).take(dayOffset)
+                val attemptSlots = dayOrder.flatMap { day ->
+                    MealSlots.ids.filter { it in validSlots }.map { slot ->
+                        "$weekStartIso-$day-$slot" to (day to slot)
+                    }
+                }
+                val attemptMeals = locked.associateBy { it.id }.toMutableMap()
+                val repeatCounts = locked.mapNotNull { it.recipeId }
+                    .groupingBy { it }.eachCount().toMutableMap()
+                val preferRotation = attempt < searchAttempts - 2
+
+                attemptSlots.forEach { (id, position) ->
+                    if (id in attemptMeals) return@forEach
+                    val (day, slot) = position
+                    val withoutSameDayDuplicate = allowed
+                        .filter { (repeatCounts[it.id] ?: 0) < 4 }
+                        .filter { recipe ->
+                            attemptMeals.values.none { it.dayIndex == day && it.recipeId == recipe.id }
+                        }
+                    val candidates = withoutSameDayDuplicate.ifEmpty {
+                        allowed.filter { recipe ->
+                            attemptMeals.values.none { it.dayIndex == day && it.recipeId == recipe.id }
+                        }.ifEmpty { allowed }
+                    }
+                    val rotationAlternatives = candidates.filter {
+                        it.id != previousGeneratedRecipes[id]
+                    }
+                    val candidatePool = if (
+                        preferRotation && rotationAlternatives.isNotEmpty()
+                    ) rotationAlternatives else candidates
+
+                    val selectedRecipe = candidatePool.minByOrNull { recipe ->
+                        val proposedMeal = PlannedMeal(
+                            id = id,
+                            weekStartIso = weekStartIso,
+                            dayIndex = day,
+                            mealSlot = slot,
+                            recipeId = recipe.id,
+                            servings = householdServings.coerceIn(1, 12),
+                            locked = false
+                        )
+                        scorePlan(
+                            attemptMeals.values.toList() + proposedMeal,
+                            tieBreak = random.nextDouble(0.0, 110.0)
+                        )
+                    } ?: allowed.minBy { it.id }
+
+                    attemptMeals[id] = PlannedMeal(
+                        id = id,
+                        weekStartIso = weekStartIso,
+                        dayIndex = day,
+                        mealSlot = slot,
+                        recipeId = selectedRecipe.id,
+                        servings = householdServings.coerceIn(1, 12),
+                        locked = false
+                    )
+                    repeatCounts[selectedRecipe.id] = (repeatCounts[selectedRecipe.id] ?: 0) + 1
+                }
+
+                val completedPlan = attemptMeals.values.toList()
+                val completedScore = scorePlan(
+                    completedPlan,
+                    tieBreak = random.nextDouble(0.0, 35.0)
+                )
+                if (completedScore < bestScore) {
+                    bestScore = completedScore
+                    bestPlan = completedPlan
+                }
+            }
+
+            // A final whole-week single-meal improvement pass catches swaps that
+            // become attractive only after all other days have been selected.
+            var improvedPlan = bestPlan ?: locked
+            var improvedScore = scorePlan(improvedPlan)
+            slots.forEach { (id, position) ->
+                if (id in lockedIds) return@forEach
+                val (day, slot) = position
+                val currentRecipeId = improvedPlan.firstOrNull { it.id == id }?.recipeId
+                val sameDayRecipeIds = improvedPlan
+                    .filter { it.id != id && it.dayIndex == day }
+                    .mapNotNull { it.recipeId }
+                    .toSet()
+                val alternatives = allowed
+                    .filter { it.id != currentRecipeId && it.id !in sameDayRecipeIds }
+                    .sortedBy {
+                        softPreferencePenalty(it, canonicalDislikedIngredientIds, maxCookingMinutes)
+                    }
+                    .take(18)
+                alternatives.forEach { recipe ->
+                    val replacement = PlannedMeal(
+                        id = id,
+                        weekStartIso = weekStartIso,
+                        dayIndex = day,
+                        mealSlot = slot,
+                        recipeId = recipe.id,
+                        servings = householdServings.coerceIn(1, 12),
+                        locked = false
+                    )
+                    val trial = improvedPlan.filterNot { it.id == id } + replacement
+                    val score = scorePlan(trial)
+                    if (score < improvedScore) {
+                        improvedPlan = trial
+                        improvedScore = score
+                    }
+                }
+            }
+
+            improvedPlan.associateBy { it.id }
         }
 
         val generatedAt = System.currentTimeMillis()
@@ -393,7 +584,7 @@ class MealsRepository internal constructor(
             dao.upsertPlanRun(
                 PlanRunEntity(
                     weekStartIso = weekStartIso,
-                    engineVersion = "0.3.0",
+                    engineVersion = "0.4.0",
                     generatedAtEpochMillis = generatedAt,
                     priceSnapshotAtEpochMillis = priceSnapshotAt,
                     budgetDzd = weeklyBudgetDzd,
