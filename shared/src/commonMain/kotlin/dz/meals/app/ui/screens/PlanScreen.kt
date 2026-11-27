@@ -245,77 +245,8 @@ fun PlanScreen(
                 }
             }
         }
-        if (unsafeLockedMeal != null) {
-            item {
-                MealsCard(
-                    containerColor = dz.meals.app.ui.theme.SoftOrange,
-                    borderColor = null,
-                    contentPadding = 14.dp
-                ) {
-                    Text(
-                        "تنبيه مهم: توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. لن تُعاد كتابة الخطة حتى تفتح قفل هذه الوجبة أو تستبدلها.",
-                        modifier = Modifier.padding(14.dp),
-                        color = androidx.compose.ui.graphics.Color(0xFF6A3D12),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                MealsPressable(
-                    onClick = { fillEmptyOnly = !fillEmptyOnly },
-                    modifier = Modifier.weight(0.92f),
-                    shape = RoundedCornerShape(17.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(17.dp))
-                            .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.28f))
-                            .padding(start = 5.dp, top = 5.dp, end = 10.dp, bottom = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                    MealsCheckbox(
-                        checked = fillEmptyOnly,
-                        onCheckedChange = { fillEmptyOnly = it }
-                    )
-                    Text(
-                        "املأ الفارغة فقط",
-                        modifier = Modifier.weight(1f),
-                        color = dz.meals.app.ui.theme.Ink,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 2
-                    )
-                    }
-                }
-                MealsPrimaryButton(
-                    label = if (isGenerating) "جارٍ الإنشاء" else "أنشئ الخطة",
-                    onClick = { onGenerate(fillEmptyOnly) },
-                    enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
-                    modifier = Modifier.weight(1.08f),
-                    icon = MealsIconName.Refresh,
-                    showArrow = false
-                )
-            }
-        }
-        item {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    "اختاري يوماً",
-                    color = MutedInk,
-                    style = MaterialTheme.typography.labelMedium
-                )
-
-                LazyRow(
+            LazyRow(
                     state = dayChipListState,
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(horizontal = 2.dp),
@@ -406,10 +337,68 @@ fun PlanScreen(
                             }
                         }
                     }
-                }
             }
         }
 
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                MealsPressable(
+                    onClick = { fillEmptyOnly = !fillEmptyOnly },
+                    modifier = Modifier.weight(0.92f).height(48.dp),
+                    shape = RoundedCornerShape(17.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize()
+                            .clip(RoundedCornerShape(17.dp))
+                            .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.28f))
+                            .padding(start = 5.dp, end = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        MealsCheckbox(
+                            checked = fillEmptyOnly,
+                            onCheckedChange = { fillEmptyOnly = it }
+                        )
+                        Text(
+                            "املأ الفارغة فقط",
+                            modifier = Modifier.weight(1f),
+                            color = dz.meals.app.ui.theme.Ink,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2
+                        )
+                    }
+                }
+                MealsPrimaryButton(
+                    label = if (isGenerating) "جارٍ الإنشاء" else "أنشئ الخطة",
+                    onClick = { onGenerate(fillEmptyOnly) },
+                    enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
+                    modifier = Modifier.weight(1.08f),
+                    icon = MealsIconName.Refresh,
+                    showArrow = false
+                )
+            }
+        }
+        if (unsafeLockedMeal != null) {
+            item {
+                MealsCard(
+                    containerColor = dz.meals.app.ui.theme.SoftOrange,
+                    borderColor = null,
+                    contentPadding = 14.dp
+                ) {
+                    Text(
+                        "تنبيه مهم: توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. لن تُعاد كتابة الخطة حتى تفتح قفل هذه الوجبة أو تستبدلها.",
+                        modifier = Modifier.padding(14.dp),
+                        color = androidx.compose.ui.graphics.Color(0xFF6A3D12),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
         item {
             val selectedDate = weekStart.plus(DatePeriod(days = selectedDayIndex))
             val plannedCount = orderedMealSlots.count { slot ->
