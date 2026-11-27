@@ -46,7 +46,7 @@ private val SelectionShape = RoundedCornerShape(15.dp)
  * the non-uniform outer catchlight and inset optical bevel.
  */
 @Composable
-private fun MealsSelectionGlass(
+fun MealsSelectionGlass(
     modifier: Modifier = Modifier,
     selected: Boolean,
     prominent: Boolean = false,

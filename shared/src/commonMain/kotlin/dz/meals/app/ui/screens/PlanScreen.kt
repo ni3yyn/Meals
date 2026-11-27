@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dz.meals.app.ui.components.MealsCard
 import dz.meals.app.ui.components.MealsPressable
+import dz.meals.app.ui.components.MealsSelectionGlass
 import dz.meals.app.ui.components.MealsRecipeImage
 import dz.meals.app.ui.components.MealsGlassSurface
 import dz.meals.app.ui.components.MealsIllustrationBadge
@@ -335,64 +337,74 @@ fun PlanScreen(
                         val date = weekStart.plus(DatePeriod(days = day))
                         val weekday = formatArabicDate(date).substringBefore(' ')
                         val selected = selectedDayIndex == day
-                        MealsPressable(
-                            onClick = {
-                                selectedDayIndex = day
-                                editingMealSlot = null
-                            },
-                            modifier = Modifier.width(72.dp),
-                            shape = RoundedCornerShape(18.dp)
+                        val chipScale = androidx.compose.animation.core.animateFloatAsState(
+                            targetValue = if (selected) 1.035f else 1f,
+                            animationSpec = androidx.compose.animation.core.spring(
+                                dampingRatio = 0.78f,
+                                stiffness = 560f
+                            ),
+                            label = "planDayChipScale"
+                        )
+                        MealsSelectionGlass(
+                            modifier = Modifier
+                                .width(72.dp)
+                                .graphicsLayer {
+                                    scaleX = chipScale.value
+                                    scaleY = chipScale.value
+                                },
+                            selected = selected
                         ) {
-                            MealsCard(
+                            MealsPressable(
+                                onClick = {
+                                    selectedDayIndex = day
+                                    editingMealSlot = null
+                                },
                                 modifier = Modifier.fillMaxWidth(),
-                                containerColor = if (selected) {
-                                    dz.meals.app.ui.theme.Paper.copy(alpha = 0.99f)
-                                } else {
-                                    androidx.compose.ui.graphics.Color.White.copy(alpha = 0.22f)
-                                },
-                                borderColor = if (selected) {
-                                    TextAccent.copy(alpha = 0.62f)
-                                } else {
-                                    Border.copy(alpha = 0.48f)
-                                },
-                                contentPadding = 9.dp,
-                                shape = RoundedCornerShape(18.dp),
-                                shadowElevation = if (selected) 3.dp else 0.dp
+                                role = androidx.compose.ui.semantics.Role.RadioButton
                             ) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                Box(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        weekday,
-                                        color = if (selected) TextAccent else MutedInk,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        date.day.toString(),
-                                        color = if (selected) TextAccent else dz.meals.app.ui.theme.Ink,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.ExtraBold
-                                    )
-                                    if (orderedMealSlots.isNotEmpty()) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            orderedMealSlots.forEach { slot ->
-                                                val hasRecipe =
-                                                    mealsByDayAndSlot[day to slot]?.recipeId != null
-                                                Box(
-                                                    Modifier
-                                                        .size(5.dp)
-                                                        .clip(CircleShape)
-                                                        .background(
-                                                            if (hasRecipe) TextAccent else Border.copy(alpha = 0.58f)
-                                                        )
-                                                )
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Text(
+                                            weekday,
+                                            color = androidx.compose.ui.graphics.Color(0xFF171717),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1
+                                        )
+                                        Text(
+                                            date.day.toString(),
+                                            color = androidx.compose.ui.graphics.Color(0xFF171717),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
+                                        if (orderedMealSlots.isNotEmpty()) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                orderedMealSlots.forEach { slot ->
+                                                    val hasRecipe =
+                                                        mealsByDayAndSlot[day to slot]?.recipeId != null
+                                                    Box(
+                                                        Modifier
+                                                            .size(5.dp)
+                                                            .clip(CircleShape)
+                                                            .background(
+                                                                if (hasRecipe) {
+                                                                    androidx.compose.ui.graphics.Color(0xFF171717)
+                                                                } else {
+                                                                    Border.copy(alpha = 0.58f)
+                                                                }
+                                                            )
+                                                    )
+                                                }
                                             }
                                         }
                                     }
