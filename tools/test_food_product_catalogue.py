@@ -245,6 +245,43 @@ class FoodCatalogueParserTests(unittest.TestCase):
 
 
 class FoodCatalogueBuildTests(unittest.TestCase):
+    def test_machine_translation_audit_preserves_mixed_provider_provenance(self):
+        product_id = "11111111-1111-4111-8111-111111111111"
+        products = [{
+            "id": product_id,
+            "names": {"ar": None, "en": "chickpeas", "fr": None},
+        }]
+        sidecar = {
+            "provider": "Google Apps Script LanguageApp + Midati reviewed translations",
+            "translations": {
+                product_id: {
+                    "ar": {
+                        "text": "حمص",
+                        "sourceLanguage": "en",
+                        "sourceText": "chickpeas",
+                        "provider": "Google Apps Script LanguageApp",
+                    },
+                    "fr": {
+                        "text": "pois chiches",
+                        "sourceLanguage": "en",
+                        "sourceText": "chickpeas",
+                        "provider": "Midati reviewed translation",
+                    },
+                }
+            },
+        }
+
+        report = apply_machine_name_translations(products, sidecar)
+
+        self.assertEqual(
+            report["provider"],
+            "Google Apps Script LanguageApp + Midati reviewed translations",
+        )
+        self.assertIn("Google Apps Script LanguageApp", report["providers"])
+        self.assertIn("Midati reviewed translations", report["providers"])
+        self.assertIn("Midati reviewed translation", report["providers"])
+        self.assertEqual(report["totalApplied"], 2)
+
     def test_machine_translations_fill_only_missing_names_for_matching_source(self):
         products = [{
             "id": "11111111-1111-4111-8111-111111111111",
