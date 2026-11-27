@@ -246,6 +246,7 @@ class BasketCalculatorTest {
         val taxonomy = mapOf(
             "chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken"),
             "fish" to FoodTaxonomyRef("foodcat-seafood", "foodsub-seafood-fish"),
+            "meat" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red"),
             "chickpeas" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red"),
             "artichoke-hearts" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red")
         )
