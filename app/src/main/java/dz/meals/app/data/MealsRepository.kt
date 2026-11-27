@@ -345,7 +345,7 @@ class MealsRepository internal constructor(
             val recipe = meal.recipeId?.let { id -> recipes.firstOrNull { it.id == id } }
                 ?: return@firstNotNullOfOrNull null
             recipe.id.takeIf {
-                !isRecipeAllowedByMeatPreference(recipe, ingredientTaxonomyById, normalizedMeatPreference)
+                !isRecipeAllowedByMeatPreference(recipe, ingredientTaxonomyById, normalizedMeatPreference, ingredientsById)
             }
         }
         if (pinnedMeatConflict != null) {

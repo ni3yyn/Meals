@@ -442,7 +442,7 @@ fun MealsOnboarding(
                                 ) {
                                     listOf(
                                         "regular" to "عادي",
-                                        "none" to "بدون لحوم أو سمك",
+                                        "none" to "بدون لحم أو أحشاء",
                                         "chicken_only" to "الدجاج فقط",
                                         "monthly_limit" to "كمية شهرية"
                                     ).forEach { (value, label) ->

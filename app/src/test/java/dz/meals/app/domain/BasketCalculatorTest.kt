@@ -1,6 +1,7 @@
 package dz.meals.app.domain
 
 import dz.meals.app.data.FoodTaxonomyRef
+import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.data.RecipeIngredient
@@ -182,33 +183,91 @@ class BasketCalculatorTest {
         assertTrue(!isRecipeAllowed(milkRecipe, emptyMap(), setOf("milk"), "none"))
     }
 
+    private fun ingredientMaster(
+        id: String,
+        nameAr: String,
+        nameFr: String = ""
+    ) = IngredientMaster(
+        id = id,
+        nameAr = nameAr,
+        nameFr = nameFr,
+        baseUnit = "g",
+        allergens = emptySet(),
+        aliases = emptyList(),
+        categoryId = "foodcat-other",
+        subcategoryId = "foodsub-other-general"
+    )
+
     @Test
-    fun householdMeatPreferencesUseCanonicalIngredientTaxonomy() {
+    fun noMeatPreferenceUsesWholeMeatAndOffalIngredientWordsOnly() {
+        val meat = recipe.copy(
+            id = "meat-meal",
+            ingredients = listOf(RecipeIngredient("meat", 300.0, "g"))
+        )
+        val liver = recipe.copy(
+            id = "liver-meal",
+            ingredients = listOf(RecipeIngredient("liver", 150.0, "g"))
+        )
+        val tongue = recipe.copy(
+            id = "tongue-meal",
+            ingredients = listOf(RecipeIngredient("tongue", 150.0, "g"))
+        )
         val chicken = recipe.copy(
             id = "chicken-meal",
             ingredients = listOf(RecipeIngredient("chicken", 300.0, "g"))
-        )
-        val beef = recipe.copy(
-            id = "beef-meal",
-            ingredients = listOf(RecipeIngredient("beef", 300.0, "g"))
         )
         val fish = recipe.copy(
             id = "fish-meal",
             ingredients = listOf(RecipeIngredient("fish", 300.0, "g"))
         )
-        val taxonomy = mapOf(
-            "chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken"),
-            "beef" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red"),
-            "fish" to FoodTaxonomyRef("foodcat-seafood", "foodsub-seafood-fish")
+        val chickpeas = recipe.copy(
+            id = "chickpeas-meal",
+            ingredients = listOf(RecipeIngredient("chickpeas", 200.0, "g"))
+        )
+        val artichokeHearts = recipe.copy(
+            id = "artichoke-hearts-meal",
+            ingredients = listOf(RecipeIngredient("artichoke-hearts", 100.0, "g"))
+        )
+        val animalHeart = recipe.copy(
+            id = "animal-heart-meal",
+            ingredients = listOf(RecipeIngredient("animal-heart", 100.0, "g"))
         )
 
-        assertTrue(!isRecipeAllowedByMeatPreference(chicken, taxonomy, "none"))
-        assertTrue(!isRecipeAllowedByMeatPreference(fish, taxonomy, "none"))
-        assertTrue(isRecipeAllowedByMeatPreference(chicken, taxonomy, "chicken_only"))
-        assertTrue(!isRecipeAllowedByMeatPreference(beef, taxonomy, "chicken_only"))
-        assertTrue(!isRecipeAllowedByMeatPreference(fish, taxonomy, "chicken_only"))
-        assertTrue(isRecipeAllowedByMeatPreference(beef, taxonomy, "monthly_limit"))
-        assertTrue(isRecipeAllowedByMeatPreference(beef, taxonomy, "regular"))
+        // Deliberately give chickpeas and artichoke hearts misleading meat
+        // categories: "none" must use the actual ingredient name, not taxonomy.
+        val taxonomy = mapOf(
+            "chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken"),
+            "fish" to FoodTaxonomyRef("foodcat-seafood", "foodsub-seafood-fish"),
+            "chickpeas" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red"),
+            "artichoke-hearts" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red")
+        )
+        val names = mapOf(
+            "meat" to ingredientMaster("meat", "لحم مفروم", "viande hachée"),
+            "liver" to ingredientMaster("liver", "كبدة دجاج", "foie de poulet"),
+            "tongue" to ingredientMaster("tongue", "لسان عجل", "langue de veau"),
+            "chicken" to ingredientMaster("chicken", "دجاج", "poulet"),
+            "fish" to ingredientMaster("fish", "سمك", "poisson"),
+            "chickpeas" to ingredientMaster("chickpeas", "الحمص", "pois chiches"),
+            "artichoke-hearts" to ingredientMaster("artichoke-hearts", "قلوب خرشوف", "coeurs d'artichauts"),
+            "animal-heart" to ingredientMaster("animal-heart", "قلب دجاج", "coeur de poulet")
+        )
+
+        assertTrue(!isRecipeAllowedByMeatPreference(meat, taxonomy, "none", names))
+        assertTrue(!isRecipeAllowedByMeatPreference(liver, taxonomy, "none", names))
+        assertTrue(!isRecipeAllowedByMeatPreference(tongue, taxonomy, "none", names))
+        assertTrue(!isRecipeAllowedByMeatPreference(animalHeart, taxonomy, "none", names))
+        assertTrue(isRecipeAllowedByMeatPreference(chicken, taxonomy, "none", names))
+        assertTrue(isRecipeAllowedByMeatPreference(fish, taxonomy, "none", names))
+        assertTrue(isRecipeAllowedByMeatPreference(chickpeas, taxonomy, "none", names))
+        assertTrue(isRecipeAllowedByMeatPreference(artichokeHearts, taxonomy, "none", names))
+
+        // A missing name never falls back to a broad category exclusion.
+        assertTrue(isRecipeAllowedByMeatPreference(meat, taxonomy, "none"))
+        assertTrue(isRecipeAllowedByMeatPreference(chicken, taxonomy, "chicken_only", names))
+        assertTrue(!isRecipeAllowedByMeatPreference(meat, taxonomy, "chicken_only", names))
+        assertTrue(!isRecipeAllowedByMeatPreference(fish, taxonomy, "chicken_only", names))
+        assertTrue(isRecipeAllowedByMeatPreference(meat, taxonomy, "monthly_limit", names))
+        assertTrue(isRecipeAllowedByMeatPreference(meat, taxonomy, "regular", names))
     }
 
     @Test

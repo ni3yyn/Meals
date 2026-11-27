@@ -5,11 +5,13 @@ import dz.meals.app.data.scaleRecipeIngredientQuantity
 import dz.meals.app.data.BasketSummary
 import dz.meals.app.data.FoodTaxonomyIds
 import dz.meals.app.data.FoodTaxonomyRef
+import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.PlannedMeal
 import dz.meals.app.data.ShoppingListItem
 import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PriceObservationEntity
+import java.text.Normalizer
 import kotlin.math.ceil
 
 private data class RequirementKey(val ingredientId: String, val unit: String)
@@ -67,18 +69,109 @@ private fun FoodTaxonomyRef.isExcludedByVeganDiet(): Boolean =
 private val meatAndPoultryCategoryIds = setOf("foodcat-meat", "foodcat-poultry")
 private val animalFleshCategoryIds = meatAndPoultryCategoryIds + "foodcat-seafood"
 
-/** Household meat rules use canonical ingredient taxonomy, never recipe title matching. */
+// "No meat" is intentionally name-based. Ingredient rows imported from recipe
+// sources can have generic taxonomy IDs, and broad poultry/seafood categories
+// were excluding many dishes that users still consider acceptable.
+private val arabicMeatAndOffalWords = setOf(
+    "لحم", "لحوم", "لحمة",
+    "غنم", "خروف", "كبش", "عجل", "بقر", "بقري",
+    "كبد", "كبدة", "كلاوي", "كلية", "كلى", "كرشة", "كرش",
+    "طحال", "مخ", "دماغ", "رئة", "رئات", "قانصة", "قوانص",
+    "احشاء", "مصارين", "امعاء",
+    "خصية", "خصيتان", "خصيتين", "خصى"
+)
+
+private val meatAndOffalWords = setOf(
+    "meat", "meats", "viande", "viandes",
+    "agneau", "mouton", "boeuf", "veau", "porc",
+    "beef", "veal", "lamb", "mutton", "pork", "venison",
+    "gigot", "cotelette", "cotelettes", "steak",
+    "abats", "foie", "foies", "rognon", "rognons",
+    "tripe", "tripes", "cervelle", "cervelles", "rate",
+    "poumon", "poumons", "intestin", "intestins",
+    "gesier", "gesiers", "offal", "liver", "livers",
+    "kidney", "kidneys", "brain", "brains", "spleen",
+    "lung", "lungs", "intestine", "intestines",
+    "gizzard", "gizzards", "sweetbread", "sweetbreads",
+    "testicule", "testicules"
+)
+
+// Some organ names are ambiguous on their own (for example, artichoke hearts).
+// Match these only when the ingredient also names an animal.
+private val animalOrganPhrases = listOf(
+    "قلب دجاج", "قلب الدجاج", "قلوب دجاج", "قلوب الدجاج",
+    "قلب غنم", "قلوب غنم", "قلب خروف", "قلوب خروف",
+    "قلب عجل", "قلوب عجل", "قلب بقر", "قلوب بقر",
+    "لسان عجل", "لسان بقر", "لسان غنم", "لسان خروف",
+    "راس خروف", "راس غنم", "راس العجل", "راس بقر",
+    "كراع عجل", "كراع بقر", "كراع خروف", "كوارع",
+    "coeur de poulet", "coeurs de poulet", "coeur de boeuf",
+    "coeur de veau", "coeur d agneau", "coeur de mouton",
+    "chicken heart", "beef heart", "veal heart", "lamb heart",
+    "langue de veau", "langue de boeuf", "langue de mouton", "langue d agneau",
+    "beef tongue", "veal tongue", "lamb tongue", "ox tongue",
+    "tete de mouton", "tete de veau", "tete de boeuf",
+    "pied de veau", "pieds de veau", "pied de mouton", "pieds de mouton",
+    "ris de veau", "sweetbreads", "خصية خروف", "خصية عجل"
+).map(::normalizeIngredientKeywordText)
+
+private fun normalizeIngredientKeywordText(value: String): String =
+    Normalizer.normalize(value.lowercase(), Normalizer.Form.NFD)
+        .replace(Regex("\\\\p{M}+"), "")
+        .replace("œ", "oe")
+        .replace("æ", "ae")
+        .replace('أ', 'ا')
+        .replace('إ', 'ا')
+        .replace('آ', 'ا')
+        .replace('ى', 'ي')
+        .replace(Regex("[^\\\\p{L}\\\\p{N}]+"), " ")
+        .trim()
+        .replace(Regex("\\\\s+"), " ")
+
+private fun IngredientMaster.containsMeatOrOffalName(): Boolean {
+    val searchableText = listOf(nameAr, nameFr, nameEn)
+        .plus(aliases)
+        .asSequence()
+        .filter { it.isNotBlank() }
+        .map(::normalizeIngredientKeywordText)
+        .toList()
+    if (searchableText.isEmpty()) return false
+
+    return searchableText.any { normalized ->
+        val tokens = normalized.split(' ').filter { it.isNotBlank() }
+        val hasArabicMeatOrOffalWord = tokens.any { token ->
+            arabicMeatAndOffalWords.any { keyword ->
+                token == keyword || token.endsWith(keyword)
+            }
+        }
+        val hasOtherMeatOrOffalWord = tokens.any { it in meatAndOffalWords }
+        val paddedText = " $normalized "
+        val hasAnimalOrganPhrase = animalOrganPhrases.any { phrase ->
+            paddedText.contains(" $phrase ")
+        }
+        hasArabicMeatOrOffalWord || hasOtherMeatOrOffalWord || hasAnimalOrganPhrase
+    }
+}
+
+/** Applies household meat choices to ingredient names, not broad food categories. */
 fun isRecipeAllowedByMeatPreference(
     recipe: MealRecipe,
     ingredientTaxonomy: Map<String, FoodTaxonomyRef>,
-    meatPreference: String
+    meatPreference: String,
+    ingredientDetailsById: Map<String, IngredientMaster> = emptyMap()
 ): Boolean {
     if (meatPreference == "regular" || meatPreference == "monthly_limit") return true
+
+    if (meatPreference == "none") {
+        return recipe.ingredients.none { ingredient ->
+            ingredientDetailsById[ingredient.ingredientId]?.containsMeatOrOffalName() == true
+        }
+    }
+
     return recipe.ingredients.none { ingredient ->
         if (ingredient.optional || ingredient.quantityBase <= 0.0) return@none false
         val taxonomy = ingredientTaxonomy[ingredient.ingredientId] ?: return@none false
         when (meatPreference) {
-            "none" -> taxonomy.categoryId in animalFleshCategoryIds
             "chicken_only" ->
                 taxonomy.categoryId == "foodcat-meat" ||
                     taxonomy.categoryId == "foodcat-seafood" ||
