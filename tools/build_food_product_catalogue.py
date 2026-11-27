@@ -1658,6 +1658,31 @@ def merge_curated_food_items(
     return records
 
 
+def machine_translation_provider_names(translation_data: dict[str, Any] | None) -> list[str]:
+    """Return every distinct provider represented by sidecar metadata and entries."""
+    data = translation_data if isinstance(translation_data, dict) else {}
+    providers: set[str] = set()
+
+    def add_provider(value: Any) -> None:
+        if not isinstance(value, str):
+            return
+        # Older sidecars may summarize mixed sources in a single
+        # "Provider A + Provider B" field. Split those without losing
+        # per-translation provenance.
+        providers.update(part.strip() for part in value.split("+") if part.strip())
+
+    add_provider(data.get("provider"))
+    entries = data.get("translations")
+    if isinstance(entries, dict):
+        for language_entries in entries.values():
+            if not isinstance(language_entries, dict):
+                continue
+            for entry in language_entries.values():
+                if isinstance(entry, dict):
+                    add_provider(entry.get("provider"))
+    return sorted(providers)
+
+
 def apply_machine_name_translations(
     products: list[dict[str, Any]],
     translation_data: dict[str, Any] | None,
@@ -1744,8 +1769,10 @@ def apply_machine_name_translations(
             names[target_language] = translated_text
             applied[target_language] += 1
 
+    providers = machine_translation_provider_names(data)
     return {
-        "provider": str(data.get("provider") or "Google Apps Script LanguageApp"),
+        "provider": str(data.get("provider") or " + ".join(providers) or "Unknown"),
+        "providers": providers,
         "appliedByLanguage": {lang: applied[lang] for lang in ("ar", "en", "fr")},
         "totalApplied": sum(applied.values()),
         "ignoredExistingSourceNamesByLanguage": {lang: ignored_existing[lang] for lang in ("ar", "en", "fr")},
