@@ -8,6 +8,18 @@ on:
         required: true
         default: "6000"
         type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/translate-food-catalogue.yml"
+      - "tools/build_food_product_catalogue.py"
+      - "tools/translate_food_catalogue.py"
+      - "tools/test_food_product_catalogue.py"
+      - "tools/test_translate_food_catalogue.py"
+      - "data/recipes/ar/recipes.json"
+      - "data/products/categories.json"
+      - "data/products/curated-food-items.json"
   schedule:
     - cron: "41 4 * * *"
 
@@ -95,8 +107,20 @@ jobs:
               if actual_missing != counts.get(key):
                   raise SystemExit(f"Translation audit mismatch for {language}: {actual_missing} vs {counts.get(key)}.")
           machine = audit.get("machineNameTranslations") or {}
-          if machine.get("provider") != "Google Apps Script LanguageApp":
-              raise SystemExit("Catalogue audit does not identify the Apps Script translation provider.")
+          providers = set(machine.get("providers") or [])
+          if not providers:
+              # Backward compatibility with audits produced before the provider
+              # list was added. Mixed sources were historically joined with "+".
+              providers = {
+                  provider.strip()
+                  for provider in str(machine.get("provider") or "").split("+")
+                  if provider.strip()
+              }
+          if "Google Apps Script LanguageApp" not in providers:
+              raise SystemExit(
+                  "Catalogue audit does not list Google Apps Script LanguageApp "
+                  "among its translation providers."
+              )
           print(f"Validated {len(products)} stable food IDs; {sidecar.get('translationCount', 0)} saved translations; missing ar/en/fr: {counts.get('missingArabicNames')}/{counts.get('missingEnglishNames')}/{counts.get('missingFrenchNames')}.")
           PY
 
