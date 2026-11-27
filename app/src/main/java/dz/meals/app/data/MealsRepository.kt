@@ -26,6 +26,9 @@ import dz.meals.app.domain.exactPantryDeduction
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.findPinnedDietConflict
 import dz.meals.app.domain.isRecipeAllowed
+import dz.meals.app.domain.isRecipeAllowedByMeatPreference
+import dz.meals.app.domain.recipeMeatQuantityGrams
+import dz.meals.app.domain.recipeOilQuantityPerServing
 import dz.meals.app.domain.pricesForSavedPlan
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
@@ -39,6 +42,7 @@ import java.io.IOException
 import java.text.Normalizer
 import java.time.LocalDate
 import java.util.UUID
+import java.time.YearMonth
 import kotlin.random.Random
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -289,6 +293,9 @@ class MealsRepository internal constructor(
         dietPattern: String = "none",
         maxCookingMinutes: Int = 60,
         budgetBufferPercent: Int = 5,
+        meatPreference: String = "regular",
+        monthlyMeatGrams: Int = 3_000,
+        oilPreference: String = "regular",
         fillEmptyOnly: Boolean = false
     ): GenerationResult {
         ensureInitialized()
@@ -330,13 +337,35 @@ class MealsRepository internal constructor(
                 budgetDzd = weeklyBudgetDzd
             )
         }
+        val normalizedMeatPreference = meatPreference.takeIf {
+            it in setOf("regular", "none", "chicken_only", "monthly_limit")
+        } ?: "regular"
+        val normalizedOilPreference = oilPreference.takeIf { it in setOf("regular", "less") } ?: "regular"
+        val pinnedMeatConflict = locked.firstNotNullOfOrNull { meal ->
+            val recipe = meal.recipeId?.let { id -> recipes.firstOrNull { it.id == id } }
+                ?: return@firstNotNullOfOrNull null
+            recipe.id.takeIf {
+                !isRecipeAllowedByMeatPreference(recipe, ingredientTaxonomyById, normalizedMeatPreference)
+            }
+        }
+        if (pinnedMeatConflict != null) {
+            return GenerationResult(
+                success = false,
+                message = "توجد وجبة مطبوخة أو مثبتة لا توافق تفضيل استهلاك اللحوم الحالي. غيّر الوجبة أو عدّل التفضيل قبل إعادة التخطيط. لم نغيّر أي وجبة.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = weeklyBudgetDzd
+            )
+        }
         val allowed = generatorRecipes.filter { recipe ->
-            isRecipeAllowed(recipe, ingredientTaxonomyById, allergyIds, dietPattern)
+            isRecipeAllowed(recipe, ingredientTaxonomyById, allergyIds, dietPattern) &&
+                isRecipeAllowedByMeatPreference(recipe, ingredientTaxonomyById, normalizedMeatPreference) &&
+                (normalizedMeatPreference != "monthly_limit" ||
+                    recipeMeatQuantityGrams(recipe, householdServings, ingredientTaxonomyById) != null)
         }
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
         if (allowed.isEmpty()) {
-            return GenerationResult(false, "لا توجد أطباق رئيسية جزائرية متاحة بعد تطبيق قيود الحساسية والنمط الغذائي. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
+            return GenerationResult(false, "لا توجد أطباق رئيسية جزائرية متاحة بعد تطبيق قيود الحساسية وتفضيلات الطعام الحالية. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
         }
 
         val slots = (0 until 7).flatMap { day ->
@@ -349,6 +378,28 @@ class MealsRepository internal constructor(
             .mapNotNull { meal -> meal.recipeId?.let { meal.id to it } }
             .toMap()
         val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
+        val planningMonth = YearMonth.from(LocalDate.parse(weekStartIso))
+        val planningMonthStart = planningMonth.atDay(1)
+        val planningMonthEnd = planningMonth.atEndOfMonth()
+        val today = LocalDate.now()
+        val monthlyBaselineMeals = if (normalizedMeatPreference == "monthly_limit") {
+            (
+                dao.getPlanMealsForWeekStartsInRange(
+                    planningMonthStart.minusDays(6).toString(),
+                    planningMonthEnd.toString()
+                ).filter { it.weekStartIso != weekStartIso } +
+                    dao.getPlanMeals(weekStartIso).filter { it.mealSlot !in validSlots }
+                ).asSequence()
+                    .map { it.toModel() }
+                    .filter { meal ->
+                        val mealDate = LocalDate.parse(meal.weekStartIso).plusDays(meal.dayIndex.toLong())
+                        YearMonth.from(mealDate) == planningMonth &&
+                            (meal.isCooked || !mealDate.isBefore(today))
+                    }
+                    .toList()
+        } else {
+            emptyList()
+        }
 
         // Search is bounded and local: every pass evaluates the entire basket,
         // so shared ingredients and rounded purchase packs are considered together.
@@ -386,7 +437,26 @@ class MealsRepository internal constructor(
             }
             val recipesById = recipes.associateBy { it.id }
             val lockedIds = locked.mapTo(hashSetOf()) { it.id }
+            val monthlyBaselineMeatGrams = monthlyBaselineMeals.sumOf { meal ->
+                val recipe = meal.recipeId?.let(recipesById::get) ?: return@sumOf 0.0
+                recipeMeatQuantityGrams(recipe, meal.servings, ingredientTaxonomyById)
+                    ?: 1_000_000_000.0
+            }
+            val planningWeekStart = LocalDate.parse(weekStartIso)
+            val monthlyQuotaGrams = monthlyMeatGrams.coerceIn(250, 20_000).toDouble()
             val rotationPenalty = (weeklyBudgetDzd * 0.24).coerceIn(1_800.0, 5_200.0)
+
+            fun monthlyMeatUsageGrams(candidateMeals: List<PlannedMeal>): Double {
+                if (normalizedMeatPreference != "monthly_limit") return 0.0
+                val currentWeekUsage = candidateMeals.sumOf { meal ->
+                    val mealDate = planningWeekStart.plusDays(meal.dayIndex.toLong())
+                    if (YearMonth.from(mealDate) != planningMonth) return@sumOf 0.0
+                    val recipe = meal.recipeId?.let(recipesById::get) ?: return@sumOf 0.0
+                    recipeMeatQuantityGrams(recipe, meal.servings, ingredientTaxonomyById)
+                        ?: 1_000_000_000.0
+                }
+                return monthlyBaselineMeatGrams + currentWeekUsage
+            }
 
             fun scorePlan(candidateMeals: List<PlannedMeal>, tieBreak: Double = 0.0): Double {
                 val basket = calculateBasket(
@@ -435,6 +505,25 @@ class MealsRepository internal constructor(
                 val favoriteReward = mealsWithRecipes.count { (_, recipe) ->
                     recipe.id in favoriteRecipeIds
                 } * 240.0
+                val oilUsagePenalty = if (normalizedOilPreference == "less") {
+                    mealsWithRecipes.sumOf { (meal, recipe) ->
+                        val measuredPerServing = recipeOilQuantityPerServing(
+                            recipe,
+                            meal.servings,
+                            ingredientTaxonomyById
+                        )
+                        if (measuredPerServing == null) 650.0
+                        else measuredPerServing * meal.servings * 42.0
+                    }
+                } else {
+                    0.0
+                }
+                val monthlyMeatPenalty = if (normalizedMeatPreference == "monthly_limit") {
+                    (monthlyMeatUsageGrams(candidateMeals) - monthlyQuotaGrams)
+                        .coerceAtLeast(0.0) * 250.0
+                } else {
+                    0.0
+                }
 
                 return basket.purchaseOutlayDzd +
                     overBuffer * 2.25 +
@@ -443,7 +532,9 @@ class MealsRepository internal constructor(
                     repeatedRecipeCount * 1_250.0 +
                     adjacentSimilarityPenalty +
                     previousMatches * rotationPenalty +
-                    preferencePenalty -
+                    preferencePenalty +
+                    oilUsagePenalty +
+                    monthlyMeatPenalty -
                     favoriteReward +
                     tieBreak
             }
@@ -492,8 +583,27 @@ class MealsRepository internal constructor(
                     val candidatePool = if (
                         preferRotation && rotationAlternatives.isNotEmpty()
                     ) rotationAlternatives else candidates
+                    val quotaAwarePool = if (normalizedMeatPreference == "monthly_limit") {
+                        val currentUsage = monthlyMeatUsageGrams(attemptMeals.values.toList())
+                        val allowedCeiling = maxOf(monthlyQuotaGrams, currentUsage)
+                        candidatePool.filter { recipe ->
+                            val proposed = PlannedMeal(
+                                id = id,
+                                weekStartIso = weekStartIso,
+                                dayIndex = day,
+                                mealSlot = slot,
+                                recipeId = recipe.id,
+                                servings = householdServings.coerceIn(1, 12),
+                                locked = false
+                            )
+                            monthlyMeatUsageGrams(attemptMeals.values.toList() + proposed) <= allowedCeiling + 0.001
+                        }
+                    } else {
+                        emptyList()
+                    }
+                    val constrainedPool = quotaAwarePool.ifEmpty { candidatePool }
 
-                    val selectedRecipe = candidatePool.minByOrNull { recipe ->
+                    val selectedRecipe = constrainedPool.minByOrNull { recipe ->
                         val proposedMeal = PlannedMeal(
                             id = id,
                             weekStartIso = weekStartIso,
@@ -550,6 +660,8 @@ class MealsRepository internal constructor(
                         softPreferencePenalty(it, canonicalDislikedIngredientIds, maxCookingMinutes)
                     }
                     .take(18)
+                val currentMonthlyUsage = monthlyMeatUsageGrams(improvedPlan)
+                val monthlyUsageCeiling = maxOf(monthlyQuotaGrams, currentMonthlyUsage)
                 alternatives.forEach { recipe ->
                     val replacement = PlannedMeal(
                         id = id,
@@ -561,7 +673,9 @@ class MealsRepository internal constructor(
                         locked = false
                     )
                     val trial = improvedPlan.filterNot { it.id == id } + replacement
-                    val score = scorePlan(trial)
+                    val withinMonthlyLimit = normalizedMeatPreference != "monthly_limit" ||
+                        monthlyMeatUsageGrams(trial) <= monthlyUsageCeiling + 0.001
+                    val score = if (withinMonthlyLimit) scorePlan(trial) else Double.POSITIVE_INFINITY
                     if (score < improvedScore) {
                         improvedPlan = trial
                         improvedScore = score
@@ -584,7 +698,7 @@ class MealsRepository internal constructor(
             dao.upsertPlanRun(
                 PlanRunEntity(
                     weekStartIso = weekStartIso,
-                    engineVersion = "0.4.0",
+                    engineVersion = "0.5.0",
                     generatedAtEpochMillis = generatedAt,
                     priceSnapshotAtEpochMillis = priceSnapshotAt,
                     budgetDzd = weeklyBudgetDzd,
@@ -602,9 +716,40 @@ class MealsRepository internal constructor(
             foodTaxonomyByIngredientId = ingredientTaxonomyById
         )
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
+        val monthlyMeatUsedGrams = if (normalizedMeatPreference == "monthly_limit") {
+            val recipeById = recipes.associateBy { it.id }
+            monthlyBaselineMeals.sumOf { meal ->
+                val recipe = meal.recipeId?.let(recipeById::get) ?: return@sumOf 0.0
+                recipeMeatQuantityGrams(recipe, meal.servings, ingredientTaxonomyById)
+                    ?: 1_000_000_000.0
+            } + chosen.values.sumOf { meal ->
+                val mealDate = LocalDate.parse(weekStartIso).plusDays(meal.dayIndex.toLong())
+                if (YearMonth.from(mealDate) != planningMonth) return@sumOf 0.0
+                val recipe = meal.recipeId?.let(recipeById::get) ?: return@sumOf 0.0
+                recipeMeatQuantityGrams(recipe, meal.servings, ingredientTaxonomyById)
+                    ?: 1_000_000_000.0
+            }
+        } else {
+            0.0
+        }
+        val monthlyLimitExceeded = normalizedMeatPreference == "monthly_limit" &&
+            monthlyMeatUsedGrams > monthlyMeatGrams.coerceIn(250, 20_000) + 0.001
+        val message = when {
+            monthlyLimitExceeded ->
+                "أنشأنا الخطة، لكن الوصفات المتاحة أو الوجبات المحفوظة لا تسمح بالالتزام الكامل بسقف اللحوم الشهري. خفّضنا الكمية قدر الإمكان."
+            !within ->
+                "أنشأنا خطة أولية، لكنها تتجاوز الميزانية أو تحتوي على أسعار غير متوفرة. راجع الوجبات قبل التسوق."
+            normalizedMeatPreference == "monthly_limit" ->
+                "أنشأنا الخطة ضمن ميزانيتك، مع احترام سقف استهلاك اللحوم الشهري."
+            normalizedMeatPreference == "none" || normalizedMeatPreference == "chicken_only" ->
+                "أنشأنا الخطة وفق تفضيل استهلاك اللحوم الذي اخترته."
+            normalizedOilPreference == "less" ->
+                "أنشأنا الخطة مع تفضيل الوصفات الأقل استعمالاً للزيت."
+            else -> "أنشأنا خطة أولية ضمن ميزانيتك التقديرية."
+        }
         return GenerationResult(
             success = true,
-            message = if (within) "أنشأنا خطة أولية ضمن ميزانيتك التقديرية." else "أنشأنا خطة أولية، لكنها تتجاوز الميزانية أو تحتوي على أسعار غير متوفرة. راجع الوجبات قبل التسوق.",
+            message = message,
             purchaseOutlayDzd = result.purchaseOutlayDzd.toInt(),
             budgetDzd = weeklyBudgetDzd
         )

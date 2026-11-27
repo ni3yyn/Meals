@@ -118,7 +118,10 @@ import kotlin.math.roundToInt
 /** The two essential values collected during first-run setup. */
 data class MealsOnboardingResult(
     val weeklyBudgetDzd: Int,
-    val householdServings: Int
+    val householdServings: Int,
+    val meatPreference: String = "regular",
+    val monthlyMeatGrams: Int = 3_000,
+    val oilPreference: String = "regular"
 )
 
 private const val PageCount = 3
@@ -157,6 +160,9 @@ fun MealsOnboarding(
         mutableStateOf(maxOf(60_000, initial.weeklyBudgetDzd.coerceIn(500, 500_000)))
     }
     var servings by rememberSaveable { mutableStateOf(initial.householdServings.coerceIn(1, 12)) }
+    var meatPreference by rememberSaveable { mutableStateOf(initial.meatPreference) }
+    var monthlyMeatGrams by rememberSaveable { mutableStateOf(initial.monthlyMeatGrams.coerceIn(250, 20_000)) }
+    var oilPreference by rememberSaveable { mutableStateOf(initial.oilPreference) }
     var pendingFinish by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     // One frame clock drives every floating bubble and vector illustration.
@@ -190,7 +196,8 @@ fun MealsOnboarding(
 
     val valid = when (current) {
         1 -> budget >= 500
-        2 -> servings in 1..12
+        2 -> servings in 1..12 &&
+            (meatPreference != "monthly_limit" || monthlyMeatGrams in 250..20_000)
         else -> true
     }
 
@@ -392,7 +399,7 @@ fun MealsOnboarding(
                             2 -> StepLayout(
                                 pageOffset = pageOffset,
                                 title = "كم فرداً في الأسرة؟",
-                                subtitle = "نضبط كميات الوصفات وقائمة التسوق وفقاً لعدد أفراد الأسرة.",
+                                subtitle = "نضبط الكميات وفق عدد أفراد الأسرة وطريقة استهلاككم المعتادة.",
                                 art = MealsArt.Family,
                                 artCount = servings,
                                 satellites = listOf(
@@ -421,6 +428,70 @@ fun MealsOnboarding(
                                     }
                                     StepperButton("+") { servings = (servings + 1).coerceAtMost(12) }
                                 }
+
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "استهلاك اللحوم والدجاج",
+                                    color = Ink,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                                ) {
+                                    listOf(
+                                        "regular" to "عادي",
+                                        "none" to "بدون لحم",
+                                        "chicken_only" to "الدجاج فقط",
+                                        "monthly_limit" to "كمية شهرية"
+                                    ).forEach { (value, label) ->
+                                        BubbleChip(label, meatPreference == value) { meatPreference = value }
+                                    }
+                                }
+                                if (meatPreference == "monthly_limit") {
+                                    Text(
+                                        "الكمية القصوى للأسرة خلال الشهر",
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    MealsAnimatedCount(
+                                        value = if (monthlyMeatGrams % 1_000 == 0) {
+                                            "${monthlyMeatGrams / 1_000} كغ"
+                                        } else {
+                                            "$monthlyMeatGrams غ"
+                                        },
+                                        color = Ink,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Slider(
+                                        value = monthlyMeatGrams.toFloat(),
+                                        onValueChange = { monthlyMeatGrams = (it / 250f).roundToInt() * 250 },
+                                        valueRange = 250f..20_000f,
+                                        steps = 78,
+                                        colors = glassSliderColors()
+                                    )
+                                    Text(
+                                        "نحسب اللحم والدجاج معاً، للأسرة كاملة.",
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+
+                                Text(
+                                    "استعمال الزيت في الطبخ",
+                                    color = Ink,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                                ) {
+                                    BubbleChip("زيت أقل", oilPreference == "less") { oilPreference = "less" }
+                                    BubbleChip("عادي", oilPreference == "regular") { oilPreference = "regular" }
+                                }
                             }
                         }
                     }
@@ -437,7 +508,10 @@ fun MealsOnboarding(
                             } else {
                                 val result = MealsOnboardingResult(
                                     weeklyBudgetDzd = budget,
-                                    householdServings = servings
+                                    householdServings = servings,
+                                    meatPreference = meatPreference,
+                                    monthlyMeatGrams = monthlyMeatGrams,
+                                    oilPreference = oilPreference
                                 )
                                 pendingFinish = { onFinish(result) }
                             }

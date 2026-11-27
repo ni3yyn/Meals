@@ -64,6 +64,78 @@ private fun FoodTaxonomyRef.isExcludedByVeganDiet(): Boolean =
     categoryId in veganExcludedCategoryIds ||
         subcategoryId in veganExcludedSubcategoryIds
 
+private val meatAndPoultryCategoryIds = setOf("foodcat-meat", "foodcat-poultry")
+private val animalFleshCategoryIds = meatAndPoultryCategoryIds + "foodcat-seafood"
+
+/** Household meat rules use canonical ingredient taxonomy, never recipe title matching. */
+fun isRecipeAllowedByMeatPreference(
+    recipe: MealRecipe,
+    ingredientTaxonomy: Map<String, FoodTaxonomyRef>,
+    meatPreference: String
+): Boolean {
+    if (meatPreference == "regular" || meatPreference == "monthly_limit") return true
+    return recipe.ingredients.none { ingredient ->
+        if (ingredient.optional || ingredient.quantityBase <= 0.0) return@none false
+        val taxonomy = ingredientTaxonomy[ingredient.ingredientId] ?: return@none false
+        when (meatPreference) {
+            "none" -> taxonomy.categoryId in animalFleshCategoryIds
+            "chicken_only" ->
+                taxonomy.categoryId == "foodcat-meat" ||
+                    taxonomy.categoryId == "foodcat-seafood" ||
+                    (taxonomy.categoryId == "foodcat-poultry" &&
+                        taxonomy.subcategoryId != "foodsub-poultry-chicken")
+            else -> false
+        }
+    }
+}
+
+/**
+ * Measurable monthly meat usage for a household-sized serving.
+ * Returns null when a meat ingredient has an unknown unit, rather than
+ * silently treating an unquantified ingredient as zero consumption.
+ */
+fun recipeMeatQuantityGrams(
+    recipe: MealRecipe,
+    servings: Int,
+    ingredientTaxonomy: Map<String, FoodTaxonomyRef>
+): Double? {
+    val factor = servings.coerceAtLeast(1).toDouble() / recipe.baseServings.coerceAtLeast(1)
+    var totalGrams = 0.0
+    recipe.ingredients.filter { !it.optional && it.quantityBase > 0.0 }.forEach { ingredient ->
+        val categoryId = ingredientTaxonomy[ingredient.ingredientId]?.categoryId
+        if (categoryId == null || categoryId !in meatAndPoultryCategoryIds) return@forEach
+        val scaled = scaleRecipeIngredientQuantity(ingredient.quantityBase, factor, ingredient.scalingRule)
+        val grams = when (ingredient.unit.trim().lowercase()) {
+            "g", "gram", "grams" -> scaled
+            "kg", "kilogram", "kilograms" -> scaled * 1_000.0
+            else -> return null
+        }
+        totalGrams += grams
+    }
+    return totalGrams
+}
+
+/** Returns measured oil/fat grams-or-ml per household serving; null means unquantified. */
+fun recipeOilQuantityPerServing(
+    recipe: MealRecipe,
+    servings: Int,
+    ingredientTaxonomy: Map<String, FoodTaxonomyRef>
+): Double? {
+    val factor = servings.coerceAtLeast(1).toDouble() / recipe.baseServings.coerceAtLeast(1)
+    var total = 0.0
+    recipe.ingredients.filter { !it.optional && it.quantityBase > 0.0 }.forEach { ingredient ->
+        if (ingredientTaxonomy[ingredient.ingredientId]?.categoryId != "foodcat-oils") return@forEach
+        val scaled = scaleRecipeIngredientQuantity(ingredient.quantityBase, factor, ingredient.scalingRule)
+        val amount = when (ingredient.unit.trim().lowercase()) {
+            "g", "gram", "grams", "ml", "milliliter", "milliliters" -> scaled
+            "kg", "kilogram", "kilograms", "l", "liter", "liters" -> scaled * 1_000.0
+            else -> return null
+        }
+        total += amount
+    }
+    return total / servings.coerceAtLeast(1)
+}
+
 fun isRecipeAllowed(
     recipe: MealRecipe,
     ingredientTaxonomy: Map<String, FoodTaxonomyRef>,

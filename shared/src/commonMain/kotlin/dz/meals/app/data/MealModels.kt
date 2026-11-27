@@ -295,7 +295,10 @@ data class AppPreferences(
     val preferredShop: String = "",
     // Append new preferences here to preserve existing positional constructor calls.
     val appLanguage: String = "ar-DZ",
-    val kitchenBackground: String = MEALS_BACKGROUND_PINK
+    val kitchenBackground: String = MEALS_BACKGROUND_PINK,
+    val meatPreference: String = "regular",
+    val monthlyMeatGrams: Int = 3_000,
+    val oilPreference: String = "regular"
 )
 
 data class PantryItem(

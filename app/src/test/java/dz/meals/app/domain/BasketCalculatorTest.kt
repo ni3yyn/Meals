@@ -10,6 +10,9 @@ import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.findPinnedDietConflict
 import dz.meals.app.domain.isRecipeAllowed
+import dz.meals.app.domain.isRecipeAllowedByMeatPreference
+import dz.meals.app.domain.recipeMeatQuantityGrams
+import dz.meals.app.domain.recipeOilQuantityPerServing
 import dz.meals.app.domain.softPreferencePenalty
 import dz.meals.app.domain.shouldPreserveMeal
 import org.junit.Assert.assertEquals
@@ -158,6 +161,9 @@ class BasketCalculatorTest {
         assertEquals("none", defaults.dietPattern)
         assertTrue(defaults.budgetBufferPercent in 0..30)
         assertTrue(defaults.maxCookingMinutes in 10..240)
+        assertEquals("regular", defaults.meatPreference)
+        assertEquals(3_000, defaults.monthlyMeatGrams)
+        assertEquals("regular", defaults.oilPreference)
         assertTrue(!defaults.hasCompletedSetup)
     }
 
@@ -174,6 +180,73 @@ class BasketCalculatorTest {
         assertTrue(isRecipeAllowed(chickenRecipe, categories, emptySet(), "none"))
         val milkRecipe = recipe.copy(allergens = setOf("milk"))
         assertTrue(!isRecipeAllowed(milkRecipe, emptyMap(), setOf("milk"), "none"))
+    }
+
+    @Test
+    fun householdMeatPreferencesUseCanonicalIngredientTaxonomy() {
+        val chicken = recipe.copy(
+            id = "chicken-meal",
+            ingredients = listOf(RecipeIngredient("chicken", 300.0, "g"))
+        )
+        val beef = recipe.copy(
+            id = "beef-meal",
+            ingredients = listOf(RecipeIngredient("beef", 300.0, "g"))
+        )
+        val fish = recipe.copy(
+            id = "fish-meal",
+            ingredients = listOf(RecipeIngredient("fish", 300.0, "g"))
+        )
+        val taxonomy = mapOf(
+            "chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken"),
+            "beef" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red"),
+            "fish" to FoodTaxonomyRef("foodcat-seafood", "foodsub-seafood-fish")
+        )
+
+        assertTrue(!isRecipeAllowedByMeatPreference(chicken, taxonomy, "none"))
+        assertTrue(!isRecipeAllowedByMeatPreference(fish, taxonomy, "none"))
+        assertTrue(isRecipeAllowedByMeatPreference(chicken, taxonomy, "chicken_only"))
+        assertTrue(!isRecipeAllowedByMeatPreference(beef, taxonomy, "chicken_only"))
+        assertTrue(!isRecipeAllowedByMeatPreference(fish, taxonomy, "chicken_only"))
+        assertTrue(isRecipeAllowedByMeatPreference(beef, taxonomy, "monthly_limit"))
+        assertTrue(isRecipeAllowedByMeatPreference(beef, taxonomy, "regular"))
+    }
+
+    @Test
+    fun monthlyMeatAllowanceScalesHouseholdQuantitiesAndRejectsUnknownUnits() {
+        val chicken = recipe.copy(
+            id = "chicken-meal",
+            baseServings = 2,
+            ingredients = listOf(RecipeIngredient("chicken", 300.0, "g"))
+        )
+        val beefInKilograms = recipe.copy(
+            id = "beef-meal",
+            baseServings = 2,
+            ingredients = listOf(RecipeIngredient("beef", 0.25, "kg"))
+        )
+        val unknownUnit = beefInKilograms.copy(
+            ingredients = listOf(RecipeIngredient("beef", 1.0, "piece"))
+        )
+        val taxonomy = mapOf(
+            "chicken" to FoodTaxonomyRef("foodcat-poultry", "foodsub-poultry-chicken"),
+            "beef" to FoodTaxonomyRef("foodcat-meat", "foodsub-meat-red")
+        )
+
+        assertEquals(600.0, recipeMeatQuantityGrams(chicken, 4, taxonomy)!!, 0.0001)
+        assertEquals(500.0, recipeMeatQuantityGrams(beefInKilograms, 4, taxonomy)!!, 0.0001)
+        assertTrue(recipeMeatQuantityGrams(unknownUnit, 4, taxonomy) == null)
+    }
+
+    @Test
+    fun reducedOilPreferenceUsesMeasuredOilPerHouseholdServing() {
+        val oilyRecipe = recipe.copy(
+            baseServings = 2,
+            ingredients = listOf(RecipeIngredient("olive-oil", 20.0, "ml"))
+        )
+        val taxonomy = mapOf(
+            "olive-oil" to FoodTaxonomyRef("foodcat-oils", "foodsub-oils-olive")
+        )
+
+        assertEquals(10.0, recipeOilQuantityPerServing(oilyRecipe, 4, taxonomy)!!, 0.0001)
     }
 
     @Test

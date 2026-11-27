@@ -574,6 +574,9 @@ private fun MealsAppContent(
                                         dietPattern = preferences.dietPattern,
                                         maxCookingMinutes = preferences.maxCookingMinutes,
                                         budgetBufferPercent = preferences.budgetBufferPercent,
+                                        meatPreference = preferences.meatPreference,
+                                        monthlyMeatGrams = preferences.monthlyMeatGrams,
+                                        oilPreference = preferences.oilPreference,
                                         fillEmptyOnly = fillEmptyOnly
                                     )
                                     generationMessage = result.message
@@ -816,7 +819,10 @@ private fun MealsAppContent(
                             budgetBufferPercent = preferences.budgetBufferPercent,
                             commune = preferences.commune,
                             shoppingChannel = preferences.shoppingChannel,
-                            preferredShop = preferences.preferredShop
+                            preferredShop = preferences.preferredShop,
+                            meatPreference = result.meatPreference,
+                            monthlyMeatGrams = result.monthlyMeatGrams,
+                            oilPreference = result.oilPreference
                         )
                         refresh()
                     }
@@ -883,11 +889,11 @@ private fun MealsAppContent(
                         refresh()
                     }
                 },
-                onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer, commune, shoppingChannel, preferredShop ->
+                onSave = { budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer, commune, shoppingChannel, preferredShop, meatPreference, monthlyMeatGrams, oilPreference ->
                     scope.launch {
                         preferencesStore.saveSettings(
                             budget, wilaya, servings, allergies, slots, dislikes, diet, maxMinutes, buffer,
-                            commune, shoppingChannel, preferredShop
+                            commune, shoppingChannel, preferredShop, meatPreference, monthlyMeatGrams, oilPreference
                         )
                         showHouseholdSettings = false
                         refresh()
@@ -1539,7 +1545,7 @@ private fun HouseholdPreferencesDialog(
     ingredients: List<dz.meals.app.data.IngredientMaster>,
     isFirstSetup: Boolean,
     onQuickStart: (Int, Int) -> Unit,
-    onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int, String, String, String) -> Unit
+    onSave: (Int, String, Int, Set<String>, Set<String>, Set<String>, String, Int, Int, String, String, String, String, Int, String) -> Unit
 ) {
     val appLanguage = LocalMealsLocaleTag.current
     var step by rememberSaveable { mutableStateOf(0) }
@@ -1556,12 +1562,17 @@ private fun HouseholdPreferencesDialog(
     var diet by rememberSaveable(preferences.dietPattern) { mutableStateOf(preferences.dietPattern) }
     var maxMinutes by rememberSaveable(preferences.maxCookingMinutes) { mutableStateOf(preferences.maxCookingMinutes.toString()) }
     var buffer by rememberSaveable(preferences.budgetBufferPercent) { mutableStateOf(preferences.budgetBufferPercent.toString()) }
+    var meatPreference by rememberSaveable(preferences.meatPreference) { mutableStateOf(preferences.meatPreference) }
+    var monthlyMeatGrams by rememberSaveable(preferences.monthlyMeatGrams) { mutableStateOf(preferences.monthlyMeatGrams.toString()) }
+    var oilPreference by rememberSaveable(preferences.oilPreference) { mutableStateOf(preferences.oilPreference) }
     var searchIngredient by rememberSaveable { mutableStateOf("") }
 
     val validStep = when (step) {
         0 -> (budgetText.toIntOrNull() ?: 0) > 0 && (servingsText.toIntOrNull() ?: 0) in 1..12
         1 -> slots.isNotEmpty()
-        3 -> (maxMinutes.toIntOrNull() ?: 0) in 10..240 && (buffer.toIntOrNull() ?: -1) in 0..30
+        3 -> (maxMinutes.toIntOrNull() ?: 0) in 10..240 &&
+            (buffer.toIntOrNull() ?: -1) in 0..30 &&
+            (meatPreference != "monthly_limit" || (monthlyMeatGrams.toIntOrNull() ?: 0) in 250..20_000)
         else -> true
     }
 
@@ -1580,7 +1591,8 @@ private fun HouseholdPreferencesDialog(
                     onSave(
                         budget, wilayaText, servings, allergies, slots, dislikes, diet,
                         maxMinutes.toIntOrNull() ?: 60, buffer.toIntOrNull() ?: 5,
-                        communeText, shoppingChannel, preferredShop
+                        communeText, shoppingChannel, preferredShop,
+                        meatPreference, monthlyMeatGrams.toIntOrNull() ?: 3_000, oilPreference
                     )
                 }
             }
@@ -1778,6 +1790,48 @@ private fun HouseholdPreferencesDialog(
                         label = { Text("هامش أمان للميزانية (%)") },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
                     )
+                    Text("استهلاك اللحوم والدجاج", style = MaterialTheme.typography.titleMedium)
+                    listOf(
+                        "regular" to "عادي",
+                        "none" to "بدون لحم",
+                        "chicken_only" to "الدجاج فقط",
+                        "monthly_limit" to "كمية شهرية"
+                    ).forEach { (value, label) ->
+                        MealsChoiceTile(
+                            title = label,
+                            selected = meatPreference == value,
+                            onClick = { meatPreference = value },
+                            icon = MealsIconName.Meal
+                        )
+                    }
+                    if (meatPreference == "monthly_limit") {
+                        OutlinedTextField(
+                            value = monthlyMeatGrams,
+                            onValueChange = { monthlyMeatGrams = it.filter(Char::isDigit).take(5) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            label = { Text("الحد الشهري للأسرة (غرام)") },
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Ltr)
+                        )
+                        Text(
+                            "يُحسب اللحم والدجاج معاً على مستوى الأسرة.",
+                            color = dz.meals.app.ui.theme.MutedInk,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Text("استعمال الزيت", style = MaterialTheme.typography.titleMedium)
+                    listOf(
+                        "less" to "زيت أقل",
+                        "regular" to "عادي"
+                    ).forEach { (value, label) ->
+                        MealsChoiceTile(
+                            title = label,
+                            selected = oilPreference == value,
+                            onClick = { oilPreference = value },
+                            icon = MealsIconName.Cookbook
+                        )
+                    }
                 }
                 4 -> {
                     Text("أين تتسوقين عادة؟", style = MaterialTheme.typography.titleMedium)

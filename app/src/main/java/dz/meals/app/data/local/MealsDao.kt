@@ -225,6 +225,12 @@ interface MealsDao {
     @Query("SELECT * FROM plan_meals WHERE weekStartIso = :weekStartIso ORDER BY dayIndex, mealSlot")
     suspend fun getPlanMeals(weekStartIso: String): List<PlanMealEntity>
 
+    @Query("SELECT * FROM plan_meals WHERE weekStartIso BETWEEN :firstWeekStartIso AND :lastWeekStartIso")
+    suspend fun getPlanMealsForWeekStartsInRange(
+        firstWeekStartIso: String,
+        lastWeekStartIso: String
+    ): List<PlanMealEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertCookedMealDeduction(item: CookedMealDeductionEntity)
 

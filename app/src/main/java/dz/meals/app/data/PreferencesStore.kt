@@ -39,6 +39,9 @@ class PreferencesStore(context: Context) {
         val hasCompletedSetup = booleanPreferencesKey("has_completed_setup")
         val appLanguage = stringPreferencesKey("app_language")
         val kitchenBackground = stringPreferencesKey("kitchen_background")
+        val meatPreference = stringPreferencesKey("meat_preference")
+        val monthlyMeatGrams = intPreferencesKey("monthly_meat_grams")
+        val oilPreference = stringPreferencesKey("oil_preference")
     }
 
     val preferences: Flow<AppPreferences> = dataStore.data
@@ -66,7 +69,14 @@ class PreferencesStore(context: Context) {
                 appLanguage = normalizeStoredLanguage(values[Keys.appLanguage]),
                 kitchenBackground = values[Keys.kitchenBackground]
                     ?.takeIf { it == MEALS_BACKGROUND_CLASSIC || it == MEALS_BACKGROUND_PINK || it == MEALS_BACKGROUND_BLUE }
-                    ?: MEALS_BACKGROUND_PINK
+                    ?: MEALS_BACKGROUND_PINK,
+                meatPreference = values[Keys.meatPreference]
+                    ?.takeIf { it in setOf("regular", "none", "chicken_only", "monthly_limit") }
+                    ?: "regular",
+                monthlyMeatGrams = (values[Keys.monthlyMeatGrams] ?: 3_000).coerceIn(250, 20_000),
+                oilPreference = values[Keys.oilPreference]
+                    ?.takeIf { it in setOf("regular", "less") }
+                    ?: "regular"
             )
         }
 
@@ -82,7 +92,10 @@ class PreferencesStore(context: Context) {
         budgetBufferPercent: Int = 5,
         commune: String = "",
         shoppingChannel: String = "market",
-        preferredShop: String = ""
+        preferredShop: String = "",
+        meatPreference: String = "regular",
+        monthlyMeatGrams: Int = 3_000,
+        oilPreference: String = "regular"
     ) {
         dataStore.edit { values ->
             values[Keys.weeklyBudget] = weeklyBudgetDzd.coerceAtLeast(0)
@@ -100,6 +113,11 @@ class PreferencesStore(context: Context) {
             values[Keys.dietPattern] = dietPattern.takeIf { it in setOf("none", "vegetarian", "vegan") } ?: "none"
             values[Keys.maxCookingMinutes] = maxCookingMinutes.coerceIn(10, 240)
             values[Keys.budgetBufferPercent] = budgetBufferPercent.coerceIn(0, 30)
+            values[Keys.meatPreference] = meatPreference.takeIf {
+                it in setOf("regular", "none", "chicken_only", "monthly_limit")
+            } ?: "regular"
+            values[Keys.monthlyMeatGrams] = monthlyMeatGrams.coerceIn(250, 20_000)
+            values[Keys.oilPreference] = oilPreference.takeIf { it in setOf("regular", "less") } ?: "regular"
             values[Keys.hasCompletedSetup] = true
         }
     }
