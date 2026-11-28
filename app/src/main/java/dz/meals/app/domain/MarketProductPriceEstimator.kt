@@ -245,6 +245,7 @@ private fun normalizeWilaya(value: String?): String? {
     val normalized = value?.let(::normalizeLabel)
         ?.removePrefix("wilaya of ")
         ?.removePrefix("wilaya ")
+        ?.removePrefix("ولايه ")
         ?.removePrefix("ولاية ")
         ?.trim()
         .orEmpty()
@@ -259,8 +260,17 @@ private fun normalizeWilaya(value: String?): String? {
 }
 
 private fun normalizeLabel(value: String): String {
-    var normalized = Normalizer.normalize(value.trim(), Normalizer.Form.NFKD).lowercase()
-    normalized = normalized
+    val decomposed = Normalizer.normalize(value.trim(), Normalizer.Form.NFKD).lowercase()
+    val withoutCombiningMarks = buildString(decomposed.length) {
+        decomposed.forEach { character ->
+            val type = Character.getType(character)
+            if (type != Character.NON_SPACING_MARK.toInt() &&
+                type != Character.COMBINING_SPACING_MARK.toInt() &&
+                type != Character.ENCLOSING_MARK.toInt()
+            ) append(character)
+        }
+    }
+    val normalized = withoutCombiningMarks
         .replace("أ", "ا")
         .replace("إ", "ا")
         .replace("آ", "ا")
@@ -270,16 +280,7 @@ private fun normalizeLabel(value: String): String {
         .replace("ؤ", "و")
         .replace("ئ", "ي")
         .replace("ـ", "")
-    return buildString(normalized.length) {
-        normalized.forEach { character ->
-            val type = Character.getType(character)
-            if (type != Character.NON_SPACING_MARK.toInt() &&
-                type != Character.COMBINING_SPACING_MARK.toInt() &&
-                type != Character.ENCLOSING_MARK.toInt()
-            ) append(character)
-            else append(' ')
-        }
-    }.replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+    return normalized.replace(Regex("[^\\p{L}\\p{N}]+"), " ")
         .trim()
         .replace(Regex("\\s+"), " ")
 }
