@@ -256,6 +256,12 @@ interface MealsDao {
     suspend fun deletePlanningPeriodMeals(periodId: String)
 
     @Query("""
+        DELETE FROM planning_period_meals
+        WHERE periodId = :periodId AND mealSlot IN (:mealSlots)
+    """)
+    suspend fun deletePlanningPeriodMealSlots(periodId: String, mealSlots: List<String>)
+
+    @Query("""
         SELECT * FROM plan_ingredient_adjustments
         WHERE periodId = :periodId
         ORDER BY ingredientId, unit
