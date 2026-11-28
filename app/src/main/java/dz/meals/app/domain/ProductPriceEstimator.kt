@@ -607,12 +607,18 @@ private fun normalizeProductPriceLocation(value: String?): String? {
         .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
         .trim()
         .replace(Regex("\\s+"), " ")
-    if (normalized.isBlank()) return null
-    return when (normalized) {
+    val location = normalized
+        .removePrefix("wilaya of ")
+        .removePrefix("wilaya ")
+        .removePrefix("ولايه ")
+        .removePrefix("ولاية ")
+        .trim()
+    if (location.isBlank()) return null
+    return when (location) {
         "الاغواط" -> "laghouat"
         "البليده" -> "blida"
         "الطارف" -> "el tarf"
-        else -> normalized
+        else -> location
     }
 }
 
