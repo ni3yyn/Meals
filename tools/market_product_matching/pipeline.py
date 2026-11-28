@@ -168,11 +168,19 @@ def _category_values(value: Any) -> list[str]:
 
 
 def _forms(values: Iterable[str], category_ids: Iterable[str] = ()) -> set[str]:
-    normalized = " | ".join(normalize_text(item) for item in values if item)
+    normalized_values = [
+        f" {normalize_text(item)} "
+        for item in values
+        if normalize_text(item)
+    ]
     found = {
         form
         for form, terms in _FORM_TERMS.items()
-        if any(normalize_text(term) in normalized for term in terms)
+        if any(
+            f" {normalize_text(term)} " in normalized
+            for term in terms
+            for normalized in normalized_values
+        )
     }
     for category_id in category_ids:
         mapped = _CATEGORY_FORMS.get(str(category_id).strip().lower())
