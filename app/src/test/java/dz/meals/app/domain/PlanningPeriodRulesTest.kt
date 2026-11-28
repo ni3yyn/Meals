@@ -115,6 +115,19 @@ class PlanningPeriodRulesTest {
         assertEquals(listOf("dinner", "lunch"), slots.take(2).map { it.mealSlot })
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun slotBuilderRejectsAnIncompleteCalendarPeriod() {
+        buildPlanningPeriodSlots(
+            PlanningDateRange(
+                periodId = "MONTH:2027-02-01",
+                type = PlanningPeriodType.MONTH,
+                startDate = LocalDate.parse("2027-02-01"),
+                endDate = LocalDate.parse("2027-02-27")
+            ),
+            listOf("lunch")
+        )
+    }
+
     @Test
     fun alreadyHaveEnoughMakesPurchaseNeedZero() {
         assertEquals(
