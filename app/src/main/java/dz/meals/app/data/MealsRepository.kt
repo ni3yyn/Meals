@@ -1187,6 +1187,7 @@ class MealsRepository internal constructor(
             val searchAttempts = when {
                 slots.size >= 72 -> 2
                 slots.size >= 42 -> 3
+                slots.size >= 28 -> 4
                 slots.size >= 18 -> 6
                 slots.size >= 12 -> 8
                 else -> 10
