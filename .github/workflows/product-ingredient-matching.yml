@@ -36,7 +36,6 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-          cache: false
 
       - name: Run matching pipeline unit tests
         run: python -m unittest tools.market_product_matching.test_pipeline -v
