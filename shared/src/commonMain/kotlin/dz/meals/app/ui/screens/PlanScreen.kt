@@ -117,6 +117,9 @@ fun PlanScreen(
     }
     val visibleMealSlots = snapshot.planRun?.mealSlots ?: preferences.mealSlots
     val orderedMealSlots = listOf("breakfast", "lunch", "dinner").filter { it in visibleMealSlots }
+    val hasMarketPriceEstimates = snapshot.shoppingItems.any {
+        it.marketCashOutlayMinDzd != null
+    }
 
     val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
         meal.locked && meal.recipeId?.let { recipeId ->
@@ -179,7 +182,7 @@ fun PlanScreen(
                         )
                     }
                 }
-                if (snapshot.basket.unknownPriceCount > 0 || snapshot.basket.hasDemoPrices) {
+                if (snapshot.basket.unknownPriceCount > 0 || snapshot.basket.hasDemoPrices || hasMarketPriceEstimates) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -196,6 +199,10 @@ fun PlanScreen(
                         )
                         Text(
                             text = when {
+                                hasMarketPriceEstimates && snapshot.basket.unknownPriceCount > 0 ->
+                                    "بعض الأسعار استرشادية وغير مؤكدة، وهناك " + snapshot.basket.unknownPriceCount + " عناصر دون سعر."
+                                hasMarketPriceEstimates ->
+                                    "الأسعار استرشادية من عروض محلية وقد تختلف حسب المتجر والتوفر."
                                 snapshot.basket.hasDemoPrices && snapshot.basket.unknownPriceCount > 0 ->
                                     "الأسعار تقديرية، وهناك " + snapshot.basket.unknownPriceCount + " عناصر دون سعر."
                                 snapshot.basket.hasDemoPrices ->
