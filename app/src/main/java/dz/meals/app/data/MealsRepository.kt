@@ -539,9 +539,15 @@ class MealsRepository internal constructor(
                 )
             )
         }
-        val planAdjustmentsByIngredientUnit = dao.getPlanIngredientAdjustments(periodId)
-            .mapNotNull { it.toDomainAdjustment() }
-            .associate { it.first to it.second }
+        val persistedAdjustmentRows = dao.getPlanIngredientAdjustments(periodId)
+        val previousIngredientDemands = IngredientDemandCalculator.calculate(existingMeals, recipes)
+        // Only adjustments active in the current saved recipe set influence
+        // candidate scoring. Inactive records remain persisted but cannot
+        // silently deduct stock if a later regeneration introduces that food.
+        val planAdjustmentsByIngredientUnit = activePlanIngredientAdjustments(
+            persistedAdjustmentRows,
+            previousIngredientDemands
+        )
         val locked = existingMeals.filter { shouldPreserveMeal(it, fillEmptyOnly) }
         val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
         if (lockedConflict != null) {
@@ -656,9 +662,16 @@ class MealsRepository internal constructor(
             maxCookingMinutes = maxCookingMinutes
         )
 
-        // Rebase plan-local adjustments onto the newly selected recipes.
-        val rebasedAdjustmentRows = rebasePlanIngredientAdjustments(periodId, chosen.values.toList(), recipes)
-        val rebasedAdjustments = rebasedAdjustmentRows.mapNotNull { it.toDomainAdjustment() }.associate { it.first to it.second }
+        // Carry only adjustments that were active before regeneration and
+        // remain compatible with demand in the newly selected recipes.
+        val adjustmentRebase = rebasePlanIngredientAdjustments(
+            periodId = periodId,
+            previousPlannedMeals = existingMeals,
+            plannedMeals = chosen.values.toList(),
+            recipes = recipes
+        )
+        val rebasedAdjustmentRows = adjustmentRebase.storedRows
+        val rebasedAdjustments = adjustmentRebase.activeAdjustments
 
         val generatedAt = System.currentTimeMillis()
         val priceSnapshotAt = generatedAt
@@ -832,9 +845,15 @@ class MealsRepository internal constructor(
             .filter { it.mealSlot in validSlots }
             .map { it.toPlannedMeal(monthlyRange.startDate) }
 
-        val planAdjustmentsByIngredientUnit = dao.getPlanIngredientAdjustments(periodId)
-            .mapNotNull { it.toDomainAdjustment() }
-            .associate { it.first to it.second }
+        val persistedAdjustmentRows = dao.getPlanIngredientAdjustments(periodId)
+        val previousIngredientDemands = IngredientDemandCalculator.calculate(existingMeals, recipes)
+        // Only adjustments active in the current saved recipe set influence
+        // candidate scoring. Inactive records remain persisted but cannot
+        // silently deduct stock if a later regeneration introduces that food.
+        val planAdjustmentsByIngredientUnit = activePlanIngredientAdjustments(
+            persistedAdjustmentRows,
+            previousIngredientDemands
+        )
 
         val locked = existingMeals.filter { shouldPreserveMeal(it, fillEmptyOnly) }
         val recipes = loadRecipes()
@@ -971,9 +990,16 @@ class MealsRepository internal constructor(
             maxCookingMinutes = maxCookingMinutes
         )
 
-        // Rebase only compatible plan-local adjustments that remain relevant.
-        val rebasedAdjustmentRows = rebasePlanIngredientAdjustments(periodId, chosen.values.toList(), recipes)
-        val rebasedAdjustments = rebasedAdjustmentRows.mapNotNull { it.toDomainAdjustment() }.associate { it.first to it.second }
+        // Removed ingredients stay stored but inactive; new ingredients receive
+        // no assumed at-home amount even when an older inactive row exists.
+        val adjustmentRebase = rebasePlanIngredientAdjustments(
+            periodId = periodId,
+            previousPlannedMeals = existingMeals,
+            plannedMeals = chosen.values.toList(),
+            recipes = recipes
+        )
+        val rebasedAdjustmentRows = adjustmentRebase.storedRows
+        val rebasedAdjustments = adjustmentRebase.activeAdjustments
 
         val generatedAt = System.currentTimeMillis()
         database.withTransaction {
@@ -2432,28 +2458,94 @@ class MealsRepository internal constructor(
         }
     }
 
-    /** Rebase existing plan-local amounts to compatible demand in the new recipe set. */
-    private suspend fun rebasePlanIngredientAdjustments(
-        periodId: String,
-        plannedMeals: List<PlannedMeal>,
-        recipes: List<MealRecipe>
-    ): List<PlanIngredientAdjustmentEntity> {
-        val demands = dz.meals.app.data.IngredientDemandCalculator.calculate(plannedMeals, recipes)
-        return dao.getPlanIngredientAdjustments(periodId).mapNotNull { row ->
-            val matches = demands.filter { demand ->
+    private data class PlanIngredientAdjustmentRebase(
+        val storedRows: List<PlanIngredientAdjustmentEntity>,
+        val activeAdjustments: Map<Pair<String, String>, PlanIngredientAdjustment>
+    )
+
+    /**
+     * Candidate scoring may use only adjustments active in the previously
+     * saved recipe set. Rebase preserves those when the same canonical
+     * ingredient/form remains demanded; removed rows stay stored but inactive,
+     * and a later newly introduced ingredient does not inherit an old amount.
+     */
+    private fun activePlanIngredientAdjustments(
+        rows: List<PlanIngredientAdjustmentEntity>,
+        demands: List<IngredientDemand>
+    ): Map<Pair<String, String>, PlanIngredientAdjustment> =
+        rows.mapNotNull { row ->
+            val matchingDemand = demands.singleOrNull { demand ->
                 demand.ingredientId == row.ingredientId &&
                     convertIngredientQuantity(1.0, row.unit, demand.unit) != null
+            } ?: return@mapNotNull null
+            row.toDomainAdjustment()?.let { (key, adjustment) ->
+                (row.ingredientId to row.unit) to adjustment
             }
-            // No compatible demand means the adjustment is inactive, not lost.
-            // Keep it attached to this period; it may become relevant again if a
-            // later regeneration restores that ingredient/form.
-            val demand = matches.singleOrNull() ?: return@mapNotNull row
-            val quantity = if (row.adjustmentType == "SOME") {
-                convertIngredientQuantity(row.availableQuantity, row.unit, demand.unit)
-                    ?: return@mapNotNull row
+        }.toMap()
+
+    private suspend fun rebasePlanIngredientAdjustments(
+        periodId: String,
+        previousPlannedMeals: List<PlannedMeal>,
+        plannedMeals: List<PlannedMeal>,
+        recipes: List<MealRecipe>
+    ): PlanIngredientAdjustmentRebase {
+        val previousDemands = IngredientDemandCalculator.calculate(previousPlannedMeals, recipes)
+        val nextDemands = IngredientDemandCalculator.calculate(plannedMeals, recipes)
+        val existingRows = dao.getPlanIngredientAdjustments(periodId)
+        val activeCandidates = existingRows.mapNotNull { row ->
+            val validAdjustment = row.toDomainAdjustment() ?: return@mapNotNull null
+            // If it was not part of the old plan, it is an inactive historical
+            // row, even when the newly generated recipes happen to use it.
+            val oldDemand = previousDemands.singleOrNull { demand ->
+                demand.ingredientId == row.ingredientId &&
+                    convertIngredientQuantity(1.0, row.unit, demand.unit) != null
+            } ?: return@mapNotNull null
+            val nextDemand = nextDemands.singleOrNull { demand ->
+                demand.ingredientId == row.ingredientId &&
+                    convertIngredientQuantity(1.0, row.unit, demand.unit) != null &&
+                    convertIngredientQuantity(1.0, oldDemand.unit, demand.unit) != null
+            } ?: return@mapNotNull null
+            val quantity = if (validAdjustment.second.type == PlanIngredientAdjustment.Type.SOME) {
+                convertIngredientQuantity(
+                    validAdjustment.second.availableQuantity,
+                    row.unit,
+                    nextDemand.unit
+                ) ?: return@mapNotNull null
             } else 0.0
-            row.copy(unit = demand.unit, availableQuantity = quantity, updatedAtEpochMillis = System.currentTimeMillis())
-        }.distinctBy { Triple(it.periodId, it.ingredientId, it.unit) }
+            row to row.copy(
+                unit = nextDemand.unit,
+                availableQuantity = quantity,
+                updatedAtEpochMillis = System.currentTimeMillis()
+            )
+        }
+
+        val activeOriginalRows = activeCandidates.mapTo(hashSetOf()) { it.first }
+        val inactiveRows = existingRows.filterNot { it in activeOriginalRows }
+        val activeRows = activeCandidates.groupBy { (_, rebased) ->
+            rebased.ingredientId to rebased.unit
+        }.map { (key, candidates) ->
+            val rebasedRows = candidates.map { it.second }
+            val isEnough = rebasedRows.any {
+                it.adjustmentType.equals("ENOUGH", ignoreCase = true)
+            }
+            PlanIngredientAdjustmentEntity(
+                periodId = periodId,
+                ingredientId = key.first,
+                unit = key.second,
+                adjustmentType = if (isEnough) "ENOUGH" else "SOME",
+                availableQuantity = if (isEnough) 0.0 else rebasedRows.sumOf { it.availableQuantity },
+                updatedAtEpochMillis = rebasedRows.maxOf { it.updatedAtEpochMillis }
+            )
+        }
+        val activeAdjustments = activeRows.mapNotNull { row ->
+            row.toDomainAdjustment()?.let { it.first to it.second }
+        }.toMap()
+        val storedRows = (inactiveRows + activeRows)
+            .distinctBy { Triple(it.periodId, it.ingredientId, it.unit) }
+        return PlanIngredientAdjustmentRebase(
+            storedRows = storedRows,
+            activeAdjustments = activeAdjustments
+        )
     }
 
     private suspend fun persistPlanIngredientAdjustment(
