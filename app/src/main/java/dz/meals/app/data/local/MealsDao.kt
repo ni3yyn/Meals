@@ -368,6 +368,20 @@ interface MealsDao {
     @Query("SELECT * FROM shopping_items WHERE weekStartIso = :weekStartIso ORDER BY userAdded, customName, ingredientId")
     suspend fun getShoppingItems(weekStartIso: String): List<ShoppingItemEntity>
 
+    @Query("""
+        UPDATE shopping_items
+        SET purchaseQuantityOverride = NULL
+        WHERE weekStartIso = :weekStartIso
+            AND ingredientId = :ingredientId
+            AND unit = :unit
+            AND userAdded = 0
+    """)
+    suspend fun clearGeneratedPurchaseQuantityOverride(
+        weekStartIso: String,
+        ingredientId: String,
+        unit: String
+    ): Int
+
     @Query("UPDATE shopping_items SET weekStartIso = :weekStartIso WHERE weekStartIso = ''")
     suspend fun assignUnscopedShoppingItemsToWeek(weekStartIso: String): Int
 
