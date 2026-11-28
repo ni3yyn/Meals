@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
+import java.time.YearMonth
 
 class PlanningPeriodRulesTest {
     @Test
@@ -126,6 +127,67 @@ class PlanningPeriodRulesTest {
             ),
             listOf("lunch")
         )
+    }
+
+
+    @Test
+    fun monthlyMeatAllowanceKeepsTheFullMonthlyCap() {
+        val range = resolvePlanningDateRange(PlanningPeriodType.MONTH, "2028-02-10")
+
+        val allowances = calculatePeriodMeatAllowances(range, monthlyLimitGrams = 3_000)
+
+        assertEquals(1, allowances.size)
+        assertEquals(YearMonth.of(2028, 2), allowances.single().month)
+        assertEquals(29, allowances.single().overlapDays)
+        assertEquals(29, allowances.single().denominatorDays)
+        assertEquals(3_000.0, allowances.single().allowedGrams, 0.0)
+        assertEquals(PeriodMeatAllowance.Basis.MONTHLY_CAP, allowances.single().basis)
+    }
+
+    @Test
+    fun weeklyMeatAllowanceIsProportionalToDatesWithinTheMonth() {
+        val range = resolvePlanningDateRange(PlanningPeriodType.WEEK, "2027-04-07")
+
+        val allowances = calculatePeriodMeatAllowances(range, monthlyLimitGrams = 3_000)
+
+        assertEquals(1, allowances.size)
+        assertEquals(7, allowances.single().overlapDays)
+        assertEquals(30, allowances.single().denominatorDays)
+        assertEquals(700.0, allowances.single().allowedGrams, 0.0)
+        assertEquals(PeriodMeatAllowance.Basis.MONTHLY_CAP, allowances.single().basis)
+    }
+
+    @Test
+    fun weekCrossingMonthBoundaryGetsAnIndependentProportionalAllowanceForEachMonth() {
+        // Monday 29 March through Sunday 4 April: 3 days in March, 4 in April.
+        val range = resolvePlanningDateRange(PlanningPeriodType.WEEK, "2027-03-29")
+
+        val allowances = calculatePeriodMeatAllowances(range, monthlyLimitGrams = 3_000)
+
+        assertEquals(listOf(YearMonth.of(2027, 3), YearMonth.of(2027, 4)), allowances.map { it.month })
+        assertEquals(listOf(3, 4), allowances.map { it.overlapDays })
+        assertEquals(listOf(31, 30), allowances.map { it.denominatorDays })
+        assertEquals(3_000.0 * 3.0 / 31.0, allowances[0].allowedGrams, 0.0001)
+        assertEquals(400.0, allowances[1].allowedGrams, 0.0)
+        assertEquals(PeriodMeatAllowance.Basis.MONTHLY_CAP, allowances[0].basis)
+        assertEquals(PeriodMeatAllowance.Basis.MONTHLY_CAP, allowances[1].basis)
+    }
+
+    @Test
+    fun explicitWeeklyMeatCapOverridesMonthlyProrationAndSplitsAcrossMonths() {
+        val range = resolvePlanningDateRange(PlanningPeriodType.WEEK, "2027-03-29")
+
+        val allowances = calculatePeriodMeatAllowances(
+            period = range,
+            monthlyLimitGrams = 3_000,
+            weeklyLimitGrams = 1_400
+        )
+
+        assertEquals(600.0, allowances[0].allowedGrams, 0.0)
+        assertEquals(800.0, allowances[1].allowedGrams, 0.0)
+        assertEquals(PeriodMeatAllowance.Basis.WEEKLY_CAP, allowances[0].basis)
+        assertEquals(PeriodMeatAllowance.Basis.WEEKLY_CAP, allowances[1].basis)
+        assertEquals(1_400.0, allowances.sumOf { it.allowedGrams }, 0.0)
     }
 
     @Test

@@ -163,3 +163,73 @@ fun validatePlanIngredientAdjustment(
     PlanIngredientAdjustment.Type.SOME ->
         adjustment.availableQuantity.isFinite() && adjustment.availableQuantity > 0.0
 }
+
+
+/**
+ * Meat allowance assigned to the part of a planning period that overlaps one
+ * calendar month. Weekly plans receive a proportional share of the monthly cap;
+ * an explicit weekly cap, when supplied, is split across the selected seven dates.
+ * Monthly plans always receive the complete monthly cap.
+ */
+data class PeriodMeatAllowance(
+    val month: YearMonth,
+    val overlapDays: Int,
+    val denominatorDays: Int,
+    val allowedGrams: Double,
+    val basis: Basis
+) {
+    enum class Basis {
+        MONTHLY_CAP,
+        WEEKLY_CAP
+    }
+}
+
+fun calculatePeriodMeatAllowances(
+    period: PlanningDateRange,
+    monthlyLimitGrams: Int,
+    weeklyLimitGrams: Int? = null
+): List<PeriodMeatAllowance> {
+    val canonicalRange = resolvePlanningDateRange(period.type, period.startDate.toString())
+    require(
+        period.periodId == canonicalRange.periodId &&
+            period.startDate == canonicalRange.startDate &&
+            period.endDate == canonicalRange.endDate
+    ) {
+        "Meat allowances can only be calculated for a complete canonical planning period."
+    }
+
+    val monthlyLimit = monthlyLimitGrams.coerceIn(250, 20_000).toDouble()
+    val weeklyLimit = weeklyLimitGrams?.coerceIn(250, 20_000)?.toDouble()
+    val overlapDaysByMonth = (0 until period.dayCount)
+        .map { offset -> YearMonth.from(period.startDate.plusDays(offset.toLong())) }
+        .groupingBy { it }
+        .eachCount()
+
+    return overlapDaysByMonth.entries
+        .sortedBy { it.key }
+        .map { (month, overlapDays) ->
+            when {
+                period.type == PlanningPeriodType.MONTH -> PeriodMeatAllowance(
+                    month = month,
+                    overlapDays = overlapDays,
+                    denominatorDays = month.lengthOfMonth(),
+                    allowedGrams = monthlyLimit,
+                    basis = PeriodMeatAllowance.Basis.MONTHLY_CAP
+                )
+                weeklyLimit != null -> PeriodMeatAllowance(
+                    month = month,
+                    overlapDays = overlapDays,
+                    denominatorDays = period.dayCount,
+                    allowedGrams = weeklyLimit * overlapDays / period.dayCount,
+                    basis = PeriodMeatAllowance.Basis.WEEKLY_CAP
+                )
+                else -> PeriodMeatAllowance(
+                    month = month,
+                    overlapDays = overlapDays,
+                    denominatorDays = month.lengthOfMonth(),
+                    allowedGrams = monthlyLimit * overlapDays / month.lengthOfMonth(),
+                    basis = PeriodMeatAllowance.Basis.MONTHLY_CAP
+                )
+            }
+        }
+}
