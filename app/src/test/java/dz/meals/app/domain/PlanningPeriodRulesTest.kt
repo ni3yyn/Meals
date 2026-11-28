@@ -77,6 +77,45 @@ class PlanningPeriodRulesTest {
     }
 
     @Test
+    fun weeklySlotBuilderPreservesLegacyIdsAndExactlySevenDates() {
+        val range = resolvePlanningDateRange(PlanningPeriodType.WEEK, "2026-11-28")
+        val slots = buildPlanningPeriodSlots(range, listOf("breakfast", "lunch", "dinner"))
+
+        assertEquals(21, slots.size)
+        assertEquals("2026-11-23-0-breakfast", slots.first().id)
+        assertEquals(LocalDate.parse("2026-11-23"), slots.first().date)
+        assertEquals(6, slots.last().dayIndex)
+        assertEquals(LocalDate.parse("2026-11-29"), slots.last().date)
+        assertEquals(21, slots.map { it.id }.toSet().size)
+    }
+
+    @Test
+    fun monthlySlotBuilderCoversEveryCalendarDateWithoutWeekBoundaries() {
+        val range = resolvePlanningDateRange(PlanningPeriodType.MONTH, "2028-02-29")
+        val slots = buildPlanningPeriodSlots(range, listOf("lunch", "dinner"))
+
+        assertEquals(58, slots.size)
+        assertEquals(LocalDate.parse("2028-02-01"), slots.first().date)
+        assertEquals(LocalDate.parse("2028-02-29"), slots.last().date)
+        assertEquals(0, slots.first().dayIndex)
+        assertEquals(28, slots.last().dayIndex)
+        assertEquals("MONTH:2028-02-01-2028-02-01-lunch", slots.first().id)
+        assertEquals(58, slots.map { it.id }.toSet().size)
+    }
+
+    @Test
+    fun slotBuilderDeduplicatesSelectedMealSlotsAndKeepsTheirOrder() {
+        val range = resolvePlanningDateRange(PlanningPeriodType.MONTH, "2027-04-12")
+        val slots = buildPlanningPeriodSlots(
+            range,
+            listOf("dinner", "lunch", "dinner", "")
+        )
+
+        assertEquals(60, slots.size)
+        assertEquals(listOf("dinner", "lunch"), slots.take(2).map { it.mealSlot })
+    }
+
+    @Test
     fun alreadyHaveEnoughMakesPurchaseNeedZero() {
         assertEquals(
             0.0,
