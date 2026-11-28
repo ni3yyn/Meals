@@ -1158,20 +1158,32 @@ private fun MealsSnapshot.purchaseEstimateLabel(): String {
         return if (plannedMeals.isEmpty()) "—" else 0.formatDzd()
     }
 
-    val hasAnyEstimate = plannedPurchases.any {
-        it.cashOutlayDzd != null || it.marketCashOutlayMinDzd != null
-    }
-    if (basket.unknownPriceCount > 0 && !hasAnyEstimate) return "غير متوفر"
+    fun hasPrice(item: dz.meals.app.data.ShoppingListItem): Boolean =
+        item.cashOutlayDzd != null ||
+            (item.marketCashOutlayMinDzd != null && item.marketCashOutlayMaxDzd != null)
 
-    if (basket.unknownPriceCount == 0) {
-        val minimum = basket.purchaseOutlayMinDzd
-        val maximum = basket.purchaseOutlayMaxDzd
-        if (minimum != null && maximum != null && minimum != maximum) {
-            return "${minimum.toInt().formatDzd()} – ${maximum.toInt().formatDzd()}"
-        }
+    val pricedItems = plannedPurchases.filter(::hasPrice)
+    val missingCount = plannedPurchases.size - pricedItems.size
+    if (pricedItems.isEmpty()) return "غير متوفر"
+
+    val knownLow = pricedItems.sumOf {
+        it.marketCashOutlayMinDzd ?: it.cashOutlayDzd ?: 0.0
     }
-    val total = basket.purchaseOutlayDzd.toInt().formatDzd()
-    return if (basket.unknownPriceCount > 0) "تقدير جزئي · $total" else total
+    val knownHigh = pricedItems.sumOf {
+        it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
+    }
+    if (missingCount > 0) {
+        val partial = if (knownLow != knownHigh) {
+            "${knownLow.toInt().formatDzd()} – ${knownHigh.toInt().formatDzd()}"
+        } else knownHigh.toInt().formatDzd()
+        return "تقدير جزئي · $partial"
+    }
+
+    val minimum = basket.purchaseOutlayMinDzd ?: knownLow
+    val maximum = basket.purchaseOutlayMaxDzd ?: knownHigh
+    return if (minimum != maximum) {
+        "${minimum.toInt().formatDzd()} – ${maximum.toInt().formatDzd()}"
+    } else maximum.toInt().formatDzd()
 }
 
 @Composable

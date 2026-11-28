@@ -410,10 +410,16 @@ class MealsRepository internal constructor(
                     snapshotAtEpochMillis = marketPriceSnapshotAt
                 )
             }
-        val hasRanges = shoppingItems.any { it.marketCashOutlayMinDzd != null }
+        val hasRanges = shoppingItems.any {
+            it.marketCashOutlayMinDzd != null && it.marketCashOutlayMaxDzd != null
+        }
         val basketMin = shoppingItems.sumOf { it.marketCashOutlayMinDzd ?: it.cashOutlayDzd ?: 0.0 }
         val basketMax = shoppingItems.sumOf { it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0 }
-        val allPricesKnown = shoppingItems.all { it.cashOutlayDzd != null || it.purchaseQuantity <= 0.0 }
+        val allPricesKnown = shoppingItems.all {
+            it.purchaseQuantity <= 0.0 ||
+                it.cashOutlayDzd != null ||
+                (it.marketCashOutlayMinDzd != null && it.marketCashOutlayMaxDzd != null)
+        }
 
         val priceSummaries = currentPrices.mapNotNull { observation ->
             val ingredient = names[observation.ingredientId] ?: return@mapNotNull null
@@ -456,9 +462,16 @@ class MealsRepository internal constructor(
             basket = basket.copy(
                 items = shoppingItems,
                 consumedValueDzd = shoppingItems.sumOf { it.consumedValueDzd ?: 0.0 },
-                purchaseOutlayDzd = shoppingItems.sumOf { it.cashOutlayDzd ?: 0.0 },
+                // Market-backed items carry a range instead of cashOutlayDzd.
+                // Use the high bound for the conservative scalar; keep the
+                // explicit low/high fields below for the UI.
+                purchaseOutlayDzd = shoppingItems.sumOf {
+                    it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
+                },
                 unknownPriceCount = shoppingItems.count {
-                    it.cashOutlayDzd == null && it.purchaseQuantity > 0.0
+                    it.purchaseQuantity > 0.0 &&
+                        it.cashOutlayDzd == null &&
+                        (it.marketCashOutlayMinDzd == null || it.marketCashOutlayMaxDzd == null)
                 },
                 actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 },
                 purchaseOutlayMinDzd = basketMin.takeIf { hasRanges && allPricesKnown },
