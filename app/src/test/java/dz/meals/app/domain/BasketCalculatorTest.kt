@@ -112,6 +112,143 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun verifiedMarketProductRangeOverridesLegacyPriceAndRoundsWholePacks() {
+        val legacy = PriceObservationEntity(
+            "legacy-potato", "potato", 100.0, "g", 5.0,
+            "legacy", "Laghouat", 1_800_000_000_000L, "user_reported", "unverified"
+        )
+        val evidence = MarketProductPriceEvidence(
+            productId = "retail-potato",
+            sourceListingId = "listing-potato",
+            ingredientId = "potato",
+            productName = "Potatoes 1 kg",
+            packageQuantity = 1_000.0,
+            packageUnit = "g",
+            mappingStatus = "VERIFIED",
+            mappingReviewedAtEpochMillis = 1_799_999_000_000L,
+            foodScopeReviewNeeded = false,
+            priceDzd = null,
+            priceMinDzd = 200.0,
+            priceMaxDzd = 240.0,
+            currencyCode = "DZD",
+            observedAtEpochMillis = 1_799_999_900_000L,
+            priceStatus = "observed_unverified",
+            availabilityRaw = "https://schema.org/InStock",
+            storeName = "متجر محلي",
+            source = "test",
+            wilaya = "Laghouat",
+            sourceNotice = "Indicative retailer price"
+        )
+
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = listOf(legacy),
+            selectedWilaya = "Laghouat",
+            nowEpochMillis = 1_800_000_000_000L,
+            marketProductPriceEvidence = listOf(evidence)
+        )
+
+        val item = result.items.single()
+        assertEquals(400.0, item.purchaseQuantity, 0.0001)
+        assertEquals(200.0, item.marketCashOutlayMinDzd!!, 0.0001)
+        assertEquals(240.0, item.marketCashOutlayMaxDzd!!, 0.0001)
+        assertEquals(240.0, item.cashOutlayDzd!!, 0.0001)
+        assertEquals(80.0, item.marketConsumedValueMinDzd!!, 0.0001)
+        assertEquals(96.0, item.marketConsumedValueMaxDzd!!, 0.0001)
+        assertEquals(240.0, result.purchaseOutlayDzd, 0.0001)
+        assertEquals(200.0, result.purchaseOutlayMinDzd!!, 0.0001)
+        assertEquals(240.0, result.purchaseOutlayMaxDzd!!, 0.0001)
+        assertEquals("سعر استرشادي غير مؤكد", item.priceLabel)
+    }
+
+    @Test
+    fun productMarketEstimateRequiresAnExactSelectedWilaya() {
+        val evidence = MarketProductPriceEvidence(
+            productId = "retail-potato",
+            sourceListingId = "listing-potato",
+            ingredientId = "potato",
+            productName = "Potatoes 1 kg",
+            packageQuantity = 1_000.0,
+            packageUnit = "g",
+            mappingStatus = "VERIFIED",
+            mappingReviewedAtEpochMillis = 1_799_999_000_000L,
+            foodScopeReviewNeeded = false,
+            priceDzd = 200.0,
+            priceMinDzd = null,
+            priceMaxDzd = null,
+            currencyCode = "DZD",
+            observedAtEpochMillis = 1_799_999_900_000L,
+            priceStatus = "observed_unverified",
+            availabilityRaw = "https://schema.org/InStock",
+            storeName = "متجر محلي",
+            source = "test",
+            wilaya = "Laghouat",
+            sourceNotice = ""
+        )
+
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = emptyList(),
+            selectedWilaya = null,
+            nowEpochMillis = 1_800_000_000_000L,
+            marketProductPriceEvidence = listOf(evidence)
+        )
+
+        assertEquals(1, result.unknownPriceCount)
+        assertEquals(null, result.items.single().marketCashOutlayMinDzd)
+    }
+
+    @Test
+    fun incompleteBasketDoesNotExposeACompleteMarketTotalRange() {
+        val twoIngredientRecipe = recipe.copy(
+            ingredients = listOf(
+                RecipeIngredient("potato", 200.0, "g"),
+                RecipeIngredient("carrot", 100.0, "g")
+            )
+        )
+        val potatoEvidence = MarketProductPriceEvidence(
+            productId = "retail-potato",
+            sourceListingId = "listing-potato",
+            ingredientId = "potato",
+            productName = "Potatoes 1 kg",
+            packageQuantity = 1_000.0,
+            packageUnit = "g",
+            mappingStatus = "VERIFIED",
+            mappingReviewedAtEpochMillis = 1_799_999_000_000L,
+            foodScopeReviewNeeded = false,
+            priceDzd = 200.0,
+            priceMinDzd = null,
+            priceMaxDzd = null,
+            currencyCode = "DZD",
+            observedAtEpochMillis = 1_799_999_900_000L,
+            priceStatus = "observed_unverified",
+            availabilityRaw = "https://schema.org/InStock",
+            storeName = "متجر محلي",
+            source = "test",
+            wilaya = "Laghouat",
+            sourceNotice = ""
+        )
+
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(twoIngredientRecipe),
+            pantry = emptyList(),
+            prices = emptyList(),
+            selectedWilaya = "Laghouat",
+            nowEpochMillis = 1_800_000_000_000L,
+            marketProductPriceEvidence = listOf(potatoEvidence)
+        )
+
+        assertEquals(1, result.unknownPriceCount)
+        assertEquals(null, result.purchaseOutlayMinDzd)
+        assertEquals(null, result.purchaseOutlayMaxDzd)
+    }
+
+    @Test
     fun weekStartsOnMondayForAlgerianMealPlanning() {
         assertEquals("2026-11-16", dz.meals.app.data.currentWeekStartIso(java.time.LocalDate.parse("2026-11-21")))
         assertEquals("2026-11-23", dz.meals.app.data.currentWeekStartIso(java.time.LocalDate.parse("2026-11-24")))
