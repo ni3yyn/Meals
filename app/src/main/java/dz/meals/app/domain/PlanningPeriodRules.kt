@@ -16,6 +16,10 @@ enum class PlanningPeriodType(val storageValue: String) {
     }
 }
 
+data class PlanningPeriodId(val value: String) {
+    init { require(value.isNotBlank()) { "Planning period ID cannot be blank." } }
+}
+
 data class PlanningDateRange(
     val periodId: String,
     val type: PlanningPeriodType,

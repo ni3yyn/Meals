@@ -32,6 +32,7 @@ import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.MarketProductPriceEvidence
 import dz.meals.app.domain.PlanIngredientAdjustment
 import dz.meals.app.domain.PlanningPeriodType
+import dz.meals.app.domain.PlanningPeriodId
 import dz.meals.app.domain.PeriodMeatAllowance
 import dz.meals.app.domain.calculatePeriodMeatAllowances
 import dz.meals.app.domain.periodSearchAttempts
@@ -191,79 +192,110 @@ class MealsRepository internal constructor(
         }
     }
 
+    /**
+     * Compatibility wrapper for existing weekly call sites. Week keys remain
+     * Monday-starting ISO dates and retain their existing storage scope.
+     */
     suspend fun snapshot(
         weekStartIso: String,
         selectedWilaya: String? = null,
         selectedMealSlots: Set<String> = MealSlots.ids.toSet()
+    ): MealsSnapshot {
+        val range = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
+        return snapshot(PlanningPeriodId(range.periodId), selectedWilaya, selectedMealSlots)
+    }
+
+    /**
+     * Canonical period snapshot. WEEK uses legacy plan_runs/plan_meals when
+     * present; MONTH uses date-keyed period meals. Both share period-scoped
+     * adjustments, shopping state, immutable price evidence and basket rebuild.
+     */
+    suspend fun snapshot(
+        periodId: PlanningPeriodId,
+        selectedWilaya: String? = null,
+        selectedMealSlots: Set<String> = MealSlots.ids.toSet()
     ): MealsSnapshot = withContext(Dispatchers.Default) {
         ensureInitialized()
-        val ingredients = loadIngredients()
-        val ingredientTaxonomyById = ingredients.associate { ingredient ->
-            ingredient.id to FoodTaxonomyRef(ingredient.categoryId, ingredient.subcategoryId)
+
+        val separator = periodId.value.indexOf(':')
+        require(separator > 0) { "Invalid planning period ID: ${periodId.value}" }
+        val periodType = PlanningPeriodType.fromStorage(periodId.value.substring(0, separator))
+            ?: throw IllegalArgumentException("Unknown planning period type: ${periodId.value}")
+        val range = resolvePlanningDateRange(periodType, periodId.value.substring(separator + 1))
+        require(range.periodId == periodId.value) {
+            "Planning period ID is not canonical: ${periodId.value}"
         }
+
+        // Existing week-scoped tables use the Monday ISO date. Period-native
+        // tables use the canonical ID; this keeps legacy callers byte-compatible.
+        val scopeKey = if (periodType == PlanningPeriodType.WEEK) {
+            range.startDate.toString()
+        } else {
+            periodId.value
+        }
+        val savedRun = if (periodType == PlanningPeriodType.WEEK) dao.getPlanRun(scopeKey) else null
+        val period = dao.getPlanningPeriod(periodId.value) ?: PlanningPeriodEntity(
+            id = periodId.value,
+            periodType = periodType.storageValue,
+            startDateIso = range.startDate.toString(),
+            endDateIso = range.endDate.toString(),
+            budgetDzd = savedRun?.budgetDzd ?: 0,
+            wilaya = savedRun?.wilaya.orEmpty(),
+            mealSlotsCsv = savedRun?.mealSlotsCsv ?: selectedMealSlots.sorted().joinToString(","),
+            engineVersion = savedRun?.engineVersion ?: "snapshot-adapter",
+            createdAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L,
+            priceSnapshotAtEpochMillis = savedRun?.priceSnapshotAtEpochMillis ?: 0L,
+            householdServings = 1,
+            updatedAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L
+        ).also { dao.upsertPlanningPeriod(it) }
+
+        val persistedSlots = period.mealSlotsCsv.split(",").filter { it.isNotBlank() }.toSet()
+        val runSlots = savedRun?.mealSlotsCsv?.split(",")?.filter { it.isNotBlank() }?.toSet().orEmpty()
+        val visibleSlots = persistedSlots.ifEmpty { runSlots.ifEmpty { selectedMealSlots } }
+
+        val ingredients = loadIngredients()
+        val taxonomy = ingredients.associate { it.id to FoodTaxonomyRef(it.categoryId, it.subcategoryId) }
         val foodCategories = dao.getFoodCategories().map { it.toModel() }
         val foodSubcategories = dao.getFoodSubcategories().map { it.toModel() }
         val recipes = loadRecipes()
-        val savedRun = dao.getPlanRun(weekStartIso)
-        val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
-        val periodId = weeklyRange.periodId
-        val existingPeriod = dao.getPlanningPeriod(periodId)
-        if (existingPeriod == null) {
-            dao.upsertPlanningPeriod(
-                PlanningPeriodEntity(
-                    id = periodId,
-                    periodType = PlanningPeriodType.WEEK.storageValue,
-                    startDateIso = weeklyRange.startDate.toString(),
-                    endDateIso = weeklyRange.endDate.toString(),
-                    budgetDzd = savedRun?.budgetDzd ?: 0,
-                    wilaya = savedRun?.wilaya.orEmpty(),
-                    mealSlotsCsv = savedRun?.mealSlotsCsv ?: selectedMealSlots.sorted().joinToString(","),
-                    engineVersion = savedRun?.engineVersion ?: "legacy-adapter",
-                    createdAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L,
-                    priceSnapshotAtEpochMillis = savedRun?.priceSnapshotAtEpochMillis ?: 0L,
-                    householdServings = 1,
-                    updatedAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L
-                )
-            )
-        }
-        val planAdjustmentsByIngredientUnit = dao.getPlanIngredientAdjustments(periodId)
+        val adjustments = dao.getPlanIngredientAdjustments(periodId.value)
             .mapNotNull { it.toDomainAdjustment() }
             .toMap()
-        val slotsForThisWeek = savedRun?.mealSlotsCsv
-            ?.split(",")
-            ?.filter { it.isNotBlank() }
-            ?.toSet()
-            ?: selectedMealSlots
-        val planned = dao.getPlanMeals(weekStartIso)
-            .filter { it.mealSlot in slotsForThisWeek }
-            .map { it.toModel() }
-        // Household stock is intentionally not loaded into the shopping flow.
-        // Keep legacy Room rows intact for upgrade compatibility.
+
+        val plannedMeals = when (periodType) {
+            PlanningPeriodType.WEEK -> {
+                val legacyRows = dao.getPlanMeals(scopeKey).filter { it.mealSlot in visibleSlots }
+                if (legacyRows.isNotEmpty()) legacyRows.map { it.toModel() }
+                else dao.getPlanningPeriodMeals(periodId.value)
+                    .filter { it.mealSlot in visibleSlots }
+                    .map { it.toPlannedMeal(range.startDate) }
+            }
+            PlanningPeriodType.MONTH -> dao.getPlanningPeriodMeals(periodId.value)
+                .filter { it.mealSlot in visibleSlots }
+                .map { it.toPlannedMeal(range.startDate) }
+        }
+
+        // Inventory is not assumed; deductions come only from this period's explicit adjustments.
         val pantryEntities = emptyList<PantryItemEntity>()
         val pantry = emptyList<PantryItem>()
         val currentPrices = dao.getPriceObservations()
-        val savedPriceSnapshot = if (savedRun != null) {
-            dao.getPlanPriceSnapshots(weekStartIso).map { it.toPriceObservation() }
+        val priceTime = period.priceSnapshotAtEpochMillis
+            .takeIf { it > 0L }
+            ?: savedRun?.priceSnapshotAtEpochMillis?.takeIf { it > 0L }
+        val savedPriceRows = if (priceTime != null) {
+            dao.getPlanPriceSnapshots(scopeKey).map { it.toPriceObservation() }
         } else emptyList()
-        val prices = if (savedRun != null) {
-            pricesForSavedPlan(savedPriceSnapshot, currentPrices, savedRun.priceSnapshotAtEpochMillis)
+        val prices = if (priceTime != null || savedRun != null) {
+            pricesForSavedPlan(savedPriceRows, currentPrices, priceTime ?: 0L)
         } else currentPrices
-        val planWilaya = savedRun?.wilaya?.takeIf { it.isNotBlank() } ?: selectedWilaya
-        // Product offers are immutable source observations. Rebuild a saved plan
-        // using only evidence that existed at its original price snapshot time.
-        val marketPriceSnapshotAt = savedRun?.priceSnapshotAtEpochMillis
-            ?.takeIf { it > 0L } ?: System.currentTimeMillis()
-        val storedMarketPriceSnapshots = if (
-            savedRun != null && existingPeriod?.marketPriceSnapshotCaptured == true
-        ) {
-            dao.getPlanMarketPriceSnapshots(periodId)
-        } else {
-            emptyList()
-        }
-        val marketPriceEvidence = if (
-            savedRun != null && existingPeriod?.marketPriceSnapshotCaptured == true
-        ) {
-            storedMarketPriceSnapshots.map { it.toPriceEvidence() }
+
+        val planWilaya = period.wilaya.takeIf { it.isNotBlank() } ?: selectedWilaya
+        val marketPriceSnapshotAt = priceTime ?: System.currentTimeMillis()
+        val storedMarketRows = if (period.marketPriceSnapshotCaptured) {
+            dao.getPlanMarketPriceSnapshots(periodId.value)
+        } else emptyList()
+        val marketEvidence = if (period.marketPriceSnapshotCaptured) {
+            storedMarketRows.map { it.toPriceEvidence() }
         } else {
             dao.getVerifiedMarketProductPriceRows()
                 .asSequence()
@@ -271,76 +303,61 @@ class MealsRepository internal constructor(
                 .map { it.toPriceEvidence() }
                 .toList()
         }
-        val existingShopping = dao.getShoppingItems(weekStartIso)
-        // Basket rows frequently share ingredient/unit pairs. Build this lookup
-        // once so each generated basket line does not rescan the full shopping list.
-        val existingShoppingByIngredientAndUnit = existingShopping.groupBy {
-            it.ingredientId to it.unit
-        }
-        val favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet()
-        val checkedItemIds = existingShopping
+
+        val existingShopping = dao.getShoppingItems(scopeKey)
+        val existingByIngredientUnit = existingShopping.groupBy { it.ingredientId to it.unit }
+        val favorites = dao.getFavoriteRecipeIds().toSet()
+        val checkedIds = existingShopping
             .filter { it.checked && it.ingredientId != null }
             .mapNotNull { item ->
                 item.ingredientId?.let { "$it::${item.unit}" }
                     ?: item.id.substringAfter("::").takeIf { it.isNotBlank() }
             }.toSet()
         val basket = calculateBasket(
-            planned,
+            plannedMeals,
             recipes,
             pantryEntities,
             prices,
-            checkedItemIds,
+            checkedIds,
             planWilaya,
-            allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty(),
-            foodTaxonomyByIngredientId = ingredientTaxonomyById,
-            marketProductPriceEvidence = marketPriceEvidence,
-            planIngredientAdjustments = planAdjustmentsByIngredientUnit,
+            allowStaleSnapshotPrices = savedPriceRows.isNotEmpty(),
+            foodTaxonomyByIngredientId = taxonomy,
+            marketProductPriceEvidence = marketEvidence,
+            planIngredientAdjustments = adjustments,
             nowEpochMillis = marketPriceSnapshotAt
         )
+
         val names = ingredients.associateBy { it.id }
-        val autoItems = basket.items.map { line ->
-            val scopedId = "$weekStartIso::${line.id}"
-            // Reuse old rows by canonical ingredient and unit, not their legacy
-            // embedded IDs. If aliases converge, fold their editable state together.
-            val oldRows = existingShoppingByIngredientAndUnit[
-                line.ingredientId to line.unit
-            ].orEmpty()
+        val generatedShoppingRows = basket.items.map { line ->
+            val itemId = "$scopeKey::${line.id}"
+            val oldRows = existingByIngredientUnit[line.ingredientId to line.unit].orEmpty()
             val old = oldRows.maxByOrNull { it.updatedAtEpochMillis }
-            val overrides = oldRows.mapNotNull { it.purchaseQuantityOverride }
-            val purchaseOverride = overrides.takeIf { it.isNotEmpty() }?.sum()
+            val purchaseOverride = oldRows.mapNotNull { it.purchaseQuantityOverride }
+                .takeIf { it.isNotEmpty() }?.sum()
             val storeNotes = oldRows.map { it.storeNote.trim() }
                 .filter { it.isNotEmpty() }.distinct().joinToString(" · ")
             val actualSpend = oldRows.mapNotNull { it.actualSpentDzd }.takeIf { it.isNotEmpty() }?.sum()
             ShoppingItemEntity(
-                id = scopedId,
+                id = itemId,
                 ingredientId = line.ingredientId,
                 customName = names[line.ingredientId]?.nameAr ?: line.name,
                 requiredQuantity = line.requiredQuantity,
                 pantryQuantity = line.pantryQuantity,
                 purchaseQuantity = purchaseOverride ?: line.purchaseQuantity,
                 unit = line.unit,
-                // Market evidence is recalculated from the immutable source rows
-                // on every snapshot; never persist a range's upper bound as a
-                // permanent scalar that could outlive its offer freshness.
-                consumedValueDzd = line.consumedValueDzd.takeUnless {
-                    line.marketCashOutlayMinDzd != null
-                },
-                cashOutlayDzd = if (line.marketCashOutlayMinDzd != null) {
-                    null
-                } else if (purchaseOverride != null && line.purchaseQuantity > 0.0) {
-                    line.cashOutlayDzd?.times(purchaseOverride / line.purchaseQuantity)
-                } else line.cashOutlayDzd,
-                priceLabel = if (line.marketCashOutlayMinDzd != null) {
-                    null
-                } else if (purchaseOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
-                sourceLabel = line.sourceLabel.takeUnless {
-                    line.marketCashOutlayMinDzd != null
-                },
+                consumedValueDzd = line.consumedValueDzd.takeUnless { line.marketCashOutlayMinDzd != null },
+                cashOutlayDzd = if (line.marketCashOutlayMinDzd != null) null
+                    else if (purchaseOverride != null && line.purchaseQuantity > 0.0) {
+                        line.cashOutlayDzd?.times(purchaseOverride / line.purchaseQuantity)
+                    } else line.cashOutlayDzd,
+                priceLabel = if (line.marketCashOutlayMinDzd != null) null
+                    else if (purchaseOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
+                sourceLabel = line.sourceLabel.takeUnless { line.marketCashOutlayMinDzd != null },
                 isApproximatePantry = line.isApproximatePantry,
                 checked = oldRows.any { it.checked },
                 userAdded = false,
                 updatedAtEpochMillis = old?.updatedAtEpochMillis ?: System.currentTimeMillis(),
-                weekStartIso = weekStartIso,
+                weekStartIso = scopeKey,
                 purchaseQuantityOverride = purchaseOverride,
                 storeNote = storeNotes,
                 isUnavailable = oldRows.any { it.isUnavailable },
@@ -348,74 +365,82 @@ class MealsRepository internal constructor(
             )
         }
         database.withTransaction {
-            dao.deleteGeneratedShoppingItems(weekStartIso)
-            if (autoItems.isNotEmpty()) dao.upsertShoppingItems(autoItems)
+            dao.deleteGeneratedShoppingItems(scopeKey)
+            if (generatedShoppingRows.isNotEmpty()) dao.upsertShoppingItems(generatedShoppingRows)
         }
-        val shoppingItems = dao.getShoppingItems(weekStartIso)
+
+        val shoppingItems = dao.getShoppingItems(scopeKey)
             .map { it.toModel(names[it.ingredientId]) }
-            .map { item -> item.withPlanIngredientAdjustment(planAdjustmentsByIngredientUnit) }
+            .map { it.withPlanIngredientAdjustment(adjustments) }
             .map { item ->
                 item.withMarketProductPrice(
-                    evidence = marketPriceEvidence,
+                    evidence = marketEvidence,
                     wilaya = planWilaya,
                     snapshotAtEpochMillis = marketPriceSnapshotAt
                 )
             }
-        val hasMarketPriceRanges = shoppingItems.any { it.marketCashOutlayMinDzd != null }
-        val marketAwareBasketMin = shoppingItems.sumOf {
-            it.marketCashOutlayMinDzd ?: it.cashOutlayDzd ?: 0.0
-        }
-        val marketAwareBasketMax = shoppingItems.sumOf {
-            it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
-        }
-        val allShoppingPricesKnown = shoppingItems.all {
-            it.cashOutlayDzd != null || it.purchaseQuantity <= 0.0
-        }
+        val hasRanges = shoppingItems.any { it.marketCashOutlayMinDzd != null }
+        val basketMin = shoppingItems.sumOf { it.marketCashOutlayMinDzd ?: it.cashOutlayDzd ?: 0.0 }
+        val basketMax = shoppingItems.sumOf { it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0 }
+        val allPricesKnown = shoppingItems.all { it.cashOutlayDzd != null || it.purchaseQuantity <= 0.0 }
+
+        val priceSummaries = currentPrices.mapNotNull { observation ->
+            val ingredient = names[observation.ingredientId] ?: return@mapNotNull null
+            PriceObservationSummary(
+                id = observation.id,
+                ingredientId = observation.ingredientId,
+                ingredientNameAr = ingredient.nameAr,
+                packQuantityBase = observation.packQuantityBase,
+                unit = observation.unit,
+                packPriceDzd = observation.packPriceDzd,
+                sourceLabel = observation.sourceLabel,
+                locationLabel = observation.locationLabel,
+                observedAtEpochMillis = observation.observedAtEpochMillis,
+                priceKind = observation.priceKind,
+                confidenceLabel = observation.confidenceLabel,
+                categoryId = ingredient.categoryId,
+                subcategoryId = ingredient.subcategoryId,
+                isStale = observation.priceKind != "demo" &&
+                    (observation.observedAtEpochMillis == null ||
+                        System.currentTimeMillis() < observation.observedAtEpochMillis ||
+                        System.currentTimeMillis() - observation.observedAtEpochMillis >
+                            30L * 24L * 60L * 60L * 1000L)
+            )
+        }.sortedByDescending { it.observedAtEpochMillis ?: 0L }
+
+        val runSummary = savedRun?.toModel()
+            ?: if (periodType == PlanningPeriodType.MONTH && period.updatedAtEpochMillis > 0L) {
+                period.toPlanRunSummary()
+            } else null
+
         MealsSnapshot(
             recipes = recipes,
             ingredients = ingredients,
-            plannedMeals = planned,
+            plannedMeals = plannedMeals,
             pantry = pantry,
             shoppingItems = shoppingItems,
-            priceObservations = currentPrices.mapNotNull { observation ->
-                val master = names[observation.ingredientId] ?: return@mapNotNull null
-                PriceObservationSummary(
-                    id = observation.id,
-                    ingredientId = observation.ingredientId,
-                    ingredientNameAr = master.nameAr,
-                    packQuantityBase = observation.packQuantityBase,
-                    unit = observation.unit,
-                    packPriceDzd = observation.packPriceDzd,
-                    sourceLabel = observation.sourceLabel,
-                    locationLabel = observation.locationLabel,
-                    observedAtEpochMillis = observation.observedAtEpochMillis,
-                    priceKind = observation.priceKind,
-                    confidenceLabel = observation.confidenceLabel,
-                    categoryId = master.categoryId,
-                    subcategoryId = master.subcategoryId,
-                    isStale = observation.priceKind != "demo" &&
-                        (observation.observedAtEpochMillis == null ||
-                            System.currentTimeMillis() < observation.observedAtEpochMillis ||
-                            System.currentTimeMillis() - observation.observedAtEpochMillis > 30L * 24L * 60L * 60L * 1000L)
-                )
-            }.sortedByDescending { it.observedAtEpochMillis ?: 0L },
-            favoriteRecipeIds = favoriteRecipeIds,
-            planRun = savedRun?.toModel(),
+            priceObservations = priceSummaries,
+            favoriteRecipeIds = favorites,
+            planRun = runSummary,
             basket = basket.copy(
                 items = shoppingItems,
                 consumedValueDzd = shoppingItems.sumOf { it.consumedValueDzd ?: 0.0 },
                 purchaseOutlayDzd = shoppingItems.sumOf { it.cashOutlayDzd ?: 0.0 },
-                unknownPriceCount = shoppingItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
+                unknownPriceCount = shoppingItems.count {
+                    it.cashOutlayDzd == null && it.purchaseQuantity > 0.0
+                },
                 actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 },
-                purchaseOutlayMinDzd = marketAwareBasketMin.takeIf { hasMarketPriceRanges && allShoppingPricesKnown },
-                purchaseOutlayMaxDzd = marketAwareBasketMax.takeIf { hasMarketPriceRanges && allShoppingPricesKnown }
+                purchaseOutlayMinDzd = basketMin.takeIf { hasRanges && allPricesKnown },
+                purchaseOutlayMaxDzd = basketMax.takeIf { hasRanges && allPricesKnown }
             ),
             foodCategories = foodCategories,
-            foodSubcategories = foodSubcategories
+            foodSubcategories = foodSubcategories,
+            planningPeriod = period.toPlanningPeriodSummary(),
+            marketPriceEvidence = marketEvidence.map { it.toSummary() }
         )
     }
 
-    suspend fun generateWeek(
+        suspend fun generateWeek(
         weekStartIso: String,
         weeklyBudgetDzd: Int,
         householdServings: Int,
@@ -923,6 +948,11 @@ class MealsRepository internal constructor(
                 )
             )
 
+            // Freeze ingredient-price observations under the generic period key.
+            dao.deletePlanPriceSnapshots(periodId)
+            if (prices.isNotEmpty()) {
+                dao.insertPlanPriceSnapshots(prices.map { it.toPlanSnapshot(periodId) })
+            }
             // Freeze the precise verified product-offer rows used by this month.
             dao.deletePlanMarketPriceSnapshots(periodId)
             if (marketPriceEvidence.isNotEmpty()) {
@@ -2499,6 +2529,55 @@ private fun PlanningPeriodMealEntity.toPlannedMeal(periodStartDate: LocalDate): 
         isUserEdited = isUserEdited
     )
 }
+
+
+private fun PlanningPeriodEntity.toPlanRunSummary() = PlanRunSummary(
+    engineVersion = engineVersion,
+    generatedAtEpochMillis = updatedAtEpochMillis,
+    priceSnapshotAtEpochMillis = priceSnapshotAtEpochMillis,
+    budgetDzd = budgetDzd,
+    wilaya = wilaya,
+    mealSlots = mealSlotsCsv.split(",").filter { it.isNotBlank() }.toSet()
+)
+
+private fun PlanningPeriodEntity.toPlanningPeriodSummary() = PlanningPeriodSummary(
+    id = id,
+    periodType = periodType,
+    startDateIso = startDateIso,
+    endDateIso = endDateIso,
+    budgetDzd = budgetDzd,
+    wilaya = wilaya,
+    mealSlots = mealSlotsCsv.split(",").filter { it.isNotBlank() }.toSet(),
+    engineVersion = engineVersion,
+    createdAtEpochMillis = createdAtEpochMillis,
+    priceSnapshotAtEpochMillis = priceSnapshotAtEpochMillis,
+    marketPriceSnapshotCaptured = marketPriceSnapshotCaptured,
+    householdServings = householdServings,
+    updatedAtEpochMillis = updatedAtEpochMillis
+)
+
+private fun MarketProductPriceEvidence.toSummary() = MarketPriceEvidenceSummary(
+    productId = productId,
+    sourceListingId = sourceListingId,
+    ingredientId = ingredientId,
+    productName = productName,
+    packageQuantity = packageQuantity,
+    packageUnit = packageUnit,
+    mappingStatus = mappingStatus,
+    mappingReviewedAtEpochMillis = mappingReviewedAtEpochMillis,
+    foodScopeReviewNeeded = foodScopeReviewNeeded,
+    priceDzd = priceDzd,
+    priceMinDzd = priceMinDzd,
+    priceMaxDzd = priceMaxDzd,
+    currencyCode = currencyCode,
+    observedAtEpochMillis = observedAtEpochMillis,
+    priceStatus = priceStatus,
+    availabilityRaw = availabilityRaw,
+    storeName = storeName,
+    source = source,
+    wilaya = wilaya,
+    sourceNotice = sourceNotice
+)
 
 private fun PlannedMeal.toPlanningPeriodEntity(
     periodId: String,

@@ -2,6 +2,9 @@ package dz.meals.app.data
 
 import android.content.Context
 import dz.meals.app.data.local.MealsDatabase
+import dz.meals.app.data.local.PlanIngredientAdjustmentEntity
+import dz.meals.app.data.local.PlanMarketPriceSnapshotEntity
+import dz.meals.app.domain.PlanningPeriodId
 import dz.meals.app.domain.PlanningPeriodType
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -59,6 +62,7 @@ class MonthlyPlanGenerationTest {
                 monthlyBudgetDzd = options.monthlyBudgetDzd,
                 householdServings = options.householdServings,
                 allergyIds = options.allergyIds,
+                selectedWilaya = "الجزائر",
                 selectedMealSlots = options.selectedMealSlots,
                 meatPreference = options.meatPreference
             )
@@ -100,6 +104,7 @@ class MonthlyPlanGenerationTest {
                 monthlyBudgetDzd = options.monthlyBudgetDzd,
                 householdServings = options.householdServings,
                 allergyIds = options.allergyIds,
+                selectedWilaya = "الجزائر",
                 selectedMealSlots = options.selectedMealSlots,
                 meatPreference = options.meatPreference
             )
@@ -124,6 +129,101 @@ class MonthlyPlanGenerationTest {
                 assertEquals(preservedRow.dateIso, after.dateIso)
                 assertEquals(preservedRow.mealSlot, after.mealSlot)
             }
+
+
+            // A period snapshot restores date-keyed meals, period-local adjustments,
+            // editable shopping state and the immutable product-offer evidence.
+            val initialSnapshot = repository.snapshot(
+                PlanningPeriodId(periodId),
+                selectedWilaya = "الجزائر"
+            )
+            assertEquals(periodId, initialSnapshot.planningPeriod?.id)
+            assertEquals("MONTH", initialSnapshot.planningPeriod?.periodType)
+            assertEquals("2027-01-01", initialSnapshot.planningPeriod?.startDateIso)
+            assertEquals("2027-01-31", initialSnapshot.planningPeriod?.endDateIso)
+            assertEquals(31, initialSnapshot.plannedMeals.size)
+            assertTrue(dao.getPlanPriceSnapshots(periodId).isNotEmpty())
+
+            val targetLine = initialSnapshot.shoppingItems.first {
+                it.ingredientId != null &&
+                    it.requiredQuantity > 0.0 &&
+                    it.purchaseQuantity > 0.0 &&
+                    it.unit.trim().lowercase() in setOf("g", "kg", "mg", "ml", "l", "cl", "piece", "pieces", "pc", "pcs", "unit", "units")
+            }
+            val targetIngredientId = requireNotNull(targetLine.ingredientId)
+            val amountAlreadyHave = (targetLine.requiredQuantity * 0.2)
+                .coerceAtMost(targetLine.requiredQuantity - 0.0001)
+                .coerceAtLeast(0.0001)
+            dao.upsertPlanIngredientAdjustment(
+                PlanIngredientAdjustmentEntity(
+                    periodId = periodId,
+                    ingredientId = targetIngredientId,
+                    unit = targetLine.unit,
+                    adjustmentType = "SOME",
+                    availableQuantity = amountAlreadyHave,
+                    updatedAtEpochMillis = System.currentTimeMillis()
+                )
+            )
+
+            val persistedShoppingLine = dao.getShoppingItems(periodId)
+                .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
+            dao.upsertShoppingItems(
+                listOf(
+                    persistedShoppingLine.copy(
+                        checked = true,
+                        purchaseQuantityOverride = (targetLine.purchaseQuantity * 0.8).coerceAtLeast(0.001),
+                        storeNote = "اختبار حفظ الفترة",
+                        actualSpentDzd = 75.0
+                    )
+                )
+            )
+
+            val capturedPeriod = requireNotNull(dao.getPlanningPeriod(periodId))
+            val evidenceTime = (capturedPeriod.priceSnapshotAtEpochMillis - 1L).coerceAtLeast(1L)
+            dao.upsertPlanMarketPriceSnapshots(
+                listOf(
+                    PlanMarketPriceSnapshotEntity(
+                        periodId = periodId,
+                        sourceListingId = "snapshot-source-${targetIngredientId}",
+                        productId = "snapshot-product-${targetIngredientId}",
+                        ingredientId = targetIngredientId,
+                        productName = "منتج اختبار",
+                        packageQuantity = 1.0,
+                        packageUnit = targetLine.unit,
+                        mappingStatus = "VERIFIED",
+                        mappingReviewedAtEpochMillis = evidenceTime,
+                        priceDzd = 120.0,
+                        priceMinDzd = null,
+                        priceMaxDzd = null,
+                        currencyCode = "DZD",
+                        observedAtEpochMillis = evidenceTime,
+                        priceStatus = "indicative_unverified",
+                        availabilityRaw = "https://schema.org/InStock",
+                        storeName = "متجر اختبار",
+                        source = "snapshot-test",
+                        wilaya = "الجزائر",
+                        sourceNotice = "بيانات اختبار"
+                    )
+                )
+            )
+
+            val restoredSnapshot = repository.snapshot(
+                PlanningPeriodId(periodId),
+                selectedWilaya = "الجزائر"
+            )
+            assertEquals(31, restoredSnapshot.plannedMeals.size)
+            val restoredShoppingLine = restoredSnapshot.shoppingItems
+                .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
+            assertEquals(amountAlreadyHave, restoredShoppingLine.alreadyHaveQuantity, 0.0001)
+            assertEquals(true, restoredShoppingLine.checked)
+            assertEquals("اختبار حفظ الفترة", restoredShoppingLine.storeNote)
+            assertEquals(75.0, restoredShoppingLine.actualSpentDzd!!, 0.0001)
+            assertTrue(restoredSnapshot.marketPriceEvidence.any {
+                it.productId == "snapshot-product-${targetIngredientId}" &&
+                    it.sourceListingId == "snapshot-source-${targetIngredientId}" &&
+                    it.mappingStatus == "VERIFIED"
+            })
+            assertNotNull(restoredShoppingLine.marketCashOutlayMinDzd)
 
             // No month slot can escape the selected calendar boundaries.
             assertFalse(

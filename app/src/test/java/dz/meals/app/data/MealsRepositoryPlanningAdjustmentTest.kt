@@ -2,6 +2,7 @@ package dz.meals.app.data
 
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.ShoppingItemEntity
+import dz.meals.app.domain.PlanningPeriodId
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -27,9 +28,16 @@ class MealsRepositoryPlanningAdjustmentTest {
             val repository = MealsRepository(context, database)
             val weekStartIso = "2026-11-23"
 
-            // Snapshot initializes the production catalogue and creates the canonical
-            // WEEK period before the plan-scoped adjustment is persisted.
-            repository.snapshot(weekStartIso)
+            // The legacy week-date wrapper and generic period entrypoint both
+            // resolve to the same canonical weekly snapshot.
+            val legacySnapshot = repository.snapshot(weekStartIso)
+            val periodSnapshot = repository.snapshot(PlanningPeriodId("WEEK:$weekStartIso"))
+            assertEquals("WEEK:$weekStartIso", legacySnapshot.planningPeriod?.id)
+            assertEquals(legacySnapshot.plannedMeals, periodSnapshot.plannedMeals)
+            assertEquals(
+                legacySnapshot.planningPeriod?.startDateIso,
+                periodSnapshot.planningPeriod?.startDateIso
+            )
             val dao = database.mealsDao()
             val ingredient = dao.getIngredients().first()
             val unit = ingredient.baseUnit.ifBlank { "piece" }

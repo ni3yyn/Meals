@@ -407,6 +407,45 @@ data class PlanRunSummary(
     val mealSlots: Set<String>
 )
 
+data class PlanningPeriodSummary(
+    val id: String,
+    val periodType: String,
+    val startDateIso: String,
+    val endDateIso: String,
+    val budgetDzd: Int,
+    val wilaya: String,
+    val mealSlots: Set<String>,
+    val engineVersion: String,
+    val createdAtEpochMillis: Long,
+    val priceSnapshotAtEpochMillis: Long,
+    val marketPriceSnapshotCaptured: Boolean,
+    val householdServings: Int,
+    val updatedAtEpochMillis: Long
+)
+
+data class MarketPriceEvidenceSummary(
+    val productId: String,
+    val sourceListingId: String,
+    val ingredientId: String,
+    val productName: String,
+    val packageQuantity: Double?,
+    val packageUnit: String,
+    val mappingStatus: String,
+    val mappingReviewedAtEpochMillis: Long?,
+    val foodScopeReviewNeeded: Boolean,
+    val priceDzd: Double?,
+    val priceMinDzd: Double?,
+    val priceMaxDzd: Double?,
+    val currencyCode: String,
+    val observedAtEpochMillis: Long?,
+    val priceStatus: String,
+    val availabilityRaw: String,
+    val storeName: String,
+    val source: String,
+    val wilaya: String,
+    val sourceNotice: String
+)
+
 data class MealsSnapshot(
     val recipes: List<MealRecipe> = emptyList(),
     val ingredients: List<IngredientMaster> = emptyList(),
@@ -418,7 +457,9 @@ data class MealsSnapshot(
     val planRun: PlanRunSummary? = null,
     val basket: BasketSummary = BasketSummary(),
     val foodCategories: List<FoodCategory> = emptyList(),
-    val foodSubcategories: List<FoodSubcategory> = emptyList()
+    val foodSubcategories: List<FoodSubcategory> = emptyList(),
+    val planningPeriod: PlanningPeriodSummary? = null,
+    val marketPriceEvidence: List<MarketPriceEvidenceSummary> = emptyList()
 )
 
 /** Applies the dataset's linear, sublinear/damped or fixed ingredient rule. */
