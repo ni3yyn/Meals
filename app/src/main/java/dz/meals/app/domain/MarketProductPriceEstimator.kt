@@ -119,7 +119,7 @@ fun estimateMarketProductPrice(
         }
 
     val eligibleOffers = latestByListing.mapNotNull { row ->
-        if (!isVerifiedMapping(row) ||
+        if (!isVerifiedMapping(row, nowEpochMillis) ||
             normalizeWilaya(row.wilaya) != requestedWilaya ||
             !isEligibleObservation(row, nowEpochMillis, maxAgeMillis)
         ) return@mapNotNull null
@@ -202,10 +202,16 @@ fun estimateMarketProductPrice(
     )
 }
 
-private fun isVerifiedMapping(row: MarketProductPriceEvidence): Boolean =
-    row.mappingStatus.equals(MAPPING_VERIFIED, ignoreCase = true) &&
-        (row.mappingReviewedAtEpochMillis ?: 0L) > 0L &&
+private fun isVerifiedMapping(
+    row: MarketProductPriceEvidence,
+    snapshotAtEpochMillis: Long
+): Boolean {
+    val reviewedAt = row.mappingReviewedAtEpochMillis ?: return false
+    return row.mappingStatus.equals(MAPPING_VERIFIED, ignoreCase = true) &&
+        reviewedAt > 0L &&
+        reviewedAt <= snapshotAtEpochMillis &&
         !row.foodScopeReviewNeeded
+}
 
 private fun isEligibleObservation(
     row: MarketProductPriceEvidence,
