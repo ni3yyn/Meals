@@ -30,7 +30,7 @@ class FoodIdentityMigrationTest {
         try {
             val db = roomDatabase.openHelper.writableDatabase
 
-            assertEquals(19, db.query("PRAGMA user_version").use { cursor ->
+            assertEquals(20, db.query("PRAGMA user_version").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 cursor.getInt(0)
             })
@@ -47,6 +47,42 @@ class FoodIdentityMigrationTest {
                 scalarString(db, "SELECT nameAr FROM food_categories WHERE id = 'foodcat-dairy'")
             )
             assertEquals(0, count(db, "SELECT COUNT(*) FROM pragma_foreign_key_check"))
+
+            // The generic period model is seeded from the exact same weekly
+            // rows. A seven-day plan stays a WEEK, with dates rather than a
+            // month-like 0..30 day index.
+            assertEquals(
+                1,
+                count(db, "SELECT COUNT(*) FROM planning_periods WHERE id = 'WEEK:2025-01-06' AND periodType = 'WEEK'")
+            )
+            assertEquals(
+                "2025-01-12",
+                scalarString(db, "SELECT endDateIso FROM planning_periods WHERE id = 'WEEK:2025-01-06'")
+            )
+            assertEquals(
+                65000,
+                count(db, "SELECT budgetDzd FROM planning_periods WHERE id = 'WEEK:2025-01-06'")
+            )
+            assertEquals(
+                2,
+                count(db, "SELECT COUNT(*) FROM planning_period_meals WHERE periodId = 'WEEK:2025-01-06'")
+            )
+            assertEquals(
+                "2025-01-06",
+                scalarString(db, "SELECT dateIso FROM planning_period_meals WHERE id = '2025-01-06-0-breakfast'")
+            )
+            assertEquals(
+                "2025-01-12",
+                scalarString(db, "SELECT dateIso FROM planning_period_meals WHERE id = '2025-01-06-6-dinner'")
+            )
+            assertEquals(
+                1,
+                count(db, "SELECT COUNT(*) FROM planning_period_meals WHERE id = '2025-01-06-0-breakfast' AND locked = 1")
+            )
+            assertEquals(
+                1,
+                count(db, "SELECT COUNT(*) FROM planning_period_meals WHERE id = '2025-01-06-6-dinner' AND isCooked = 1 AND isUserEdited = 1")
+            )
 
             // Two recipe rows which converge on one UUID remain two rows with all
             // quantities, units, preparation notes and optional flags intact.
@@ -272,6 +308,28 @@ class FoodIdentityMigrationTest {
             db.execSQL(
                 "INSERT INTO recipe_ingredients VALUES (?, ?, ?, ?, ?, ?, ?)",
                 arrayOf<Any?>("unitools-chicken-demo", "chicken", 0.5, "g", "imported use", 0, "linear")
+            )
+
+            db.execSQL(
+                "INSERT INTO plan_runs VALUES (?, ?, ?, ?, ?, ?, ?)",
+                arrayOf<Any?>(
+                    "2025-01-06", "0.5.0", 1700000003000L, 1700000003000L,
+                    65000, "Laghouat", "breakfast,lunch,dinner"
+                )
+            )
+            db.execSQL(
+                "INSERT INTO plan_meals VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                arrayOf<Any?>(
+                    "2025-01-06-0-breakfast", "2025-01-06", 0,
+                    "breakfast", "focus-test-recipe", 2, 1, 0, 0
+                )
+            )
+            db.execSQL(
+                "INSERT INTO plan_meals VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                arrayOf<Any?>(
+                    "2025-01-06-6-dinner", "2025-01-06", 6,
+                    "dinner", "seed-baseline", 4, 0, 1, 1
+                )
             )
             db.execSQL(
                 "INSERT INTO pantry_items VALUES (?, ?, ?, ?, ?, ?, ?)",
