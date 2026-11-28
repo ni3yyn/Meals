@@ -3,6 +3,7 @@ package dz.meals.app.data
 import android.content.Context
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.PlanMarketPriceSnapshotEntity
+import dz.meals.app.data.local.PlanIngredientAdjustmentEntity
 import dz.meals.app.domain.PlanningPeriodId
 import dz.meals.app.domain.PlanningPeriodType
 import kotlinx.coroutines.runBlocking
@@ -91,6 +92,22 @@ class MonthlyPlanGenerationTest {
             assertTrue(dao.getPlanMeals("2027-01-01").isEmpty())
             assertNull(dao.getPlanRun("2027-01-01"))
 
+            val beforeRegenerationSnapshot = repository.snapshot(PlanningPeriodId(periodId))
+            val demandedIngredientIds = beforeRegenerationSnapshot.basket.ingredientDemands
+                .mapTo(hashSetOf()) { it.ingredientId }
+            val inactiveIngredient = beforeRegenerationSnapshot.ingredients
+                .firstOrNull { it.id !in demandedIngredientIds }
+            assertNotNull("Test fixture needs an ingredient unused by the generated plan", inactiveIngredient)
+            val inactiveAdjustment = PlanIngredientAdjustmentEntity(
+                periodId = periodId,
+                ingredientId = requireNotNull(inactiveIngredient).id,
+                unit = inactiveIngredient.baseUnit,
+                adjustmentType = "SOME",
+                availableQuantity = 12.0,
+                updatedAtEpochMillis = System.currentTimeMillis()
+            )
+            dao.upsertPlanIngredientAdjustment(inactiveAdjustment)
+
             val lockedBefore = firstRows[0].copy(locked = true)
             val cookedBefore = firstRows[1].copy(isCooked = true)
             val editedBefore = firstRows[2].copy(isUserEdited = true)
@@ -117,6 +134,15 @@ class MonthlyPlanGenerationTest {
                 firstRows.any { old ->
                     old.id !in preservedIds && regeneratedById[old.id]?.recipeId != old.recipeId
                 }
+            )
+            assertEquals(
+                "Adjustments for ingredients removed from this recipe set remain attached but inactive.",
+                inactiveAdjustment,
+                dao.getPlanIngredientAdjustment(
+                    periodId,
+                    inactiveAdjustment.ingredientId,
+                    inactiveAdjustment.unit
+                )
             )
             for (preservedRow in listOf(lockedBefore, cookedBefore, editedBefore)) {
                 val after = regeneratedById[preservedRow.id]

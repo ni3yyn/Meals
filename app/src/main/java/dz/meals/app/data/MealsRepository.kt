@@ -639,7 +639,7 @@ class MealsRepository internal constructor(
             dao.deletePlanSlots(weekStartIso, validSlots.toList())
             dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
             dao.deletePlanIngredientAdjustments(periodId)
-            if (rebasedAdjustmentRows.isNotEmpty()) dao.upsertPlanIngredientAdjustments(rebasedAdjustmentRows)
+            rebasedAdjustmentRows.forEach(dao::upsertPlanIngredientAdjustment)
             dao.upsertPlanRun(
                 PlanRunEntity(
                     weekStartIso = weekStartIso,
@@ -951,7 +951,7 @@ class MealsRepository internal constructor(
                     .map { it.toPlanningPeriodEntity(periodId, monthlyRange.startDate) }
             )
             dao.deletePlanIngredientAdjustments(periodId)
-            if (rebasedAdjustmentRows.isNotEmpty()) dao.upsertPlanIngredientAdjustments(rebasedAdjustmentRows)
+            rebasedAdjustmentRows.forEach(dao::upsertPlanIngredientAdjustment)
 
             val previousPeriod = dao.getPlanningPeriod(periodId)
             dao.upsertPlanningPeriod(
@@ -2242,10 +2242,13 @@ class MealsRepository internal constructor(
                 demand.ingredientId == row.ingredientId &&
                     convertIngredientQuantity(1.0, row.unit, demand.unit) != null
             }
-            val demand = matches.singleOrNull() ?: return@mapNotNull null
+            // No compatible demand means the adjustment is inactive, not lost.
+            // Keep it attached to this period; it may become relevant again if a
+            // later regeneration restores that ingredient/form.
+            val demand = matches.singleOrNull() ?: return@mapNotNull row
             val quantity = if (row.adjustmentType == "SOME") {
                 convertIngredientQuantity(row.availableQuantity, row.unit, demand.unit)
-                    ?: return@mapNotNull null
+                    ?: return@mapNotNull row
             } else 0.0
             row.copy(unit = demand.unit, availableQuantity = quantity, updatedAtEpochMillis = System.currentTimeMillis())
         }.distinctBy { Triple(it.periodId, it.ingredientId, it.unit) }
