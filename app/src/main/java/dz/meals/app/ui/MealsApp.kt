@@ -587,27 +587,11 @@ private fun MealsAppContent(
                         snapshot = if (planningMode == "MONTH") monthlySnapshot else snapshot,
                         isGenerating = isGenerating,
                         onPlanningModeChange = { mode ->
-                            scope.launch {
-                                preferencesStore.setPlanningMode(mode)
-                                if (mode == "MONTH") {
-                                    monthlySnapshot = repository.snapshot(
-                                        PlanningPeriodId("MONTH:$monthStartIso"),
-                                        preferences.wilaya,
-                                        preferences.mealSlots
-                                    )
-                                }
-                            }
+                            scope.launch { preferencesStore.setPlanningMode(mode) }
                         },
                         onMonthChange = { delta ->
-                            scope.launch {
-                                monthStartIso = YearMonth.from(LocalDate.parse(monthStartIso))
-                                    .plusMonths(delta.toLong()).atDay(1).toString()
-                                monthlySnapshot = repository.snapshot(
-                                    PlanningPeriodId("MONTH:$monthStartIso"),
-                                    preferences.wilaya,
-                                    preferences.mealSlots
-                                )
-                            }
+                            monthStartIso = YearMonth.from(LocalDate.parse(monthStartIso))
+                                .plusMonths(delta.toLong()).atDay(1).toString()
                         },
                         onRefreshPrices = {
                             scope.launch {

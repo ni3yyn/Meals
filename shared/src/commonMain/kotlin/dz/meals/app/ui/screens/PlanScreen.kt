@@ -839,6 +839,9 @@ private fun MonthlyPlanContent(
     val todayWeekIndex = ((weekOffset + todayIndex) / 7).coerceIn(0, weekGroups.lastIndex)
     val monthListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(monthStart) {
+        monthListState.scrollToItem(0)
+    }
     val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
         meal.locked && meal.recipeId?.let { recipeId ->
             recipesById[recipeId]?.allergens?.intersect(preferences.allergyIds)?.isNotEmpty()
