@@ -308,7 +308,8 @@ fun calculateBasket(
     selectedWilaya: String? = null,
     nowEpochMillis: Long = System.currentTimeMillis(),
     allowStaleSnapshotPrices: Boolean = false,
-    foodTaxonomyByIngredientId: Map<String, FoodTaxonomyRef> = emptyMap()
+    foodTaxonomyByIngredientId: Map<String, FoodTaxonomyRef> = emptyMap(),
+    marketProductPriceEvidence: List<MarketProductPriceEvidence> = emptyList()
 ): BasketSummary {
     val recipesById = recipes.associateBy { it.id }
     val required = linkedMapOf<RequirementKey, Double>()
@@ -365,10 +366,25 @@ fun calculateBasket(
             }.thenBy { it.observedAtEpochMillis ?: 0L }
         )
 
-        val consumedValue = price?.let { amount / it.packQuantityBase * it.packPriceDzd }
+        val marketEstimate = estimateMarketProductPrice(
+            ingredientId = key.ingredientId,
+            requiredQuantity = netRequired,
+            requiredUnit = key.unit,
+            selectedWilaya = selectedWilaya,
+            evidence = marketProductPriceEvidence,
+            nowEpochMillis = nowEpochMillis
+        )
+        val legacyConsumedValue = price?.let { amount / it.packQuantityBase * it.packPriceDzd }
         val packs = price?.let { if (netRequired <= 0.0) 0.0 else ceil(netRequired / it.packQuantityBase) }
-        val purchaseQuantity = if (price != null && packs != null) packs * price.packQuantityBase else netRequired
-        val cashOutlay = if (price != null && packs != null) packs * price.packPriceDzd else null
+        val legacyPurchaseQuantity = if (price != null && packs != null) packs * price.packQuantityBase else netRequired
+        val legacyCashOutlay = if (price != null && packs != null) packs * price.packPriceDzd else null
+        // A market range may combine several actual offers and pack sizes. Do not
+        // pretend one exact package quantity was selected; keep the recipe amount.
+        val purchaseQuantity = if (marketEstimate != null) netRequired else legacyPurchaseQuantity
+        // The upper observed bound is used by the generator as a conservative
+        // budget ceiling. The UI still renders the explicit lower–upper range.
+        val consumedValue = marketEstimate?.maxConsumedValueDzd ?: legacyConsumedValue
+        val cashOutlay = marketEstimate?.maxCashOutlayDzd ?: legacyCashOutlay
         val id = key.ingredientId + "::" + key.unit
         val isHistoricalPrice = allowStaleSnapshotPrices && price != null &&
             price.priceKind != "demo" && price.observedAtEpochMillis?.let { observedAt ->
@@ -396,27 +412,51 @@ fun calculateBasket(
             consumedValueDzd = consumedValue,
             cashOutlayDzd = cashOutlay,
             priceLabel = when {
+                marketEstimate != null -> "سعر استرشادي غير مؤكد"
                 price == null -> null
                 price.priceKind == "demo" -> "قيمة توضيحية"
                 isHistoricalPrice -> "سعر تاريخي من لقطة الخطة"
                 else -> "ملاحظة سعر"
             },
-            sourceLabel = price?.let {
+            sourceLabel = marketEstimate?.let { estimate ->
+                listOf(estimate.wilaya, estimate.storeNames.joinToString(" · "))
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · ")
+            } ?: price?.let {
                 listOfNotNull(it.sourceLabel, it.locationLabel, observationDate).joinToString(" · ")
             },
             isApproximatePantry = approximateStock,
             checked = id in checkedItemIds,
-            userAdded = false
+            userAdded = false,
+            marketCashOutlayMinDzd = marketEstimate?.minCashOutlayDzd,
+            marketCashOutlayMaxDzd = marketEstimate?.maxCashOutlayDzd,
+            marketConsumedValueMinDzd = marketEstimate?.minConsumedValueDzd,
+            marketConsumedValueMaxDzd = marketEstimate?.maxConsumedValueDzd,
+            marketPriceOfferCount = marketEstimate?.offerCount ?: 0,
+            marketPriceWilaya = marketEstimate?.wilaya,
+            marketPriceStoreNames = marketEstimate?.storeNames.orEmpty(),
+            marketPriceSourceNotices = marketEstimate?.sourceNotices.orEmpty(),
+            marketPriceObservedAtEpochMillis = marketEstimate?.latestObservedAtEpochMillis,
+            marketPriceIncludesLimitedAvailability = marketEstimate?.includesLimitedAvailability ?: false
         )
     }
 
     val priced = items.filter { it.cashOutlayDzd != null }
+    val hasMarketPriceRanges = items.any { it.marketCashOutlayMinDzd != null }
+    val purchaseOutlayMin = items.sumOf {
+        it.marketCashOutlayMinDzd ?: it.cashOutlayDzd ?: 0.0
+    }
+    val purchaseOutlayMax = items.sumOf {
+        it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
+    }
     return BasketSummary(
         items = items,
         consumedValueDzd = items.sumOf { it.consumedValueDzd ?: 0.0 },
         purchaseOutlayDzd = priced.sumOf { it.cashOutlayDzd ?: 0.0 },
         unknownPriceCount = items.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
-        hasDemoPrices = prices.any { it.priceKind == "demo" }
+        hasDemoPrices = prices.any { it.priceKind == "demo" },
+        purchaseOutlayMinDzd = purchaseOutlayMin.takeIf { hasMarketPriceRanges },
+        purchaseOutlayMaxDzd = purchaseOutlayMax.takeIf { hasMarketPriceRanges }
     )
 }
 
