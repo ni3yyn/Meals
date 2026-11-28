@@ -244,11 +244,24 @@ class MealsRepository internal constructor(
         // using only evidence that existed at its original price snapshot time.
         val marketPriceSnapshotAt = savedRun?.priceSnapshotAtEpochMillis
             ?.takeIf { it > 0L } ?: System.currentTimeMillis()
-        val marketPriceEvidence = dao.getVerifiedMarketProductPriceRows()
-            .asSequence()
-            .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
-            .map { it.toPriceEvidence() }
-            .toList()
+        val storedMarketPriceSnapshots = if (
+            savedRun != null && existingPeriod?.marketPriceSnapshotCaptured == true
+        ) {
+            dao.getPlanMarketPriceSnapshots(periodId)
+        } else {
+            emptyList()
+        }
+        val marketPriceEvidence = if (
+            savedRun != null && existingPeriod?.marketPriceSnapshotCaptured == true
+        ) {
+            storedMarketPriceSnapshots.map { it.toPriceEvidence() }
+        } else {
+            dao.getVerifiedMarketProductPriceRows()
+                .asSequence()
+                .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
+                .map { it.toPriceEvidence() }
+                .toList()
+        }
         val existingShopping = dao.getShoppingItems(weekStartIso)
         // Basket rows frequently share ingredient/unit pairs. Build this lookup
         // once so each generated basket line does not rescan the full shopping list.
@@ -885,6 +898,7 @@ class MealsRepository internal constructor(
                     engineVersion = "0.5.0",
                     createdAtEpochMillis = previousPeriod?.createdAtEpochMillis?.takeIf { it > 0L } ?: generatedAt,
                     priceSnapshotAtEpochMillis = priceSnapshotAt,
+                    marketPriceSnapshotCaptured = true,
                     householdServings = householdServings.coerceIn(1, 12),
                     updatedAtEpochMillis = generatedAt
                 )
@@ -1493,9 +1507,12 @@ class MealsRepository internal constructor(
         val canonicalId = foodIdentityResolver.canonicalId(ingredientId)
         val normalizedUnit = unit.trim()
         if (normalizedUnit.isBlank()) return
+        val ingredientExists = dao.getIngredients().any { it.id == canonicalId }
+        if (!ingredientExists) return
         val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
         val periodId = weeklyRange.periodId
         val type = adjustmentType?.trim()?.uppercase()
+        dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, canonicalId, normalizedUnit)
         when (type) {
             "SOME" -> {
                 if (!availableQuantity.isFinite() || availableQuantity <= 0.0) return
