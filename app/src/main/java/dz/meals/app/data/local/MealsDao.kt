@@ -436,6 +436,15 @@ interface MealsDao {
     @Query("SELECT * FROM market_products ORDER BY name COLLATE NOCASE, id LIMIT :limit")
     suspend fun getMarketProducts(limit: Int): List<MarketProductEntity>
 
+    @Query("SELECT * FROM market_products WHERE id IN (:productIds)")
+    suspend fun getMarketProductsByIds(productIds: List<String>): List<MarketProductEntity>
+
+    @Query("SELECT * FROM market_product_sources WHERE productId IN (:productIds)")
+    suspend fun getMarketProductSourcesForProducts(productIds: List<String>): List<MarketProductSourceEntity>
+
+    @Query("SELECT * FROM market_price_observations WHERE productId IN (:productIds)")
+    suspend fun getMarketPriceObservationsForProducts(productIds: List<String>): List<MarketPriceObservationEntity>
+
     @Query("""
         SELECT * FROM market_products
         WHERE name LIKE '%' || :query || '%'

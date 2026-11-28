@@ -29,7 +29,10 @@ import dz.meals.app.data.local.RecipeIngredientEntity
 import dz.meals.app.data.local.RecipeStepEntity
 import dz.meals.app.data.local.RecipeImageOverrideEntity
 import dz.meals.app.data.local.ShoppingItemEntity
+import dz.meals.app.BuildConfig
 import dz.meals.app.domain.MarketProductPriceEvidence
+import dz.meals.app.domain.ProductPriceEstimator
+import dz.meals.app.domain.ProductPriceLocality
 import dz.meals.app.domain.PlanIngredientAdjustment
 import dz.meals.app.domain.PlanningPeriodType
 import dz.meals.app.domain.PlanningPeriodId
@@ -332,6 +335,20 @@ class MealsRepository internal constructor(
             planIngredientAdjustments = adjustments,
             nowEpochMillis = marketPriceSnapshotAt
         )
+
+        // Shadow-test the newer confidence-aware estimator during development and
+        // the explicitly enabled internal beta. It never feeds the displayed
+        // basket yet; current plan totals remain on the established estimator
+        // until the parallel results have been validated.
+        if (BuildConfig.DEBUG || BuildConfig.MONTHLY_PLANNING_ENABLED) {
+            logProductPriceShadowEstimate(
+                periodId = periodId,
+                demands = basket.ingredientDemands,
+                wilaya = planWilaya,
+                nowEpochMillis = marketPriceSnapshotAt,
+                establishedTypicalDzd = basket.purchaseOutlayDzd
+            )
+        }
 
         val names = ingredients.associateBy { it.id }
         val generatedShoppingRows = basket.items.map { line ->
@@ -2339,6 +2356,66 @@ class MealsRepository internal constructor(
                     )
                 )
             )
+        }
+    }
+
+    /**
+     * Runs the next-generation product estimator over one batched, demand-scoped
+     * catalogue read. The result is diagnostic only during shadow rollout.
+     * Product IDs are queried once in bounded chunks rather than scanning the
+     * entire retailer catalogue separately for each ingredient.
+     */
+    private suspend fun logProductPriceShadowEstimate(
+        periodId: PlanningPeriodId,
+        demands: List<dz.meals.app.data.IngredientDemand>,
+        wilaya: String?,
+        nowEpochMillis: Long,
+        establishedTypicalDzd: Double
+    ) {
+        if (demands.isEmpty()) return
+        try {
+            val demandedIngredientIds = demands.mapTo(hashSetOf()) { it.ingredientId }
+            val approvedMatches = dao.getVerifiedMarketProductIngredientMatches()
+                .filter { it.ingredientId in demandedIngredientIds }
+            val productIds = approvedMatches.map { it.productId }.distinct().sorted()
+            val products = productIds.chunked(800).flatMap { dao.getMarketProductsByIds(it) }
+            val listings = productIds.chunked(800).flatMap { dao.getMarketProductSourcesForProducts(it) }
+            val observations = productIds.chunked(800)
+                .flatMap { dao.getMarketPriceObservationsForProducts(it) }
+
+            val result = ProductPriceEstimator.estimate(
+                demands = demands,
+                approvedMatches = approvedMatches,
+                products = products,
+                sourceListings = listings,
+                observations = observations,
+                locality = ProductPriceLocality(wilaya = wilaya),
+                nowEpochMillis = nowEpochMillis
+            )
+            val pricedCount = result.ingredientEstimates.count { it.typicalDzd != null }
+            val averageConfidence = result.ingredientEstimates
+                .map { it.confidence.score }
+                .takeIf { it.isNotEmpty() }
+                ?.average()
+            val missingReasons = result.ingredientEstimates
+                .filter { it.typicalDzd == null }
+                .flatMap { estimate -> estimate.missingPriceReasons.map { it.name } }
+                .distinct()
+                .sorted()
+                .joinToString(",")
+            Log.d(
+                "MidatiPriceShadow",
+                "period=${periodId.value} ingredients=${demands.size} priced=$pricedCount " +
+                    "missing=${result.missingIngredientCount} establishedDzd=$establishedTypicalDzd " +
+                    "shadowLowDzd=${result.lowDzd} shadowTypicalDzd=${result.typicalDzd} " +
+                    "shadowHighDzd=${result.highDzd} avgConfidence=$averageConfidence " +
+                    "missingReasons=$missingReasons"
+            )
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            // A diagnostic calculation must never prevent opening or editing a plan.
+            Log.w("MidatiPriceShadow", "Shadow estimate unavailable for ${periodId.value}", error)
         }
     }
 
