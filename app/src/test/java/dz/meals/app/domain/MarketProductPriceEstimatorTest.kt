@@ -168,6 +168,19 @@ class MarketProductPriceEstimatorTest {
     }
 
     @Test
+    fun excludesMappingsReviewedAfterThePlanPriceSnapshot() {
+        val rows = listOf(
+            evidence(mappingReviewedAt = now + 1L)
+        )
+
+        assertNull(
+            estimateMarketProductPrice(
+                "ingredient-rice", 500.0, "g", "Laghouat", rows, now
+            )
+        )
+    }
+
+    @Test
     fun excludesStaleFutureDatedAndUnknownPriceStatuses() {
         val rows = listOf(
             evidence(listingId = "stale", observedAt = now - DEFAULT_MAX_PRICE_AGE_MILLIS - 1),
