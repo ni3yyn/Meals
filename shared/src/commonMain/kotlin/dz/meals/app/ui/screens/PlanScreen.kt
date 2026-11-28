@@ -1120,7 +1120,17 @@ private fun IngredientNeedsSection(
                         color = TextAccent, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        item.cashOutlayDzd?.let { "تكلفة الشراء: ${it.toInt().formatDzd()}" } ?: "السعر غير متوفر",
+                        when {
+                            item.marketCashOutlayMinDzd != null && item.marketCashOutlayMaxDzd != null -> {
+                                val low = item.marketCashOutlayMinDzd.toInt().formatDzd()
+                                val high = item.marketCashOutlayMaxDzd.toInt().formatDzd()
+                                if (low == high) "التكلفة المتوقعة: $low"
+                                else "التكلفة المتوقعة: $low – $high"
+                            }
+                            item.cashOutlayDzd != null ->
+                                "تكلفة الشراء: ${item.cashOutlayDzd.toInt().formatDzd()}"
+                            else -> "السعر غير متوفر"
+                        },
                         color = MutedInk, style = MaterialTheme.typography.bodySmall
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
