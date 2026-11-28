@@ -30,9 +30,13 @@ import dz.meals.app.data.FoodIdentityResolver
         PlanPriceSnapshotEntity::class,
         RecipeAttributionEntity::class,
         RecipeImageOverrideEntity::class,
-        MarketProductIngredientMatchEntity::class
+        MarketProductIngredientMatchEntity::class,
+        PlanningPeriodEntity::class,
+        PlanningPeriodMealEntity::class,
+        PlanIngredientAdjustmentEntity::class,
+        PlanMarketPriceSnapshotEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -400,6 +404,163 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        internal val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS planning_periods (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        periodType TEXT NOT NULL,
+                        startDateIso TEXT NOT NULL,
+                        endDateIso TEXT NOT NULL,
+                        budgetDzd INTEGER NOT NULL,
+                        wilaya TEXT NOT NULL,
+                        mealSlotsCsv TEXT NOT NULL,
+                        engineVersion TEXT NOT NULL,
+                        createdAtEpochMillis INTEGER NOT NULL,
+                        priceSnapshotAtEpochMillis INTEGER NOT NULL,
+                        householdServings INTEGER NOT NULL,
+                        updatedAtEpochMillis INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_planning_periods_periodType_startDateIso " +
+                        "ON planning_periods(periodType, startDateIso)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_planning_periods_endDateIso " +
+                        "ON planning_periods(endDateIso)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS planning_period_meals (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        periodId TEXT NOT NULL,
+                        dateIso TEXT NOT NULL,
+                        mealSlot TEXT NOT NULL,
+                        recipeId TEXT,
+                        servings INTEGER NOT NULL,
+                        locked INTEGER NOT NULL,
+                        isCooked INTEGER NOT NULL,
+                        isUserEdited INTEGER NOT NULL,
+                        FOREIGN KEY(periodId) REFERENCES planning_periods(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_planning_period_meals_periodId ON planning_period_meals(periodId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_planning_period_meals_dateIso ON planning_period_meals(dateIso)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_planning_period_meals_recipeId ON planning_period_meals(recipeId)")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_planning_period_meals_periodId_dateIso_mealSlot " +
+                        "ON planning_period_meals(periodId, dateIso, mealSlot)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS plan_ingredient_adjustments (
+                        periodId TEXT NOT NULL,
+                        ingredientId TEXT NOT NULL,
+                        unit TEXT NOT NULL,
+                        adjustmentType TEXT NOT NULL,
+                        availableQuantity REAL NOT NULL,
+                        updatedAtEpochMillis INTEGER NOT NULL,
+                        PRIMARY KEY(periodId, ingredientId, unit),
+                        FOREIGN KEY(periodId) REFERENCES planning_periods(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(ingredientId) REFERENCES ingredients(id)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_ingredient_adjustments_ingredientId ON plan_ingredient_adjustments(ingredientId)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS plan_market_price_snapshots (
+                        periodId TEXT NOT NULL,
+                        sourceListingId TEXT NOT NULL,
+                        productId TEXT NOT NULL,
+                        ingredientId TEXT NOT NULL,
+                        productName TEXT NOT NULL,
+                        packageQuantity REAL,
+                        packageUnit TEXT NOT NULL,
+                        mappingStatus TEXT NOT NULL,
+                        mappingReviewedAtEpochMillis INTEGER,
+                        priceDzd REAL,
+                        priceMinDzd REAL,
+                        priceMaxDzd REAL,
+                        currencyCode TEXT NOT NULL,
+                        observedAtEpochMillis INTEGER,
+                        priceStatus TEXT NOT NULL,
+                        availabilityRaw TEXT NOT NULL,
+                        storeName TEXT NOT NULL,
+                        source TEXT NOT NULL,
+                        wilaya TEXT NOT NULL,
+                        sourceNotice TEXT NOT NULL,
+                        PRIMARY KEY(periodId, sourceListingId),
+                        FOREIGN KEY(periodId) REFERENCES planning_periods(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_market_price_snapshots_ingredientId ON plan_market_price_snapshots(ingredientId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_market_price_snapshots_productId ON plan_market_price_snapshots(productId)")
+
+                // Preserve every already-generated week. These rows are explicitly
+                // WEEK periods; no old weekly plan is expanded or re-labelled as a month.
+                db.execSQL(
+                    """
+                    INSERT INTO planning_periods (
+                        id, periodType, startDateIso, endDateIso, budgetDzd, wilaya,
+                        mealSlotsCsv, engineVersion, createdAtEpochMillis,
+                        priceSnapshotAtEpochMillis, householdServings, updatedAtEpochMillis
+                    )
+                    SELECT
+                        'WEEK:' || weekStartIso, 'WEEK', weekStartIso,
+                        date(weekStartIso, '+6 days'), budgetDzd, wilaya,
+                        mealSlotsCsv, engineVersion, generatedAtEpochMillis,
+                        priceSnapshotAtEpochMillis, 1, generatedAtEpochMillis
+                    FROM plan_runs
+                    """
+                )
+                // Some older installations may contain manually edited meals
+                // without a matching plan_runs row. Keep those rows accessible too.
+                db.execSQL(
+                    """
+                    INSERT OR IGNORE INTO planning_periods (
+                        id, periodType, startDateIso, endDateIso, budgetDzd, wilaya,
+                        mealSlotsCsv, engineVersion, createdAtEpochMillis,
+                        priceSnapshotAtEpochMillis, householdServings, updatedAtEpochMillis
+                    )
+                    SELECT
+                        'WEEK:' || weekStartIso, 'WEEK', weekStartIso,
+                        date(weekStartIso, '+6 days'), 0, '',
+                        COALESCE(group_concat(DISTINCT mealSlot), ''),
+                        'legacy-adapter', 0, 0, 1, 0
+                    FROM plan_meals
+                    WHERE weekStartIso NOT IN (SELECT weekStartIso FROM plan_runs)
+                    GROUP BY weekStartIso
+                    """
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO planning_period_meals (
+                        id, periodId, dateIso, mealSlot, recipeId, servings,
+                        locked, isCooked, isUserEdited
+                    )
+                    SELECT
+                        id, 'WEEK:' || weekStartIso,
+                        date(weekStartIso, '+' || dayIndex || ' days'),
+                        mealSlot, recipeId, servings, locked, isCooked, isUserEdited
+                    FROM plan_meals
+                    """
+                )
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -435,7 +596,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 FoodTaxonomyMigration(context.applicationContext),
                 MIGRATION_16_17,
                 MIGRATION_17_18,
-                MIGRATION_18_19
+                MIGRATION_18_19,
+                MIGRATION_19_20
             ).build()
     }
 }
