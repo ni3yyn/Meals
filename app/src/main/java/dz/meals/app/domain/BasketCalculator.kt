@@ -309,7 +309,8 @@ fun calculateBasket(
     nowEpochMillis: Long = System.currentTimeMillis(),
     allowStaleSnapshotPrices: Boolean = false,
     foodTaxonomyByIngredientId: Map<String, FoodTaxonomyRef> = emptyMap(),
-    marketProductPriceEvidence: List<MarketProductPriceEvidence> = emptyList()
+    marketProductPriceEvidence: List<MarketProductPriceEvidence> = emptyList(),
+    planIngredientAdjustments: Map<Pair<String, String>, PlanIngredientAdjustment> = emptyMap()
 ): BasketSummary {
     val recipesById = recipes.associateBy { it.id }
     val required = linkedMapOf<RequirementKey, Double>()
@@ -332,7 +333,8 @@ fun calculateBasket(
     val items = required.map { (key, amount) ->
         val pantryUsed = 0.0
         val approximateStock = false
-        val netRequired = amount
+        val adjustment = planIngredientAdjustments[key.ingredientId to key.unit]
+        val netRequired = calculatePurchaseNeed(amount, adjustment)
         val compatiblePrices = priceByIngredient[key.ingredientId]
             .orEmpty()
             .filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd > 0.0 }
@@ -385,7 +387,11 @@ fun calculateBasket(
         val legacyConsumedValue = price?.let { amount / it.packQuantityBase * it.packPriceDzd }
         val packs = price?.let { if (netRequired <= 0.0) 0.0 else ceil(netRequired / it.packQuantityBase) }
         val legacyPurchaseQuantity = if (price != null && packs != null) packs * price.packQuantityBase else netRequired
-        val legacyCashOutlay = if (price != null && packs != null) packs * price.packPriceDzd else null
+        val legacyCashOutlay = when {
+            netRequired <= 0.0 -> 0.0
+            price != null && packs != null -> packs * price.packPriceDzd
+            else -> null
+        }
         // A market range may combine several actual offers and pack sizes. Do not
         // pretend one exact package quantity was selected; keep the recipe amount.
         val purchaseQuantity = if (marketEstimate != null) netRequired else legacyPurchaseQuantity
@@ -445,7 +451,12 @@ fun calculateBasket(
             marketPriceStoreNames = marketEstimate?.storeNames.orEmpty(),
             marketPriceSourceNotices = marketEstimate?.sourceNotices.orEmpty(),
             marketPriceObservedAtEpochMillis = marketEstimate?.latestObservedAtEpochMillis,
-            marketPriceIncludesLimitedAvailability = marketEstimate?.includesLimitedAvailability ?: false
+            marketPriceIncludesLimitedAvailability = marketEstimate?.includesLimitedAvailability ?: false,
+            alreadyHaveQuantity = when (adjustment?.type) {
+                PlanIngredientAdjustment.Type.SOME -> adjustment.availableQuantity
+                else -> 0.0
+            },
+            alreadyHaveEnough = adjustment?.type == PlanIngredientAdjustment.Type.ENOUGH
         )
     }
 
