@@ -1,6 +1,5 @@
 package dz.meals.app.ui
 
-import dz.meals.app.BuildConfig
 import dz.meals.app.ui.components.MealsText as Text
 
 import dz.meals.app.MealsStartupLogger
