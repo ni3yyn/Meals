@@ -439,23 +439,23 @@ class MealsRepository internal constructor(
             .map { it.toModel() }
         val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
         val periodId = weeklyRange.periodId
+        val savedRun = dao.getPlanRun(weekStartIso)
         val existingPeriod = dao.getPlanningPeriod(periodId)
         if (existingPeriod == null) {
-            val previousRun = dao.getPlanRun(weekStartIso)
             dao.upsertPlanningPeriod(
                 PlanningPeriodEntity(
                     id = periodId,
                     periodType = PlanningPeriodType.WEEK.storageValue,
                     startDateIso = weeklyRange.startDate.toString(),
                     endDateIso = weeklyRange.endDate.toString(),
-                    budgetDzd = previousRun?.budgetDzd ?: weeklyBudgetDzd,
-                    wilaya = previousRun?.wilaya ?: selectedWilaya.orEmpty(),
-                    mealSlotsCsv = previousRun?.mealSlotsCsv ?: validSlots.sorted().joinToString(","),
-                    engineVersion = previousRun?.engineVersion ?: "legacy-adapter",
-                    createdAtEpochMillis = previousRun?.generatedAtEpochMillis ?: 0L,
-                    priceSnapshotAtEpochMillis = previousRun?.priceSnapshotAtEpochMillis ?: 0L,
+                    budgetDzd = savedRun?.budgetDzd ?: weeklyBudgetDzd,
+                    wilaya = savedRun?.wilaya ?: selectedWilaya.orEmpty(),
+                    mealSlotsCsv = savedRun?.mealSlotsCsv ?: validSlots.sorted().joinToString(","),
+                    engineVersion = savedRun?.engineVersion ?: "legacy-adapter",
+                    createdAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L,
+                    priceSnapshotAtEpochMillis = savedRun?.priceSnapshotAtEpochMillis ?: 0L,
                     householdServings = householdServings.coerceIn(1, 12),
-                    updatedAtEpochMillis = previousRun?.generatedAtEpochMillis ?: 0L
+                    updatedAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L
                 )
             )
         }
@@ -539,7 +539,7 @@ class MealsRepository internal constructor(
             MealSlots.ids.filter { it in validSlots }.map { slot -> "$weekStartIso-$day-$slot" to (day to slot) }
         }
         val targetBudget = weeklyBudgetDzd * (100 - budgetBufferPercent.coerceIn(0, 30)) / 100.0
-        val previousRun = dao.getPlanRun(weekStartIso)
+        val previousRun = savedRun
         val previousGeneratedRecipes = existingMeals
             .filterNot { shouldPreserveMeal(it, fillEmptyOnly) }
             .mapNotNull { meal -> meal.recipeId?.let { meal.id to it } }
@@ -721,7 +721,7 @@ class MealsRepository internal constructor(
                 else -> 10
             }
             val seed = System.currentTimeMillis() xor
-                (previousRun?.generatedAtEpochMillis ?: 0L) xor
+                (savedRun?.generatedAtEpochMillis ?: 0L) xor
                 weekStartIso.hashCode().toLong()
             var bestPlan: List<PlannedMeal>? = null
             var bestScore = Double.POSITIVE_INFINITY
