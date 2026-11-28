@@ -705,6 +705,291 @@ class MealsRepository internal constructor(
      * for any canonical WEEK or MONTH range; storage and legacy UI models stay in
      * the caller's compatibility adapter. No Room reads or writes occur here.
      */
+
+    /**
+     * Generates one complete calendar month through the shared period engine.
+     *
+     * Monthly meals are persisted only in planning_period_meals. Legacy
+     * plan_meals/plan_runs and week-scoped shopping rows remain untouched.
+     */
+    suspend fun generateMonthlyPlan(
+        month: YearMonth,
+        monthlyBudgetDzd: Int,
+        householdServings: Int,
+        allergyIds: Set<String>,
+        selectedWilaya: String? = null,
+        selectedMealSlots: Set<String> = MealSlots.ids.toSet(),
+        dislikedIngredientIds: Set<String> = emptySet(),
+        dietPattern: String = "none",
+        maxCookingMinutes: Int = 60,
+        budgetBufferPercent: Int = 5,
+        meatPreference: String = "regular",
+        monthlyMeatGrams: Int = 3_000,
+        oilPreference: String = "regular",
+        fillEmptyOnly: Boolean = false
+    ): GenerationResult {
+        ensureInitialized()
+
+        val monthlyRange = resolvePlanningDateRange(
+            PlanningPeriodType.MONTH,
+            month.atDay(1).toString()
+        )
+        val periodId = monthlyRange.periodId
+        val validSlots = selectedMealSlots.intersect(MealSlots.ids.toSet())
+        val budget = monthlyBudgetDzd.coerceAtLeast(0)
+        if (validSlots.isEmpty()) {
+            return GenerationResult(
+                success = false,
+                message = "اختر وجبة واحدة على الأقل لتخطيط الشهر.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = budget
+            )
+        }
+
+        val existingPeriod = dao.getPlanningPeriod(periodId)
+        if (existingPeriod == null) {
+            val now = System.currentTimeMillis()
+            dao.upsertPlanningPeriod(
+                PlanningPeriodEntity(
+                    id = periodId,
+                    periodType = PlanningPeriodType.MONTH.storageValue,
+                    startDateIso = monthlyRange.startDate.toString(),
+                    endDateIso = monthlyRange.endDate.toString(),
+                    budgetDzd = budget,
+                    wilaya = selectedWilaya.orEmpty(),
+                    mealSlotsCsv = validSlots.sorted().joinToString(","),
+                    engineVersion = "period-adapter",
+                    createdAtEpochMillis = now,
+                    priceSnapshotAtEpochMillis = 0L,
+                    marketPriceSnapshotCaptured = false,
+                    householdServings = householdServings.coerceIn(1, 12),
+                    updatedAtEpochMillis = now
+                )
+            )
+        }
+
+        val existingMeals = dao.getPlanningPeriodMeals(periodId)
+            .filter { it.mealSlot in validSlots }
+            .map { it.toPlannedMeal(monthlyRange.startDate) }
+
+        val planAdjustmentsByIngredientUnit = dao.getPlanIngredientAdjustments(periodId)
+            .mapNotNull { it.toDomainAdjustment() }
+            .associate { it.first to it.second }
+
+        val locked = existingMeals.filter { shouldPreserveMeal(it, fillEmptyOnly) }
+        val recipes = loadRecipes()
+        val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
+        if (lockedConflict != null) {
+            return GenerationResult(
+                success = false,
+                message = "توجد وجبة مثبتة لا توافق قيود الحساسية الحالية. استبدلها أو غيّر قيود الطعام قبل إنشاء خطة الشهر. لم نغيّر أي وجبة.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = budget
+            )
+        }
+
+        val ingredientsById = loadIngredients().associateBy { it.id }
+        val ingredientTaxonomyById = ingredientsById.mapValues { (_, ingredient) ->
+            FoodTaxonomyRef(ingredient.categoryId, ingredient.subcategoryId)
+        }
+        val pinnedDietConflict = findPinnedDietConflict(
+            locked,
+            recipes,
+            ingredientTaxonomyById,
+            dietPattern
+        )
+        if (pinnedDietConflict != null) {
+            return GenerationResult(
+                success = false,
+                message = "توجد وجبة مثبتة لا توافق النمط الغذائي الحالي. استبدلها أو غيّر النمط قبل إنشاء خطة الشهر. لم نغيّر أي وجبة.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = budget
+            )
+        }
+
+        val normalizedMeatPreference = meatPreference.takeIf {
+            it in setOf("regular", "none", "chicken_only", "monthly_limit")
+        } ?: "regular"
+        val normalizedOilPreference = oilPreference.takeIf {
+            it in setOf("regular", "less")
+        } ?: "regular"
+
+        val pinnedMeatConflict = locked.firstNotNullOfOrNull { meal ->
+            val recipe = meal.recipeId?.let { id -> recipes.firstOrNull { it.id == id } }
+                ?: return@firstNotNullOfOrNull null
+            recipe.id.takeIf {
+                !isRecipeAllowedByMeatPreference(
+                    recipe,
+                    ingredientTaxonomyById,
+                    normalizedMeatPreference,
+                    ingredientsById
+                )
+            }
+        }
+        if (pinnedMeatConflict != null) {
+            return GenerationResult(
+                success = false,
+                message = "توجد وجبة مطبوخة أو مثبتة لا توافق تفضيل استهلاك اللحوم الحالي. غيّر الوجبة أو عدّل التفضيل قبل إعادة تخطيط الشهر. لم نغيّر أي وجبة.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = budget
+            )
+        }
+
+        val generatorRecipes = recipes.filter(PlanCuisinePolicy::allowsForGeneration)
+        val allowed = generatorRecipes.filter { recipe ->
+            isRecipeAllowed(recipe, ingredientTaxonomyById, allergyIds, dietPattern) &&
+                isRecipeAllowedByMeatPreference(
+                    recipe,
+                    ingredientTaxonomyById,
+                    normalizedMeatPreference,
+                    ingredientsById
+                ) &&
+                (normalizedMeatPreference != "monthly_limit" ||
+                    recipeMeatQuantityGrams(
+                        recipe,
+                        householdServings,
+                        ingredientTaxonomyById
+                    ) != null)
+        }
+        if (allowed.isEmpty()) {
+            return GenerationResult(
+                success = false,
+                message = "لا توجد أطباق رئيسية جزائرية متاحة بعد تطبيق قيود الحساسية وتفضيلات الطعام الحالية. لم نغيّر خطة الشهر.",
+                purchaseOutlayDzd = 0,
+                budgetDzd = budget
+            )
+        }
+
+        val pantry = dao.getPantryItems()
+        val prices = dao.getPriceObservations()
+        val marketPriceSnapshotAt = System.currentTimeMillis()
+        val marketPriceEvidence = if (existingPeriod?.marketPriceSnapshotCaptured == true) {
+            dao.getPlanMarketPriceSnapshots(periodId).map { it.toPriceEvidence() }
+        } else {
+            dao.getVerifiedMarketProductPriceRows()
+                .asSequence()
+                .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
+                .map { it.toPriceEvidence() }
+                .toList()
+        }
+
+        // This period already spans the entire calendar month. Other saved
+        // weekly plans are separate plans and are not silently merged into it.
+        val monthlyBaselineMeals = mapOf(month to emptyList<PlannedMeal>())
+        val chosen = generatePeriodCandidates(
+            periodType = PlanningPeriodType.MONTH,
+            startDate = monthlyRange.startDate,
+            endDate = monthlyRange.endDate,
+            periodBudgetDzd = budget,
+            householdServings = householdServings,
+            mealSlots = validSlots,
+            fillEmptyOnly = fillEmptyOnly,
+            existingMeals = existingMeals,
+            locked = locked,
+            recipes = recipes,
+            allowed = allowed,
+            canonicalDislikedIngredientIds = dislikedIngredientIds
+                .mapTo(linkedSetOf(), foodIdentityResolver::canonicalId),
+            ingredientTaxonomyById = ingredientTaxonomyById,
+            pantry = pantry,
+            prices = prices,
+            selectedWilaya = selectedWilaya,
+            marketPriceEvidence = marketPriceEvidence,
+            planAdjustmentsByIngredientUnit = planAdjustmentsByIngredientUnit,
+            marketPriceSnapshotAt = marketPriceSnapshotAt,
+            budgetBufferPercent = budgetBufferPercent,
+            previousGeneratedAtEpochMillis = existingPeriod?.updatedAtEpochMillis,
+            favoriteRecipeIds = dao.getFavoriteRecipeIds().toSet(),
+            monthlyBaselineMealsByMonth = monthlyBaselineMeals,
+            normalizedMeatPreference = normalizedMeatPreference,
+            monthlyMeatGrams = monthlyMeatGrams,
+            normalizedOilPreference = normalizedOilPreference,
+            maxCookingMinutes = maxCookingMinutes
+        )
+
+        val generatedAt = System.currentTimeMillis()
+        database.withTransaction {
+            dao.deletePlanningPeriodMealSlots(periodId, validSlots.toList())
+            dao.upsertPlanningPeriodMeals(
+                chosen.values
+                    .sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot })
+                    .map { it.toPlanningPeriodEntity(periodId, monthlyRange.startDate) }
+            )
+
+            val previousPeriod = dao.getPlanningPeriod(periodId)
+            dao.upsertPlanningPeriod(
+                PlanningPeriodEntity(
+                    id = periodId,
+                    periodType = PlanningPeriodType.MONTH.storageValue,
+                    startDateIso = monthlyRange.startDate.toString(),
+                    endDateIso = monthlyRange.endDate.toString(),
+                    budgetDzd = budget,
+                    wilaya = selectedWilaya.orEmpty(),
+                    mealSlotsCsv = validSlots.sorted().joinToString(","),
+                    engineVersion = "0.6.0",
+                    createdAtEpochMillis = previousPeriod?.createdAtEpochMillis?.takeIf { it > 0L }
+                        ?: generatedAt,
+                    priceSnapshotAtEpochMillis = generatedAt,
+                    marketPriceSnapshotCaptured = true,
+                    householdServings = householdServings.coerceIn(1, 12),
+                    updatedAtEpochMillis = generatedAt
+                )
+            )
+
+            // Freeze the precise verified product-offer rows used by this month.
+            dao.deletePlanMarketPriceSnapshots(periodId)
+            if (marketPriceEvidence.isNotEmpty()) {
+                dao.upsertPlanMarketPriceSnapshots(
+                    marketPriceEvidence.map { it.toPlanMarketSnapshot(periodId) }
+                )
+            }
+        }
+
+        val basket = calculateBasket(
+            chosen.values.toList(),
+            recipes,
+            pantry,
+            prices,
+            selectedWilaya = selectedWilaya,
+            foodTaxonomyByIngredientId = ingredientTaxonomyById,
+            marketProductPriceEvidence = marketPriceEvidence,
+            planIngredientAdjustments = planAdjustmentsByIngredientUnit,
+            nowEpochMillis = marketPriceSnapshotAt
+        )
+        val monthlyMeatUsedGrams = if (normalizedMeatPreference == "monthly_limit") {
+            chosen.values.sumOf { meal ->
+                val recipe = meal.recipeId?.let { id -> recipes.firstOrNull { it.id == id } }
+                    ?: return@sumOf 0.0
+                recipeMeatQuantityGrams(recipe, meal.servings, ingredientTaxonomyById)
+                    ?: 1_000_000_000.0
+            }
+        } else {
+            0.0
+        }
+        val monthlyLimitExceeded = normalizedMeatPreference == "monthly_limit" &&
+            monthlyMeatUsedGrams > monthlyMeatGrams.coerceIn(250, 20_000) + 0.001
+        val withinBudget = basket.unknownPriceCount == 0 && basket.purchaseOutlayDzd <= budget
+        val message = when {
+            monthlyLimitExceeded ->
+                "أنشأنا الخطة الشهرية، لكن الوصفات المتاحة أو الوجبات المحفوظة لا تسمح بالالتزام الكامل بسقف اللحوم الشهري. خفّضنا الكمية قدر الإمكان."
+            !withinBudget ->
+                "أنشأنا خطة الشهر، لكنها تتجاوز الميزانية أو تحتوي على أسعار غير متوفرة. راجع الوجبات قبل التسوق."
+            normalizedMeatPreference == "monthly_limit" ->
+                "أنشأنا خطة الشهر ضمن ميزانيتك، مع احترام سقف استهلاك اللحوم الشهري."
+            normalizedMeatPreference == "none" || normalizedMeatPreference == "chicken_only" ->
+                "أنشأنا خطة الشهر وفق تفضيل استهلاك اللحوم الذي اخترته."
+            normalizedOilPreference == "less" ->
+                "أنشأنا خطة الشهر مع تفضيل الوصفات الأقل استعمالاً للزيت."
+            else -> "أنشأنا خطة شهرية أولية ضمن ميزانيتك التقديرية."
+        }
+        return GenerationResult(
+            success = true,
+            message = message,
+            purchaseOutlayDzd = basket.purchaseOutlayDzd.toInt(),
+            budgetDzd = budget
+        )
+    }
+
     private suspend fun generatePeriodCandidates(
         periodType: PlanningPeriodType,
         startDate: LocalDate,
