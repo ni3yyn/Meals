@@ -5,6 +5,7 @@ on:
     paths:
       - "app/src/main/java/dz/meals/app/data/**"
       - "app/src/main/java/dz/meals/app/data/local/**"
+      - "app/src/main/java/dz/meals/app/ui/**"
       - "app/src/main/java/dz/meals/app/domain/**"
       - "app/src/test/java/dz/meals/app/data/**"
       - "app/src/test/java/dz/meals/app/domain/**"
@@ -22,6 +23,7 @@ on:
     paths:
       - "app/src/main/java/dz/meals/app/data/**"
       - "app/src/main/java/dz/meals/app/data/local/**"
+      - "app/src/main/java/dz/meals/app/ui/**"
       - "app/src/main/java/dz/meals/app/domain/**"
       - "app/src/test/java/dz/meals/app/data/**"
       - "app/src/test/java/dz/meals/app/domain/**"

@@ -1121,6 +1121,7 @@ private fun IngredientNeedsSection(
                     )
                     Text(
                         when {
+                            item.purchaseQuantity <= 0.0 -> "لا حاجة للشراء"
                             item.marketCashOutlayMinDzd != null && item.marketCashOutlayMaxDzd != null -> {
                                 val low = item.marketCashOutlayMinDzd.toInt().formatDzd()
                                 val high = item.marketCashOutlayMaxDzd.toInt().formatDzd()
