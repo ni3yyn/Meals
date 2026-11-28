@@ -625,6 +625,10 @@ class MealsRepository internal constructor(
             maxCookingMinutes = maxCookingMinutes
         )
 
+        // Rebase plan-local adjustments onto the newly selected recipes.
+        val rebasedAdjustmentRows = rebasePlanIngredientAdjustments(periodId, chosen.values.toList(), recipes)
+        val rebasedAdjustments = rebasedAdjustmentRows.mapNotNull { it.toDomainAdjustment() }.associate { it.first to it.second }
+
         val generatedAt = System.currentTimeMillis()
         val priceSnapshotAt = generatedAt
         database.withTransaction {
@@ -634,6 +638,8 @@ class MealsRepository internal constructor(
             }
             dao.deletePlanSlots(weekStartIso, validSlots.toList())
             dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
+            dao.deletePlanIngredientAdjustments(periodId)
+            if (rebasedAdjustmentRows.isNotEmpty()) dao.upsertPlanIngredientAdjustments(rebasedAdjustmentRows)
             dao.upsertPlanRun(
                 PlanRunEntity(
                     weekStartIso = weekStartIso,
@@ -679,7 +685,7 @@ class MealsRepository internal constructor(
             selectedWilaya = selectedWilaya,
             foodTaxonomyByIngredientId = ingredientTaxonomyById,
             marketProductPriceEvidence = marketPriceEvidence,
-            planIngredientAdjustments = planAdjustmentsByIngredientUnit,
+            planIngredientAdjustments = rebasedAdjustments,
             nowEpochMillis = marketPriceSnapshotAt
         )
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
@@ -932,6 +938,10 @@ class MealsRepository internal constructor(
             maxCookingMinutes = maxCookingMinutes
         )
 
+        // Rebase only compatible plan-local adjustments that remain relevant.
+        val rebasedAdjustmentRows = rebasePlanIngredientAdjustments(periodId, chosen.values.toList(), recipes)
+        val rebasedAdjustments = rebasedAdjustmentRows.mapNotNull { it.toDomainAdjustment() }.associate { it.first to it.second }
+
         val generatedAt = System.currentTimeMillis()
         database.withTransaction {
             dao.deletePlanningPeriodMealSlots(periodId, validSlots.toList())
@@ -940,6 +950,8 @@ class MealsRepository internal constructor(
                     .sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot })
                     .map { it.toPlanningPeriodEntity(periodId, monthlyRange.startDate) }
             )
+            dao.deletePlanIngredientAdjustments(periodId)
+            if (rebasedAdjustmentRows.isNotEmpty()) dao.upsertPlanIngredientAdjustments(rebasedAdjustmentRows)
 
             val previousPeriod = dao.getPlanningPeriod(periodId)
             dao.upsertPlanningPeriod(
@@ -983,7 +995,7 @@ class MealsRepository internal constructor(
             selectedWilaya = selectedWilaya,
             foodTaxonomyByIngredientId = ingredientTaxonomyById,
             marketProductPriceEvidence = marketPriceEvidence,
-            planIngredientAdjustments = planAdjustmentsByIngredientUnit,
+            planIngredientAdjustments = rebasedAdjustments,
             nowEpochMillis = marketPriceSnapshotAt
         )
         val monthlyMeatUsedGrams = if (normalizedMeatPreference == "monthly_limit") {
@@ -1930,6 +1942,42 @@ class MealsRepository internal constructor(
         dao.setShoppingItemChecked(id, checked, System.currentTimeMillis())
     }
 
+    /** Refresh price evidence only; saved recipes and plan-local edits are immutable. */
+    suspend fun refreshPlanPrices(periodId: PlanningPeriodId): MealsSnapshot? {
+        ensureInitialized()
+        val separator = periodId.value.indexOf(':')
+        if (separator <= 0) return null
+        val type = PlanningPeriodType.fromStorage(periodId.value.substring(0, separator)) ?: return null
+        val range = runCatching { resolvePlanningDateRange(type, periodId.value.substring(separator + 1)) }.getOrNull() ?: return null
+        if (range.periodId != periodId.value) return null
+        val before = snapshot(periodId)
+        val now = System.currentTimeMillis()
+        val priceRows = dao.getPriceObservations()
+        val marketEvidence = dao.getVerifiedMarketProductPriceRows()
+            .asSequence().filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= now }
+            .map { it.toPriceEvidence() }.toList()
+        val scopeKey = if (type == PlanningPeriodType.WEEK) range.startDate.toString() else periodId.value
+
+        database.withTransaction {
+            val current = dao.getPlanningPeriod(periodId.value) ?: return@withTransaction
+            dao.deletePlanPriceSnapshots(scopeKey)
+            if (priceRows.isNotEmpty()) dao.insertPlanPriceSnapshots(priceRows.map { it.toPlanSnapshot(scopeKey) })
+            dao.deletePlanMarketPriceSnapshots(periodId.value)
+            if (marketEvidence.isNotEmpty()) {
+                dao.upsertPlanMarketPriceSnapshots(marketEvidence.map { it.toPlanMarketSnapshot(periodId.value) })
+            }
+            dao.upsertPlanningPeriod(current.copy(
+                priceSnapshotAtEpochMillis = now,
+                marketPriceSnapshotCaptured = true,
+                updatedAtEpochMillis = now
+            ))
+            if (type == PlanningPeriodType.WEEK) {
+                dao.getPlanRun(scopeKey)?.let { dao.upsertPlanRun(it.copy(priceSnapshotAtEpochMillis = now)) }
+            }
+        }
+        return snapshot(periodId, selectedWilaya = before.planningPeriod?.wilaya?.takeIf { it.isNotBlank() })
+    }
+
     suspend fun updatePlanIngredientAdjustment(
         weekStartIso: String,
         ingredientId: String,
@@ -2179,6 +2227,27 @@ class MealsRepository internal constructor(
                 )
             )
         }
+    }
+
+    /** Rebase existing plan-local amounts to compatible demand in the new recipe set. */
+    private suspend fun rebasePlanIngredientAdjustments(
+        periodId: String,
+        plannedMeals: List<PlannedMeal>,
+        recipes: List<MealRecipe>
+    ): List<PlanIngredientAdjustmentEntity> {
+        val demands = dz.meals.app.data.IngredientDemandCalculator.calculate(plannedMeals, recipes)
+        return dao.getPlanIngredientAdjustments(periodId).mapNotNull { row ->
+            val matches = demands.filter { demand ->
+                demand.ingredientId == row.ingredientId &&
+                    convertIngredientQuantity(1.0, row.unit, demand.unit) != null
+            }
+            val demand = matches.singleOrNull() ?: return@mapNotNull null
+            val quantity = if (row.adjustmentType == "SOME") {
+                convertIngredientQuantity(row.availableQuantity, row.unit, demand.unit)
+                    ?: return@mapNotNull null
+            } else 0.0
+            row.copy(unit = demand.unit, availableQuantity = quantity, updatedAtEpochMillis = System.currentTimeMillis())
+        }.distinctBy { Triple(it.periodId, it.ingredientId, it.unit) }
     }
 
     private suspend fun persistPlanIngredientAdjustment(
