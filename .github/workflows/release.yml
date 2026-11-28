@@ -12,6 +12,11 @@ on:
         description: "Release version without the v prefix (for example 0.2.1)"
         required: true
         type: string
+      monthly_planning_enabled:
+        description: "Enable the monthly planning UI in this signed build (internal beta)"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -125,6 +130,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           APP_VERSION: ${{ steps.release.outputs.version }}
           APP_VERSION_CODE: ${{ steps.release.outputs.version_code }}
+          MONTHLY_PLANNING_ENABLED: ${{ inputs.monthly_planning_enabled }}
         run: |
           set -euo pipefail
           # Signing credentials are evaluated during configuration. Avoid storing
@@ -132,6 +138,7 @@ jobs:
           ./gradlew :baselineprofile:assemble :app:testReleaseUnitTest :app:assembleRelease :app:lintRelease --no-configuration-cache --stacktrace \
             -PappVersionCode="$APP_VERSION_CODE" \
             -PappVersionName="$APP_VERSION" \
+            -PmidatiMonthlyPlanningEnabled="$MONTHLY_PLANNING_ENABLED" \
             -PreleaseKeystorePath="$RUNNER_TEMP/meals-release.jks" \
             -PreleaseStorePassword="$ANDROID_KEYSTORE_PASSWORD" \
             -PreleaseKeyAlias="$ANDROID_KEY_ALIAS" \
