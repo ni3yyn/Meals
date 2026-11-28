@@ -1972,6 +1972,140 @@ class MealsRepository internal constructor(
     }
 
     /**
+     * Updates the at-home adjustment for one canonical ingredient in one saved
+     * planning period, then returns a rebuilt snapshot with purchase needs and
+     * estimates recalculated from that period's existing recipes and saved price
+     * evidence. This never calls either recipe generator.
+     *
+     * alreadyHaveAll takes precedence over the entered quantity. When false,
+     * zero clears the adjustment; a positive amount is converted into the demand
+     * unit and stored as a plan-local partial amount.
+     */
+    suspend fun updatePlanIngredientAdjustment(
+        periodId: PlanningPeriodId,
+        ingredientId: String,
+        unit: String,
+        alreadyHaveAll: Boolean,
+        alreadyHaveQuantity: Double
+    ): MealsSnapshot? {
+        ensureInitialized()
+
+        val normalizedUnit = unit.trim()
+        if (normalizedUnit.isBlank() ||
+            !alreadyHaveQuantity.isFinite() ||
+            alreadyHaveQuantity < 0.0
+        ) return null
+
+        val canonicalId = foodIdentityResolver.canonicalId(ingredientId)
+        if (canonicalId.isBlank() || dao.getIngredients().none { it.id == canonicalId }) {
+            return null
+        }
+
+        val separator = periodId.value.indexOf(':')
+        if (separator <= 0) return null
+        val periodType = PlanningPeriodType.fromStorage(periodId.value.substring(0, separator))
+            ?: return null
+        val range = runCatching {
+            resolvePlanningDateRange(periodType, periodId.value.substring(separator + 1))
+        }.getOrNull() ?: return null
+        if (range.periodId != periodId.value) return null
+
+        // This read also creates the lightweight period adapter for old weekly
+        // plans before the period/ingredient adjustment foreign key is written.
+        val currentSnapshot = snapshot(periodId)
+        val matchingDemand = currentSnapshot.basket.ingredientDemands.singleOrNull { demand ->
+            demand.ingredientId == canonicalId &&
+                convertIngredientQuantity(1.0, normalizedUnit, demand.unit) != null
+        } ?: return null
+        val demandUnit = matchingDemand.unit
+        val availableInDemandUnit = convertIngredientQuantity(
+            alreadyHaveQuantity,
+            normalizedUnit,
+            demandUnit
+        ) ?: return null
+
+        val adjustmentType = when {
+            alreadyHaveAll -> PlanIngredientAdjustment.Type.ENOUGH
+            availableInDemandUnit > 0.0 -> PlanIngredientAdjustment.Type.SOME
+            else -> null
+        }
+        val shoppingScopeKey = if (periodType == PlanningPeriodType.WEEK) {
+            range.startDate.toString()
+        } else {
+            periodId.value
+        }
+        val updatedAt = System.currentTimeMillis()
+
+        val persisted = database.withTransaction {
+            if (dao.getPlanningPeriod(periodId.value) == null) {
+                return@withTransaction false
+            }
+
+            // Remove older compatible-unit rows first. New adjustments are
+            // always stored against the calculator's canonical demand unit.
+            dao.getPlanIngredientAdjustments(periodId.value)
+                .filter { existing ->
+                    existing.ingredientId == canonicalId &&
+                        convertIngredientQuantity(1.0, existing.unit, demandUnit) != null
+                }
+                .forEach { existing ->
+                    dao.deletePlanIngredientAdjustment(
+                        periodId.value,
+                        canonicalId,
+                        existing.unit
+                    )
+                }
+
+            // An at-home change invalidates an old hand-entered purchase amount
+            // for this ingredient, but keeps checked state, notes and actual spend.
+            dao.getShoppingItems(shoppingScopeKey)
+                .filter { existing ->
+                    existing.ingredientId == canonicalId &&
+                        convertIngredientQuantity(1.0, existing.unit, demandUnit) != null
+                }
+                .forEach { existing ->
+                    dao.clearGeneratedPurchaseQuantityOverride(
+                        shoppingScopeKey,
+                        canonicalId,
+                        existing.unit
+                    )
+                }
+
+            when (adjustmentType) {
+                PlanIngredientAdjustment.Type.SOME -> dao.upsertPlanIngredientAdjustment(
+                    PlanIngredientAdjustmentEntity(
+                        periodId = periodId.value,
+                        ingredientId = canonicalId,
+                        unit = demandUnit,
+                        adjustmentType = "SOME",
+                        availableQuantity = availableInDemandUnit,
+                        updatedAtEpochMillis = updatedAt
+                    )
+                )
+                PlanIngredientAdjustment.Type.ENOUGH -> dao.upsertPlanIngredientAdjustment(
+                    PlanIngredientAdjustmentEntity(
+                        periodId = periodId.value,
+                        ingredientId = canonicalId,
+                        unit = demandUnit,
+                        adjustmentType = "ENOUGH",
+                        availableQuantity = 0.0,
+                        updatedAtEpochMillis = updatedAt
+                    )
+                )
+                null -> Unit
+            }
+            true
+        }
+        if (!persisted) return null
+
+        return snapshot(
+            periodId = periodId,
+            selectedWilaya = currentSnapshot.planningPeriod?.wilaya
+                ?.takeIf { it.isNotBlank() }
+        )
+    }
+
+    /**
      * Saves the plan-only availability choice and the corresponding shopping
      * row edit as one transaction. The UI must use this for ingredient rows so
      * clearing an adjustment cannot race a separate purchase-quantity update.

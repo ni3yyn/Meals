@@ -2,7 +2,6 @@ package dz.meals.app.data
 
 import android.content.Context
 import dz.meals.app.data.local.MealsDatabase
-import dz.meals.app.data.local.PlanIngredientAdjustmentEntity
 import dz.meals.app.data.local.PlanMarketPriceSnapshotEntity
 import dz.meals.app.domain.PlanningPeriodId
 import dz.meals.app.domain.PlanningPeriodType
@@ -154,17 +153,6 @@ class MonthlyPlanGenerationTest {
             val amountAlreadyHave = (targetLine.requiredQuantity * 0.2)
                 .coerceAtMost(targetLine.requiredQuantity - 0.0001)
                 .coerceAtLeast(0.0001)
-            dao.upsertPlanIngredientAdjustment(
-                PlanIngredientAdjustmentEntity(
-                    periodId = periodId,
-                    ingredientId = targetIngredientId,
-                    unit = targetLine.unit,
-                    adjustmentType = "SOME",
-                    availableQuantity = amountAlreadyHave,
-                    updatedAtEpochMillis = System.currentTimeMillis()
-                )
-            )
-
             val persistedShoppingLine = dao.getShoppingItems(periodId)
                 .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
             dao.upsertShoppingItems(
@@ -207,23 +195,98 @@ class MonthlyPlanGenerationTest {
                 )
             )
 
-            val restoredSnapshot = repository.snapshot(
-                PlanningPeriodId(periodId),
-                selectedWilaya = "الجزائر"
+            val recipeAssignmentsBeforeAdjustment = dao.getPlanningPeriodMeals(periodId)
+                .associate { it.id to it.recipeId }
+            val partialSnapshot = repository.updatePlanIngredientAdjustment(
+                periodId = PlanningPeriodId(periodId),
+                ingredientId = targetIngredientId,
+                unit = targetLine.unit,
+                alreadyHaveAll = false,
+                alreadyHaveQuantity = amountAlreadyHave
             )
-            assertEquals(31, restoredSnapshot.plannedMeals.size)
-            val restoredShoppingLine = restoredSnapshot.shoppingItems
+            assertNotNull(partialSnapshot)
+            val partialShoppingLine = partialSnapshot!!.shoppingItems
                 .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
-            assertEquals(amountAlreadyHave, restoredShoppingLine.alreadyHaveQuantity, 0.0001)
-            assertEquals(true, restoredShoppingLine.checked)
-            assertEquals("اختبار حفظ الفترة", restoredShoppingLine.storeNote)
-            assertEquals(75.0, restoredShoppingLine.actualSpentDzd!!, 0.0001)
-            assertTrue(restoredSnapshot.marketPriceEvidence.any {
+            assertEquals(amountAlreadyHave, partialShoppingLine.alreadyHaveQuantity, 0.0001)
+            assertEquals(false, partialShoppingLine.alreadyHaveEnough)
+            assertEquals(
+                (targetLine.requiredQuantity - amountAlreadyHave).coerceAtLeast(0.0),
+                partialShoppingLine.purchaseQuantity,
+                0.0001
+            )
+            assertNotNull(partialShoppingLine.marketCashOutlayMinDzd)
+            assertEquals(true, partialShoppingLine.checked)
+            assertEquals("اختبار حفظ الفترة", partialShoppingLine.storeNote)
+            assertEquals(75.0, partialShoppingLine.actualSpentDzd!!, 0.0001)
+            assertNull(
+                dao.getShoppingItems(periodId)
+                    .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
+                    .purchaseQuantityOverride
+            )
+            assertTrue(partialSnapshot.marketPriceEvidence.any {
                 it.productId == "snapshot-product-${targetIngredientId}" &&
                     it.sourceListingId == "snapshot-source-${targetIngredientId}" &&
                     it.mappingStatus == "VERIFIED"
             })
-            assertNotNull(restoredShoppingLine.marketCashOutlayMinDzd)
+            assertEquals(recipeAssignmentsBeforeAdjustment, dao.getPlanningPeriodMeals(periodId)
+                .associate { it.id to it.recipeId })
+
+            // Invalid input must not replace the last valid plan-local adjustment.
+            val rejectedSnapshot = repository.updatePlanIngredientAdjustment(
+                periodId = PlanningPeriodId(periodId),
+                ingredientId = targetIngredientId,
+                unit = targetLine.unit,
+                alreadyHaveAll = false,
+                alreadyHaveQuantity = Double.NaN
+            )
+            assertNull(rejectedSnapshot)
+            assertEquals(
+                amountAlreadyHave,
+                dao.getPlanIngredientAdjustment(periodId, targetIngredientId, targetLine.unit)
+                    ?.availableQuantity ?: -1.0,
+                0.0001
+            )
+
+            // "Already have enough" makes the remaining purchase and estimate zero.
+            val enoughSnapshot = repository.updatePlanIngredientAdjustment(
+                periodId = PlanningPeriodId(periodId),
+                ingredientId = targetIngredientId,
+                unit = targetLine.unit,
+                alreadyHaveAll = true,
+                alreadyHaveQuantity = 0.0
+            )
+            assertNotNull(enoughSnapshot)
+            val enoughShoppingLine = enoughSnapshot!!.shoppingItems
+                .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
+            assertEquals(true, enoughShoppingLine.alreadyHaveEnough)
+            assertEquals(0.0, enoughShoppingLine.purchaseQuantity, 0.0001)
+            assertEquals(0.0, enoughShoppingLine.cashOutlayDzd!!, 0.0001)
+            assertEquals(recipeAssignmentsBeforeAdjustment, dao.getPlanningPeriodMeals(periodId)
+                .associate { it.id to it.recipeId })
+
+            // An explicit zero partial amount clears the adjustment and restores
+            // full recipe demand; it does not carry stock from this period.
+            val clearedSnapshot = repository.updatePlanIngredientAdjustment(
+                periodId = PlanningPeriodId(periodId),
+                ingredientId = targetIngredientId,
+                unit = targetLine.unit,
+                alreadyHaveAll = false,
+                alreadyHaveQuantity = 0.0
+            )
+            assertNotNull(clearedSnapshot)
+            val clearedShoppingLine = clearedSnapshot!!.shoppingItems
+                .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
+            assertEquals(false, clearedShoppingLine.alreadyHaveEnough)
+            assertEquals(0.0, clearedShoppingLine.alreadyHaveQuantity, 0.0001)
+            assertEquals(
+                targetLine.requiredQuantity,
+                clearedShoppingLine.purchaseQuantity,
+                0.0001
+            )
+            assertNull(dao.getPlanIngredientAdjustment(periodId, targetIngredientId, targetLine.unit))
+            assertNull(dao.getPlanIngredientAdjustment("MONTH:2027-02-01", targetIngredientId, targetLine.unit))
+            assertEquals(recipeAssignmentsBeforeAdjustment, dao.getPlanningPeriodMeals(periodId)
+                .associate { it.id to it.recipeId })
 
             // No month slot can escape the selected calendar boundaries.
             assertFalse(
