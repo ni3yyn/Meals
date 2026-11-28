@@ -30,7 +30,7 @@ class FoodIdentityMigrationTest {
         try {
             val db = roomDatabase.openHelper.writableDatabase
 
-            assertEquals(18, db.query("PRAGMA user_version").use { cursor ->
+            assertEquals(19, db.query("PRAGMA user_version").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 cursor.getInt(0)
             })
