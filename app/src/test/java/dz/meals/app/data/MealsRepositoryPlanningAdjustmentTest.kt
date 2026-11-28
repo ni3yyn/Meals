@@ -112,6 +112,28 @@ class MealsRepositoryPlanningAdjustmentTest {
                 dao.getShoppingItem(shoppingItem.id)?.purchaseQuantityOverride!!,
                 0.0001
             )
+
+            // The combined editor action clears the previous adjustment and
+            // commits a newly typed purchase override in the same transaction.
+            repository.updatePlanShoppingItemDetails(
+                weekStartIso = weekStartIso,
+                shoppingItemId = shoppingItem.id,
+                ingredientId = ingredient.id,
+                unit = unit,
+                adjustmentType = null,
+                availableQuantity = 0.0,
+                purchaseQuantity = 23.0,
+                storeNote = "سوق الحي",
+                unavailable = true,
+                actualSpentDzd = 55.0
+            )
+
+            assertNull(dao.getPlanIngredientAdjustment(periodId, ingredient.id, unit))
+            val editedRow = dao.getShoppingItem(shoppingItem.id)!!
+            assertEquals(23.0, editedRow.purchaseQuantityOverride!!, 0.0001)
+            assertEquals("سوق الحي", editedRow.storeNote)
+            assertEquals(true, editedRow.isUnavailable)
+            assertEquals(55.0, editedRow.actualSpentDzd!!, 0.0001)
         } finally {
             database.close()
             context.deleteDatabase(databaseName)
