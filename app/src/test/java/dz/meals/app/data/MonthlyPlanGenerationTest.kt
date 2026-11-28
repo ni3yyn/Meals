@@ -138,34 +138,28 @@ class MonthlyPlanGenerationTest {
                     old.id !in preservedIds && regeneratedById[old.id]?.recipeId != old.recipeId
                 }
             )
-            val regeneratedIngredientDemands = repository.snapshot(PlanningPeriodId(periodId))
-                .basket.ingredientDemands
+            val regeneratedSnapshot = repository.snapshot(PlanningPeriodId(periodId))
+            val regeneratedIngredientDemands = regeneratedSnapshot.basket.ingredientDemands
                 .filter { it.ingredientId == inactiveAdjustment.ingredientId }
             val compatibleRegeneratedDemands = regeneratedIngredientDemands.filter {
                 convertIngredientQuantity(1.0, inactiveAdjustment.unit, it.unit) != null
             }
             val persistedInactiveAdjustment = dao.getPlanIngredientAdjustments(periodId)
                 .singleOrNull { it.ingredientId == inactiveAdjustment.ingredientId }
-            assertNotNull(
-                "Regeneration must retain the plan-local adjustment even when its ingredient is not currently needed.",
+            assertEquals(
+                "Removed ingredients' amounts remain stored but must not be reactivated when later introduced as new ingredients.",
+                inactiveAdjustment,
                 persistedInactiveAdjustment
             )
             if (compatibleRegeneratedDemands.size == 1) {
-                val regeneratedDemand = compatibleRegeneratedDemands.single()
-                assertEquals(regeneratedDemand.unit, persistedInactiveAdjustment!!.unit)
-                assertEquals(
-                    requireNotNull(
-                        convertIngredientQuantity(
-                            inactiveAdjustment.availableQuantity,
-                            inactiveAdjustment.unit,
-                            regeneratedDemand.unit
-                        )
-                    ),
-                    persistedInactiveAdjustment.availableQuantity,
-                    0.0001
-                )
+                val regeneratedShoppingLine = regeneratedSnapshot.shoppingItems
+                    .single { it.ingredientId == inactiveAdjustment.ingredientId }
+                assertEquals(0.0, regeneratedShoppingLine.alreadyHaveQuantity, 0.0001)
+                assertFalse(regeneratedShoppingLine.alreadyHaveEnough)
             } else {
-                assertEquals(inactiveAdjustment, persistedInactiveAdjustment)
+                assertTrue(regeneratedSnapshot.shoppingItems.none {
+                    it.ingredientId == inactiveAdjustment.ingredientId
+                })
             }
             for (preservedRow in listOf(lockedBefore, cookedBefore, editedBefore)) {
                 val after = regeneratedById[preservedRow.id]
