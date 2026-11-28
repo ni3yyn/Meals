@@ -311,6 +311,9 @@ class MealsRepository internal constructor(
         val marketAwareBasketMax = shoppingItems.sumOf {
             it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
         }
+        val allShoppingPricesKnown = shoppingItems.all {
+            it.cashOutlayDzd != null || it.purchaseQuantity <= 0.0
+        }
         MealsSnapshot(
             recipes = recipes,
             ingredients = ingredients,
@@ -347,8 +350,8 @@ class MealsRepository internal constructor(
                 purchaseOutlayDzd = shoppingItems.sumOf { it.cashOutlayDzd ?: 0.0 },
                 unknownPriceCount = shoppingItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
                 actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 },
-                purchaseOutlayMinDzd = marketAwareBasketMin.takeIf { hasMarketPriceRanges },
-                purchaseOutlayMaxDzd = marketAwareBasketMax.takeIf { hasMarketPriceRanges }
+                purchaseOutlayMinDzd = marketAwareBasketMin.takeIf { hasMarketPriceRanges && allShoppingPricesKnown },
+                purchaseOutlayMaxDzd = marketAwareBasketMax.takeIf { hasMarketPriceRanges && allShoppingPricesKnown }
             ),
             foodCategories = foodCategories,
             foodSubcategories = foodSubcategories
