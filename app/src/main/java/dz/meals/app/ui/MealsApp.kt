@@ -231,6 +231,8 @@ private fun MealsAppContent(
     val storedPreferences by preferencesFlow.collectAsState(initial = null)
     val preferencesLoaded = storedPreferences != null
     val preferences = storedPreferences ?: AppPreferences(hasCompletedSetup = true)
+    val monthlyPlanningEnabled = BuildConfig.DEBUG || BuildConfig.MONTHLY_PLANNING_ENABLED
+    val planningMode = preferences.planningMode.takeIf { monthlyPlanningEnabled } ?: "WEEK"
     val appLanguage = preferences.appLanguage
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
@@ -297,7 +299,7 @@ private fun MealsAppContent(
     )
 
     fun activePlanningPeriodId(): PlanningPeriodId =
-        if (preferences.planningMode == "MONTH") {
+        if (planningMode == "MONTH") {
             PlanningPeriodId("MONTH:$monthStartIso")
         } else {
             PlanningPeriodId("WEEK:$weekStartIso")
@@ -305,7 +307,7 @@ private fun MealsAppContent(
 
     suspend fun refresh() {
         snapshot = repository.snapshot(weekStartIso, preferences.wilaya, preferences.mealSlots)
-        if (preferences.planningMode == "MONTH") {
+        if (planningMode == "MONTH") {
             monthlySnapshot = repository.snapshot(
                 PlanningPeriodId("MONTH:$monthStartIso"),
                 preferences.wilaya,
@@ -436,7 +438,7 @@ private fun MealsAppContent(
         }
     }
 
-    LaunchedEffect(repository, weekStartIso, monthStartIso, preferences.planningMode, preferences.wilaya, preferences.mealSlots, preferencesLoaded) {
+    LaunchedEffect(repository, weekStartIso, monthStartIso, planningMode, preferences.wilaya, preferences.mealSlots, preferencesLoaded) {
         try {
             MealsStartupLogger.markOnce("Initial repository initialization started")
             repository.ensureInitialized()
@@ -577,10 +579,11 @@ private fun MealsAppContent(
                     AppTab.Plan -> {
                     PlanScreen(
                         weekStartIso = weekStartIso,
-                        planningMode = preferences.planningMode,
+                        planningMode = planningMode,
+                        monthlyPlanningEnabled = monthlyPlanningEnabled,
                         monthStartIso = monthStartIso,
                         preferences = preferences,
-                        snapshot = if (preferences.planningMode == "MONTH") monthlySnapshot else snapshot,
+                        snapshot = if (planningMode == "MONTH") monthlySnapshot else snapshot,
                         isGenerating = isGenerating,
                         onPlanningModeChange = { mode ->
                             scope.launch {
@@ -609,7 +612,7 @@ private fun MealsAppContent(
                             scope.launch {
                                 val refreshed = repository.refreshPlanPrices(activePlanningPeriodId())
                                 if (refreshed != null) {
-                                    if (preferences.planningMode == "MONTH") monthlySnapshot = refreshed
+                                    if (planningMode == "MONTH") monthlySnapshot = refreshed
                                     else snapshot = refreshed
                                 }
                             }
@@ -624,7 +627,7 @@ private fun MealsAppContent(
                                     quantity
                                 )
                                 if (adjusted != null) {
-                                    if (preferences.planningMode == "MONTH") monthlySnapshot = adjusted
+                                    if (planningMode == "MONTH") monthlySnapshot = adjusted
                                     else snapshot = adjusted
                                 }
                             }
@@ -633,7 +636,7 @@ private fun MealsAppContent(
                             scope.launch {
                                 isGenerating = true
                                 try {
-                                    val result = if (preferences.planningMode == "MONTH") {
+                                    val result = if (planningMode == "MONTH") {
                                         val month = YearMonth.from(LocalDate.parse(monthStartIso))
                                         val monthlyBudget = (
                                             preferences.weeklyBudgetDzd * month.lengthOfMonth() / 7.0
@@ -713,7 +716,7 @@ private fun MealsAppContent(
                             onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                             onAddRecipe = { id ->
                                 recipeIdToOpenFromPlan = null
-                                generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
+                                generationMessage = "أُضيفت الوصفة إلى خطة ${if (planningMode == "MONTH") "الشهر" else "الأسبوع"}"
                                 perform {
                                     repository.addRecipeToNextSlot(
                                         activePlanningPeriodId(),
@@ -783,7 +786,7 @@ private fun MealsAppContent(
                         },
                         onToggleFavorite = { id -> perform { repository.toggleFavorite(id) } },
                         onAddRecipe = { id ->
-                            generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
+                            generationMessage = "أُضيفت الوصفة إلى خطة ${if (planningMode == "MONTH") "الشهر" else "الأسبوع"}"
                             perform {
                                 repository.addRecipeToNextSlot(
                                     activePlanningPeriodId(),

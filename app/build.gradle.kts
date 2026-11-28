@@ -13,6 +13,13 @@ plugins {
 val appVersionCode = providers.gradleProperty("appVersionCode").map(String::toInt).orElse(3)
 val appVersionName = providers.gradleProperty("appVersionName").orElse("0.2.1")
 
+// Monthly planning is available in Debug builds. Release builds remain on the
+// proven weekly UI unless an internal-beta build explicitly opts in with
+// -PmidatiMonthlyPlanningEnabled=true.
+val releaseMonthlyPlanningEnabled = providers.gradleProperty("midatiMonthlyPlanningEnabled")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
+
 val foodCatalogueRevision = providers.provider<String> {
     val digest = MessageDigest.getInstance("SHA-256")
     listOf(
@@ -177,10 +184,16 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField("boolean", "MONTHLY_PLANNING_ENABLED", "true")
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
         release {
+            buildConfigField(
+                "boolean",
+                "MONTHLY_PLANNING_ENABLED",
+                releaseMonthlyPlanningEnabled.get().toString()
+            )
             // Public releases use the persistent private key supplied by CI.
             // Local builds remain installable with the machine's standard debug key.
             signingConfig = if (hasReleaseSigning) {

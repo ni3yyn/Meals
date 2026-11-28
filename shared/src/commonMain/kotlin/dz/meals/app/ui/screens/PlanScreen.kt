@@ -89,6 +89,7 @@ import kotlin.math.roundToInt
 fun PlanScreen(
     weekStartIso: String,
     planningMode: String,
+    monthlyPlanningEnabled: Boolean,
     monthStartIso: String,
     preferences: AppPreferences,
     snapshot: MealsSnapshot,
@@ -111,7 +112,7 @@ fun PlanScreen(
     val monthDayCount = (
         monthStart.plus(DatePeriod(months = 1)).toEpochDays() - monthStart.toEpochDays()
     ).toInt()
-    val isMonthly = planningMode == "MONTH"
+    val isMonthly = monthlyPlanningEnabled && planningMode == "MONTH"
     val weekDays = remember { (0 until 7).toList() }
     val today = Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -131,8 +132,8 @@ fun PlanScreen(
     var editingIngredientRowId by rememberSaveable { mutableStateOf<String?>(null) }
     var availableAmountText by rememberSaveable { mutableStateOf("") }
     val dayChipListState = rememberLazyListState()
-    LaunchedEffect(weekStartIso, initialDayIndex) {
-        dayChipListState.animateScrollToItem(initialDayIndex)
+    LaunchedEffect(weekStartIso, initialDayIndex, isMonthly) {
+        if (!isMonthly) dayChipListState.animateScrollToItem(initialDayIndex)
     }
     val recipesById = remember(snapshot.recipes) { snapshot.recipes.associateBy { it.id } }
     val eligibleRecipes = remember(snapshot.recipes, preferences.allergyIds) {
@@ -198,10 +199,12 @@ fun PlanScreen(
                 contentPadding = 15.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {
-                PeriodModeSelector(
-                    selectedMode = planningMode,
-                    onModeChange = onPlanningModeChange
-                )
+                if (monthlyPlanningEnabled) {
+                    PeriodModeSelector(
+                        selectedMode = planningMode,
+                        onModeChange = onPlanningModeChange
+                    )
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -218,7 +221,11 @@ fun PlanScreen(
                     ) {
                         Text("ميزانية الأسبوع", color = dz.meals.app.ui.theme.TextAccent, style = MaterialTheme.typography.labelMedium)
                         Text(
-                            preferences.weeklyBudgetDzd.formatDzd(),
+                            (
+                                snapshot.planRun?.budgetDzd
+                                    ?: snapshot.planningPeriod?.budgetDzd?.takeIf { it > 0 }
+                                    ?: preferences.weeklyBudgetDzd
+                            ).formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
