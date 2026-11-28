@@ -377,6 +377,20 @@ interface MealsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertShoppingItems(items: List<ShoppingItemEntity>)
 
+    @Query("""
+        UPDATE shopping_items
+        SET purchaseQuantityOverride = NULL
+        WHERE weekStartIso = :weekStartIso
+            AND ingredientId = :ingredientId
+            AND unit = :unit
+            AND userAdded = 0
+    """)
+    suspend fun clearGeneratedPurchaseQuantityOverride(
+        weekStartIso: String,
+        ingredientId: String,
+        unit: String
+    ): Int
+
     @Query("DELETE FROM shopping_items WHERE userAdded = 0 AND weekStartIso = :weekStartIso")
     suspend fun deleteGeneratedShoppingItems(weekStartIso: String)
 
