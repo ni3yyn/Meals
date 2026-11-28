@@ -545,7 +545,6 @@ class MealsRepository internal constructor(
                 )
             )
         }
-        val recipes = loadRecipes()
         val persistedAdjustmentRows = dao.getPlanIngredientAdjustments(periodId)
         val previousIngredientDemands = IngredientDemandCalculator.calculate(existingMeals, recipes)
         // Only adjustments active in the current saved recipe set influence
@@ -852,6 +851,7 @@ class MealsRepository internal constructor(
             .filter { it.mealSlot in validSlots }
             .map { it.toPlannedMeal(monthlyRange.startDate) }
 
+        val recipes = loadRecipes()
         val persistedAdjustmentRows = dao.getPlanIngredientAdjustments(periodId)
         val previousIngredientDemands = IngredientDemandCalculator.calculate(existingMeals, recipes)
         // Only adjustments active in the current saved recipe set influence
