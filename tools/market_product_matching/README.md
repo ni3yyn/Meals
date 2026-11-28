@@ -49,7 +49,7 @@ Place the final `ingredient-matches.json` at:
 data/market-products/ingredient-matches.json
 ```
 
-Commit it on the feature branch. Do not modify the market product part files or the manifest for a mapping-only refresh. The Android build computes a base revision that excludes this exact filename, while still invalidating the map if any underlying market catalogue source changes.
+Commit it on `main`. Do not modify the market product part files or the manifest for a mapping-only refresh. The Android build computes a base revision that excludes this exact filename, while still invalidating the map if any underlying market catalogue source changes.
 
 The Room installer may defer applying the mappings until recipe ingredients have been installed. The repository retries installation on later initialization. It is safe for a clean first launch to have no mapping file yet.
 
