@@ -439,7 +439,13 @@ class BasketCalculatorTest {
             plannedMeals = listOf(plan.copy(servings = 4)),
             recipes = listOf(mixedUnitRecipe),
             pantry = emptyList(),
-            prices = prices
+            prices = prices,
+            planIngredientAdjustments = mapOf(
+                ("potato" to "kg") to PlanIngredientAdjustment(
+                    PlanIngredientAdjustment.Type.SOME,
+                    availableQuantity = 0.1
+                )
+            )
         )
         val potatoDemand = result.ingredientDemands.single { it.ingredientId == "potato" }
         val potatoItem = result.items.single { it.ingredientId == "potato" }
@@ -447,6 +453,7 @@ class BasketCalculatorTest {
         assertEquals(600.0, potatoDemand.quantity, 0.0001)
         assertEquals("g", potatoDemand.unit)
         assertEquals(2, potatoDemand.contributions.size)
+        assertEquals(100.0, potatoItem.alreadyHaveQuantity, 0.0001)
         assertEquals(1_000.0, potatoItem.purchaseQuantity, 0.0001)
         assertEquals(100.0, potatoItem.cashOutlayDzd!!, 0.0001)
         assertTrue(result.ingredientDemands.none { it.ingredientId == "optional" })

@@ -305,7 +305,12 @@ class MealsRepository internal constructor(
         }
 
         val existingShopping = dao.getShoppingItems(scopeKey)
-        val existingByIngredientUnit = existingShopping.groupBy { it.ingredientId to it.unit }
+        // A canonical demand may use g/ml even when an older saved shopping
+        // row used kg/l. Keep rows grouped by ingredient and match only units
+        // that have a defined conversion into the current demand unit.
+        val existingByIngredient = existingShopping
+            .filter { it.ingredientId != null }
+            .groupBy { requireNotNull(it.ingredientId) }
         val favorites = dao.getFavoriteRecipeIds().toSet()
         val checkedIds = existingShopping
             .filter { it.checked && it.ingredientId != null }
@@ -330,10 +335,18 @@ class MealsRepository internal constructor(
         val names = ingredients.associateBy { it.id }
         val generatedShoppingRows = basket.items.map { line ->
             val itemId = "$scopeKey::${line.id}"
-            val oldRows = existingByIngredientUnit[line.ingredientId to line.unit].orEmpty()
+            val oldRows = line.ingredientId
+                ?.let(existingByIngredient::get)
+                .orEmpty()
+                .filter { oldRow ->
+                    convertIngredientQuantity(1.0, oldRow.unit, line.unit) != null
+                }
             val old = oldRows.maxByOrNull { it.updatedAtEpochMillis }
-            val purchaseOverride = oldRows.mapNotNull { it.purchaseQuantityOverride }
-                .takeIf { it.isNotEmpty() }?.sum()
+            val purchaseOverride = oldRows.mapNotNull { oldRow ->
+                oldRow.purchaseQuantityOverride?.let { quantity ->
+                    convertIngredientQuantity(quantity, oldRow.unit, line.unit)
+                }
+            }.takeIf { it.isNotEmpty() }?.sum()
             val storeNotes = oldRows.map { it.storeNote.trim() }
                 .filter { it.isNotEmpty() }.distinct().joinToString(" · ")
             val actualSpend = oldRows.mapNotNull { it.actualSpentDzd }.takeIf { it.isNotEmpty() }?.sum()

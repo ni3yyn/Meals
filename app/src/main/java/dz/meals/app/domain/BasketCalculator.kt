@@ -18,6 +18,34 @@ import kotlin.math.ceil
 
 private data class RequirementKey(val ingredientId: String, val unit: String)
 
+private fun resolvePlanIngredientAdjustment(
+    ingredientId: String,
+    targetUnit: String,
+    adjustments: Map<Pair<String, String>, PlanIngredientAdjustment>
+): PlanIngredientAdjustment? {
+    // A newly edited canonical-unit row wins over compatible legacy rows.
+    adjustments[ingredientId to targetUnit]?.let { return it }
+
+    val compatibleRows = adjustments.entries.filter { (key, _) ->
+        key.first == ingredientId &&
+            convertIngredientQuantity(1.0, key.second, targetUnit) != null
+    }
+    if (compatibleRows.any { it.value.type == PlanIngredientAdjustment.Type.ENOUGH }) {
+        return PlanIngredientAdjustment(PlanIngredientAdjustment.Type.ENOUGH)
+    }
+
+    val availableInTargetUnit = compatibleRows.sumOf { (key, adjustment) ->
+        if (adjustment.type != PlanIngredientAdjustment.Type.SOME) {
+            0.0
+        } else {
+            convertIngredientQuantity(adjustment.availableQuantity, key.second, targetUnit) ?: 0.0
+        }
+    }
+    return availableInTargetUnit.takeIf { it.isFinite() && it > 0.0 }?.let {
+        PlanIngredientAdjustment(PlanIngredientAdjustment.Type.SOME, it)
+    }
+}
+
 private const val MAX_PRICE_AGE_MILLIS = 30L * 24L * 60L * 60L * 1000L
 
 fun shouldPreserveMeal(
@@ -325,7 +353,7 @@ fun calculateBasket(
         val amount = demand.quantity
         val pantryUsed = 0.0
         val approximateStock = false
-        val adjustment = planIngredientAdjustments[key.ingredientId to key.unit]
+        val adjustment = resolvePlanIngredientAdjustment(key.ingredientId, key.unit, planIngredientAdjustments)
         val netRequired = calculatePurchaseNeed(amount, adjustment)
         val compatiblePrices = priceByIngredient[key.ingredientId]
             .orEmpty()
