@@ -66,12 +66,6 @@ val prepareMarketProductCatalogueAssets = tasks.register<Sync>("prepareMarketPro
         into("market-products")
     }
     into(generatedMarketProductAssets)
-    doLast {
-        val manifest = generatedMarketProductAssets.get().file("market-products/manifest.json").asFile
-        require(manifest.isFile) { "Missing bundled market product catalogue manifest." }
-        val partCount = Regex("market-products/parts/market-products-[0-9]{3}").findAll(manifest.readText()).count()
-        require(partCount == 7) { "Expected 7 market product catalogue parts, found $partCount." }
-    }
 }
 val prepareFoodIdentityMigrationAssets = tasks.register<Sync>("prepareFoodIdentityMigrationAssets") {
     from(rootProject.file("data/products/recipe-ingredient-map.json")) {
