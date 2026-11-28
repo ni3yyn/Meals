@@ -90,11 +90,10 @@ class MealsRepository internal constructor(
         SeedRecipes.validateCatalogue()
         FoodCatalogueInstaller(appContext, databaseOverride = database).installIfNeeded()
         MarketProductCatalogueInstaller(appContext, databaseOverride = database).installIfNeeded()
-        MarketProductIngredientMatchInstaller(appContext, databaseOverride = database).installIfNeeded()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
-        if (dao.recipeCount() > 0) return@withLock
-        database.withTransaction {
+        if (dao.recipeCount() == 0) {
+            database.withTransaction {
             dao.insertIngredients(SeedRecipes.ingredients.map {
                 IngredientEntity(
                     id = foodIdentityResolver.canonicalId(it.id),
@@ -145,8 +144,12 @@ class MealsRepository internal constructor(
                     )
                 }
             })
-            dao.insertPrices(demoPrices())
+                dao.insertPrices(demoPrices())
+            }
         }
+        // Mapping validation intentionally targets the canonical recipe
+        // ingredients table. Install only after a fresh database has its seeds.
+        MarketProductIngredientMatchInstaller(appContext, databaseOverride = database).installIfNeeded()
     }
 
     /**
