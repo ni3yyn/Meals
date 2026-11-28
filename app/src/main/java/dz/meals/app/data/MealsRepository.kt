@@ -19,6 +19,10 @@ import dz.meals.app.data.local.PantryItemEntity
 import dz.meals.app.data.local.PlanMealEntity
 import dz.meals.app.data.local.PlanPriceSnapshotEntity
 import dz.meals.app.data.local.PlanRunEntity
+import dz.meals.app.data.local.PlanningPeriodEntity
+import dz.meals.app.data.local.PlanIngredientAdjustmentEntity
+import dz.meals.app.data.local.PlanMarketPriceSnapshotEntity
+import dz.meals.app.data.local.PlanningPeriodMealEntity
 import dz.meals.app.data.local.PriceObservationEntity
 import dz.meals.app.data.local.RecipeEntity
 import dz.meals.app.data.local.RecipeIngredientEntity
@@ -26,6 +30,10 @@ import dz.meals.app.data.local.RecipeStepEntity
 import dz.meals.app.data.local.RecipeImageOverrideEntity
 import dz.meals.app.data.local.ShoppingItemEntity
 import dz.meals.app.domain.MarketProductPriceEvidence
+import dz.meals.app.domain.PlanIngredientAdjustment
+import dz.meals.app.domain.PlanningPeriodType
+import dz.meals.app.domain.calculatePurchaseNeed
+import dz.meals.app.domain.resolvePlanningDateRange
 import dz.meals.app.domain.calculateBasket
 import dz.meals.app.domain.estimateMarketProductPrice
 import dz.meals.app.domain.exactPantryDeduction
@@ -187,6 +195,31 @@ class MealsRepository internal constructor(
         val foodSubcategories = dao.getFoodSubcategories().map { it.toModel() }
         val recipes = loadRecipes()
         val savedRun = dao.getPlanRun(weekStartIso)
+        val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
+        val periodId = weeklyRange.periodId
+        val existingPeriod = dao.getPlanningPeriod(periodId)
+        if (existingPeriod == null) {
+            dao.upsertPlanningPeriod(
+                PlanningPeriodEntity(
+                    id = periodId,
+                    periodType = PlanningPeriodType.WEEK.storageValue,
+                    startDateIso = weeklyRange.startDate.toString(),
+                    endDateIso = weeklyRange.endDate.toString(),
+                    budgetDzd = savedRun?.budgetDzd ?: 0,
+                    wilaya = savedRun?.wilaya.orEmpty(),
+                    mealSlotsCsv = savedRun?.mealSlotsCsv ?: selectedMealSlots.sorted().joinToString(","),
+                    engineVersion = savedRun?.engineVersion ?: "legacy-adapter",
+                    createdAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L,
+                    priceSnapshotAtEpochMillis = savedRun?.priceSnapshotAtEpochMillis ?: 0L,
+                    householdServings = 1,
+                    updatedAtEpochMillis = savedRun?.generatedAtEpochMillis ?: 0L
+                )
+            )
+        }
+        val periodAdjustments = dao.getPlanIngredientAdjustments(periodId)
+            .mapNotNull { it.toDomainAdjustment() }
+            .associateBy { it.first }
+        val planAdjustmentsByIngredientUnit = periodAdjustments.mapValues { it.value.second }
         val slotsForThisWeek = savedRun?.mealSlotsCsv
             ?.split(",")
             ?.filter { it.isNotBlank() }
@@ -239,6 +272,7 @@ class MealsRepository internal constructor(
             allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty(),
             foodTaxonomyByIngredientId = ingredientTaxonomyById,
             marketProductPriceEvidence = marketPriceEvidence,
+            planIngredientAdjustments = planAdjustmentsByIngredientUnit,
             nowEpochMillis = marketPriceSnapshotAt
         )
         val names = ingredients.associateBy { it.id }
@@ -297,6 +331,7 @@ class MealsRepository internal constructor(
         }
         val shoppingItems = dao.getShoppingItems(weekStartIso)
             .map { it.toModel(names[it.ingredientId]) }
+            .map { item -> item.withPlanIngredientAdjustment(planAdjustmentsByIngredientUnit) }
             .map { item ->
                 item.withMarketProductPrice(
                     evidence = marketPriceEvidence,
@@ -390,6 +425,31 @@ class MealsRepository internal constructor(
         val existingMeals = dao.getPlanMeals(weekStartIso)
             .filter { it.mealSlot in validSlots }
             .map { it.toModel() }
+        val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
+        val periodId = weeklyRange.periodId
+        val existingPeriod = dao.getPlanningPeriod(periodId)
+        if (existingPeriod == null) {
+            val previousRun = dao.getPlanRun(weekStartIso)
+            dao.upsertPlanningPeriod(
+                PlanningPeriodEntity(
+                    id = periodId,
+                    periodType = PlanningPeriodType.WEEK.storageValue,
+                    startDateIso = weeklyRange.startDate.toString(),
+                    endDateIso = weeklyRange.endDate.toString(),
+                    budgetDzd = previousRun?.budgetDzd ?: weeklyBudgetDzd,
+                    wilaya = previousRun?.wilaya ?: selectedWilaya.orEmpty(),
+                    mealSlotsCsv = previousRun?.mealSlotsCsv ?: validSlots.sorted().joinToString(","),
+                    engineVersion = previousRun?.engineVersion ?: "legacy-adapter",
+                    createdAtEpochMillis = previousRun?.generatedAtEpochMillis ?: 0L,
+                    priceSnapshotAtEpochMillis = previousRun?.priceSnapshotAtEpochMillis ?: 0L,
+                    householdServings = householdServings.coerceIn(1, 12),
+                    updatedAtEpochMillis = previousRun?.generatedAtEpochMillis ?: 0L
+                )
+            )
+        }
+        val planAdjustmentsByIngredientUnit = dao.getPlanIngredientAdjustments(periodId)
+            .mapNotNull { it.toDomainAdjustment() }
+            .associate { it.first to it.second }
         val locked = existingMeals.filter { shouldPreserveMeal(it, fillEmptyOnly) }
         val lockedConflict = findLockedAllergyConflict(locked, recipes, allergyIds)
         if (lockedConflict != null) {
@@ -553,6 +613,7 @@ class MealsRepository internal constructor(
                     selectedWilaya = selectedWilaya,
                     foodTaxonomyByIngredientId = ingredientTaxonomyById,
                     marketProductPriceEvidence = marketPriceEvidence,
+                    planIngredientAdjustments = planAdjustmentsByIngredientUnit,
                     nowEpochMillis = marketPriceSnapshotAt
                 )
                 val mealsWithRecipes = candidateMeals.mapNotNull { meal ->
@@ -809,6 +870,30 @@ class MealsRepository internal constructor(
                     mealSlotsCsv = validSlots.sorted().joinToString(",")
                 )
             )
+            val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
+            val periodId = weeklyRange.periodId
+            val previousPeriod = dao.getPlanningPeriod(periodId)
+            dao.upsertPlanningPeriod(
+                PlanningPeriodEntity(
+                    id = periodId,
+                    periodType = PlanningPeriodType.WEEK.storageValue,
+                    startDateIso = weeklyRange.startDate.toString(),
+                    endDateIso = weeklyRange.endDate.toString(),
+                    budgetDzd = weeklyBudgetDzd,
+                    wilaya = selectedWilaya.orEmpty(),
+                    mealSlotsCsv = validSlots.sorted().joinToString(","),
+                    engineVersion = "0.5.0",
+                    createdAtEpochMillis = previousPeriod?.createdAtEpochMillis?.takeIf { it > 0L } ?: generatedAt,
+                    priceSnapshotAtEpochMillis = priceSnapshotAt,
+                    householdServings = householdServings.coerceIn(1, 12),
+                    updatedAtEpochMillis = generatedAt
+                )
+            )
+            // Freeze the exact verified product-offer evidence available to this plan.
+            dao.deletePlanMarketPriceSnapshots(periodId)
+            if (marketPriceEvidence.isNotEmpty()) {
+                dao.upsertPlanMarketPriceSnapshots(marketPriceEvidence.map { it.toPlanMarketSnapshot(periodId) })
+            }
         }
         val result = calculateBasket(
             chosen.values.toList(),
@@ -818,6 +903,7 @@ class MealsRepository internal constructor(
             selectedWilaya = selectedWilaya,
             foodTaxonomyByIngredientId = ingredientTaxonomyById,
             marketProductPriceEvidence = marketPriceEvidence,
+            planIngredientAdjustments = planAdjustmentsByIngredientUnit,
             nowEpochMillis = marketPriceSnapshotAt
         )
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
@@ -1396,6 +1482,50 @@ class MealsRepository internal constructor(
         dao.setShoppingItemChecked(id, checked, System.currentTimeMillis())
     }
 
+    suspend fun updatePlanIngredientAdjustment(
+        weekStartIso: String,
+        ingredientId: String,
+        unit: String,
+        adjustmentType: String?,
+        availableQuantity: Double = 0.0
+    ) {
+        ensureInitialized()
+        val canonicalId = foodIdentityResolver.canonicalId(ingredientId)
+        val normalizedUnit = unit.trim()
+        if (normalizedUnit.isBlank()) return
+        val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
+        val periodId = weeklyRange.periodId
+        val type = adjustmentType?.trim()?.uppercase()
+        when (type) {
+            "SOME" -> {
+                if (!availableQuantity.isFinite() || availableQuantity <= 0.0) return
+                dao.upsertPlanIngredientAdjustment(
+                    PlanIngredientAdjustmentEntity(
+                        periodId = periodId,
+                        ingredientId = canonicalId,
+                        unit = normalizedUnit,
+                        adjustmentType = "SOME",
+                        availableQuantity = availableQuantity,
+                        updatedAtEpochMillis = System.currentTimeMillis()
+                    )
+                )
+            }
+            "ENOUGH" -> {
+                dao.upsertPlanIngredientAdjustment(
+                    PlanIngredientAdjustmentEntity(
+                        periodId = periodId,
+                        ingredientId = canonicalId,
+                        unit = normalizedUnit,
+                        adjustmentType = "ENOUGH",
+                        availableQuantity = 0.0,
+                        updatedAtEpochMillis = System.currentTimeMillis()
+                    )
+                )
+            }
+            else -> dao.deletePlanIngredientAdjustment(periodId, canonicalId, normalizedUnit)
+        }
+    }
+
     suspend fun addCatalogueShoppingItem(
         weekStartIso: String,
         ingredientId: String
@@ -1843,6 +1973,82 @@ private fun PlannedMeal.toEntity() = PlanMealEntity(
     locked = locked,
     isCooked = isCooked,
     isUserEdited = isUserEdited
+)
+
+private fun PlanIngredientAdjustmentEntity.toDomainAdjustment():
+    Pair<Pair<String, String>, PlanIngredientAdjustment>? {
+    val adjustment = when (adjustmentType.uppercase()) {
+        "SOME" -> PlanIngredientAdjustment(
+            type = PlanIngredientAdjustment.Type.SOME,
+            availableQuantity = availableQuantity
+        )
+        "ENOUGH" -> PlanIngredientAdjustment(
+            type = PlanIngredientAdjustment.Type.ENOUGH
+        )
+        else -> return null
+    }
+    if (!dz.meals.app.domain.validatePlanIngredientAdjustment(adjustment)) return null
+    return (ingredientId to unit) to adjustment
+}
+
+private fun ShoppingListItem.withPlanIngredientAdjustment(
+    adjustments: Map<Pair<String, String>, PlanIngredientAdjustment>
+): ShoppingListItem {
+    val ingredient = ingredientId ?: return this
+    val adjustment = adjustments[ingredient to unit] ?: return this
+    return copy(
+        alreadyHaveQuantity = adjustment.availableQuantity.takeIf {
+            adjustment.type == PlanIngredientAdjustment.Type.SOME
+        } ?: 0.0,
+        alreadyHaveEnough = adjustment.type == PlanIngredientAdjustment.Type.ENOUGH
+    )
+}
+
+private fun MarketProductPriceEvidence.toPlanMarketSnapshot(periodId: String) =
+    PlanMarketPriceSnapshotEntity(
+        periodId = periodId,
+        sourceListingId = sourceListingId,
+        productId = productId,
+        ingredientId = ingredientId,
+        productName = productName,
+        packageQuantity = packageQuantity,
+        packageUnit = packageUnit,
+        mappingStatus = mappingStatus,
+        mappingReviewedAtEpochMillis = mappingReviewedAtEpochMillis,
+        priceDzd = priceDzd,
+        priceMinDzd = priceMinDzd,
+        priceMaxDzd = priceMaxDzd,
+        currencyCode = currencyCode,
+        observedAtEpochMillis = observedAtEpochMillis,
+        priceStatus = priceStatus,
+        availabilityRaw = availabilityRaw,
+        storeName = storeName,
+        source = source,
+        wilaya = wilaya,
+        sourceNotice = sourceNotice
+    )
+
+private fun PlanMarketPriceSnapshotEntity.toPriceEvidence() = MarketProductPriceEvidence(
+    productId = productId,
+    sourceListingId = sourceListingId,
+    ingredientId = ingredientId,
+    productName = productName,
+    packageQuantity = packageQuantity,
+    packageUnit = packageUnit,
+    mappingStatus = mappingStatus,
+    mappingReviewedAtEpochMillis = mappingReviewedAtEpochMillis,
+    foodScopeReviewNeeded = false,
+    priceDzd = priceDzd,
+    priceMinDzd = priceMinDzd,
+    priceMaxDzd = priceMaxDzd,
+    currencyCode = currencyCode,
+    observedAtEpochMillis = observedAtEpochMillis,
+    priceStatus = priceStatus,
+    availabilityRaw = availabilityRaw,
+    storeName = storeName,
+    source = source,
+    wilaya = wilaya,
+    sourceNotice = sourceNotice
 )
 
 private fun VerifiedMarketProductPriceRow.toPriceEvidence() = MarketProductPriceEvidence(
