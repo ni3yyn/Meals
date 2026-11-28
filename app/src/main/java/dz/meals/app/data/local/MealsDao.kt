@@ -337,6 +337,42 @@ interface MealsDao {
     @Query("SELECT * FROM market_price_observations ORDER BY observedAtEpochMillis DESC")
     suspend fun getAllMarketPriceObservations(): List<MarketPriceObservationEntity>
 
+    @Query("""
+        SELECT
+            mapping.productId AS productId,
+            listing.id AS sourceListingId,
+            mapping.ingredientId AS ingredientId,
+            product.name AS productName,
+            product.packageQuantity AS packageQuantity,
+            product.packageUnit AS packageUnit,
+            mapping.status AS mappingStatus,
+            mapping.reviewedAtEpochMillis AS mappingReviewedAtEpochMillis,
+            product.foodScopeReviewNeeded AS foodScopeReviewNeeded,
+            price.priceDzd AS priceDzd,
+            price.priceMinDzd AS priceMinDzd,
+            price.priceMaxDzd AS priceMaxDzd,
+            price.currencyCode AS currencyCode,
+            price.observedAtEpochMillis AS observedAtEpochMillis,
+            price.priceStatus AS priceStatus,
+            price.availabilityRaw AS availabilityRaw,
+            listing.storeName AS storeName,
+            listing.source AS source,
+            listing.wilaya AS wilaya,
+            price.sourceNotice AS sourceNotice
+        FROM market_product_ingredient_matches AS mapping
+        INNER JOIN market_products AS product
+            ON product.id = mapping.productId
+        INNER JOIN market_product_sources AS listing
+            ON listing.productId = product.id
+        INNER JOIN market_price_observations AS price
+            ON price.productId = product.id
+            AND price.sourceListingId = listing.id
+        WHERE mapping.status = 'VERIFIED'
+            AND product.foodScopeReviewNeeded = 0
+        ORDER BY price.observedAtEpochMillis DESC, price.id
+    """)
+    suspend fun getVerifiedMarketProductPriceRows(): List<VerifiedMarketProductPriceRow>
+
     @Upsert
     suspend fun upsertMarketProductIngredientMatches(items: List<MarketProductIngredientMatchEntity>)
 
