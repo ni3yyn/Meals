@@ -102,7 +102,7 @@ class ProductIngredientPipelineTests(unittest.TestCase):
         product_id = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
         products = [{
             "id": product_id,
-            "name": "Product needing food review",
+            "name": "Salt",
             "foodScopeReviewNeeded": True,
         }]
         foods = [{
