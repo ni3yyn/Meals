@@ -12,6 +12,7 @@ import dz.meals.app.data.local.IngredientEntity
 import dz.meals.app.data.local.MarketProductEntity
 import dz.meals.app.data.local.MarketProductSourceEntity
 import dz.meals.app.data.local.MarketPriceObservationEntity
+import dz.meals.app.data.local.VerifiedMarketProductPriceRow
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.MealsDao
 import dz.meals.app.data.local.PantryItemEntity
@@ -24,7 +25,9 @@ import dz.meals.app.data.local.RecipeIngredientEntity
 import dz.meals.app.data.local.RecipeStepEntity
 import dz.meals.app.data.local.RecipeImageOverrideEntity
 import dz.meals.app.data.local.ShoppingItemEntity
+import dz.meals.app.domain.MarketProductPriceEvidence
 import dz.meals.app.domain.calculateBasket
+import dz.meals.app.domain.estimateMarketProductPrice
 import dz.meals.app.domain.exactPantryDeduction
 import dz.meals.app.domain.findLockedAllergyConflict
 import dz.meals.app.domain.findPinnedDietConflict
@@ -204,6 +207,15 @@ class MealsRepository internal constructor(
             pricesForSavedPlan(savedPriceSnapshot, currentPrices, savedRun.priceSnapshotAtEpochMillis)
         } else currentPrices
         val planWilaya = savedRun?.wilaya?.takeIf { it.isNotBlank() } ?: selectedWilaya
+        // Product offers are immutable source observations. Rebuild a saved plan
+        // using only evidence that existed at its original price snapshot time.
+        val marketPriceSnapshotAt = savedRun?.priceSnapshotAtEpochMillis
+            ?.takeIf { it > 0L } ?: System.currentTimeMillis()
+        val marketPriceEvidence = dao.getVerifiedMarketProductPriceRows()
+            .asSequence()
+            .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
+            .map { it.toPriceEvidence() }
+            .toList()
         val existingShopping = dao.getShoppingItems(weekStartIso)
         // Basket rows frequently share ingredient/unit pairs. Build this lookup
         // once so each generated basket line does not rescan the full shopping list.
@@ -225,7 +237,9 @@ class MealsRepository internal constructor(
             checkedItemIds,
             planWilaya,
             allowStaleSnapshotPrices = savedRun != null && savedPriceSnapshot.isNotEmpty(),
-            foodTaxonomyByIngredientId = ingredientTaxonomyById
+            foodTaxonomyByIngredientId = ingredientTaxonomyById,
+            marketProductPriceEvidence = marketPriceEvidence,
+            nowEpochMillis = marketPriceSnapshotAt
         )
         val names = ingredients.associateBy { it.id }
         val autoItems = basket.items.map { line ->
@@ -249,12 +263,23 @@ class MealsRepository internal constructor(
                 pantryQuantity = line.pantryQuantity,
                 purchaseQuantity = purchaseOverride ?: line.purchaseQuantity,
                 unit = line.unit,
-                consumedValueDzd = line.consumedValueDzd,
-                cashOutlayDzd = if (purchaseOverride != null && line.purchaseQuantity > 0.0) {
+                // Market evidence is recalculated from the immutable source rows
+                // on every snapshot; never persist a range's upper bound as a
+                // permanent scalar that could outlive its offer freshness.
+                consumedValueDzd = line.consumedValueDzd.takeUnless {
+                    line.marketCashOutlayMinDzd != null
+                },
+                cashOutlayDzd = if (line.marketCashOutlayMinDzd != null) {
+                    null
+                } else if (purchaseOverride != null && line.purchaseQuantity > 0.0) {
                     line.cashOutlayDzd?.times(purchaseOverride / line.purchaseQuantity)
                 } else line.cashOutlayDzd,
-                priceLabel = if (purchaseOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
-                sourceLabel = line.sourceLabel,
+                priceLabel = if (line.marketCashOutlayMinDzd != null) {
+                    null
+                } else if (purchaseOverride != null) "تقدير معدل يدوياً" else line.priceLabel,
+                sourceLabel = line.sourceLabel.takeUnless {
+                    line.marketCashOutlayMinDzd != null
+                },
                 isApproximatePantry = line.isApproximatePantry,
                 checked = oldRows.any { it.checked },
                 userAdded = false,
@@ -270,7 +295,22 @@ class MealsRepository internal constructor(
             dao.deleteGeneratedShoppingItems(weekStartIso)
             if (autoItems.isNotEmpty()) dao.upsertShoppingItems(autoItems)
         }
-        val shoppingItems = dao.getShoppingItems(weekStartIso).map { it.toModel(names[it.ingredientId]) }
+        val shoppingItems = dao.getShoppingItems(weekStartIso)
+            .map { it.toModel(names[it.ingredientId]) }
+            .map { item ->
+                item.withMarketProductPrice(
+                    evidence = marketPriceEvidence,
+                    wilaya = planWilaya,
+                    snapshotAtEpochMillis = marketPriceSnapshotAt
+                )
+            }
+        val hasMarketPriceRanges = shoppingItems.any { it.marketCashOutlayMinDzd != null }
+        val marketAwareBasketMin = shoppingItems.sumOf {
+            it.marketCashOutlayMinDzd ?: it.cashOutlayDzd ?: 0.0
+        }
+        val marketAwareBasketMax = shoppingItems.sumOf {
+            it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
+        }
         MealsSnapshot(
             recipes = recipes,
             ingredients = ingredients,
@@ -303,9 +343,12 @@ class MealsRepository internal constructor(
             planRun = savedRun?.toModel(),
             basket = basket.copy(
                 items = shoppingItems,
+                consumedValueDzd = shoppingItems.sumOf { it.consumedValueDzd ?: 0.0 },
                 purchaseOutlayDzd = shoppingItems.sumOf { it.cashOutlayDzd ?: 0.0 },
                 unknownPriceCount = shoppingItems.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
-                actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 }
+                actualSpendDzd = shoppingItems.sumOf { it.actualSpentDzd ?: 0.0 },
+                purchaseOutlayMinDzd = marketAwareBasketMin.takeIf { hasMarketPriceRanges },
+                purchaseOutlayMaxDzd = marketAwareBasketMax.takeIf { hasMarketPriceRanges }
             ),
             foodCategories = foodCategories,
             foodSubcategories = foodSubcategories
@@ -394,6 +437,12 @@ class MealsRepository internal constructor(
         }
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
+        val marketPriceSnapshotAt = System.currentTimeMillis()
+        val marketPriceEvidence = dao.getVerifiedMarketProductPriceRows()
+            .asSequence()
+            .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
+            .map { it.toPriceEvidence() }
+            .toList()
         if (allowed.isEmpty()) {
             return GenerationResult(false, "لا توجد أطباق رئيسية جزائرية متاحة بعد تطبيق قيود الحساسية وتفضيلات الطعام الحالية. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
         }
@@ -499,7 +548,9 @@ class MealsRepository internal constructor(
                     pantry,
                     prices,
                     selectedWilaya = selectedWilaya,
-                    foodTaxonomyByIngredientId = ingredientTaxonomyById
+                    foodTaxonomyByIngredientId = ingredientTaxonomyById,
+                    marketProductPriceEvidence = marketPriceEvidence,
+                    nowEpochMillis = marketPriceSnapshotAt
                 )
                 val mealsWithRecipes = candidateMeals.mapNotNull { meal ->
                     meal.recipeId?.let { recipeId ->
@@ -762,7 +813,9 @@ class MealsRepository internal constructor(
             pantry,
             prices,
             selectedWilaya = selectedWilaya,
-            foodTaxonomyByIngredientId = ingredientTaxonomyById
+            foodTaxonomyByIngredientId = ingredientTaxonomyById,
+            marketProductPriceEvidence = marketPriceEvidence,
+            nowEpochMillis = marketPriceSnapshotAt
         )
         val within = result.unknownPriceCount == 0 && result.purchaseOutlayDzd <= weeklyBudgetDzd
         val finalRecipesById = recipes.associateBy { it.id }
@@ -1788,6 +1841,65 @@ private fun PlannedMeal.toEntity() = PlanMealEntity(
     isCooked = isCooked,
     isUserEdited = isUserEdited
 )
+
+private fun VerifiedMarketProductPriceRow.toPriceEvidence() = MarketProductPriceEvidence(
+    productId = productId,
+    sourceListingId = sourceListingId,
+    ingredientId = ingredientId,
+    productName = productName,
+    packageQuantity = packageQuantity,
+    packageUnit = packageUnit,
+    mappingStatus = mappingStatus,
+    mappingReviewedAtEpochMillis = mappingReviewedAtEpochMillis,
+    foodScopeReviewNeeded = foodScopeReviewNeeded,
+    priceDzd = priceDzd,
+    priceMinDzd = priceMinDzd,
+    priceMaxDzd = priceMaxDzd,
+    currencyCode = currencyCode,
+    observedAtEpochMillis = observedAtEpochMillis,
+    priceStatus = priceStatus,
+    availabilityRaw = availabilityRaw,
+    storeName = storeName,
+    source = source,
+    wilaya = wilaya,
+    sourceNotice = sourceNotice
+)
+
+private fun ShoppingListItem.withMarketProductPrice(
+    evidence: List<MarketProductPriceEvidence>,
+    wilaya: String?,
+    snapshotAtEpochMillis: Long
+): ShoppingListItem {
+    val canonicalIngredientId = ingredientId ?: return this
+    val estimate = estimateMarketProductPrice(
+        ingredientId = canonicalIngredientId,
+        requiredQuantity = purchaseQuantity,
+        requiredUnit = unit,
+        selectedWilaya = wilaya,
+        evidence = evidence,
+        nowEpochMillis = snapshotAtEpochMillis
+    ) ?: return this
+
+    val source = listOf(estimate.wilaya, estimate.storeNames.joinToString(" · "))
+        .filter { it.isNotBlank() }
+        .joinToString(" · ")
+    return copy(
+        consumedValueDzd = estimate.maxConsumedValueDzd,
+        cashOutlayDzd = estimate.maxCashOutlayDzd,
+        priceLabel = "سعر استرشادي غير مؤكد",
+        sourceLabel = source,
+        marketCashOutlayMinDzd = estimate.minCashOutlayDzd,
+        marketCashOutlayMaxDzd = estimate.maxCashOutlayDzd,
+        marketConsumedValueMinDzd = estimate.minConsumedValueDzd,
+        marketConsumedValueMaxDzd = estimate.maxConsumedValueDzd,
+        marketPriceOfferCount = estimate.offerCount,
+        marketPriceWilaya = estimate.wilaya,
+        marketPriceStoreNames = estimate.storeNames,
+        marketPriceSourceNotices = estimate.sourceNotices,
+        marketPriceObservedAtEpochMillis = estimate.latestObservedAtEpochMillis,
+        marketPriceIncludesLimitedAvailability = estimate.includesLimitedAvailability
+    )
+}
 
 private fun ShoppingItemEntity.toModel(ingredient: IngredientMaster?) = ShoppingListItem(
     id = id,
