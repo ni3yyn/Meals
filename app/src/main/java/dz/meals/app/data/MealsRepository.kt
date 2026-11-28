@@ -1874,7 +1874,7 @@ private fun ShoppingListItem.withMarketProductPrice(
     snapshotAtEpochMillis: Long
 ): ShoppingListItem {
     val canonicalIngredientId = ingredientId ?: return this
-    val estimate = estimateMarketProductPrice(
+    val purchaseEstimate = estimateMarketProductPrice(
         ingredientId = canonicalIngredientId,
         requiredQuantity = purchaseQuantity,
         requiredUnit = unit,
@@ -1882,27 +1882,38 @@ private fun ShoppingListItem.withMarketProductPrice(
         evidence = evidence,
         nowEpochMillis = snapshotAtEpochMillis
     ) ?: return this
+    // A manual purchase-quantity adjustment changes the cash outlay, not how
+    // much the recipes consume. Keep those two quantities distinct.
+    val consumptionEstimate = estimateMarketProductPrice(
+        ingredientId = canonicalIngredientId,
+        requiredQuantity = requiredQuantity,
+        requiredUnit = unit,
+        selectedWilaya = wilaya,
+        evidence = evidence,
+        nowEpochMillis = snapshotAtEpochMillis
+    )
 
-    val source = listOf(estimate.wilaya, estimate.storeNames.joinToString(" · "))
-        .filter { it.isNotBlank() }
-        .joinToString(" · ")
+    val source = listOf(
+        purchaseEstimate.wilaya,
+        purchaseEstimate.storeNames.joinToString(" · ")
+    ).filter { it.isNotBlank() }.joinToString(" · ")
     return copy(
-        consumedValueDzd = estimate.maxConsumedValueDzd,
-        cashOutlayDzd = estimate.maxCashOutlayDzd,
+        consumedValueDzd = consumptionEstimate?.maxConsumedValueDzd,
+        cashOutlayDzd = purchaseEstimate.maxCashOutlayDzd,
         priceLabel = "سعر استرشادي غير مؤكد",
         sourceLabel = source,
-        marketCashOutlayMinDzd = estimate.minCashOutlayDzd,
-        marketCashOutlayMaxDzd = estimate.maxCashOutlayDzd,
-        marketConsumedValueMinDzd = estimate.minConsumedValueDzd,
-        marketConsumedValueMaxDzd = estimate.maxConsumedValueDzd,
-        marketPriceOfferCount = estimate.offerCount,
-        marketPriceMinPackageCount = estimate.minPackageCount,
-        marketPriceMaxPackageCount = estimate.maxPackageCount,
-        marketPriceWilaya = estimate.wilaya,
-        marketPriceStoreNames = estimate.storeNames,
-        marketPriceSourceNotices = estimate.sourceNotices,
-        marketPriceObservedAtEpochMillis = estimate.latestObservedAtEpochMillis,
-        marketPriceIncludesLimitedAvailability = estimate.includesLimitedAvailability
+        marketCashOutlayMinDzd = purchaseEstimate.minCashOutlayDzd,
+        marketCashOutlayMaxDzd = purchaseEstimate.maxCashOutlayDzd,
+        marketConsumedValueMinDzd = consumptionEstimate?.minConsumedValueDzd,
+        marketConsumedValueMaxDzd = consumptionEstimate?.maxConsumedValueDzd,
+        marketPriceOfferCount = purchaseEstimate.offerCount,
+        marketPriceMinPackageCount = purchaseEstimate.minPackageCount,
+        marketPriceMaxPackageCount = purchaseEstimate.maxPackageCount,
+        marketPriceWilaya = purchaseEstimate.wilaya,
+        marketPriceStoreNames = purchaseEstimate.storeNames,
+        marketPriceSourceNotices = purchaseEstimate.sourceNotices,
+        marketPriceObservedAtEpochMillis = purchaseEstimate.latestObservedAtEpochMillis,
+        marketPriceIncludesLimitedAvailability = purchaseEstimate.includesLimitedAvailability
     )
 }
 
