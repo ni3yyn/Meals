@@ -255,6 +255,26 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun missingWilayaNeverUsesAnotherNamedWilayasLegacyPrice() {
+        val otherWilaya = PriceObservationEntity(
+            "local-other-wilaya", "potato", 500.0, "g", 150.0,
+            "سوق محلي", "Laghouat", 1_800_000_000_000L, "user_reported", "غير موثق"
+        )
+
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = listOf(otherWilaya),
+            selectedWilaya = null,
+            nowEpochMillis = 1_800_000_000_000L
+        )
+
+        assertEquals(1, result.unknownPriceCount)
+        assertEquals(null, result.items.single().cashOutlayDzd)
+    }
+
+    @Test
     fun staleLocalPriceIsIgnoredAndDemoPriceIsClearlyUsedAsFallback() {
         val demo = PriceObservationEntity("demo-potato", "potato", 500.0, "g", 100.0, "demo", "غير مرتبطة بولاية", null, "demo", "غير موثق")
         val staleLocal = PriceObservationEntity("old-local", "potato", 500.0, "g", 40.0, "سوق قديم", "الجلفة", 1_700_000_000_000L, "user_reported", "غير موثق")
