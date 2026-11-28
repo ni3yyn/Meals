@@ -1086,14 +1086,14 @@ class MealsRepository internal constructor(
 
             fun monthlyMeatUsageGrams(candidateMeals: List<PlannedMeal>, month: YearMonth): Double {
                 if (normalizedMeatPreference != "monthly_limit") return 0.0
-                val currentWeekUsage = candidateMeals.sumOf { meal ->
+                val currentPeriodUsage = candidateMeals.sumOf { meal ->
                     val mealDate = periodStartDate.plusDays(meal.dayIndex.toLong())
                     if (YearMonth.from(mealDate) != month) return@sumOf 0.0
                     val recipe = meal.recipeId?.let(recipesById::get) ?: return@sumOf 0.0
                     recipeMeatQuantityGrams(recipe, meal.servings, ingredientTaxonomyById)
                         ?: 1_000_000_000.0
                 }
-                return (monthlyBaselineMeatGramsByMonth[month] ?: 0.0) + currentWeekUsage
+                return (monthlyBaselineMeatGramsByMonth[month] ?: 0.0) + currentPeriodUsage
             }
 
             fun scorePlan(candidateMeals: List<PlannedMeal>, tieBreak: Double = 0.0): Double {
@@ -1182,7 +1182,11 @@ class MealsRepository internal constructor(
                     tieBreak
             }
 
+            // Month plans can contain up to 93 slots. Reduce retry count for
+            // long horizons so whole-period basket scoring stays bounded.
             val searchAttempts = when {
+                slots.size >= 72 -> 2
+                slots.size >= 42 -> 3
                 slots.size >= 18 -> 6
                 slots.size >= 12 -> 8
                 else -> 10
