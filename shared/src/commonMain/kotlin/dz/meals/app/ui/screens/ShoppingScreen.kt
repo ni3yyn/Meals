@@ -1449,7 +1449,7 @@ private fun ShoppingItemRow(
                 }
                 add(
                     "سعر استرشادي في $wilaya" +
-                        if (stores.isNotBlank()) " · $stores" else "" +
+                        (if (stores.isNotBlank()) " · $stores" else "") +
                         packageText
                 )
             }
