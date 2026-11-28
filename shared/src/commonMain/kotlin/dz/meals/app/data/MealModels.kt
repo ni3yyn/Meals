@@ -347,7 +347,10 @@ data class ShoppingListItem(
     val marketPriceStoreNames: List<String> = emptyList(),
     val marketPriceSourceNotices: List<String> = emptyList(),
     val marketPriceObservedAtEpochMillis: Long? = null,
-    val marketPriceIncludesLimitedAvailability: Boolean = false
+    val marketPriceIncludesLimitedAvailability: Boolean = false,
+    /** Plan-scoped adjustment; not a shared household stock count. */
+    val alreadyHaveQuantity: Double = 0.0,
+    val alreadyHaveEnough: Boolean = false
 )
 
 data class BasketSummary(
