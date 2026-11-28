@@ -1966,10 +1966,11 @@ class MealsRepository internal constructor(
             if (marketEvidence.isNotEmpty()) {
                 dao.upsertPlanMarketPriceSnapshots(marketEvidence.map { it.toPlanMarketSnapshot(periodId.value) })
             }
+            // Keep updatedAtEpochMillis as the recipe-generation seed/version;
+            // a price-only refresh must not influence the next regeneration.
             dao.upsertPlanningPeriod(current.copy(
                 priceSnapshotAtEpochMillis = now,
-                marketPriceSnapshotCaptured = true,
-                updatedAtEpochMillis = now
+                marketPriceSnapshotCaptured = true
             ))
             if (type == PlanningPeriodType.WEEK) {
                 dao.getPlanRun(scopeKey)?.let { dao.upsertPlanRun(it.copy(priceSnapshotAtEpochMillis = now)) }
