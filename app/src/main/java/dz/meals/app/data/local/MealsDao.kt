@@ -297,6 +297,48 @@ interface MealsDao {
     @Query("DELETE FROM shopping_items WHERE id = :id AND userAdded = 1")
     suspend fun deleteCustomShoppingItem(id: String)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPlanningPeriod(item: PlanningPeriodEntity)
+
+    @Query("SELECT * FROM planning_periods WHERE id = :periodId LIMIT 1")
+    suspend fun getPlanningPeriod(periodId: String): PlanningPeriodEntity?
+
+    @Query("SELECT * FROM planning_periods WHERE periodType = :periodType AND startDate = :startDate LIMIT 1")
+    suspend fun findPlanningPeriod(periodType: String, startDate: String): PlanningPeriodEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPlanningPeriodMeals(items: List<PlanningPeriodMealEntity>)
+
+    @Query("SELECT * FROM planning_period_meals WHERE periodId = :periodId ORDER BY calendarDate, mealSlot")
+    suspend fun getPlanningPeriodMeals(periodId: String): List<PlanningPeriodMealEntity>
+
+    @Query("DELETE FROM planning_period_meals WHERE periodId = :periodId")
+    suspend fun deletePlanningPeriodMeals(periodId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPlanIngredientAdjustment(item: PlanIngredientAdjustmentEntity)
+
+    @Query("SELECT * FROM plan_ingredient_adjustments WHERE periodId = :periodId ORDER BY ingredientId, unit")
+    suspend fun getPlanIngredientAdjustments(periodId: String): List<PlanIngredientAdjustmentEntity>
+
+    @Query("SELECT * FROM plan_ingredient_adjustments WHERE periodId = :periodId AND ingredientId = :ingredientId AND unit = :unit LIMIT 1")
+    suspend fun getPlanIngredientAdjustment(periodId: String, ingredientId: String, unit: String): PlanIngredientAdjustmentEntity?
+
+    @Query("DELETE FROM plan_ingredient_adjustments WHERE periodId = :periodId AND ingredientId = :ingredientId AND unit = :unit")
+    suspend fun deletePlanIngredientAdjustment(periodId: String, ingredientId: String, unit: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMarketProductIngredientMatches(items: List<MarketProductIngredientMatchEntity>)
+
+    @Query("SELECT * FROM market_product_ingredient_matches WHERE productId = :productId ORDER BY confidence DESC, ingredientId")
+    suspend fun getProductIngredientMatches(productId: String): List<MarketProductIngredientMatchEntity>
+
+    @Query("SELECT * FROM market_product_ingredient_matches WHERE ingredientId = :ingredientId AND reviewStatus = 'REVIEWED' ORDER BY confidence DESC, productId")
+    suspend fun getReviewedProductsForIngredient(ingredientId: String): List<MarketProductIngredientMatchEntity>
+
+    @Query("SELECT * FROM market_product_ingredient_matches WHERE reviewStatus = :reviewStatus ORDER BY confidence DESC, productId")
+    suspend fun getProductIngredientMatchesByStatus(reviewStatus: String): List<MarketProductIngredientMatchEntity>
+
     @Upsert
     suspend fun upsertMarketProducts(items: List<MarketProductEntity>)
 
