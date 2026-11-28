@@ -135,15 +135,35 @@ class MonthlyPlanGenerationTest {
                     old.id !in preservedIds && regeneratedById[old.id]?.recipeId != old.recipeId
                 }
             )
-            assertEquals(
-                "Adjustments for ingredients removed from this recipe set remain attached but inactive.",
-                inactiveAdjustment,
-                dao.getPlanIngredientAdjustment(
-                    periodId,
-                    inactiveAdjustment.ingredientId,
-                    inactiveAdjustment.unit
-                )
+            val regeneratedIngredientDemands = repository.snapshot(PlanningPeriodId(periodId))
+                .basket.ingredientDemands
+                .filter { it.ingredientId == inactiveAdjustment.ingredientId }
+            val compatibleRegeneratedDemands = regeneratedIngredientDemands.filter {
+                convertIngredientQuantity(1.0, inactiveAdjustment.unit, it.unit) != null
+            }
+            val persistedInactiveAdjustment = dao.getPlanIngredientAdjustments(periodId)
+                .singleOrNull { it.ingredientId == inactiveAdjustment.ingredientId }
+            assertNotNull(
+                "Regeneration must retain the plan-local adjustment even when its ingredient is not currently needed.",
+                persistedInactiveAdjustment
             )
+            if (compatibleRegeneratedDemands.size == 1) {
+                val regeneratedDemand = compatibleRegeneratedDemands.single()
+                assertEquals(regeneratedDemand.unit, persistedInactiveAdjustment!!.unit)
+                assertEquals(
+                    requireNotNull(
+                        convertIngredientQuantity(
+                            inactiveAdjustment.availableQuantity,
+                            inactiveAdjustment.unit,
+                            regeneratedDemand.unit
+                        )
+                    ),
+                    persistedInactiveAdjustment.availableQuantity,
+                    0.0001
+                )
+            } else {
+                assertEquals(inactiveAdjustment, persistedInactiveAdjustment)
+            }
             for (preservedRow in listOf(lockedBefore, cookedBefore, editedBefore)) {
                 val after = regeneratedById[preservedRow.id]
                 assertNotNull(after)
