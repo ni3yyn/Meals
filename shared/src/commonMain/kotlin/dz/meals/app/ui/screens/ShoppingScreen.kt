@@ -1248,7 +1248,7 @@ fun ShoppingScreen(
                                     if (editAdjustmentType != "NONE") {
                                         editPurchaseQuantity = ""
                                     } else {
-                                        editPurchaseQuantity = editingShoppingItem.purchaseQuantity.prettyQuantity()
+                                        editPurchaseQuantity = ""
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -1347,9 +1347,9 @@ fun ShoppingScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = (!editUserAdded || (editName.isNotBlank() && (editQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0)) &&
-                        (editAdjustmentType != "SOME" ||
+                        (editUserAdded || editAdjustmentType != "SOME" ||
                             (editAvailableQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
-                        (editAdjustmentType != "NONE" || editPurchaseQuantity.isBlank() ||
+                        (editUserAdded || editAdjustmentType != "NONE" || editPurchaseQuantity.isBlank() ||
                             (editPurchaseQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
                         (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 )
