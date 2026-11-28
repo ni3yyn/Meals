@@ -33,6 +33,7 @@ import dz.meals.app.domain.MarketProductPriceEvidence
 import dz.meals.app.domain.PlanIngredientAdjustment
 import dz.meals.app.domain.PlanningPeriodType
 import dz.meals.app.domain.PlanningPeriodId
+import dz.meals.app.domain.PlanningDateRange
 import dz.meals.app.domain.PeriodMeatAllowance
 import dz.meals.app.domain.calculatePeriodMeatAllowances
 import dz.meals.app.domain.periodSearchAttempts
@@ -1514,6 +1515,29 @@ class MealsRepository internal constructor(
         }
         val meal = dao.getPlanningPeriodMealById(id)?.takeIf { it.periodId == periodId.value } ?: return
         dao.upsertPlanningPeriodMeal(meal.copy(isCooked = !meal.isCooked))
+    }
+
+    suspend fun addRecipeToNextSlot(
+        periodId: PlanningPeriodId,
+        recipeId: String,
+        servings: Int
+    ) {
+        val (type, range) = resolvePeriod(periodId) ?: return
+        if (type == PlanningPeriodType.WEEK) {
+            addRecipeToNextSlot(range.startDate.toString(), recipeId, servings)
+            return
+        }
+        val period = dao.getPlanningPeriod(periodId.value) ?: return
+        val enabledSlots = period.mealSlotsCsv.split(",").filter { it in MealSlots.ids }
+        if (enabledSlots.isEmpty()) return
+        val existing = dao.getPlanningPeriodMeals(periodId.value)
+        val nextSlot = (0 until range.dayCount).asSequence()
+            .flatMap { day -> enabledSlots.asSequence().map { day to it } }
+            .firstOrNull { (day, slot) ->
+                existing.none { it.dateIso == range.startDate.plusDays(day.toLong()).toString() &&
+                    it.mealSlot == slot && it.recipeId != null }
+            } ?: return
+        setMeal(periodId, nextSlot.first, nextSlot.second, recipeId, servings)
     }
 
     suspend fun adjustMealServings(id: String, periodId: PlanningPeriodId, delta: Int) {

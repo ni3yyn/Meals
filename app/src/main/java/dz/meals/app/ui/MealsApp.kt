@@ -124,6 +124,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import java.time.LocalDate
+import java.time.YearMonth
+import kotlin.math.roundToInt
+import dz.meals.app.domain.PlanningPeriodId
 
 private const val LATEST_APK_DOWNLOAD_URL = "https://github.com/ni3yyn/Meals/releases/latest/download/meals.apk"
 
@@ -243,8 +246,12 @@ private fun MealsAppContent(
     val snackbarHostState = remember { SnackbarHostState() }
     var weekStartIso by rememberSaveable { mutableStateOf(currentWeekStartIso()) }
     val weekStart = remember(weekStartIso) { LocalDate.parse(weekStartIso) }
+    var monthStartIso by rememberSaveable {
+        mutableStateOf(YearMonth.now().atDay(1).toString())
+    }
 
     var snapshot by remember { mutableStateOf(MealsSnapshot()) }
+    var monthlySnapshot by remember { mutableStateOf(MealsSnapshot()) }
     val arabicCatalogueDownloader = remember(context) { ArabicRecipeCatalogueDownloader(context) }
     val arabicCatalogueInstaller = remember(context) { ArabicRecipeCatalogueInstaller(context) }
     val algerianCatalogueInstaller = remember(context) { dz.meals.app.data.AlgerianRecipeCatalogueInstaller(context) }
@@ -289,8 +296,22 @@ private fun MealsAppContent(
         onBack = { showExitConfirmation = true }
     )
 
+    fun activePlanningPeriodId(): PlanningPeriodId =
+        if (preferences.planningMode == "MONTH") {
+            PlanningPeriodId("MONTH:$monthStartIso")
+        } else {
+            PlanningPeriodId("WEEK:$weekStartIso")
+        }
+
     suspend fun refresh() {
         snapshot = repository.snapshot(weekStartIso, preferences.wilaya, preferences.mealSlots)
+        if (preferences.planningMode == "MONTH") {
+            monthlySnapshot = repository.snapshot(
+                PlanningPeriodId("MONTH:$monthStartIso"),
+                preferences.wilaya,
+                preferences.mealSlots
+            )
+        }
     }
 
     fun ensureArabicRecipeCatalogue() {
@@ -415,7 +436,7 @@ private fun MealsAppContent(
         }
     }
 
-    LaunchedEffect(repository, weekStartIso, preferences.wilaya, preferences.mealSlots, preferencesLoaded) {
+    LaunchedEffect(repository, weekStartIso, monthStartIso, preferences.planningMode, preferences.wilaya, preferences.mealSlots, preferencesLoaded) {
         try {
             MealsStartupLogger.markOnce("Initial repository initialization started")
             repository.ensureInitialized()
@@ -556,29 +577,101 @@ private fun MealsAppContent(
                     AppTab.Plan -> {
                     PlanScreen(
                         weekStartIso = weekStartIso,
+                        planningMode = preferences.planningMode,
+                        monthStartIso = monthStartIso,
                         preferences = preferences,
-                        snapshot = snapshot,
+                        snapshot = if (preferences.planningMode == "MONTH") monthlySnapshot else snapshot,
                         isGenerating = isGenerating,
+                        onPlanningModeChange = { mode ->
+                            scope.launch {
+                                preferencesStore.setPlanningMode(mode)
+                                if (mode == "MONTH") {
+                                    monthlySnapshot = repository.snapshot(
+                                        PlanningPeriodId("MONTH:$monthStartIso"),
+                                        preferences.wilaya,
+                                        preferences.mealSlots
+                                    )
+                                }
+                            }
+                        },
+                        onMonthChange = { delta ->
+                            scope.launch {
+                                monthStartIso = YearMonth.from(LocalDate.parse(monthStartIso))
+                                    .plusMonths(delta.toLong()).atDay(1).toString()
+                                monthlySnapshot = repository.snapshot(
+                                    PlanningPeriodId("MONTH:$monthStartIso"),
+                                    preferences.wilaya,
+                                    preferences.mealSlots
+                                )
+                            }
+                        },
+                        onRefreshPrices = {
+                            scope.launch {
+                                val refreshed = repository.refreshPlanPrices(activePlanningPeriodId())
+                                if (refreshed != null) {
+                                    if (preferences.planningMode == "MONTH") monthlySnapshot = refreshed
+                                    else snapshot = refreshed
+                                }
+                            }
+                        },
+                        onAdjustIngredient = { ingredientId, unit, alreadyHaveAll, quantity ->
+                            scope.launch {
+                                val adjusted = repository.updatePlanIngredientAdjustment(
+                                    activePlanningPeriodId(),
+                                    ingredientId,
+                                    unit,
+                                    alreadyHaveAll,
+                                    quantity
+                                )
+                                if (adjusted != null) {
+                                    if (preferences.planningMode == "MONTH") monthlySnapshot = adjusted
+                                    else snapshot = adjusted
+                                }
+                            }
+                        },
                         onGenerate = { fillEmptyOnly ->
                             scope.launch {
                                 isGenerating = true
                                 try {
-                                    val result = repository.generateWeek(
-                                        weekStartIso = weekStartIso,
-                                        weeklyBudgetDzd = preferences.weeklyBudgetDzd,
-                                        householdServings = preferences.householdServings,
-                                        allergyIds = preferences.allergyIds,
-                                        selectedWilaya = preferences.wilaya,
-                                        selectedMealSlots = preferences.mealSlots,
-                                        dislikedIngredientIds = preferences.dislikedIngredientIds,
-                                        dietPattern = preferences.dietPattern,
-                                        maxCookingMinutes = preferences.maxCookingMinutes,
-                                        budgetBufferPercent = preferences.budgetBufferPercent,
-                                        meatPreference = preferences.meatPreference,
-                                        monthlyMeatGrams = preferences.monthlyMeatGrams,
-                                        oilPreference = preferences.oilPreference,
-                                        fillEmptyOnly = fillEmptyOnly
-                                    )
+                                    val result = if (preferences.planningMode == "MONTH") {
+                                        val month = YearMonth.from(LocalDate.parse(monthStartIso))
+                                        val monthlyBudget = (
+                                            preferences.weeklyBudgetDzd * month.lengthOfMonth() / 7.0
+                                        ).roundToInt()
+                                        repository.generateMonthlyPlan(
+                                            month = month,
+                                            monthlyBudgetDzd = monthlyBudget,
+                                            householdServings = preferences.householdServings,
+                                            allergyIds = preferences.allergyIds,
+                                            selectedWilaya = preferences.wilaya,
+                                            selectedMealSlots = preferences.mealSlots,
+                                            dislikedIngredientIds = preferences.dislikedIngredientIds,
+                                            dietPattern = preferences.dietPattern,
+                                            maxCookingMinutes = preferences.maxCookingMinutes,
+                                            budgetBufferPercent = preferences.budgetBufferPercent,
+                                            meatPreference = preferences.meatPreference,
+                                            monthlyMeatGrams = preferences.monthlyMeatGrams,
+                                            oilPreference = preferences.oilPreference,
+                                            fillEmptyOnly = fillEmptyOnly
+                                        )
+                                    } else {
+                                        repository.generateWeek(
+                                            weekStartIso = weekStartIso,
+                                            weeklyBudgetDzd = preferences.weeklyBudgetDzd,
+                                            householdServings = preferences.householdServings,
+                                            allergyIds = preferences.allergyIds,
+                                            selectedWilaya = preferences.wilaya,
+                                            selectedMealSlots = preferences.mealSlots,
+                                            dislikedIngredientIds = preferences.dislikedIngredientIds,
+                                            dietPattern = preferences.dietPattern,
+                                            maxCookingMinutes = preferences.maxCookingMinutes,
+                                            budgetBufferPercent = preferences.budgetBufferPercent,
+                                            meatPreference = preferences.meatPreference,
+                                            monthlyMeatGrams = preferences.monthlyMeatGrams,
+                                            oilPreference = preferences.oilPreference,
+                                            fillEmptyOnly = fillEmptyOnly
+                                        )
+                                    }
                                     generationMessage = result.message
                                     refresh()
                                 } finally {
@@ -588,12 +681,21 @@ private fun MealsAppContent(
                         },
                         onSetMeal = { day, slot, recipeId ->
                             perform {
-                                repository.setMeal(weekStartIso, day, slot, recipeId, preferences.householdServings)
+                                repository.setMeal(
+                                    activePlanningPeriodId(), day, slot, recipeId,
+                                    preferences.householdServings
+                                )
                             }
                         },
-                        onToggleLock = { id -> perform { repository.toggleMealLock(id, weekStartIso) } },
-                        onToggleCooked = { id -> perform { repository.toggleMealCooked(id, weekStartIso) } },
-                        onAdjustServings = { id, delta -> perform { repository.adjustMealServings(id, weekStartIso, delta) } },
+                        onToggleLock = { id ->
+                            perform { repository.toggleMealLock(id, activePlanningPeriodId()) }
+                        },
+                        onToggleCooked = { id ->
+                            perform { repository.toggleMealCooked(id, activePlanningPeriodId()) }
+                        },
+                        onAdjustServings = { id, delta ->
+                            perform { repository.adjustMealServings(id, activePlanningPeriodId(), delta) }
+                        },
                         onOpenRecipe = { recipeId ->
                             // Keep the current Plan tab visible and present recipe details above it.
                             recipeIdToOpenFromPlan = recipeId
@@ -614,7 +716,7 @@ private fun MealsAppContent(
                                 generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
                                 perform {
                                     repository.addRecipeToNextSlot(
-                                        weekStartIso,
+                                        activePlanningPeriodId(),
                                         id,
                                         preferences.householdServings
                                     )
@@ -684,7 +786,7 @@ private fun MealsAppContent(
                             generationMessage = "أُضيفت الوصفة إلى خطة الأسبوع"
                             perform {
                                 repository.addRecipeToNextSlot(
-                                    weekStartIso,
+                                    activePlanningPeriodId(),
                                     id,
                                     preferences.householdServings
                                 )
