@@ -419,6 +419,7 @@ abstract class MealsDatabase : RoomDatabase() {
                         engineVersion TEXT NOT NULL,
                         createdAtEpochMillis INTEGER NOT NULL,
                         priceSnapshotAtEpochMillis INTEGER NOT NULL,
+                        marketPriceSnapshotCaptured INTEGER NOT NULL DEFAULT 0,
                         householdServings INTEGER NOT NULL,
                         updatedAtEpochMillis INTEGER NOT NULL
                     )
