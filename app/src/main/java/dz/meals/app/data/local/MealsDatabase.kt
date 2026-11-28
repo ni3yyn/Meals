@@ -29,9 +29,13 @@ import dz.meals.app.data.FoodIdentityResolver
         CookedMealDeductionEntity::class,
         PlanPriceSnapshotEntity::class,
         RecipeAttributionEntity::class,
-        RecipeImageOverrideEntity::class
+        RecipeImageOverrideEntity::class,
+        PlanningPeriodEntity::class,
+        PlanningPeriodMealEntity::class,
+        PlanIngredientAdjustmentEntity::class,
+        MarketProductIngredientMatchEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -372,6 +376,68 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+
+        private val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS planning_periods (
+                    id TEXT NOT NULL PRIMARY KEY, periodType TEXT NOT NULL,
+                    startDate TEXT NOT NULL, endDate TEXT NOT NULL, budgetDzd INTEGER NOT NULL,
+                    wilaya TEXT NOT NULL, mealSlotsCsv TEXT NOT NULL, engineVersion TEXT NOT NULL,
+                    generatedAtEpochMillis INTEGER NOT NULL, priceSnapshotAtEpochMillis INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'ACTIVE')""".trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_planning_periods_periodType_startDate_endDate ON planning_periods(periodType, startDate, endDate)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS planning_period_meals (
+                    id TEXT NOT NULL PRIMARY KEY, periodId TEXT NOT NULL, calendarDate TEXT NOT NULL,
+                    mealSlot TEXT NOT NULL, recipeId TEXT, servings INTEGER NOT NULL, locked INTEGER NOT NULL,
+                    isCooked INTEGER NOT NULL, isUserEdited INTEGER NOT NULL,
+                    FOREIGN KEY(periodId) REFERENCES planning_periods(id) ON UPDATE NO ACTION ON DELETE CASCADE)""".trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_planning_period_meals_periodId ON planning_period_meals(periodId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_planning_period_meals_recipeId ON planning_period_meals(recipeId)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_planning_period_meals_periodId_calendarDate_mealSlot ON planning_period_meals(periodId, calendarDate, mealSlot)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS plan_ingredient_adjustments (
+                    id TEXT NOT NULL PRIMARY KEY, periodId TEXT NOT NULL, ingredientId TEXT NOT NULL,
+                    unit TEXT NOT NULL, alreadyHaveQuantity REAL NOT NULL, alreadyHaveEnough INTEGER NOT NULL,
+                    updatedAtEpochMillis INTEGER NOT NULL,
+                    FOREIGN KEY(periodId) REFERENCES planning_periods(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(ingredientId) REFERENCES ingredients(id) ON UPDATE NO ACTION ON DELETE CASCADE)""".trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_ingredient_adjustments_periodId ON plan_ingredient_adjustments(periodId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_ingredient_adjustments_ingredientId ON plan_ingredient_adjustments(ingredientId)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_plan_ingredient_adjustments_periodId_ingredientId_unit ON plan_ingredient_adjustments(periodId, ingredientId, unit)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS market_product_ingredient_matches (
+                    id TEXT NOT NULL PRIMARY KEY, productId TEXT NOT NULL, ingredientId TEXT NOT NULL,
+                    reviewStatus TEXT NOT NULL, matchMethod TEXT NOT NULL, confidence REAL NOT NULL,
+                    evidenceJson TEXT NOT NULL, reviewedAtEpochMillis INTEGER, reviewedBy TEXT,
+                    FOREIGN KEY(productId) REFERENCES market_products(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(ingredientId) REFERENCES ingredients(id) ON UPDATE NO ACTION ON DELETE CASCADE)""".trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_ingredient_matches_productId ON market_product_ingredient_matches(productId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_ingredient_matches_ingredientId ON market_product_ingredient_matches(ingredientId)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_market_product_ingredient_matches_productId_ingredientId ON market_product_ingredient_matches(productId, ingredientId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_ingredient_matches_reviewStatus_matchMethod ON market_product_ingredient_matches(reviewStatus, matchMethod)")
+
+                // Backfill legacy weekly data additively. Existing week-keyed records stay readable.
+                db.execSQL("""INSERT OR IGNORE INTO planning_periods (
+                    id, periodType, startDate, endDate, budgetDzd, wilaya, mealSlotsCsv,
+                    engineVersion, generatedAtEpochMillis, priceSnapshotAtEpochMillis, status)
+                    SELECT 'week:' || weekStartIso, 'WEEK', weekStartIso, date(weekStartIso, '+6 day'),
+                    budgetDzd, wilaya, mealSlotsCsv, engineVersion, generatedAtEpochMillis,
+                    priceSnapshotAtEpochMillis, 'ACTIVE'
+                    FROM plan_runs WHERE weekStartIso IS NOT NULL AND length(weekStartIso) = 10""".trimIndent())
+                db.execSQL("""INSERT OR IGNORE INTO planning_period_meals (
+                    id, periodId, calendarDate, mealSlot, recipeId, servings, locked, isCooked, isUserEdited)
+                    SELECT 'legacy:' || pm.id, 'week:' || pm.weekStartIso,
+                    date(pm.weekStartIso, '+' || pm.dayIndex || ' day'), pm.mealSlot, pm.recipeId,
+                    pm.servings, pm.locked, pm.isCooked, pm.isUserEdited
+                    FROM plan_meals pm INNER JOIN planning_periods pp
+                    ON pp.id = 'week:' || pm.weekStartIso""".trimIndent())
+                val violations = db.query("PRAGMA foreign_key_check").use { cursor ->
+                    var count = 0
+                    while (cursor.moveToNext()) count++
+                    count
+                }
+                if (violations != 0) throw IllegalStateException("Planning-period migration created $violations foreign-key violations.")
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -406,7 +472,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 MIGRATION_14_15,
                 FoodTaxonomyMigration(context.applicationContext),
                 MIGRATION_16_17,
-                MIGRATION_17_18
+                MIGRATION_17_18,
+                MIGRATION_18_19
             ).build()
     }
 }
