@@ -294,6 +294,32 @@ class MarketProductPriceEstimatorTest {
     }
 
     @Test
+    fun futureDatedOfferDoesNotHideLastValidHistoricalOffer() {
+        val rows = listOf(
+            evidence(
+                listingId = "same-listing",
+                observedAt = now - 60_000L,
+                price = 150.0,
+                availability = "https://schema.org/InStock"
+            ),
+            evidence(
+                listingId = "same-listing",
+                observedAt = now + 60_000L,
+                price = 999.0,
+                availability = "https://schema.org/InStock"
+            )
+        )
+
+        val estimate = estimateMarketProductPrice(
+            "ingredient-rice", 500.0, "g", "Laghouat", rows, now
+        )
+
+        requireNotNull(estimate)
+        assertEquals(1, estimate.offerCount)
+        assertEquals(150.0, estimate.minCashOutlayDzd, 0.001)
+    }
+
+    @Test
     fun ignoresInvalidRequestedQuantitiesAndBlankIngredients() {
         val rows = listOf(evidence())
 
