@@ -767,14 +767,19 @@ private fun MealsAppContent(
                         onUpdateItemDetails = { id, purchaseQty, note, unavailable, actual ->
                             perform { repository.updateShoppingItemDetails(id, purchaseQty, note, unavailable, actual) }
                         },
-                        onUpdatePlanAdjustment = { ingredientId, unit, adjustmentType, availableQuantity ->
+                        onUpdatePlanAdjustment = { id, ingredientId, unit, adjustmentType, availableQuantity, purchaseQty, note, unavailable, actual ->
                             perform {
-                                repository.updatePlanIngredientAdjustment(
-                                    weekStartIso,
-                                    ingredientId,
-                                    unit,
-                                    adjustmentType,
-                                    availableQuantity
+                                repository.updatePlanShoppingItemDetails(
+                                    weekStartIso = weekStartIso,
+                                    shoppingItemId = id,
+                                    ingredientId = ingredientId,
+                                    unit = unit,
+                                    adjustmentType = adjustmentType,
+                                    availableQuantity = availableQuantity,
+                                    purchaseQuantity = purchaseQty,
+                                    storeNote = note,
+                                    unavailable = unavailable,
+                                    actualSpentDzd = actual
                                 )
                             }
                         },
