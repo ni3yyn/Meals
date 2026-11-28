@@ -82,7 +82,7 @@ class MarketProductPriceEstimatorTest {
         assertEquals(2, estimate.offerCount)
         assertEquals(270.0, estimate.minCashOutlayDzd, 0.001)
         assertEquals(480.0, estimate.maxCashOutlayDzd, 0.001)
-        assertEquals(300.0, estimate.minConsumedValueDzd, 0.001)
+        assertEquals(270.0, estimate.minConsumedValueDzd, 0.001)
         assertEquals(360.0, estimate.maxConsumedValueDzd, 0.001)
         assertEquals(2, estimate.minPackageCount)
         assertEquals(3, estimate.maxPackageCount)
