@@ -204,6 +204,101 @@ interface MealsDao {
     @Query("SELECT * FROM plan_runs WHERE weekStartIso = :weekStartIso LIMIT 1")
     suspend fun getPlanRun(weekStartIso: String): PlanRunEntity?
 
+    @Query("SELECT * FROM planning_periods WHERE id = :periodId LIMIT 1")
+    suspend fun getPlanningPeriod(periodId: String): PlanningPeriodEntity?
+
+    @Query("""
+        SELECT * FROM planning_periods
+        WHERE periodType = :periodType
+            AND startDateIso <= :rangeEndIso
+            AND endDateIso >= :rangeStartIso
+        ORDER BY startDateIso, id
+    """)
+    suspend fun getPlanningPeriodsOverlappingRange(
+        periodType: String,
+        rangeStartIso: String,
+        rangeEndIso: String
+    ): List<PlanningPeriodEntity>
+
+    @Upsert
+    suspend fun upsertPlanningPeriod(period: PlanningPeriodEntity)
+
+    @Upsert
+    suspend fun upsertPlanningPeriods(periods: List<PlanningPeriodEntity>)
+
+    @Query("DELETE FROM planning_periods WHERE id = :periodId")
+    suspend fun deletePlanningPeriod(periodId: String)
+
+    @Query("""
+        SELECT * FROM planning_period_meals
+        WHERE periodId = :periodId
+        ORDER BY dateIso, mealSlot, id
+    """)
+    suspend fun getPlanningPeriodMeals(periodId: String): List<PlanningPeriodMealEntity>
+
+    @Query("""
+        SELECT * FROM planning_period_meals
+        WHERE dateIso BETWEEN :startDateIso AND :endDateIso
+        ORDER BY dateIso, mealSlot, id
+    """)
+    suspend fun getPlanningPeriodMealsInDateRange(
+        startDateIso: String,
+        endDateIso: String
+    ): List<PlanningPeriodMealEntity>
+
+    @Upsert
+    suspend fun upsertPlanningPeriodMeal(meal: PlanningPeriodMealEntity)
+
+    @Upsert
+    suspend fun upsertPlanningPeriodMeals(meals: List<PlanningPeriodMealEntity>)
+
+    @Query("DELETE FROM planning_period_meals WHERE periodId = :periodId")
+    suspend fun deletePlanningPeriodMeals(periodId: String)
+
+    @Query("""
+        SELECT * FROM plan_ingredient_adjustments
+        WHERE periodId = :periodId
+        ORDER BY ingredientId, unit
+    """)
+    suspend fun getPlanIngredientAdjustments(periodId: String): List<PlanIngredientAdjustmentEntity>
+
+    @Query("""
+        SELECT * FROM plan_ingredient_adjustments
+        WHERE periodId = :periodId AND ingredientId = :ingredientId AND unit = :unit
+        LIMIT 1
+    """)
+    suspend fun getPlanIngredientAdjustment(
+        periodId: String,
+        ingredientId: String,
+        unit: String
+    ): PlanIngredientAdjustmentEntity?
+
+    @Upsert
+    suspend fun upsertPlanIngredientAdjustment(adjustment: PlanIngredientAdjustmentEntity)
+
+    @Query("""
+        DELETE FROM plan_ingredient_adjustments
+        WHERE periodId = :periodId AND ingredientId = :ingredientId AND unit = :unit
+    """)
+    suspend fun deletePlanIngredientAdjustment(periodId: String, ingredientId: String, unit: String)
+
+    @Query("DELETE FROM plan_ingredient_adjustments WHERE periodId = :periodId")
+    suspend fun deletePlanIngredientAdjustments(periodId: String)
+
+    @Query("""
+        SELECT * FROM plan_market_price_snapshots
+        WHERE periodId = :periodId
+        ORDER BY ingredientId, storeName, sourceListingId
+    """)
+    suspend fun getPlanMarketPriceSnapshots(periodId: String): List<PlanMarketPriceSnapshotEntity>
+
+    @Upsert
+    suspend fun upsertPlanMarketPriceSnapshots(snapshots: List<PlanMarketPriceSnapshotEntity>)
+
+    @Query("DELETE FROM plan_market_price_snapshots WHERE periodId = :periodId")
+    suspend fun deletePlanMarketPriceSnapshots(periodId: String)
+
+
     @Query("SELECT * FROM plan_price_snapshots WHERE weekStartIso = :weekStartIso")
     suspend fun getPlanPriceSnapshots(weekStartIso: String): List<PlanPriceSnapshotEntity>
 
