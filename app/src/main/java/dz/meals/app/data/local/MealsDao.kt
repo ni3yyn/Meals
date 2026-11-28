@@ -337,4 +337,23 @@ interface MealsDao {
     @Query("SELECT * FROM market_price_observations ORDER BY observedAtEpochMillis DESC")
     suspend fun getAllMarketPriceObservations(): List<MarketPriceObservationEntity>
 
+    @Upsert
+    suspend fun upsertMarketProductIngredientMatches(items: List<MarketProductIngredientMatchEntity>)
+
+    @Query("SELECT * FROM market_product_ingredient_matches WHERE productId = :productId LIMIT 1")
+    suspend fun getMarketProductIngredientMatch(productId: String): MarketProductIngredientMatchEntity?
+
+    @Query("""
+        SELECT * FROM market_product_ingredient_matches
+        WHERE status = 'VERIFIED'
+        ORDER BY ingredientId, productId
+    """)
+    suspend fun getVerifiedMarketProductIngredientMatches(): List<MarketProductIngredientMatchEntity>
+
+    @Query("SELECT COUNT(*) FROM market_product_ingredient_matches")
+    suspend fun countMarketProductIngredientMatches(): Int
+
+    @Query("DELETE FROM market_product_ingredient_matches")
+    suspend fun deleteAllMarketProductIngredientMatches()
+
 }

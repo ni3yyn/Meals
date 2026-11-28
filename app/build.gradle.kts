@@ -45,6 +45,29 @@ val marketProductCatalogueRevision = providers.provider<String> {
     }
     digest.digest().joinToString("") { byte: Byte -> "%02x".format(byte.toInt() and 0xff) }
 }
+
+val marketProductBaseCatalogueRevision = providers.provider<String> {
+    val catalogueDirectory = rootProject.file("data/market-products")
+    require(catalogueDirectory.isDirectory) { "Missing market product catalogue directory: ${catalogueDirectory.path}" }
+    val digest = MessageDigest.getInstance("SHA-256")
+    val jsonFiles = catalogueDirectory.walkTopDown()
+        .filter {
+            it.isFile &&
+                it.extension.equals("json", ignoreCase = true) &&
+                it.name != "ingredient-matches.json"
+        }
+        .sortedBy { it.relativeTo(catalogueDirectory).invariantSeparatorsPath }
+        .toList()
+    require(jsonFiles.isNotEmpty()) { "Market product base catalogue contains no JSON files." }
+    jsonFiles.forEach { file ->
+        digest.update(file.relativeTo(catalogueDirectory).invariantSeparatorsPath.toByteArray(Charsets.UTF_8))
+        digest.update(0.toByte())
+        digest.update(file.readBytes())
+        digest.update(0.toByte())
+    }
+    digest.digest().joinToString("") { byte: Byte -> "%02x".format(byte.toInt() and 0xff) }
+}
+
 val releaseKeystorePath = providers.gradleProperty("releaseKeystorePath").orNull
 val releaseStorePassword = providers.gradleProperty("releaseStorePassword").orNull
 val releaseKeyAlias = providers.gradleProperty("releaseKeyAlias").orNull
@@ -136,6 +159,7 @@ android {
         versionName = appVersionName.get()
         buildConfigField("String", "FOOD_CATALOGUE_REVISION", "\"${foodCatalogueRevision.get()}\"")
         buildConfigField("String", "MARKET_PRODUCT_CATALOGUE_REVISION", "\"${marketProductCatalogueRevision.get()}\"")
+        buildConfigField("String", "MARKET_PRODUCT_BASE_CATALOGUE_REVISION", "\"${marketProductBaseCatalogueRevision.get()}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

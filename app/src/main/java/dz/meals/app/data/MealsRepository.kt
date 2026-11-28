@@ -79,6 +79,7 @@ class MealsRepository internal constructor(
         SeedRecipes.validateCatalogue()
         FoodCatalogueInstaller(appContext).installIfNeeded()
         MarketProductCatalogueInstaller(appContext).installIfNeeded()
+        MarketProductIngredientMatchInstaller(appContext).installIfNeeded()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
         if (dao.recipeCount() > 0) return@withLock

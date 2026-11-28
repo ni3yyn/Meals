@@ -308,7 +308,7 @@ class MarketProductCatalogueInstaller internal constructor(
         private const val FORMAT = "midati-market-product-catalogue"
         private const val PART_FORMAT = "midati-market-product-catalogue-part"
         private const val FORMAT_VERSION = 1
-        private const val ROOM_SCHEMA_VERSION = 18
+        private const val ROOM_SCHEMA_VERSION = 19
         private const val TARGET_REPOSITORY = "ni3yyn/Meals"
         private const val MANIFEST_ASSET = "market-products/manifest.json"
         private const val PREFERENCES_NAME = "market_product_catalogue"

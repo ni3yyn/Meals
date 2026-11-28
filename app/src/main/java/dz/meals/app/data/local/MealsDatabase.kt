@@ -29,9 +29,10 @@ import dz.meals.app.data.FoodIdentityResolver
         CookedMealDeductionEntity::class,
         PlanPriceSnapshotEntity::class,
         RecipeAttributionEntity::class,
-        RecipeImageOverrideEntity::class
+        RecipeImageOverrideEntity::class,
+        MarketProductIngredientMatchEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -372,6 +373,33 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+
+        internal val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS market_product_ingredient_matches (
+                        productId TEXT NOT NULL PRIMARY KEY,
+                        ingredientId TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        matchMethod TEXT NOT NULL,
+                        confidenceScore REAL,
+                        rationale TEXT NOT NULL,
+                        algorithmVersion TEXT NOT NULL,
+                        reviewedAtEpochMillis INTEGER,
+                        updatedAtEpochMillis INTEGER NOT NULL,
+                        FOREIGN KEY(productId) REFERENCES market_products(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(ingredientId) REFERENCES ingredients(id)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_ingredient_matches_ingredientId ON market_product_ingredient_matches(ingredientId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_ingredient_matches_status_ingredientId ON market_product_ingredient_matches(status, ingredientId)")
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -406,7 +434,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 MIGRATION_14_15,
                 FoodTaxonomyMigration(context.applicationContext),
                 MIGRATION_16_17,
-                MIGRATION_17_18
+                MIGRATION_17_18,
+                MIGRATION_18_19
             ).build()
     }
 }
