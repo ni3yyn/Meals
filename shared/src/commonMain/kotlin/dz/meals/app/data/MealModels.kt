@@ -362,7 +362,9 @@ data class BasketSummary(
     val actualSpendDzd: Double = 0.0,
     /** Present only when at least one line uses a verified local market range. */
     val purchaseOutlayMinDzd: Double? = null,
-    val purchaseOutlayMaxDzd: Double? = null
+    val purchaseOutlayMaxDzd: Double? = null,
+    /** Deterministic recipe-line provenance behind the visible ingredient totals. */
+    val ingredientDemands: List<IngredientDemand> = emptyList()
 )
 
 object MealSlots {

@@ -5,6 +5,8 @@ import dz.meals.app.data.scaleRecipeIngredientQuantity
 import dz.meals.app.data.BasketSummary
 import dz.meals.app.data.FoodTaxonomyIds
 import dz.meals.app.data.FoodTaxonomyRef
+import dz.meals.app.data.IngredientDemandCalculator
+import dz.meals.app.data.convertIngredientQuantity
 import dz.meals.app.data.IngredientMaster
 import dz.meals.app.data.MealRecipe
 import dz.meals.app.data.PlannedMeal
@@ -312,32 +314,32 @@ fun calculateBasket(
     marketProductPriceEvidence: List<MarketProductPriceEvidence> = emptyList(),
     planIngredientAdjustments: Map<Pair<String, String>, PlanIngredientAdjustment> = emptyMap()
 ): BasketSummary {
-    val recipesById = recipes.associateBy { it.id }
-    val required = linkedMapOf<RequirementKey, Double>()
-
-    plannedMeals.forEach { meal ->
-        val recipe = meal.recipeId?.let(recipesById::get) ?: return@forEach
-        val factor = meal.servings.toDouble() / recipe.baseServings.coerceAtLeast(1)
-        // Unquantified "to taste" / free-text amounts stay visible in recipe details,
-        // but cannot create misleading zero-quantity shopping requirements.
-        recipe.ingredients.filter { !it.optional && it.quantityBase > 0.0 }.forEach { ingredient ->
-            val key = RequirementKey(ingredient.ingredientId, ingredient.unit)
-            required[key] = (required[key] ?: 0.0) + scaleRecipeIngredientQuantity(ingredient.quantityBase, factor, ingredient.scalingRule)
-        }
-    }
+    val ingredientDemands = IngredientDemandCalculator.calculate(plannedMeals, recipes)
 
     // Midati lists what the household needs to buy; it does not assume a
     // manually maintained stock count is current. Keep the parameter for
     // compatibility with existing snapshots and call sites.
     val priceByIngredient = prices.groupBy { it.ingredientId }
-    val items = required.map { (key, amount) ->
+    val items = ingredientDemands.map { demand ->
+        val key = RequirementKey(demand.ingredientId, demand.unit)
+        val amount = demand.quantity
         val pantryUsed = 0.0
         val approximateStock = false
         val adjustment = planIngredientAdjustments[key.ingredientId to key.unit]
         val netRequired = calculatePurchaseNeed(amount, adjustment)
         val compatiblePrices = priceByIngredient[key.ingredientId]
             .orEmpty()
-            .filter { it.unit == key.unit && it.packQuantityBase > 0.0 && it.packPriceDzd > 0.0 }
+            .mapNotNull { observation ->
+                val packQuantity = convertIngredientQuantity(
+                    observation.packQuantityBase,
+                    observation.unit,
+                    key.unit
+                ) ?: return@mapNotNull null
+                if (!packQuantity.isFinite() || packQuantity <= 0.0 ||
+                    !observation.packPriceDzd.isFinite() || observation.packPriceDzd <= 0.0
+                ) return@mapNotNull null
+                observation.copy(packQuantityBase = packQuantity, unit = key.unit)
+            }
         val freshPrices = compatiblePrices.filter { observation ->
             if (allowStaleSnapshotPrices || observation.priceKind == "demo") {
                 true
@@ -478,7 +480,8 @@ fun calculateBasket(
         unknownPriceCount = items.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
         hasDemoPrices = prices.any { it.priceKind == "demo" },
         purchaseOutlayMinDzd = purchaseOutlayMin.takeIf { hasMarketPriceRanges && allPricesKnown },
-        purchaseOutlayMaxDzd = purchaseOutlayMax.takeIf { hasMarketPriceRanges && allPricesKnown }
+        purchaseOutlayMaxDzd = purchaseOutlayMax.takeIf { hasMarketPriceRanges && allPricesKnown },
+        ingredientDemands = ingredientDemands
     )
 }
 
