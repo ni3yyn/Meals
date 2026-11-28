@@ -40,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -81,6 +82,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.plus
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun PlanScreen(
@@ -161,7 +164,6 @@ fun PlanScreen(
             isGenerating = isGenerating,
             fillEmptyOnly = fillEmptyOnly,
             onFillEmptyOnlyChange = { fillEmptyOnly = it },
-            selectedDayIndex = selectedDayIndex,
             onGenerate = { onGenerate(fillEmptyOnly) },
             onPreviousMonth = { onMonthChange(-1) },
             onNextMonth = { onMonthChange(1) },
@@ -796,7 +798,6 @@ private fun MonthlyPlanContent(
     isGenerating: Boolean,
     fillEmptyOnly: Boolean,
     onFillEmptyOnlyChange: (Boolean) -> Unit,
-    selectedDayIndex: Int,
     onGenerate: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
@@ -834,8 +835,21 @@ private fun MonthlyPlanContent(
         val lastDay = ((weekIndex + 1) * 7 - weekOffset - 1).coerceAtMost(monthDayCount - 1)
         weekIndex to (firstDay..lastDay).toList()
     }
+    val monthBudget = snapshot.planningPeriod?.takeIf { it.updatedAtEpochMillis > 0L }?.budgetDzd
+        ?: (preferences.weeklyBudgetDzd * monthDayCount / 7.0).roundToInt()
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val todayIndex = (today.toEpochDays() - monthStart.toEpochDays()).toInt()
+    val todayWeekIndex = ((weekOffset + todayIndex) / 7).coerceIn(0, weekGroups.lastIndex)
+    val monthListState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val unsafeLockedMeal = snapshot.plannedMeals.firstOrNull { meal ->
+        meal.locked && meal.recipeId?.let { recipeId ->
+            recipesById[recipeId]?.allergens?.intersect(preferences.allergyIds)?.isNotEmpty()
+        } == true
+    }
 
     LazyColumn(
+        state = monthListState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 122.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -860,8 +874,7 @@ private fun MonthlyPlanContent(
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text("ميزانية الشهر", color = TextAccent, style = MaterialTheme.typography.labelMedium)
                         Text(
-                            (snapshot.planningPeriod?.budgetDzd ?: preferences.weeklyBudgetDzd)
-                                .formatDzd(),
+                            monthBudget.formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
@@ -913,9 +926,37 @@ private fun MonthlyPlanContent(
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     )
+                    if (todayIndex in 0 until monthDayCount) {
+                        MealsTextButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    monthListState.animateScrollToItem(todayWeekIndex + 2)
+                                }
+                            }
+                        ) {
+                            Text("اليوم", color = TextAccent, fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                     MealsIconAction(onClick = onNextMonth, modifier = Modifier.size(40.dp)) {
                         MealsIcon(MealsIconName.ArrowForward, contentDescription = "الشهر التالي", modifier = Modifier.size(24.dp))
                     }
+                }
+            }
+        }
+        if (unsafeLockedMeal != null) {
+            item {
+                MealsCard(
+                    containerColor = dz.meals.app.ui.theme.SoftOrange,
+                    borderColor = null,
+                    contentPadding = 14.dp
+                ) {
+                    Text(
+                        "تنبيه مهم: توجد وجبة مقفلة لا توافق قيود الحساسية الحالية. افتحي قفلها أو استبدليها قبل تعديل القيود. لم تتغير الوجبات.",
+                        modifier = Modifier.padding(14.dp),
+                        color = androidx.compose.ui.graphics.Color(0xFF6A3D12),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
