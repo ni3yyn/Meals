@@ -94,6 +94,9 @@ fun formatArabicDate(date: LocalDate): String {
     return "$weekday ${date.day} $month"
 }
 
+fun formatArabicMonth(date: LocalDate): String =
+    "${ArabicMonths[date.month.ordinal]} ${date.year}"
+
 fun formatArabicWeekRange(start: LocalDate, end: LocalDate): String {
     val startLabel = "${start.day} ${ArabicMonths[start.month.ordinal]}"
     val endLabel = "${end.day} ${ArabicMonths[end.month.ordinal]} ${end.year}"
