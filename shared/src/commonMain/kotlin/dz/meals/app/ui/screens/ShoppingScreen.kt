@@ -1363,12 +1363,15 @@ fun ShoppingScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = (!editUserAdded || (editName.isNotBlank() && (editQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0)) &&
-                        (editUserAdded || editAdjustmentType != "SOME" ||
-                            (editAvailableQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
-                        (editUserAdded || editAdjustmentType != "NONE" || editPurchaseQuantity.isBlank() ||
-                            (editPurchaseQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
-                        (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull()?.let { it.isFinite() && it >= 0.0 } == true))
+                    enabled = (!editUserAdded || (editName.isNotBlank() &&
+                        (editQuantity.replace(',', '.').toDoubleOrNull()?.let { it.isFinite() && it > 0.0 } == true))) &&
+                        (editUserAdded || !canAdjustPlan || editAdjustmentType != "SOME" ||
+                            (editAvailableQuantity.replace(',', '.').toDoubleOrNull()?.let { it.isFinite() && it > 0.0 } == true)) &&
+                        (editUserAdded || (canAdjustPlan && editAdjustmentType != "NONE") ||
+                            editPurchaseQuantity.isBlank() ||
+                            (editPurchaseQuantity.replace(',', '.').toDoubleOrNull()?.let { it.isFinite() && it > 0.0 } == true)) &&
+                        (editActualSpent.isBlank() ||
+                            (editActualSpent.replace(',', '.').toDoubleOrNull()?.let { it.isFinite() && it >= 0.0 } == true))
                 )
             },
             dismissButton = {
