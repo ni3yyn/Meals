@@ -95,7 +95,10 @@ class MonthlyPlanGenerationTest {
             val beforeRegenerationSnapshot = repository.snapshot(PlanningPeriodId(periodId))
             val demandedIngredientIds = beforeRegenerationSnapshot.basket.ingredientDemands
                 .mapTo(hashSetOf()) { it.ingredientId }
-            val inactiveIngredient = beforeRegenerationSnapshot.ingredients
+            // Plan adjustments reference the canonical Room ingredients table,
+            // so seed this fixture from that exact FK target rather than the
+            // broader presentation catalogue in MealsSnapshot.
+            val inactiveIngredient = dao.getIngredients()
                 .firstOrNull { it.id !in demandedIngredientIds }
             assertNotNull("Test fixture needs an ingredient unused by the generated plan", inactiveIngredient)
             val inactiveAdjustment = PlanIngredientAdjustmentEntity(
