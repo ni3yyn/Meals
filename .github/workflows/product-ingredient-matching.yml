@@ -1,0 +1,45 @@
+name: Product ingredient matching pipeline
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "tools/market_product_matching/**"
+      - "notebooks/midati_market_product_ingredient_review.ipynb"
+      - ".github/workflows/product-ingredient-matching.yml"
+  pull_request:
+    paths:
+      - "tools/market_product_matching/**"
+      - "notebooks/midati_market_product_ingredient_review.ipynb"
+      - ".github/workflows/product-ingredient-matching.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-ingredient-matching-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Validate deterministic matching and Colab notebook
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: false
+
+      - name: Run matching pipeline unit tests
+        run: python -m unittest tools.market_product_matching.test_pipeline -v
+
+      - name: Validate Colab notebook JSON
+        run: python -m json.tool notebooks/midati_market_product_ingredient_review.ipynb > /dev/null
