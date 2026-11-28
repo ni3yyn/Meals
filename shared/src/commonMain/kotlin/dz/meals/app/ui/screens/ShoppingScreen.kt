@@ -116,7 +116,7 @@ fun ShoppingScreen(
     onAddCatalogueItem: (String) -> Unit,
     onEditCustomItem: (String, String, Double, String) -> Unit,
     onUpdateItemDetails: (String, Double?, String, Boolean, Double?) -> Unit,
-    onUpdatePlanAdjustment: (String, String, String?, Double) -> Unit,
+    onUpdatePlanAdjustment: (String, String, String, String?, Double, Double?, String, Boolean, Double?) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
     onRecordPrice: (String, Double, Double, String) -> Unit,
     onShareList: (String) -> Unit,
@@ -1329,18 +1329,33 @@ fun ShoppingScreen(
                         }
                         if (id != null && valid && (actualSpent == null || actualSpent >= 0.0)) {
                             dismissSheet {
-                                if (editUserAdded && quantity != null) onEditCustomItem(id, editName, quantity, editUnit)
-                                if (!editUserAdded) {
-                                    editingShoppingItem?.ingredientId?.let { ingredientId ->
-                                        onUpdatePlanAdjustment(
-                                            ingredientId,
-                                            editingShoppingItem.unit,
-                                            editAdjustmentType.takeIf { it != "NONE" },
-                                            typedAvailableQuantity ?: 0.0
-                                        )
-                                    }
+                                if (editUserAdded && quantity != null) {
+                                    onEditCustomItem(id, editName, quantity, editUnit)
                                 }
-                                onUpdateItemDetails(id, purchaseQuantity, editStoreNote, editUnavailable, actualSpent)
+                                val ingredientRow = editingShoppingItem?.takeIf {
+                                    !editUserAdded && it.ingredientId != null
+                                }
+                                if (ingredientRow != null) {
+                                    onUpdatePlanAdjustment(
+                                        id,
+                                        ingredientRow.ingredientId.orEmpty(),
+                                        ingredientRow.unit,
+                                        editAdjustmentType.takeIf { it != "NONE" },
+                                        typedAvailableQuantity ?: 0.0,
+                                        purchaseQuantity,
+                                        editStoreNote,
+                                        editUnavailable,
+                                        actualSpent
+                                    )
+                                } else {
+                                    onUpdateItemDetails(
+                                        id,
+                                        purchaseQuantity,
+                                        editStoreNote,
+                                        editUnavailable,
+                                        actualSpent
+                                    )
+                                }
                                 editItemId = null
                             }
                         }
