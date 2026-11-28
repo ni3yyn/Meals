@@ -1523,37 +1523,48 @@ class MealsRepository internal constructor(
         if (!ingredientExists) return
         val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
         val periodId = weeklyRange.periodId
-        val type = adjustmentType?.trim()?.uppercase()
-        if (type == "SOME" || type == "ENOUGH") {
-            dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, canonicalId, normalizedUnit)
+        val type = when (adjustmentType?.trim()?.uppercase()) {
+            null, "", "NONE" -> null
+            "SOME" -> "SOME"
+            "ENOUGH" -> "ENOUGH"
+            else -> return
         }
-        when (type) {
-            "SOME" -> {
-                if (!availableQuantity.isFinite() || availableQuantity <= 0.0) return
-                dao.upsertPlanIngredientAdjustment(
+
+        // Validate before mutating either persisted row. A rejected quantity must
+        // never erase a previous valid adjustment or a manual shopping override.
+        if (type == "SOME" && (!availableQuantity.isFinite() || availableQuantity <= 0.0)) {
+            return
+        }
+
+        val updatedAt = System.currentTimeMillis()
+        database.withTransaction {
+            // Any change to the available amount (including clearing it) invalidates
+            // a previously typed purchase quantity. The subsequent shopping edit
+            // may write a new explicit quantity; null restores generated quantity.
+            dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, canonicalId, normalizedUnit)
+            when (type) {
+                "SOME" -> dao.upsertPlanIngredientAdjustment(
                     PlanIngredientAdjustmentEntity(
                         periodId = periodId,
                         ingredientId = canonicalId,
                         unit = normalizedUnit,
                         adjustmentType = "SOME",
                         availableQuantity = availableQuantity,
-                        updatedAtEpochMillis = System.currentTimeMillis()
+                        updatedAtEpochMillis = updatedAt
                     )
                 )
-            }
-            "ENOUGH" -> {
-                dao.upsertPlanIngredientAdjustment(
+                "ENOUGH" -> dao.upsertPlanIngredientAdjustment(
                     PlanIngredientAdjustmentEntity(
                         periodId = periodId,
                         ingredientId = canonicalId,
                         unit = normalizedUnit,
                         adjustmentType = "ENOUGH",
                         availableQuantity = 0.0,
-                        updatedAtEpochMillis = System.currentTimeMillis()
+                        updatedAtEpochMillis = updatedAt
                     )
                 )
+                null -> dao.deletePlanIngredientAdjustment(periodId, canonicalId, normalizedUnit)
             }
-            else -> dao.deletePlanIngredientAdjustment(periodId, canonicalId, normalizedUnit)
         }
     }
 
