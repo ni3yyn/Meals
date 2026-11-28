@@ -128,7 +128,7 @@ fun PlanScreen(
         mutableStateOf(initialDayIndex)
     }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
-    var editingIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingIngredientRowId by rememberSaveable { mutableStateOf<String?>(null) }
     var availableAmountText by rememberSaveable { mutableStateOf("") }
     val dayChipListState = rememberLazyListState()
     LaunchedEffect(weekStartIso, initialDayIndex) {
@@ -180,7 +180,7 @@ fun PlanScreen(
             },
             onAdjustIngredient = onAdjustIngredient,
             onEditIngredient = { item ->
-                editingIngredientId = item.ingredientId
+                editingIngredientRowId = item.id
                 availableAmountText = item.alreadyHaveQuantity
                     .takeIf { it > 0.0 }?.let { it.toString() } ?: ""
             }
@@ -564,7 +564,7 @@ fun PlanScreen(
                     item.ingredientId?.let { onAdjustIngredient(it, item.unit, enough, 0.0) }
                 },
                 onEditAmount = { item ->
-                    editingIngredientId = item.ingredientId
+                    editingIngredientRowId = item.id
                     availableAmountText = item.alreadyHaveQuantity
                         .takeIf { it > 0.0 }?.let { it.toString() } ?: ""
                 }
@@ -700,11 +700,11 @@ fun PlanScreen(
     }
 
     val editingIngredient = snapshot.shoppingItems.firstOrNull {
-        it.ingredientId == editingIngredientId && !it.userAdded
+        it.id == editingIngredientRowId && !it.userAdded
     }
     if (editingIngredient != null) {
         MealsBottomSheet(
-            onDismissRequest = { editingIngredientId = null },
+            onDismissRequest = { editingIngredientRowId = null },
             title = { Text("كم لديك من ${editingIngredient.name}؟") },
             subtitle = "تُطبّق هذه الكمية على هذه الخطة فقط",
             text = {
@@ -737,7 +737,7 @@ fun PlanScreen(
                             editingIngredient.ingredientId?.let {
                                 onAdjustIngredient(it, editingIngredient.unit, false, amount)
                             }
-                            editingIngredientId = null
+                            editingIngredientRowId = null
                         }
                     }
                 )
@@ -746,7 +746,7 @@ fun PlanScreen(
                 MealsSecondaryButton(
                     label = "إلغاء",
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { editingIngredientId = null }
+                    onClick = { editingIngredientRowId = null }
                 )
             }
         )

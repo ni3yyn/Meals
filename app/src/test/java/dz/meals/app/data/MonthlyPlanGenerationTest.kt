@@ -155,6 +155,30 @@ class MonthlyPlanGenerationTest {
                 assertEquals(preservedRow.mealSlot, after.mealSlot)
             }
 
+            // The generic monthly editor persists by exact calendar date/slot identity.
+            val monthlyEditTarget = dao.getPlanningPeriodMeals(periodId)
+                .first { it.dateIso == "2027-01-11" && it.mealSlot == "lunch" }
+            repository.setMeal(
+                PlanningPeriodId(periodId),
+                dayIndex = 10,
+                mealSlot = "lunch",
+                recipeId = monthlyEditTarget.recipeId,
+                servings = 3
+            )
+            var editedMonthlyMeal = dao.getPlanningPeriodMeals(periodId)
+                .first { it.id == monthlyEditTarget.id }
+            assertTrue(editedMonthlyMeal.isUserEdited)
+            assertEquals(3, editedMonthlyMeal.servings)
+
+            repository.toggleMealLock(editedMonthlyMeal.id, PlanningPeriodId(periodId))
+            repository.adjustMealServings(editedMonthlyMeal.id, PlanningPeriodId(periodId), 1)
+            repository.toggleMealCooked(editedMonthlyMeal.id, PlanningPeriodId(periodId))
+            editedMonthlyMeal = dao.getPlanningPeriodMeals(periodId)
+                .first { it.id == monthlyEditTarget.id }
+            assertTrue(editedMonthlyMeal.locked)
+            assertTrue(editedMonthlyMeal.isCooked)
+            assertEquals(4, editedMonthlyMeal.servings)
+
 
             // A period snapshot restores date-keyed meals, period-local adjustments,
             // editable shopping state and the immutable product-offer evidence.
@@ -261,6 +285,8 @@ class MonthlyPlanGenerationTest {
             val adjustmentBeforeRefresh = dao.getPlanIngredientAdjustment(
                 periodId, targetIngredientId, targetLine.unit
             )
+            val periodUpdatedAtBeforeRefresh = requireNotNull(dao.getPlanningPeriod(periodId))
+                .updatedAtEpochMillis
             val priceTimestampBeforeRefresh = requireNotNull(dao.getPlanningPeriod(periodId))
                 .priceSnapshotAtEpochMillis
             val refreshedSnapshot = repository.refreshPlanPrices(PlanningPeriodId(periodId))
@@ -276,6 +302,11 @@ class MonthlyPlanGenerationTest {
             assertTrue(
                 requireNotNull(dao.getPlanningPeriod(periodId)).priceSnapshotAtEpochMillis >=
                     priceTimestampBeforeRefresh
+            )
+            assertEquals(
+                "A price-only refresh must not change the recipe-generation timestamp.",
+                periodUpdatedAtBeforeRefresh,
+                requireNotNull(dao.getPlanningPeriod(periodId)).updatedAtEpochMillis
             )
             val refreshedShoppingLine = refreshedSnapshot!!.shoppingItems
                 .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
