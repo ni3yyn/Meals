@@ -262,9 +262,7 @@ class MealsRepository internal constructor(
         val foodCategories = dao.getFoodCategories().map { it.toModel() }
         val foodSubcategories = dao.getFoodSubcategories().map { it.toModel() }
         val recipes = loadRecipes()
-        val adjustments = dao.getPlanIngredientAdjustments(periodId.value)
-            .mapNotNull { it.toDomainAdjustment() }
-            .toMap()
+        val persistedAdjustmentRows = dao.getPlanIngredientAdjustments(periodId.value)
 
         val plannedMeals = when (periodType) {
             PlanningPeriodType.WEEK -> {
@@ -278,6 +276,14 @@ class MealsRepository internal constructor(
                 .filter { it.mealSlot in visibleSlots }
                 .map { it.toPlannedMeal(range.startDate) }
         }
+        // Only amounts that were active in the currently saved recipe set may
+        // affect this snapshot. Historical inactive rows stay persisted but do
+        // not become active again just because a later plan reuses that food.
+        val currentIngredientDemands = IngredientDemandCalculator.calculate(plannedMeals, recipes)
+        val adjustments = activePlanIngredientAdjustments(
+            persistedAdjustmentRows,
+            currentIngredientDemands
+        )
 
         // Inventory is not assumed; deductions come only from this period's explicit adjustments.
         val pantryEntities = emptyList<PantryItemEntity>()
