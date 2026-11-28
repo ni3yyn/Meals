@@ -48,11 +48,13 @@ fun buildPlanningPeriodSlots(
     period: PlanningDateRange,
     mealSlots: List<String>
 ): List<PlanningPeriodSlot> {
-    require(period.dayCount in 1..31) {
-        "A planning period must contain between 1 and 31 calendar days."
-    }
-    require(period.endDate == period.startDate.plusDays(period.dayCount.toLong() - 1L)) {
-        "Planning period end date does not match its day count."
+    val canonicalRange = resolvePlanningDateRange(period.type, period.startDate.toString())
+    require(
+        period.periodId == canonicalRange.periodId &&
+            period.startDate == canonicalRange.startDate &&
+            period.endDate == canonicalRange.endDate
+    ) {
+        "Slots can only be built for a complete canonical planning period."
     }
 
     val selectedSlots = mealSlots
