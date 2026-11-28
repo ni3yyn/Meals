@@ -7,9 +7,9 @@ from tools.market_product_matching.pipeline import (
 )
 
 
-SALT_ID = "3c718b6b-0535-43d7-9f4f-1dd5ab860bae"
-CANNED_CHICKPEAS_ID = "ba7f4611-f247-4be4-89ea-41f970be51c1"
-PLAIN_CHICKPEAS_ID = "f04fe295-6527-4e4e-b9b2-68de6ed1dd29"
+SALT_ID = "11111111-1111-4111-8111-111111111111"
+CANNED_CHICKPEAS_ID = "22222222-2222-4222-8222-222222222222"
+PLAIN_CHICKPEAS_ID = "33333333-3333-4333-8333-333333333333"
 
 
 class ProductIngredientPipelineTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class ProductIngredientPipelineTests(unittest.TestCase):
     def test_incompatible_package_unit_is_not_suggested(self):
         products = [{
             "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-            "name": "Fresh milk",
+            "name": "Salt",
             "packageQuantity": 1.0,
             "packageUnit": "l",
         }]
