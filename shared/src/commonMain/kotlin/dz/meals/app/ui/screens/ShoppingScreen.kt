@@ -151,6 +151,9 @@ fun ShoppingScreen(
     val editingShoppingItem = remember(snapshot.shoppingItems, editItemId) {
         snapshot.shoppingItems.firstOrNull { it.id == editItemId }
     }
+    val canAdjustPlan = editingShoppingItem?.let {
+        !it.userAdded && it.ingredientId != null
+    } == true
     var addedFeedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(addedFeedback) {
@@ -1207,7 +1210,7 @@ fun ShoppingScreen(
                         )
                         MealsLiquidGlassTextField(value = editUnit, onValueChange = { editUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
                     } else {
-                        if (editingShoppingItem?.ingredientId != null) {
+                        if (canAdjustPlan) {
                             val noneLabel = when {
                                 appLocaleTag.startsWith("en") -> "None"
                                 appLocaleTag.startsWith("fr") -> "Aucun"
@@ -1278,7 +1281,7 @@ fun ShoppingScreen(
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
-                        if (editingShoppingItem?.ingredientId == null || editAdjustmentType == "NONE") {
+                        if (!canAdjustPlan || editAdjustmentType == "NONE") {
                             MealsLiquidGlassTextField(
                                 value = editPurchaseQuantity,
                                 onValueChange = { editPurchaseQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
@@ -1309,9 +1312,7 @@ fun ShoppingScreen(
                         val id = editItemId
                         val quantity = editQuantity.replace(',', '.').toDoubleOrNull()
                         val typedAvailableQuantity = editAvailableQuantity.replace(',', '.').toDoubleOrNull()
-                        val purchaseQuantity = if (!editUserAdded && editingShoppingItem?.ingredientId != null &&
-                            editAdjustmentType != "NONE"
-                        ) {
+                        val purchaseQuantity = if (canAdjustPlan && editAdjustmentType != "NONE") {
                             null
                         } else {
                             editPurchaseQuantity.takeIf { it.isNotBlank() }
@@ -1320,20 +1321,21 @@ fun ShoppingScreen(
                         val actualSpent = editActualSpent.takeIf { it.isNotBlank() }
                             ?.replace(',', '.')?.toDoubleOrNull()
                         val valid = if (editUserAdded) {
-                            quantity != null && quantity > 0.0 && editName.isNotBlank()
+                            quantity != null && quantity.isFinite() && quantity > 0.0 && editName.isNotBlank()
                         } else {
-                            (editAdjustmentType != "SOME" ||
+                            (!canAdjustPlan || editAdjustmentType != "SOME" ||
                                 (typedAvailableQuantity != null && typedAvailableQuantity.isFinite() && typedAvailableQuantity > 0.0)) &&
-                                (editAdjustmentType != "NONE" ||
-                                    editPurchaseQuantity.isBlank() || (purchaseQuantity != null && purchaseQuantity > 0.0))
+                                ((canAdjustPlan && editAdjustmentType != "NONE") ||
+                                    editPurchaseQuantity.isBlank() ||
+                                    (purchaseQuantity != null && purchaseQuantity.isFinite() && purchaseQuantity > 0.0))
                         }
-                        if (id != null && valid && (actualSpent == null || actualSpent >= 0.0)) {
+                        if (id != null && valid && (actualSpent == null || (actualSpent.isFinite() && actualSpent >= 0.0))) {
                             dismissSheet {
                                 if (editUserAdded && quantity != null) {
                                     onEditCustomItem(id, editName, quantity, editUnit)
                                 }
                                 val ingredientRow = editingShoppingItem?.takeIf {
-                                    !editUserAdded && it.ingredientId != null
+                                    canAdjustPlan && it.ingredientId != null
                                 }
                                 if (ingredientRow != null) {
                                     onUpdatePlanAdjustment(
@@ -1366,7 +1368,7 @@ fun ShoppingScreen(
                             (editAvailableQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
                         (editUserAdded || editAdjustmentType != "NONE" || editPurchaseQuantity.isBlank() ||
                             (editPurchaseQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
-                        (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
+                        (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull()?.let { it.isFinite() && it >= 0.0 } == true))
                 )
             },
             dismissButton = {
