@@ -1896,6 +1896,8 @@ private fun ShoppingListItem.withMarketProductPrice(
         marketConsumedValueMinDzd = estimate.minConsumedValueDzd,
         marketConsumedValueMaxDzd = estimate.maxConsumedValueDzd,
         marketPriceOfferCount = estimate.offerCount,
+        marketPriceMinPackageCount = estimate.minPackageCount,
+        marketPriceMaxPackageCount = estimate.maxPackageCount,
         marketPriceWilaya = estimate.wilaya,
         marketPriceStoreNames = estimate.storeNames,
         marketPriceSourceNotices = estimate.sourceNotices,
