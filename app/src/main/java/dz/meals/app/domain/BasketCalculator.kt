@@ -347,7 +347,15 @@ fun calculateBasket(
             }
         }
         val relevantPrices = if (selectedWilaya.isNullOrBlank()) {
-            freshPrices
+            // Without a selected Wilaya, never borrow a price from another
+            // region. Only explicitly national, demo, or unlocated observations
+            // may remain as non-local evidence.
+            freshPrices.filter {
+                it.priceKind == "demo" ||
+                    it.locationLabel.equals("وطني", ignoreCase = true) ||
+                    it.locationLabel.isBlank() ||
+                    it.locationLabel.equals("غير محدد", ignoreCase = true)
+            }
         } else {
             freshPrices.filter {
                 it.priceKind == "demo" ||
