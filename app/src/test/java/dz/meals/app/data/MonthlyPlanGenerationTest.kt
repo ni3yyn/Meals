@@ -107,15 +107,15 @@ class MonthlyPlanGenerationTest {
 
             val regeneratedById = dao.getPlanningPeriodMeals(periodId).associateBy { it.id }
             assertEquals(31, regeneratedById.size)
-            for (protected in listOf(lockedBefore, cookedBefore, editedBefore)) {
-                val after = regeneratedById[protected.id]
+            for (preservedRow in listOf(lockedBefore, cookedBefore, editedBefore)) {
+                val after = regeneratedById[preservedRow.id]
                 assertNotNull(after)
-                assertEquals(protected.recipeId, after!!.recipeId)
-                assertEquals(protected.locked, after.locked)
-                assertEquals(protected.isCooked, after.isCooked)
-                assertEquals(protected.isUserEdited, after.isUserEdited)
-                assertEquals(protected.dateIso, after.dateIso)
-                assertEquals(protected.mealSlot, after.mealSlot)
+                assertEquals(preservedRow.recipeId, after!!.recipeId)
+                assertEquals(preservedRow.locked, after.locked)
+                assertEquals(preservedRow.isCooked, after.isCooked)
+                assertEquals(preservedRow.isUserEdited, after.isUserEdited)
+                assertEquals(preservedRow.dateIso, after.dateIso)
+                assertEquals(preservedRow.mealSlot, after.mealSlot)
             }
 
             // No month slot can escape the selected calendar boundaries.
