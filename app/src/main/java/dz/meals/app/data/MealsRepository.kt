@@ -2473,6 +2473,42 @@ private fun PlanMealEntity.toModel() = PlannedMeal(
     isUserEdited = isUserEdited
 )
 
+private fun PlanningPeriodMealEntity.toPlannedMeal(periodStartDate: LocalDate): PlannedMeal {
+    val calendarDate = LocalDate.parse(dateIso)
+    val dayIndex = java.time.temporal.ChronoUnit.DAYS
+        .between(periodStartDate, calendarDate)
+        .toInt()
+    require(dayIndex in 0..30) {
+        "Planning-period meal date must belong to its selected calendar month."
+    }
+    return PlannedMeal(
+        id = id,
+        weekStartIso = periodStartDate.toString(),
+        dayIndex = dayIndex,
+        mealSlot = mealSlot,
+        recipeId = recipeId,
+        servings = servings,
+        locked = locked,
+        isCooked = isCooked,
+        isUserEdited = isUserEdited
+    )
+}
+
+private fun PlannedMeal.toPlanningPeriodEntity(
+    periodId: String,
+    periodStartDate: LocalDate
+) = PlanningPeriodMealEntity(
+    id = id,
+    periodId = periodId,
+    dateIso = periodStartDate.plusDays(dayIndex.toLong()).toString(),
+    mealSlot = mealSlot,
+    recipeId = recipeId,
+    servings = servings.coerceIn(1, 12),
+    locked = locked,
+    isCooked = isCooked,
+    isUserEdited = isUserEdited
+)
+
 private fun PlannedMeal.toEntity() = PlanMealEntity(
     id = id,
     weekStartIso = weekStartIso,
