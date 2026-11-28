@@ -216,10 +216,9 @@ class MealsRepository internal constructor(
                 )
             )
         }
-        val periodAdjustments = dao.getPlanIngredientAdjustments(periodId)
+        val planAdjustmentsByIngredientUnit = dao.getPlanIngredientAdjustments(periodId)
             .mapNotNull { it.toDomainAdjustment() }
-            .associateBy { it.first }
-        val planAdjustmentsByIngredientUnit = periodAdjustments.mapValues { it.value.second }
+            .toMap()
         val slotsForThisWeek = savedRun?.mealSlotsCsv
             ?.split(",")
             ?.filter { it.isNotBlank() }
@@ -514,11 +513,24 @@ class MealsRepository internal constructor(
         val pantry = dao.getPantryItems()
         val prices = dao.getPriceObservations()
         val marketPriceSnapshotAt = System.currentTimeMillis()
-        val marketPriceEvidence = dao.getVerifiedMarketProductPriceRows()
-            .asSequence()
-            .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
-            .map { it.toPriceEvidence() }
-            .toList()
+        val storedMarketPriceSnapshots = if (
+            savedRun != null && existingPeriod?.marketPriceSnapshotCaptured == true
+        ) {
+            dao.getPlanMarketPriceSnapshots(periodId)
+        } else {
+            emptyList()
+        }
+        val marketPriceEvidence = if (
+            savedRun != null && existingPeriod?.marketPriceSnapshotCaptured == true
+        ) {
+            storedMarketPriceSnapshots.map { it.toPriceEvidence() }
+        } else {
+            dao.getVerifiedMarketProductPriceRows()
+                .asSequence()
+                .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= marketPriceSnapshotAt }
+                .map { it.toPriceEvidence() }
+                .toList()
+        }
         if (allowed.isEmpty()) {
             return GenerationResult(false, "لا توجد أطباق رئيسية جزائرية متاحة بعد تطبيق قيود الحساسية وتفضيلات الطعام الحالية. لم نغيّر خطتك.", 0, weeklyBudgetDzd)
         }
@@ -1512,7 +1524,9 @@ class MealsRepository internal constructor(
         val weeklyRange = resolvePlanningDateRange(PlanningPeriodType.WEEK, weekStartIso)
         val periodId = weeklyRange.periodId
         val type = adjustmentType?.trim()?.uppercase()
-        dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, canonicalId, normalizedUnit)
+        if (type == "SOME" || type == "ENOUGH") {
+            dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, canonicalId, normalizedUnit)
+        }
         when (type) {
             "SOME" -> {
                 if (!availableQuantity.isFinite() || availableQuantity <= 0.0) return
