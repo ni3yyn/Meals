@@ -1536,35 +1536,129 @@ class MealsRepository internal constructor(
             return
         }
 
-        val updatedAt = System.currentTimeMillis()
         database.withTransaction {
-            // Any change to the available amount (including clearing it) invalidates
-            // a previously typed purchase quantity. The subsequent shopping edit
-            // may write a new explicit quantity; null restores generated quantity.
-            dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, canonicalId, normalizedUnit)
-            when (type) {
-                "SOME" -> dao.upsertPlanIngredientAdjustment(
-                    PlanIngredientAdjustmentEntity(
-                        periodId = periodId,
-                        ingredientId = canonicalId,
-                        unit = normalizedUnit,
-                        adjustmentType = "SOME",
-                        availableQuantity = availableQuantity,
-                        updatedAtEpochMillis = updatedAt
-                    )
-                )
-                "ENOUGH" -> dao.upsertPlanIngredientAdjustment(
-                    PlanIngredientAdjustmentEntity(
-                        periodId = periodId,
-                        ingredientId = canonicalId,
-                        unit = normalizedUnit,
-                        adjustmentType = "ENOUGH",
-                        availableQuantity = 0.0,
-                        updatedAtEpochMillis = updatedAt
-                    )
-                )
-                null -> dao.deletePlanIngredientAdjustment(periodId, canonicalId, normalizedUnit)
+            persistPlanIngredientAdjustment(
+                weekStartIso = weekStartIso,
+                periodId = periodId,
+                ingredientId = canonicalId,
+                unit = normalizedUnit,
+                type = type,
+                availableQuantity = availableQuantity,
+                updatedAtEpochMillis = System.currentTimeMillis()
+            )
+        }
+    }
+
+    /**
+     * Saves the plan-only availability choice and the corresponding shopping
+     * row edit as one transaction. The UI must use this for ingredient rows so
+     * clearing an adjustment cannot race a separate purchase-quantity update.
+     */
+    suspend fun updatePlanShoppingItemDetails(
+        weekStartIso: String,
+        shoppingItemId: String,
+        ingredientId: String,
+        unit: String,
+        adjustmentType: String?,
+        availableQuantity: Double,
+        purchaseQuantity: Double?,
+        storeNote: String,
+        unavailable: Boolean,
+        actualSpentDzd: Double?
+    ) {
+        ensureInitialized()
+        if (purchaseQuantity != null && (!purchaseQuantity.isFinite() || purchaseQuantity <= 0.0)) return
+        if (actualSpentDzd != null && (!actualSpentDzd.isFinite() || actualSpentDzd < 0.0)) return
+
+        val canonicalId = foodIdentityResolver.canonicalId(ingredientId)
+        val normalizedUnit = unit.trim()
+        if (normalizedUnit.isBlank()) return
+        if (dao.getIngredients().none { it.id == canonicalId }) return
+
+        val periodId = resolvePlanningDateRange(
+            PlanningPeriodType.WEEK,
+            weekStartIso
+        ).periodId
+        val type = when (adjustmentType?.trim()?.uppercase()) {
+            null, "", "NONE" -> null
+            "SOME" -> "SOME"
+            "ENOUGH" -> "ENOUGH"
+            else -> return
+        }
+        if (type == "SOME" && (!availableQuantity.isFinite() || availableQuantity <= 0.0)) return
+
+        database.withTransaction {
+            val current = dao.getShoppingItem(shoppingItemId) ?: return@withTransaction
+            if (current.ingredientId != canonicalId || current.unit != normalizedUnit) {
+                return@withTransaction
             }
+
+            persistPlanIngredientAdjustment(
+                weekStartIso = weekStartIso,
+                periodId = periodId,
+                ingredientId = canonicalId,
+                unit = normalizedUnit,
+                type = type,
+                availableQuantity = availableQuantity,
+                updatedAtEpochMillis = System.currentTimeMillis()
+            )
+            dao.upsertShoppingItems(
+                listOf(
+                    current.copy(
+                        purchaseQuantityOverride = purchaseQuantity,
+                        purchaseQuantity = purchaseQuantity ?: current.purchaseQuantity,
+                        cashOutlayDzd = if (purchaseQuantity != null && current.purchaseQuantity > 0.0) {
+                            current.cashOutlayDzd?.times(purchaseQuantity / current.purchaseQuantity)
+                        } else current.cashOutlayDzd,
+                        priceLabel = if (purchaseQuantity != null) {
+                            "تقدير معدل يدوياً"
+                        } else {
+                            current.priceLabel
+                        },
+                        storeNote = storeNote.trim().take(100),
+                        isUnavailable = unavailable,
+                        actualSpentDzd = actualSpentDzd,
+                        updatedAtEpochMillis = System.currentTimeMillis()
+                    )
+                )
+            )
+        }
+    }
+
+    private suspend fun persistPlanIngredientAdjustment(
+        weekStartIso: String,
+        periodId: String,
+        ingredientId: String,
+        unit: String,
+        type: String?,
+        availableQuantity: Double,
+        updatedAtEpochMillis: Long
+    ) {
+        // Any change to the available amount (including clearing it) invalidates
+        // the previous manual quantity before the caller applies a new override.
+        dao.clearGeneratedPurchaseQuantityOverride(weekStartIso, ingredientId, unit)
+        when (type) {
+            "SOME" -> dao.upsertPlanIngredientAdjustment(
+                PlanIngredientAdjustmentEntity(
+                    periodId = periodId,
+                    ingredientId = ingredientId,
+                    unit = unit,
+                    adjustmentType = "SOME",
+                    availableQuantity = availableQuantity,
+                    updatedAtEpochMillis = updatedAtEpochMillis
+                )
+            )
+            "ENOUGH" -> dao.upsertPlanIngredientAdjustment(
+                PlanIngredientAdjustmentEntity(
+                    periodId = periodId,
+                    ingredientId = ingredientId,
+                    unit = unit,
+                    adjustmentType = "ENOUGH",
+                    availableQuantity = 0.0,
+                    updatedAtEpochMillis = updatedAtEpochMillis
+                )
+            )
+            null -> dao.deletePlanIngredientAdjustment(periodId, ingredientId, unit)
         }
     }
 
