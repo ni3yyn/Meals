@@ -34,7 +34,6 @@ import dz.meals.app.domain.PlanIngredientAdjustment
 import dz.meals.app.domain.PlanningPeriodType
 import dz.meals.app.domain.calculatePurchaseNeed
 import dz.meals.app.domain.resolvePlanningDateRange
-import dz.meals.app.domain.PlanningDateRange
 import dz.meals.app.domain.buildPlanningPeriodSlots
 import dz.meals.app.domain.calculateBasket
 import dz.meals.app.domain.estimateMarketProductPrice
@@ -1214,9 +1213,7 @@ class MealsRepository internal constructor(
                 val dayOffset = random.nextInt(periodDayCount)
                 val dayOrder = (0 until periodDayCount).drop(dayOffset) + (0 until periodDayCount).take(dayOffset)
                 val attemptSlots = dayOrder.flatMap { day ->
-                    MealSlots.ids.filter { it in validSlots }.map { slot ->
-                        "$periodStartIso-$day-$slot" to (day to slot)
-                    }
+                    slots.filter { it.dayIndex == day }
                 }
                 val attemptMeals = locked.associateBy { it.id }.toMutableMap()
                 val repeatCounts = locked.mapNotNull { it.recipeId }
@@ -1252,7 +1249,7 @@ class MealsRepository internal constructor(
                         candidatePool.filter { recipe ->
                             val proposed = PlannedMeal(
                                 id = id,
-                                periodStartIso = periodStartIso,
+                                weekStartIso = periodStartIso,
                                 dayIndex = day,
                                 mealSlot = slot,
                                 recipeId = recipe.id,
@@ -1276,7 +1273,7 @@ class MealsRepository internal constructor(
                     val selectedRecipe = constrainedPool.minByOrNull { recipe ->
                         val proposedMeal = PlannedMeal(
                             id = id,
-                            periodStartIso = periodStartIso,
+                            weekStartIso = periodStartIso,
                             dayIndex = day,
                             mealSlot = slot,
                             recipeId = recipe.id,
@@ -1291,7 +1288,7 @@ class MealsRepository internal constructor(
 
                     attemptMeals[id] = PlannedMeal(
                         id = id,
-                        periodStartIso = periodStartIso,
+                        weekStartIso = periodStartIso,
                         dayIndex = day,
                         mealSlot = slot,
                         recipeId = selectedRecipe.id,
@@ -1338,7 +1335,7 @@ class MealsRepository internal constructor(
                 alternatives.forEach { recipe ->
                     val replacement = PlannedMeal(
                         id = id,
-                        periodStartIso = periodStartIso,
+                        weekStartIso = periodStartIso,
                         dayIndex = day,
                         mealSlot = slot,
                         recipeId = recipe.id,
