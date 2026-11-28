@@ -127,9 +127,20 @@ def _tokens(value: str) -> set[str]:
             continue
         # Arabic definite article differences should not hide otherwise exact tokens.
         if re.fullmatch(r"[\u0600-\u06ff]+", token) and token.startswith("ال") and len(token) > 3:
-            token = token[2:]
-        if token:
+            result.add(token[2:])
             result.add(token)
+            continue
+
+        # Keep the original English token and add a conservative singular
+        # candidate for the review index (chickpeas -> chickpea). Scoring still
+        # uses the full label, so this cannot approve a match by itself.
+        result.add(token)
+        if len(token) > 4 and token.endswith("ies"):
+            result.add(token[:-3] + "y")
+        elif len(token) > 4 and token.endswith("es"):
+            result.add(token[:-2])
+        elif len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+            result.add(token[:-1])
     return result
 
 
