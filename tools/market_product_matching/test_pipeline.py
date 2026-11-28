@@ -47,6 +47,24 @@ class ProductIngredientPipelineTests(unittest.TestCase):
         self.assertEqual(rows[0]["candidate_score"], "100")
         self.assertEqual(rows[0]["review_decision"], "")
 
+    def test_boiled_name_does_not_accidentally_trigger_oil_form(self):
+        products = [{
+            "id": "abababab-abab-4bab-8bab-abababababab",
+            "name": "Boiled chickpeas",
+        }]
+        foods = [{
+            "id": PLAIN_CHICKPEAS_ID,
+            "names": {"ar": "حمص", "en": "Chickpea", "fr": "Pois chiche"},
+            "aliases": {"ar": [], "en": [], "fr": []},
+            "categoryId": "foodcat-legumes",
+            "subcategoryId": "foodsub-legumes-dry",
+            "acceptedUnits": ["g", "kg"],
+        }]
+
+        rows = build_candidate_rows(products, foods, {PLAIN_CHICKPEAS_ID})
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["ingredient_id"], PLAIN_CHICKPEAS_ID)
+
     def test_incompatible_package_unit_is_not_suggested(self):
         products = [{
             "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
