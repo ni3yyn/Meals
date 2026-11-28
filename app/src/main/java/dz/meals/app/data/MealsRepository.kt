@@ -640,7 +640,9 @@ class MealsRepository internal constructor(
             dao.deletePlanSlots(weekStartIso, validSlots.toList())
             dao.upsertPlanMeals(chosen.values.sortedWith(compareBy<PlannedMeal> { it.dayIndex }.thenBy { it.mealSlot }).map { it.toEntity() })
             dao.deletePlanIngredientAdjustments(periodId)
-            rebasedAdjustmentRows.forEach(dao::upsertPlanIngredientAdjustment)
+            for (rebasedAdjustment in rebasedAdjustmentRows) {
+                dao.upsertPlanIngredientAdjustment(rebasedAdjustment)
+            }
             dao.upsertPlanRun(
                 PlanRunEntity(
                     weekStartIso = weekStartIso,
@@ -952,7 +954,9 @@ class MealsRepository internal constructor(
                     .map { it.toPlanningPeriodEntity(periodId, monthlyRange.startDate) }
             )
             dao.deletePlanIngredientAdjustments(periodId)
-            rebasedAdjustmentRows.forEach(dao::upsertPlanIngredientAdjustment)
+            for (rebasedAdjustment in rebasedAdjustmentRows) {
+                dao.upsertPlanIngredientAdjustment(rebasedAdjustment)
+            }
 
             val previousPeriod = dao.getPlanningPeriod(periodId)
             dao.upsertPlanningPeriod(
