@@ -341,6 +341,8 @@ data class ShoppingListItem(
     val marketConsumedValueMinDzd: Double? = null,
     val marketConsumedValueMaxDzd: Double? = null,
     val marketPriceOfferCount: Int = 0,
+    val marketPriceMinPackageCount: Int? = null,
+    val marketPriceMaxPackageCount: Int? = null,
     val marketPriceWilaya: String? = null,
     val marketPriceStoreNames: List<String> = emptyList(),
     val marketPriceSourceNotices: List<String> = emptyList(),
