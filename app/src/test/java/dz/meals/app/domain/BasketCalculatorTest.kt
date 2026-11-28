@@ -82,6 +82,83 @@ class BasketCalculatorTest {
     }
 
     @Test
+    fun planAdjustmentSomeDeductsOnlyTheQuantityEntered() {
+        val price = PriceObservationEntity(
+            "demo-potato", "potato", 100.0, "g", 20.0,
+            "demo", "غير محدد", null, "demo", "غير موثق"
+        )
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = listOf(price),
+            planIngredientAdjustments = mapOf(
+                ("potato" to "g") to PlanIngredientAdjustment(
+                    PlanIngredientAdjustment.Type.SOME,
+                    availableQuantity = 100.0
+                )
+            )
+        )
+
+        val item = result.items.single()
+        assertEquals(400.0, item.requiredQuantity, 0.0001)
+        assertEquals(300.0, item.purchaseQuantity, 0.0001)
+        assertEquals(100.0, item.alreadyHaveQuantity, 0.0001)
+        assertTrue(!item.alreadyHaveEnough)
+        assertEquals(60.0, item.cashOutlayDzd!!, 0.0001)
+        assertEquals(0, result.unknownPriceCount)
+    }
+
+    @Test
+    fun planAdjustmentEnoughMakesPurchaseNeedAndCashOutlayZero() {
+        val result = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = emptyList(),
+            planIngredientAdjustments = mapOf(
+                ("potato" to "g") to PlanIngredientAdjustment(
+                    PlanIngredientAdjustment.Type.ENOUGH
+                )
+            )
+        )
+
+        val item = result.items.single()
+        assertEquals(400.0, item.requiredQuantity, 0.0001)
+        assertEquals(0.0, item.purchaseQuantity, 0.0001)
+        assertTrue(item.alreadyHaveEnough)
+        assertEquals(0.0, item.cashOutlayDzd!!, 0.0001)
+        assertEquals(0, result.unknownPriceCount)
+    }
+
+    @Test
+    fun planIngredientAdjustmentDoesNotLeakIntoAnotherPlanCalculation() {
+        val adjusted = calculateBasket(
+            plannedMeals = listOf(plan),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = emptyList(),
+            planIngredientAdjustments = mapOf(
+                ("potato" to "g") to PlanIngredientAdjustment(
+                    PlanIngredientAdjustment.Type.SOME,
+                    availableQuantity = 100.0
+                )
+            )
+        )
+        val separatePlanWithoutAdjustment = calculateBasket(
+            plannedMeals = listOf(plan.copy(weekStartIso = "2026-11-23")),
+            recipes = listOf(recipe),
+            pantry = emptyList(),
+            prices = emptyList()
+        )
+
+        assertEquals(300.0, adjusted.items.single().purchaseQuantity, 0.0001)
+        assertEquals(400.0, separatePlanWithoutAdjustment.items.single().purchaseQuantity, 0.0001)
+        assertEquals(100.0, adjusted.items.single().alreadyHaveQuantity, 0.0001)
+        assertEquals(0.0, separatePlanWithoutAdjustment.items.single().alreadyHaveQuantity, 0.0001)
+    }
+
+    @Test
     fun approximatePantryIsVisibleButNeverDeducted() {
         val pantry = listOf(PantryItemEntity("potato", "potato", null, "g", true, "some left", null))
         val result = calculateBasket(listOf(plan), listOf(recipe), pantry, emptyList())
