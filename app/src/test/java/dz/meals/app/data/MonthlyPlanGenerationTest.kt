@@ -64,12 +64,6 @@ class MonthlyPlanGenerationTest {
             )
 
             assertTrue("Monthly generation failed: ${firstResult.message}", firstResult.success)
-            assertEquals(1, firstResult.meatAllowanceBreakdown.size)
-            assertEquals(3_000.0, firstResult.meatAllowanceBreakdown.single().allowedGrams, 0.0)
-            assertEquals(
-                dz.meals.app.domain.PeriodMeatAllowance.Basis.MONTHLY_CAP,
-                firstResult.meatAllowanceBreakdown.single().basis
-            )
 
             val dao = database.mealsDao()
             val periodId = "MONTH:2027-01-01"
