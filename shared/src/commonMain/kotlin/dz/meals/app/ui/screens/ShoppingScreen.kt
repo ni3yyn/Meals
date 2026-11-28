@@ -411,7 +411,12 @@ fun ShoppingScreen(
                             style = MaterialTheme.typography.labelMedium
                         )
                         Text(
-                            snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
+                            snapshot.basket.purchaseOutlayMinDzd?.let { minimum ->
+                                val maximum = snapshot.basket.purchaseOutlayMaxDzd
+                                if (maximum != null && minimum != maximum) {
+                                    minimum.toInt().formatDzd() + " – " + maximum.toInt().formatDzd()
+                                } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+                            } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.headlineSmall,
@@ -1495,7 +1500,12 @@ private fun ShoppingItemRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر",
+                    if (item.marketCashOutlayMinDzd != null && item.marketCashOutlayMaxDzd != null) {
+                        item.marketCashOutlayMinDzd.toInt().formatDzd() + " – " +
+                            item.marketCashOutlayMaxDzd.toInt().formatDzd()
+                    } else {
+                        item.cashOutlayDzd?.toInt()?.formatDzd() ?: "السعر غير متوفر"
+                    },
                     color = MutedInk,
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
@@ -1613,7 +1623,13 @@ private fun buildShoppingShareText(
     localeTag: String
 ): String = buildString {
     appendLine(mealsText("قائمة مشتريات Midati", localeTag))
-    appendLine(mealsText("التكلفة التقديرية: " + snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(), localeTag))
+    val basketRangeText = snapshot.basket.purchaseOutlayMinDzd?.let { minimum ->
+        val maximum = snapshot.basket.purchaseOutlayMaxDzd
+        if (maximum != null && minimum != maximum) {
+            minimum.toInt().formatDzd() + " – " + maximum.toInt().formatDzd()
+        } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+    } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+    appendLine(mealsText("التكلفة التقديرية: " + basketRangeText, localeTag))
     if (snapshot.basket.actualSpendDzd > 0.0) {
         appendLine(mealsText("الإنفاق الفعلي المُدخل: " + snapshot.basket.actualSpendDzd.toInt().formatDzd(), localeTag))
     }
@@ -1640,8 +1656,15 @@ private fun buildShoppingShareText(
                         append(bidiIsolate(if (item.ingredientId == null) item.name else mealsText(item.name, localeTag)))
                         append(" — ")
                         append(mealsText(item.purchaseQuantity.formatHouseholdQuantity(item.unit), localeTag))
-                        val itemCost: Double? = item.cashOutlayDzd
-                        if (itemCost != null) append(" · " + mealsText(itemCost.toInt().formatDzd(), localeTag))
+                        val itemCostLabel = if (
+                            item.marketCashOutlayMinDzd != null && item.marketCashOutlayMaxDzd != null
+                        ) {
+                            item.marketCashOutlayMinDzd.toInt().formatDzd() + " – " +
+                                item.marketCashOutlayMaxDzd.toInt().formatDzd()
+                        } else {
+                            item.cashOutlayDzd?.toInt()?.formatDzd()
+                        }
+                        if (itemCostLabel != null) append(" · " + mealsText(itemCostLabel, localeTag))
                         if (item.isUnavailable) append(" · " + mealsText("غير متوفر", localeTag))
                         if (item.storeNote.isNotBlank()) append(" · " + bidiIsolate(item.storeNote))
                         appendLine()
