@@ -233,12 +233,7 @@ fun PlanScreen(
                     ) {
                         Text("الشراء المتوقع", color = dz.meals.app.ui.theme.TextAccent, style = MaterialTheme.typography.labelMedium)
                         Text(
-                            snapshot.basket.purchaseOutlayMinDzd?.let { minimum ->
-                                val maximum = snapshot.basket.purchaseOutlayMaxDzd
-                                if (maximum != null && minimum != maximum) {
-                                    minimum.toInt().formatDzd() + " – " + maximum.toInt().formatDzd()
-                                } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
-                            } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
+                            snapshot.purchaseEstimateLabel(),
                             color = dz.meals.app.ui.theme.Ink,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
@@ -823,12 +818,7 @@ private fun MonthlyPlanContent(
     val hasMarketPriceEstimates = snapshot.shoppingItems.any { it.marketCashOutlayMinDzd != null }
     val hasPriceContext = snapshot.basket.unknownPriceCount > 0 ||
         snapshot.basket.hasDemoPrices || hasMarketPriceEstimates
-    val purchaseRange = snapshot.basket.purchaseOutlayMinDzd?.let { minimum ->
-        val maximum = snapshot.basket.purchaseOutlayMaxDzd
-        if (maximum != null && maximum != minimum) {
-            "${minimum.toInt().formatDzd()} – ${maximum.toInt().formatDzd()}"
-        } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
-    } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+    val purchaseRange = snapshot.purchaseEstimateLabel()
     val weekOffset = monthStart.dayOfWeek.ordinal
     val weekGroups = (0..((weekOffset + monthDayCount - 1) / 7)).map { weekIndex ->
         val firstDay = (weekIndex * 7 - weekOffset).coerceAtLeast(0)
@@ -1149,6 +1139,33 @@ private fun IngredientNeedsSection(
     }
 }
 
+
+/**
+ * Do not display a zero estimate when the plan contains purchases with no price.
+ * A partial total is labelled as partial; an empty, not-yet-generated plan stays
+ * neutral instead of implying a zero-cost basket.
+ */
+private fun MealsSnapshot.purchaseEstimateLabel(): String {
+    val plannedPurchases = shoppingItems.filter { !it.userAdded && it.purchaseQuantity > 0.0 }
+    if (plannedPurchases.isEmpty()) {
+        return if (plannedMeals.isEmpty()) "—" else 0.formatDzd()
+    }
+
+    val hasAnyEstimate = plannedPurchases.any {
+        it.cashOutlayDzd != null || it.marketCashOutlayMinDzd != null
+    }
+    if (basket.unknownPriceCount > 0 && !hasAnyEstimate) return "غير متوفر"
+
+    if (basket.unknownPriceCount == 0) {
+        val minimum = basket.purchaseOutlayMinDzd
+        val maximum = basket.purchaseOutlayMaxDzd
+        if (minimum != null && maximum != null && minimum != maximum) {
+            return "${minimum.toInt().formatDzd()} – ${maximum.toInt().formatDzd()}"
+        }
+    }
+    val total = basket.purchaseOutlayDzd.toInt().formatDzd()
+    return if (basket.unknownPriceCount > 0) "تقدير جزئي · $total" else total
+}
 
 @Composable
 private fun SlotRow(
