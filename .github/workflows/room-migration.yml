@@ -77,4 +77,6 @@ jobs:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Run Room migration and unit tests
-        run: ./gradlew :app:testReleaseUnitTest --stacktrace --no-daemon
+        # Compile and exercise the monthly internal-beta path in CI.
+        # Production Release builds remain weekly-only unless explicitly opted in.
+        run: ./gradlew :app:testReleaseUnitTest --stacktrace --no-daemon -PmidatiMonthlyPlanningEnabled=true
