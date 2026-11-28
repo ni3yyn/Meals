@@ -242,6 +242,13 @@ fun PlanScreen(
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
+                    MealsIconAction(onClick = onRefreshPrices, modifier = Modifier.size(38.dp)) {
+                        MealsIcon(
+                            MealsIconName.Refresh,
+                            contentDescription = "تحديث الأسعار",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
                 if (snapshot.basket.unknownPriceCount > 0 || snapshot.basket.hasDemoPrices || hasMarketPriceEstimates) {
                     Row(
@@ -563,6 +570,186 @@ fun PlanScreen(
         }
     }
     }
+
+    editingMealSlot?.let { editingSlot ->
+        val day = selectedDayIndex
+        val slotTitle = when (editingSlot) {
+            "breakfast" -> "الفطور"
+            "lunch" -> "الغداء"
+            "dinner" -> "العشاء"
+            else -> "الوجبة"
+        }
+        val existingMeal = mealsByDayAndSlot[day to editingSlot]
+        val currentRecipe = existingMeal?.recipeId?.let(recipesById::get)
+
+        MealsBottomSheet(
+            onDismissRequest = { editingMealSlot = null },
+            title = { Text("اختر وصفة · $slotTitle") },
+            subtitle = "وصفات مناسبة لتفضيلات الأسرة",
+            fixedHeightFraction = 0.88f,
+            fillBody = true,
+            text = {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    item {
+                        Text(
+                            "اختاري الوصفة التي تناسب هذه الوجبة",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 7.dp)
+                        )
+                    }
+                    if (eligibleRecipes.isEmpty()) {
+                        item {
+                            Text(
+                                "لا توجد وصفات تطابق قيود الحساسية الحالية.",
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 16.dp)
+                            )
+                        }
+                    }
+                    items(
+                        eligibleRecipes,
+                        key = { it.id },
+                        contentType = { "recipe-choice" }
+                    ) { recipe ->
+                        MealsTextButton(
+                            onClick = {
+                                onSetMeal(day, editingSlot, recipe.id)
+                                editingMealSlot = null
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                MealsRecipeImage(
+                                    imageUrl = recipe.takeIf { it.hasDisplayableRecipeImage() }?.imageUrl.orEmpty(),
+                                    contentDescription = recipe.nameAr,
+                                    modifier = Modifier.size(58.dp),
+                                    imageWidth = 280,
+                                    cornerRadius = 12.dp,
+                                    placeholderIconSize = 25.dp
+                                )
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        recipe.nameAr,
+                                        color = dz.meals.app.ui.theme.Ink,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        recipe.durationMinutes.toString() + " دقيقة · " +
+                                            preferences.householdServings.toString() + " حصص",
+                                        color = MutedInk,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                if (recipe.id == currentRecipe?.id) {
+                                    MealsIcon(
+                                        name = MealsIconName.Check,
+                                        contentDescription = "الوصفة الحالية",
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                } else {
+                                    MealsIcon(
+                                        name = MealsIconName.ChevronRight,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = if (existingMeal?.recipeId != null) {
+                {
+                    MealsSecondaryButton(
+                        label = "إفراغ الوجبة",
+                        onClick = {
+                            onSetMeal(day, editingSlot, null)
+                            editingMealSlot = null
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else {
+                null
+            },
+            dismissButton = {
+                val dismissSheet = mealsSheetDismissAction()
+                MealsSecondaryButton(
+                    label = "العودة إلى الوجبات",
+                    onClick = { dismissSheet { editingMealSlot = null } },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        )
+    }
+
+    val editingIngredient = snapshot.shoppingItems.firstOrNull {
+        it.ingredientId == editingIngredientId && !it.userAdded
+    }
+    if (editingIngredient != null) {
+        MealsBottomSheet(
+            onDismissRequest = { editingIngredientId = null },
+            title = { Text("كم لديك من ${editingIngredient.name}؟") },
+            subtitle = "تُطبّق هذه الكمية على هذه الخطة فقط",
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "الكمية المطلوبة: ${editingIngredient.requiredQuantity.formatHouseholdQuantity(editingIngredient.unit)}",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = availableAmountText,
+                        onValueChange = { value ->
+                            availableAmountText = value.filter { it.isDigit() || it == '.' || it == ',' }.take(12)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("الكمية المتوفرة") },
+                        suffix = { Text(dz.meals.app.shared.format.formatHouseholdUnit(editingIngredient.unit)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                }
+            },
+            confirmButton = {
+                MealsPrimaryButton(
+                    label = "حفظ الكمية",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        val amount = availableAmountText.replace(',', '.').toDoubleOrNull()
+                        if (amount != null && amount.isFinite() && amount >= 0.0) {
+                            editingIngredient.ingredientId?.let {
+                                onAdjustIngredient(it, editingIngredient.unit, false, amount)
+                            }
+                            editingIngredientId = null
+                        }
+                    }
+                )
+            },
+            dismissButton = {
+                MealsSecondaryButton(
+                    label = "إلغاء",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { editingIngredientId = null }
+                )
+            }
+        )
+    }
+}
 
 @Composable
 private fun PeriodModeSelector(
@@ -921,185 +1108,6 @@ private fun IngredientNeedsSection(
     }
 }
 
-    editingMealSlot?.let { editingSlot ->
-        val day = selectedDayIndex
-        val slotTitle = when (editingSlot) {
-            "breakfast" -> "الفطور"
-            "lunch" -> "الغداء"
-            "dinner" -> "العشاء"
-            else -> "الوجبة"
-        }
-        val existingMeal = mealsByDayAndSlot[day to editingSlot]
-        val currentRecipe = existingMeal?.recipeId?.let(recipesById::get)
-
-        MealsBottomSheet(
-            onDismissRequest = { editingMealSlot = null },
-            title = { Text("اختر وصفة · $slotTitle") },
-            subtitle = "وصفات مناسبة لتفضيلات الأسرة",
-            fixedHeightFraction = 0.88f,
-            fillBody = true,
-            text = {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    item {
-                        Text(
-                            "اختاري الوصفة التي تناسب هذه الوجبة",
-                            color = MutedInk,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 7.dp)
-                        )
-                    }
-                    if (eligibleRecipes.isEmpty()) {
-                        item {
-                            Text(
-                                "لا توجد وصفات تطابق قيود الحساسية الحالية.",
-                                color = MutedInk,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    }
-                    items(
-                        eligibleRecipes,
-                        key = { it.id },
-                        contentType = { "recipe-choice" }
-                    ) { recipe ->
-                        MealsTextButton(
-                            onClick = {
-                                onSetMeal(day, editingSlot, recipe.id)
-                                editingMealSlot = null
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                MealsRecipeImage(
-                                    imageUrl = recipe.takeIf { it.hasDisplayableRecipeImage() }?.imageUrl.orEmpty(),
-                                    contentDescription = recipe.nameAr,
-                                    modifier = Modifier.size(58.dp),
-                                    imageWidth = 280,
-                                    cornerRadius = 12.dp,
-                                    placeholderIconSize = 25.dp
-                                )
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Text(
-                                        recipe.nameAr,
-                                        color = dz.meals.app.ui.theme.Ink,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        recipe.durationMinutes.toString() + " دقيقة · " +
-                                            preferences.householdServings.toString() + " حصص",
-                                        color = MutedInk,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                                if (recipe.id == currentRecipe?.id) {
-                                    MealsIcon(
-                                        name = MealsIconName.Check,
-                                        contentDescription = "الوصفة الحالية",
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                } else {
-                                    MealsIcon(
-                                        name = MealsIconName.ChevronRight,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = if (existingMeal?.recipeId != null) {
-                {
-                    MealsSecondaryButton(
-                        label = "إفراغ الوجبة",
-                        onClick = {
-                            onSetMeal(day, editingSlot, null)
-                            editingMealSlot = null
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            } else {
-                null
-            },
-            dismissButton = {
-                val dismissSheet = mealsSheetDismissAction()
-                MealsSecondaryButton(
-                    label = "العودة إلى الوجبات",
-                    onClick = { dismissSheet { editingMealSlot = null } },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        )
-    }
-
-    val editingIngredient = snapshot.shoppingItems.firstOrNull {
-        it.ingredientId == editingIngredientId && !it.userAdded
-    }
-    if (editingIngredient != null) {
-        MealsBottomSheet(
-            onDismissRequest = { editingIngredientId = null },
-            title = { Text("كم لديك من ${editingIngredient.name}؟") },
-            subtitle = "تُطبّق هذه الكمية على هذه الخطة فقط",
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "الكمية المطلوبة: ${editingIngredient.requiredQuantity.formatHouseholdQuantity(editingIngredient.unit)}",
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    OutlinedTextField(
-                        value = availableAmountText,
-                        onValueChange = { value ->
-                            availableAmountText = value.filter { it.isDigit() || it == '.' || it == ',' }.take(12)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = { Text("الكمية المتوفرة") },
-                        suffix = { Text(dz.meals.app.shared.format.formatHouseholdUnit(editingIngredient.unit)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                }
-            },
-            confirmButton = {
-                MealsPrimaryButton(
-                    label = "حفظ الكمية",
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        val amount = availableAmountText.replace(',', '.').toDoubleOrNull()
-                        if (amount != null && amount.isFinite() && amount >= 0.0) {
-                            editingIngredient.ingredientId?.let {
-                                onAdjustIngredient(it, editingIngredient.unit, false, amount)
-                            }
-                            editingIngredientId = null
-                        }
-                    }
-                )
-            },
-            dismissButton = {
-                MealsSecondaryButton(
-                    label = "إلغاء",
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { editingIngredientId = null }
-                )
-            }
-        )
-    }
-}
 
 @Composable
 private fun SlotRow(
