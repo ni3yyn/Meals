@@ -334,7 +334,18 @@ data class ShoppingListItem(
     val isUnavailable: Boolean = false,
     val actualSpentDzd: Double? = null,
     val categoryId: String = FoodTaxonomyIds.OTHER_CATEGORY,
-    val subcategoryId: String = FoodTaxonomyIds.OTHER_SUBCATEGORY
+    val subcategoryId: String = FoodTaxonomyIds.OTHER_SUBCATEGORY,
+    /** Ephemeral verified market range; recalculated from immutable offers on each snapshot. */
+    val marketCashOutlayMinDzd: Double? = null,
+    val marketCashOutlayMaxDzd: Double? = null,
+    val marketConsumedValueMinDzd: Double? = null,
+    val marketConsumedValueMaxDzd: Double? = null,
+    val marketPriceOfferCount: Int = 0,
+    val marketPriceWilaya: String? = null,
+    val marketPriceStoreNames: List<String> = emptyList(),
+    val marketPriceSourceNotices: List<String> = emptyList(),
+    val marketPriceObservedAtEpochMillis: Long? = null,
+    val marketPriceIncludesLimitedAvailability: Boolean = false
 )
 
 data class BasketSummary(
@@ -343,7 +354,10 @@ data class BasketSummary(
     val purchaseOutlayDzd: Double = 0.0,
     val unknownPriceCount: Int = 0,
     val hasDemoPrices: Boolean = false,
-    val actualSpendDzd: Double = 0.0
+    val actualSpendDzd: Double = 0.0,
+    /** Present only when at least one line uses a verified local market range. */
+    val purchaseOutlayMinDzd: Double? = null,
+    val purchaseOutlayMaxDzd: Double? = null
 )
 
 object MealSlots {
