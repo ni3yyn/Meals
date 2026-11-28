@@ -1458,6 +1458,90 @@ class MealsRepository internal constructor(
         setMeal(weekStartIso, empty.first, empty.second, recipeId, servings)
     }
 
+    /** Date-keyed meal editing shared by monthly plans and weekly adapters. */
+    suspend fun setMeal(
+        periodId: PlanningPeriodId,
+        dayIndex: Int,
+        mealSlot: String,
+        recipeId: String?,
+        servings: Int
+    ) {
+        val (type, range) = resolvePeriod(periodId) ?: return
+        if (type == PlanningPeriodType.WEEK) {
+            setMeal(range.startDate.toString(), dayIndex, mealSlot, recipeId, servings)
+            return
+        }
+        if (dayIndex !in 0..30 || mealSlot !in MealSlots.ids) return
+        val date = range.startDate.plusDays(dayIndex.toLong())
+        if (date.isAfter(range.endDate)) return
+        val existing = dao.getPlanningPeriodMeals(periodId.value)
+            .firstOrNull { it.dateIso == date.toString() && it.mealSlot == mealSlot }
+        if (existing?.isCooked == true) return
+        dao.upsertPlanningPeriodMeal(
+            (existing ?: PlanningPeriodMealEntity(
+                id = "${periodId.value}-${date}-${mealSlot}",
+                periodId = periodId.value,
+                dateIso = date.toString(),
+                mealSlot = mealSlot,
+                recipeId = null,
+                servings = servings.coerceIn(1, 12),
+                locked = false,
+                isCooked = false,
+                isUserEdited = true
+            )).copy(
+                recipeId = recipeId,
+                servings = servings.coerceIn(1, 12),
+                isUserEdited = true
+            )
+        )
+    }
+
+    suspend fun toggleMealLock(id: String, periodId: PlanningPeriodId) {
+        val (type, range) = resolvePeriod(periodId) ?: return
+        if (type == PlanningPeriodType.WEEK) {
+            toggleMealLock(id, range.startDate.toString())
+            return
+        }
+        val meal = dao.getPlanningPeriodMealById(id)?.takeIf { it.periodId == periodId.value } ?: return
+        dao.upsertPlanningPeriodMeal(meal.copy(locked = !meal.locked))
+    }
+
+    suspend fun toggleMealCooked(id: String, periodId: PlanningPeriodId) {
+        val (type, range) = resolvePeriod(periodId) ?: return
+        if (type == PlanningPeriodType.WEEK) {
+            toggleMealCooked(id, range.startDate.toString())
+            return
+        }
+        val meal = dao.getPlanningPeriodMealById(id)?.takeIf { it.periodId == periodId.value } ?: return
+        dao.upsertPlanningPeriodMeal(meal.copy(isCooked = !meal.isCooked))
+    }
+
+    suspend fun adjustMealServings(id: String, periodId: PlanningPeriodId, delta: Int) {
+        val (type, range) = resolvePeriod(periodId) ?: return
+        if (type == PlanningPeriodType.WEEK) {
+            adjustMealServings(id, range.startDate.toString(), delta)
+            return
+        }
+        val meal = dao.getPlanningPeriodMealById(id)?.takeIf { it.periodId == periodId.value } ?: return
+        if (meal.isCooked) return
+        dao.upsertPlanningPeriodMeal(
+            meal.copy(
+                servings = (meal.servings + delta).coerceIn(1, 12),
+                isUserEdited = true
+            )
+        )
+    }
+
+    private fun resolvePeriod(periodId: PlanningPeriodId): Pair<PlanningPeriodType, PlanningDateRange>? {
+        val separator = periodId.value.indexOf(':')
+        if (separator <= 0) return null
+        val type = PlanningPeriodType.fromStorage(periodId.value.substring(0, separator)) ?: return null
+        val range = runCatching {
+            resolvePlanningDateRange(type, periodId.value.substring(separator + 1))
+        }.getOrNull() ?: return null
+        return (type to range).takeIf { range.periodId == periodId.value }
+    }
+
     suspend fun updatePantry(
         ingredientId: String,
         quantityBase: Double?,

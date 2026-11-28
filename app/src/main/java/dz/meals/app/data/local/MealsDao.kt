@@ -246,6 +246,9 @@ interface MealsDao {
         endDateIso: String
     ): List<PlanningPeriodMealEntity>
 
+    @Query("SELECT * FROM planning_period_meals WHERE id = :id LIMIT 1")
+    suspend fun getPlanningPeriodMealById(id: String): PlanningPeriodMealEntity?
+
     @Upsert
     suspend fun upsertPlanningPeriodMeal(meal: PlanningPeriodMealEntity)
 

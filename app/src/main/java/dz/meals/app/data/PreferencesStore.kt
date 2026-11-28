@@ -42,6 +42,7 @@ class PreferencesStore(context: Context) {
         val meatPreference = stringPreferencesKey("meat_preference")
         val monthlyMeatGrams = intPreferencesKey("monthly_meat_grams")
         val oilPreference = stringPreferencesKey("oil_preference")
+        val planningMode = stringPreferencesKey("planning_mode")
     }
 
     val preferences: Flow<AppPreferences> = dataStore.data
@@ -76,7 +77,10 @@ class PreferencesStore(context: Context) {
                 monthlyMeatGrams = (values[Keys.monthlyMeatGrams] ?: 3_000).coerceIn(250, 20_000),
                 oilPreference = values[Keys.oilPreference]
                     ?.takeIf { it in setOf("regular", "less") }
-                    ?: "regular"
+                    ?: "regular",
+                planningMode = values[Keys.planningMode]
+                    ?.takeIf { it in setOf("WEEK", "MONTH") }
+                    ?: "WEEK"
             )
         }
 
@@ -129,6 +133,11 @@ class PreferencesStore(context: Context) {
         }
     }
     
+    suspend fun setPlanningMode(mode: String) {
+        val normalized = mode.uppercase().takeIf { it == "WEEK" || it == "MONTH" } ?: return
+        dataStore.edit { values -> values[Keys.planningMode] = normalized }
+    }
+
     suspend fun setAppLanguage(languageTag: String) {
         val normalized = when (languageTag.lowercase().substringBefore('-')) {
             "en" -> ENGLISH_MEALS_LOCALE_TAG

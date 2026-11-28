@@ -298,7 +298,8 @@ data class AppPreferences(
     val kitchenBackground: String = MEALS_BACKGROUND_PINK,
     val meatPreference: String = "regular",
     val monthlyMeatGrams: Int = 3_000,
-    val oilPreference: String = "regular"
+    val oilPreference: String = "regular",
+    val planningMode: String = "WEEK"
 )
 
 data class PantryItem(
