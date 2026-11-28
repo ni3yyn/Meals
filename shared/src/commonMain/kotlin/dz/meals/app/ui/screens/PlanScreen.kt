@@ -31,6 +31,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import dz.meals.app.ui.components.MealsBottomSheet
 import dz.meals.app.ui.components.mealsSheetDismissAction
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +73,8 @@ import dz.meals.app.ui.theme.MutedInk
 import dz.meals.app.shared.format.formatArabicDate
 import dz.meals.app.shared.format.formatArabicWeekRange
 import dz.meals.app.shared.format.formatDzd
+import dz.meals.app.shared.format.formatHouseholdQuantity
+import dz.meals.app.shared.format.formatArabicMonth
 import kotlin.time.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -80,10 +85,16 @@ import kotlinx.datetime.plus
 @Composable
 fun PlanScreen(
     weekStartIso: String,
+    planningMode: String,
+    monthStartIso: String,
     preferences: AppPreferences,
     snapshot: MealsSnapshot,
     isGenerating: Boolean,
     onGenerate: (Boolean) -> Unit,
+    onPlanningModeChange: (String) -> Unit,
+    onMonthChange: (Int) -> Unit,
+    onRefreshPrices: () -> Unit,
+    onAdjustIngredient: (String, String, Boolean, Double) -> Unit,
     onSetMeal: (Int, String, String?) -> Unit,
     onToggleLock: (String) -> Unit,
     onToggleCooked: (String) -> Unit,
@@ -93,15 +104,29 @@ fun PlanScreen(
     onNextWeek: () -> Unit,
 ) {
     val weekStart = LocalDate.parse(weekStartIso)
+    val monthStart = LocalDate.parse(monthStartIso)
+    val monthDayCount = (
+        monthStart.plus(DatePeriod(months = 1)).toEpochDays() - monthStart.toEpochDays()
+    ).toInt()
+    val isMonthly = planningMode == "MONTH"
     val weekDays = remember { (0 until 7).toList() }
     val today = Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
     val todayIndexInWeek = today.toEpochDays() - weekStart.toEpochDays()
-    val initialDayIndex = todayIndexInWeek.takeIf { it in 0L..6L }?.toInt() ?: 0
+    val todayIndexInMonth = today.toEpochDays() - monthStart.toEpochDays()
+    val initialDayIndex = if (isMonthly) {
+        todayIndexInMonth.takeIf { it in 0L until monthDayCount.toLong() }?.toInt() ?: 0
+    } else {
+        todayIndexInWeek.takeIf { it in 0L..6L }?.toInt() ?: 0
+    }
     var fillEmptyOnly by rememberSaveable { mutableStateOf(false) }
-    var selectedDayIndex by rememberSaveable(weekStartIso) { mutableStateOf(initialDayIndex) }
+    var selectedDayIndex by rememberSaveable(planningMode, weekStartIso, monthStartIso) {
+        mutableStateOf(initialDayIndex)
+    }
     var editingMealSlot by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingIngredientId by rememberSaveable { mutableStateOf<String?>(null) }
+    var availableAmountText by rememberSaveable { mutableStateOf("") }
     val dayChipListState = rememberLazyListState()
     LaunchedEffect(weekStartIso, initialDayIndex) {
         dayChipListState.animateScrollToItem(initialDayIndex)
@@ -127,6 +152,38 @@ fun PlanScreen(
         } == true
     }
 
+    if (isMonthly) {
+        MonthlyPlanContent(
+            monthStart = monthStart,
+            monthDayCount = monthDayCount,
+            preferences = preferences,
+            snapshot = snapshot,
+            isGenerating = isGenerating,
+            fillEmptyOnly = fillEmptyOnly,
+            onFillEmptyOnlyChange = { fillEmptyOnly = it },
+            selectedDayIndex = selectedDayIndex,
+            onGenerate = { onGenerate(fillEmptyOnly) },
+            onPreviousMonth = { onMonthChange(-1) },
+            onNextMonth = { onMonthChange(1) },
+            onChangeMode = onPlanningModeChange,
+            onRefreshPrices = onRefreshPrices,
+            onSetMeal = onSetMeal,
+            onToggleLock = onToggleLock,
+            onToggleCooked = onToggleCooked,
+            onAdjustServings = onAdjustServings,
+            onOpenRecipe = onOpenRecipe,
+            onChooseMeal = { day, slot ->
+                selectedDayIndex = day
+                editingMealSlot = slot
+            },
+            onAdjustIngredient = onAdjustIngredient,
+            onEditIngredient = { item ->
+                editingIngredientId = item.ingredientId
+                availableAmountText = item.alreadyHaveQuantity
+                    .takeIf { it > 0.0 }?.let { it.toString() } ?: ""
+            }
+        )
+    } else {
     LazyColumn(
         state = rememberLazyListState(),
         modifier = Modifier.fillMaxSize(),
@@ -139,6 +196,10 @@ fun PlanScreen(
                 contentPadding = 15.dp,
                 shape = RoundedCornerShape(24.dp)
             ) {
+                PeriodModeSelector(
+                    selectedMode = planningMode,
+                    onModeChange = onPlanningModeChange
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -487,8 +548,378 @@ fun PlanScreen(
                 )
             }
         }
+        item {
+            IngredientNeedsSection(
+                items = snapshot.shoppingItems,
+                onSetEnough = { item, enough ->
+                    item.ingredientId?.let { onAdjustIngredient(it, item.unit, enough, 0.0) }
+                },
+                onEditAmount = { item ->
+                    editingIngredientId = item.ingredientId
+                    availableAmountText = item.alreadyHaveQuantity
+                        .takeIf { it > 0.0 }?.let { it.toString() } ?: ""
+                }
+            )
+        }
+    }
     }
 
+@Composable
+private fun PeriodModeSelector(
+    selectedMode: String,
+    onModeChange: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf("WEEK" to "أسبوعي", "MONTH" to "شهري").forEach { (mode, label) ->
+            MealsSelectionGlass(
+                modifier = Modifier.weight(1f),
+                selected = selectedMode == mode,
+                emphasizeSelectedFace = true
+            ) {
+                MealsPressable(
+                    onClick = { if (selectedMode != mode) onModeChange(mode) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            label,
+                            color = dz.meals.app.ui.theme.Ink,
+                            fontWeight = if (selectedMode == mode) FontWeight.Bold else FontWeight.Medium,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthlyPlanContent(
+    monthStart: LocalDate,
+    monthDayCount: Int,
+    preferences: AppPreferences,
+    snapshot: MealsSnapshot,
+    isGenerating: Boolean,
+    fillEmptyOnly: Boolean,
+    onFillEmptyOnlyChange: (Boolean) -> Unit,
+    selectedDayIndex: Int,
+    onGenerate: () -> Unit,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onChangeMode: (String) -> Unit,
+    onRefreshPrices: () -> Unit,
+    onSetMeal: (Int, String, String?) -> Unit,
+    onToggleLock: (String) -> Unit,
+    onToggleCooked: (String) -> Unit,
+    onAdjustServings: (String, Int) -> Unit,
+    onOpenRecipe: (String) -> Unit,
+    onChooseMeal: (Int, String) -> Unit,
+    onAdjustIngredient: (String, String, Boolean, Double) -> Unit,
+    onEditIngredient: (dz.meals.app.data.ShoppingListItem) -> Unit
+) {
+    val recipesById = remember(snapshot.recipes) { snapshot.recipes.associateBy { it.id } }
+    val mealsByDayAndSlot = remember(snapshot.plannedMeals) {
+        snapshot.plannedMeals.associateBy { it.dayIndex to it.mealSlot }
+    }
+    val visibleMealSlots = snapshot.planningPeriod?.mealSlots
+        ?: snapshot.planRun?.mealSlots
+        ?: preferences.mealSlots
+    val orderedMealSlots = listOf("breakfast", "lunch", "dinner").filter { it in visibleMealSlots }
+    val hasMarketPriceEstimates = snapshot.shoppingItems.any { it.marketCashOutlayMinDzd != null }
+    val hasPriceContext = snapshot.basket.unknownPriceCount > 0 ||
+        snapshot.basket.hasDemoPrices || hasMarketPriceEstimates
+    val purchaseRange = snapshot.basket.purchaseOutlayMinDzd?.let { minimum ->
+        val maximum = snapshot.basket.purchaseOutlayMaxDzd
+        if (maximum != null && maximum != minimum) {
+            "${minimum.toInt().formatDzd()} – ${maximum.toInt().formatDzd()}"
+        } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+    } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+    val weekOffset = monthStart.dayOfWeek.isoDayNumber - 1
+    val weekGroups = (0..((weekOffset + monthDayCount - 1) / 7)).map { weekIndex ->
+        val firstDay = (weekIndex * 7 - weekOffset).coerceAtLeast(0)
+        val lastDay = ((weekIndex + 1) * 7 - weekOffset - 1).coerceAtMost(monthDayCount - 1)
+        weekIndex to (firstDay..lastDay).toList()
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 122.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            MealsGlassSurface(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = 15.dp,
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                PeriodModeSelector(selectedMode = "MONTH", onModeChange = onChangeMode)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(13.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    MealsIllustrationBadge(
+                        icon = MealsIconName.Wallet,
+                        background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.84f),
+                        size = 42.dp
+                    )
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text("ميزانية الشهر", color = TextAccent, style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            (snapshot.planningPeriod?.budgetDzd ?: preferences.weeklyBudgetDzd)
+                                .formatDzd(),
+                            color = dz.meals.app.ui.theme.Ink,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                    Box(Modifier.size(width = 1.dp, height = 38.dp).background(Border.copy(alpha = 0.75f)))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text("الشراء المتوقع", color = TextAccent, style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            purchaseRange,
+                            color = dz.meals.app.ui.theme.Ink,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                    MealsIconAction(onClick = onRefreshPrices, modifier = Modifier.size(38.dp)) {
+                        MealsIcon(MealsIconName.Refresh, contentDescription = "تحديث الأسعار", modifier = Modifier.size(22.dp))
+                    }
+                }
+                if (hasPriceContext) {
+                    Text(
+                        when {
+                            hasMarketPriceEstimates && snapshot.basket.unknownPriceCount > 0 ->
+                                "بعض الأسعار استرشادية، وهناك ${snapshot.basket.unknownPriceCount} عناصر دون سعر."
+                            hasMarketPriceEstimates -> "الأسعار استرشادية وقد تختلف حسب المتجر والتوفر."
+                            snapshot.basket.hasDemoPrices -> "الأسعار تقديرية وليست أسعار سوق مباشرة."
+                            else -> "${snapshot.basket.unknownPriceCount} عناصر دون سعر."
+                        },
+                        color = dz.meals.app.ui.theme.BodyInk,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(1.dp).background(Border.copy(alpha = 0.48f))
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    MealsIconAction(onClick = onPreviousMonth, modifier = Modifier.size(40.dp)) {
+                        MealsIcon(MealsIconName.ArrowBack, contentDescription = "الشهر السابق", modifier = Modifier.size(24.dp))
+                    }
+                    Text(
+                        formatArabicMonth(monthStart),
+                        modifier = Modifier.weight(1f),
+                        color = MutedInk,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                    MealsIconAction(onClick = onNextMonth, modifier = Modifier.size(40.dp)) {
+                        MealsIcon(MealsIconName.ArrowForward, contentDescription = "الشهر التالي", modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                MealsPressable(
+                    onClick = { onFillEmptyOnlyChange(!fillEmptyOnly) },
+                    modifier = Modifier.weight(0.92f).height(48.dp),
+                    shape = RoundedCornerShape(17.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize()
+                            .clip(RoundedCornerShape(17.dp))
+                            .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.28f))
+                            .padding(start = 5.dp, end = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        MealsCheckbox(checked = fillEmptyOnly, onCheckedChange = onFillEmptyOnlyChange)
+                        Text("املأ الفارغة فقط", modifier = Modifier.weight(1f), color = dz.meals.app.ui.theme.Ink,
+                            style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                    }
+                }
+                MealsPrimaryButton(
+                    label = if (isGenerating) "جارٍ الإنشاء" else "أنشئ الخطة",
+                    onClick = onGenerate,
+                    enabled = !isGenerating && snapshot.recipes.isNotEmpty(),
+                    modifier = Modifier.weight(1.08f),
+                    icon = MealsIconName.Refresh,
+                    showArrow = false
+                )
+            }
+        }
+        items(
+            weekGroups,
+            key = { it.first },
+            contentType = { "month-week-section" }
+        ) { (weekIndex, days) ->
+            val firstDate = monthStart.plus(DatePeriod(days = days.first()))
+            val lastDate = monthStart.plus(DatePeriod(days = days.last()))
+            MealsGlassSurface(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = 13.dp,
+                shape = RoundedCornerShape(22.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("الأسبوع ${weekIndex + 1}", color = TextAccent,
+                                style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            Text(formatArabicWeekRange(firstDate, lastDate), color = MutedInk,
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                        val plannedInWeek = snapshot.plannedMeals.count { it.dayIndex in days && it.recipeId != null }
+                        Text("$plannedInWeek / ${days.size * orderedMealSlots.size}", color = TextAccent,
+                            style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    }
+                    days.forEach { day ->
+                        val date = monthStart.plus(DatePeriod(days = day))
+                        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    formatArabicDate(date),
+                                    modifier = Modifier.weight(1f),
+                                    color = dz.meals.app.ui.theme.Ink,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${orderedMealSlots.count { mealsByDayAndSlot[day to it]?.recipeId != null }} / ${orderedMealSlots.size}",
+                                    color = MutedInk,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                            if (orderedMealSlots.isEmpty()) {
+                                Text("لا توجد وجبات مفعّلة لهذا الشهر.", color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                            } else {
+                                orderedMealSlots.forEach { slot ->
+                                    val meal = mealsByDayAndSlot[day to slot]
+                                    val recipe = meal?.recipeId?.let(recipesById::get)
+                                    val title = when (slot) {
+                                        "breakfast" -> "الفطور"
+                                        "lunch" -> "الغداء"
+                                        else -> "العشاء"
+                                    }
+                                    SlotRow(
+                                        title = title,
+                                        meal = meal,
+                                        recipe = recipe,
+                                        onChooseRecipe = { onChooseMeal(day, slot) },
+                                        onOpenRecipe = { recipe?.id?.let(onOpenRecipe) },
+                                        onToggleLock = { meal?.let { onToggleLock(it.id) } },
+                                        onToggleCooked = { meal?.let { onToggleCooked(it.id) } },
+                                        onAdjustServings = { delta -> meal?.let { onAdjustServings(it.id, delta) } }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            IngredientNeedsSection(
+                items = snapshot.shoppingItems,
+                onSetEnough = { item, enough ->
+                    item.ingredientId?.let { onAdjustIngredient(it, item.unit, enough, 0.0) }
+                },
+                onEditAmount = onEditIngredient
+            )
+        }
+    }
+}
+
+@Composable
+private fun IngredientNeedsSection(
+    items: List<dz.meals.app.data.ShoppingListItem>,
+    onSetEnough: (dz.meals.app.data.ShoppingListItem, Boolean) -> Unit,
+    onEditAmount: (dz.meals.app.data.ShoppingListItem) -> Unit
+) {
+    val needs = remember(items) {
+        items.filter { !it.userAdded && it.ingredientId != null && it.requiredQuantity > 0.0 }
+    }
+    MealsGlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = 14.dp,
+        shape = RoundedCornerShape(22.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Text("احتياجات المكونات", color = dz.meals.app.ui.theme.Ink,
+                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("الكميات تخص هذه الخطة فقط، ولا تُحفظ كمخزون دائم.", color = MutedInk,
+                style = MaterialTheme.typography.bodySmall)
+            if (needs.isEmpty()) {
+                Text("ستظهر احتياجات المكونات بعد إنشاء الخطة.", color = MutedInk,
+                    style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 7.dp))
+            }
+            needs.forEachIndexed { index, item ->
+                if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(Border.copy(alpha = 0.42f)))
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(item.name, color = dz.meals.app.ui.theme.Ink, fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleSmall)
+                    Text("المطلوب: ${item.requiredQuantity.formatHouseholdQuantity(item.unit)}",
+                        color = dz.meals.app.ui.theme.BodyInk, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        if (item.alreadyHaveEnough) "المتوفر: الكمية كاملة"
+                        else if (item.alreadyHaveQuantity > 0.0) {
+                            "المتوفر: ${item.alreadyHaveQuantity.formatHouseholdQuantity(item.unit)}"
+                        } else "المتوفر: لم تُسجّل كمية",
+                        color = MutedInk, style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        "المتبقي للشراء: ${item.purchaseQuantity.formatHouseholdQuantity(item.unit)}",
+                        color = TextAccent, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        item.cashOutlayDzd?.let { "تكلفة الشراء: ${it.toInt().formatDzd()}" } ?: "السعر غير متوفر",
+                        color = MutedInk, style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MealsSecondaryButton(
+                            label = if (item.alreadyHaveEnough) "إلغاء توفر الكمية" else "لدي الكمية",
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSetEnough(item, !item.alreadyHaveEnough) }
+                        )
+                        MealsTextButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { onEditAmount(item) }
+                        ) {
+                            Text(
+                                if (item.alreadyHaveQuantity > 0.0) "تعديل الكمية" else "لدي بعض منها",
+                                color = TextAccent, fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
     editingMealSlot?.let { editingSlot ->
         val day = selectedDayIndex
@@ -611,6 +1042,59 @@ fun PlanScreen(
                     label = "العودة إلى الوجبات",
                     onClick = { dismissSheet { editingMealSlot = null } },
                     modifier = Modifier.fillMaxWidth()
+                )
+            }
+        )
+    }
+
+    val editingIngredient = snapshot.shoppingItems.firstOrNull {
+        it.ingredientId == editingIngredientId && !it.userAdded
+    }
+    if (editingIngredient != null) {
+        MealsBottomSheet(
+            onDismissRequest = { editingIngredientId = null },
+            title = { Text("كم لديك من ${editingIngredient.name}؟") },
+            subtitle = "تُطبّق هذه الكمية على هذه الخطة فقط",
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "الكمية المطلوبة: ${editingIngredient.requiredQuantity.formatHouseholdQuantity(editingIngredient.unit)}",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = availableAmountText,
+                        onValueChange = { value ->
+                            availableAmountText = value.filter { it.isDigit() || it == '.' || it == ',' }.take(12)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("الكمية المتوفرة") },
+                        suffix = { Text(dz.meals.app.shared.format.formatHouseholdUnit(editingIngredient.unit)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                }
+            },
+            confirmButton = {
+                MealsPrimaryButton(
+                    label = "حفظ الكمية",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        val amount = availableAmountText.replace(',', '.').toDoubleOrNull()
+                        if (amount != null && amount.isFinite() && amount >= 0.0) {
+                            editingIngredient.ingredientId?.let {
+                                onAdjustIngredient(it, editingIngredient.unit, false, amount)
+                            }
+                            editingIngredientId = null
+                        }
+                    }
+                )
+            },
+            dismissButton = {
+                MealsSecondaryButton(
+                    label = "إلغاء",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { editingIngredientId = null }
                 )
             }
         )
