@@ -829,7 +829,7 @@ private fun MonthlyPlanContent(
             "${minimum.toInt().formatDzd()} – ${maximum.toInt().formatDzd()}"
         } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
     } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
-    val weekOffset = monthStart.dayOfWeek.isoDayNumber - 1
+    val weekOffset = monthStart.dayOfWeek.ordinal
     val weekGroups = (0..((weekOffset + monthDayCount - 1) / 7)).map { weekIndex ->
         val firstDay = (weekIndex * 7 - weekOffset).coerceAtLeast(0)
         val lastDay = ((weekIndex + 1) * 7 - weekOffset - 1).coerceAtMost(monthDayCount - 1)
