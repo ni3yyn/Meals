@@ -28,6 +28,23 @@ val foodCatalogueRevision = providers.provider<String> {
     digest.digest().joinToString("") { byte: Byte -> "%02x".format(byte.toInt() and 0xff) }
 }
 
+val marketProductCatalogueRevision = providers.provider<String> {
+    val catalogueDirectory = rootProject.file("data/market-products")
+    require(catalogueDirectory.isDirectory) { "Missing market product catalogue directory: ${catalogueDirectory.path}" }
+    val digest = MessageDigest.getInstance("SHA-256")
+    val jsonFiles = catalogueDirectory.walkTopDown()
+        .filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
+        .sortedBy { it.relativeTo(catalogueDirectory).invariantSeparatorsPath }
+        .toList()
+    require(jsonFiles.isNotEmpty()) { "Market product catalogue contains no JSON files." }
+    jsonFiles.forEach { file ->
+        digest.update(file.relativeTo(catalogueDirectory).invariantSeparatorsPath.toByteArray(Charsets.UTF_8))
+        digest.update(0.toByte())
+        digest.update(file.readBytes())
+        digest.update(0.toByte())
+    }
+    digest.digest().joinToString("") { byte: Byte -> "%02x".format(byte.toInt() and 0xff) }
+}
 val releaseKeystorePath = providers.gradleProperty("releaseKeystorePath").orNull
 val releaseStorePassword = providers.gradleProperty("releaseStorePassword").orNull
 val releaseKeyAlias = providers.gradleProperty("releaseKeyAlias").orNull
@@ -43,6 +60,19 @@ val generatedTajawalRes = layout.buildDirectory.dir("generated/tajawal-res")
 val localRecipeCorpusDir = rootProject.file("local-data/open-recipe-corpus")
 val generatedRecipeCorpusAssets = layout.buildDirectory.dir("generated/recipe-corpus/debug-assets")
 val generatedFoodIdentityAssets = layout.buildDirectory.dir("generated/food-identity-migration-assets")
+val generatedMarketProductAssets = layout.buildDirectory.dir("generated/market-product-assets")
+val prepareMarketProductCatalogueAssets = tasks.register<Sync>("prepareMarketProductCatalogueAssets") {
+    from(rootProject.file("data/market-products")) {
+        into("market-products")
+    }
+    into(generatedMarketProductAssets)
+    doLast {
+        val manifest = generatedMarketProductAssets.get().file("market-products/manifest.json").asFile
+        require(manifest.isFile) { "Missing bundled market product catalogue manifest." }
+        val partCount = Regex("market-products/parts/market-products-[0-9]{3}").findAll(manifest.readText()).count()
+        require(partCount == 7) { "Expected 7 market product catalogue parts, found $partCount." }
+    }
+}
 val prepareFoodIdentityMigrationAssets = tasks.register<Sync>("prepareFoodIdentityMigrationAssets") {
     from(rootProject.file("data/products/recipe-ingredient-map.json")) {
         into("migration")
@@ -111,6 +141,7 @@ android {
         versionCode = appVersionCode.get()
         versionName = appVersionName.get()
         buildConfigField("String", "FOOD_CATALOGUE_REVISION", "\"${foodCatalogueRevision.get()}\"")
+        buildConfigField("String", "MARKET_PRODUCT_CATALOGUE_REVISION", "\"${marketProductCatalogueRevision.get()}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -163,6 +194,7 @@ android {
     sourceSets.getByName("main").res.srcDir(generatedTajawalRes.get().asFile)
     // Database upgrades need the generated legacy-ID crosswalk to work offline.
     sourceSets.getByName("main").assets.srcDir(generatedFoodIdentityAssets.get().asFile)
+    sourceSets.getByName("main").assets.srcDir(generatedMarketProductAssets.get().asFile)
     // Local corpus assets are attached to Debug only, never to release APKs.
     sourceSets.getByName("debug").assets.srcDir(generatedRecipeCorpusAssets.get().asFile)
 
@@ -208,10 +240,13 @@ baselineProfile {
 // Every Android resource path that can read the generated res/font folder
 // must wait for the copy task. AGP 9.5 validates these dependencies explicitly.
 tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(copyTajawalFonts, prepareFoodIdentityMigrationAssets)
+    dependsOn(copyTajawalFonts, prepareFoodIdentityMigrationAssets, prepareMarketProductCatalogueAssets)
 }
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
     dependsOn(prepareFoodIdentityMigrationAssets)
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(prepareMarketProductCatalogueAssets)
 }
 tasks.configureEach {
     val isFontResourceConsumer =

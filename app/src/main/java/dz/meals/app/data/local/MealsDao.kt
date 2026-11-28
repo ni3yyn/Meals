@@ -296,4 +296,45 @@ interface MealsDao {
 
     @Query("DELETE FROM shopping_items WHERE id = :id AND userAdded = 1")
     suspend fun deleteCustomShoppingItem(id: String)
+
+    @Upsert
+    suspend fun upsertMarketProducts(items: List<MarketProductEntity>)
+
+    @Upsert
+    suspend fun upsertMarketProductSources(items: List<MarketProductSourceEntity>)
+
+    @Upsert
+    suspend fun upsertMarketPriceObservations(items: List<MarketPriceObservationEntity>)
+
+    @Query("SELECT COUNT(*) FROM market_products")
+    suspend fun countMarketProducts(): Int
+
+    @Query("SELECT COUNT(*) FROM market_product_sources")
+    suspend fun countMarketProductSources(): Int
+
+    @Query("SELECT COUNT(*) FROM market_price_observations")
+    suspend fun countMarketPriceObservations(): Int
+
+    @Query("SELECT * FROM market_products ORDER BY name COLLATE NOCASE, id LIMIT :limit")
+    suspend fun getMarketProducts(limit: Int): List<MarketProductEntity>
+
+    @Query("""
+        SELECT * FROM market_products
+        WHERE name LIKE '%' || :query || '%'
+           OR IFNULL(brand, '') LIKE '%' || :query || '%'
+           OR gtin = :query
+        ORDER BY name COLLATE NOCASE, id
+        LIMIT :limit
+    """)
+    suspend fun searchMarketProducts(query: String, limit: Int): List<MarketProductEntity>
+
+    @Query("SELECT * FROM market_product_sources WHERE productId = :productId ORDER BY storeName, source")
+    suspend fun getMarketProductSources(productId: String): List<MarketProductSourceEntity>
+
+    @Query("SELECT * FROM market_price_observations WHERE productId = :productId ORDER BY observedAtEpochMillis DESC")
+    suspend fun getMarketPriceObservations(productId: String): List<MarketPriceObservationEntity>
+
+    @Query("SELECT * FROM market_price_observations ORDER BY observedAtEpochMillis DESC")
+    suspend fun getAllMarketPriceObservations(): List<MarketPriceObservationEntity>
+
 }

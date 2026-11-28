@@ -9,6 +9,9 @@ import dz.meals.app.data.local.FoodCategoryEntity
 import dz.meals.app.data.local.FoodSubcategoryEntity
 import dz.meals.app.data.local.FoodItemEntity
 import dz.meals.app.data.local.IngredientEntity
+import dz.meals.app.data.local.MarketProductEntity
+import dz.meals.app.data.local.MarketProductSourceEntity
+import dz.meals.app.data.local.MarketPriceObservationEntity
 import dz.meals.app.data.local.MealsDatabase
 import dz.meals.app.data.local.MealsDao
 import dz.meals.app.data.local.PantryItemEntity
@@ -75,6 +78,7 @@ class MealsRepository internal constructor(
     suspend fun ensureInitialized() = initializationMutex.withLock {
         SeedRecipes.validateCatalogue()
         FoodCatalogueInstaller(appContext).installIfNeeded()
+        MarketProductCatalogueInstaller(appContext).installIfNeeded()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
         if (dao.recipeCount() > 0) return@withLock
@@ -131,6 +135,31 @@ class MealsRepository internal constructor(
             })
             dao.insertPrices(demoPrices())
         }
+    }
+
+    /**
+     * Searches the bundled retail catalogue. Branded products stay separate
+     * from generic recipe ingredients and user-reported ingredient prices.
+     */
+    suspend fun searchMarketProducts(query: String = "", limit: Int = 60): List<MarketProductEntity> {
+        ensureInitialized()
+        val safeLimit = limit.coerceIn(1, 200)
+        val term = query.trim().take(100)
+        return if (term.isBlank()) {
+            dao.getMarketProducts(safeLimit)
+        } else {
+            dao.searchMarketProducts(term, safeLimit)
+        }
+    }
+
+    suspend fun getMarketProductSources(productId: String): List<MarketProductSourceEntity> {
+        ensureInitialized()
+        return dao.getMarketProductSources(productId)
+    }
+
+    suspend fun getMarketPriceObservations(productId: String): List<MarketPriceObservationEntity> {
+        ensureInitialized()
+        return dao.getMarketPriceObservations(productId)
     }
 
     suspend fun invalidateCatalogueCache() {

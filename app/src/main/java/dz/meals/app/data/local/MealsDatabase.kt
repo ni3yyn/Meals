@@ -14,6 +14,9 @@ import dz.meals.app.data.FoodIdentityResolver
         FoodCategoryEntity::class,
         FoodSubcategoryEntity::class,
         FoodItemEntity::class,
+        MarketProductEntity::class,
+        MarketProductSourceEntity::class,
+        MarketPriceObservationEntity::class,
         RecipeEntity::class,
         RecipeIngredientEntity::class,
         RecipeStepEntity::class,
@@ -28,7 +31,7 @@ import dz.meals.app.data.FoodIdentityResolver
         RecipeAttributionEntity::class,
         RecipeImageOverrideEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 abstract class MealsDatabase : RoomDatabase() {
@@ -275,6 +278,100 @@ abstract class MealsDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS market_products (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        identityKey TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        nameVariantsJson TEXT NOT NULL,
+                        brand TEXT,
+                        gtin TEXT,
+                        imageUrl TEXT NOT NULL,
+                        imageUrlsJson TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        packageQuantity REAL,
+                        packageUnit TEXT NOT NULL,
+                        categoryNamesJson TEXT NOT NULL,
+                        sourceCount INTEGER NOT NULL,
+                        foodScopeReviewNeeded INTEGER NOT NULL,
+                        foodScopeReviewReason TEXT NOT NULL,
+                        sourceRowCount INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS market_product_sources (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        productId TEXT NOT NULL,
+                        source TEXT NOT NULL,
+                        storeName TEXT NOT NULL,
+                        storeUrl TEXT NOT NULL,
+                        city TEXT NOT NULL,
+                        wilaya TEXT NOT NULL,
+                        storeAddress TEXT NOT NULL,
+                        sourceProductKey TEXT NOT NULL,
+                        sourceProductId TEXT NOT NULL,
+                        sourceProductKeysJson TEXT NOT NULL,
+                        sourceProductIdsJson TEXT NOT NULL,
+                        sku TEXT,
+                        gtinRaw TEXT,
+                        rawBrand TEXT,
+                        mpn TEXT,
+                        manufacturer TEXT,
+                        productUrl TEXT NOT NULL,
+                        alternateUrlsJson TEXT NOT NULL,
+                        alternateLocaleUrlsJson TEXT NOT NULL,
+                        categorySlugPathsJson TEXT NOT NULL,
+                        variationSkusJson TEXT NOT NULL,
+                        enrichmentMetadataJson TEXT NOT NULL,
+                        FOREIGN KEY(productId) REFERENCES market_products(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS market_price_observations (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        productId TEXT NOT NULL,
+                        sourceListingId TEXT NOT NULL,
+                        priceDzd REAL,
+                        priceMinDzd REAL,
+                        priceMaxDzd REAL,
+                        priceDisplayRaw TEXT NOT NULL,
+                        currencyCode TEXT NOT NULL,
+                        observedAtEpochMillis INTEGER,
+                        priceSource TEXT NOT NULL,
+                        priceStatus TEXT NOT NULL,
+                        availabilityRaw TEXT NOT NULL,
+                        stockQuantityRaw TEXT NOT NULL,
+                        locationHint TEXT NOT NULL,
+                        sourceNotice TEXT NOT NULL,
+                        FOREIGN KEY(productId) REFERENCES market_products(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(sourceListingId) REFERENCES market_product_sources(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_products_gtin ON market_products(gtin)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_products_name ON market_products(name)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_market_products_identityKey ON market_products(identityKey)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_sources_productId ON market_product_sources(productId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_sources_source ON market_product_sources(source)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_product_sources_sku ON market_product_sources(sku)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_market_product_sources_source_sourceProductKey ON market_product_sources(source, sourceProductKey)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_price_observations_productId ON market_price_observations(productId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_price_observations_sourceListingId ON market_price_observations(sourceListingId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_market_price_observations_observedAtEpochMillis ON market_price_observations(observedAtEpochMillis)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_market_price_observations_sourceListingId_observedAtEpochMillis ON market_price_observations(sourceListingId, observedAtEpochMillis)")
+            }
+        }
+
         @Volatile private var INSTANCE: MealsDatabase? = null
 
         fun getInstance(context: Context): MealsDatabase =
@@ -308,7 +405,8 @@ abstract class MealsDatabase : RoomDatabase() {
                 FoodIdentityMigration(FoodIdentityResolver(context.applicationContext)),
                 MIGRATION_14_15,
                 FoodTaxonomyMigration(context.applicationContext),
-                MIGRATION_16_17
+                MIGRATION_16_17,
+                MIGRATION_17_18
             ).build()
     }
 }
