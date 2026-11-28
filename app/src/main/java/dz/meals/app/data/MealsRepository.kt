@@ -92,61 +92,63 @@ class MealsRepository internal constructor(
         MarketProductCatalogueInstaller(appContext, databaseOverride = database).installIfNeeded()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
+
         if (dao.recipeCount() == 0) {
             database.withTransaction {
-            dao.insertIngredients(SeedRecipes.ingredients.map {
-                IngredientEntity(
-                    id = foodIdentityResolver.canonicalId(it.id),
-                    nameAr = it.nameAr,
-                    nameFr = it.nameFr,
-                    categoryId = it.categoryId,
-                    subcategoryId = it.subcategoryId,
-                    baseUnit = it.baseUnit,
-                    allergensCsv = it.allergens.sorted().joinToString(","),
-                    aliasesCsv = it.aliases.joinToString("|")
-                )
-            })
-            dao.insertRecipes(SeedRecipes.all.map { recipe ->
-                RecipeEntity(
-                    id = recipe.id,
-                    nameAr = recipe.nameAr,
-                    nameFr = recipe.nameFr,
-                    descriptionAr = recipe.descriptionAr,
-                    descriptionFr = recipe.descriptionFr,
-                    category = recipe.category,
-                    region = recipe.region,
-                    durationMinutes = recipe.durationMinutes,
-                    baseServings = recipe.baseServings,
-                    difficulty = recipe.difficulty,
-                    allergensCsv = recipe.allergens.sorted().joinToString(",")
-                )
-            })
-            dao.insertRecipeIngredients(SeedRecipes.all.flatMap { recipe ->
-                recipe.ingredients.mapIndexed { index, item ->
-                    RecipeIngredientEntity(
-                        recipeId = recipe.id,
-                        ingredientId = foodIdentityResolver.canonicalId(item.ingredientId),
-                        quantityBase = item.quantityBase,
-                        unit = item.unit,
-                        prepNote = item.prepNote,
-                        optional = item.optional,
-                        rowKey = "seed:$index"
+                dao.insertIngredients(SeedRecipes.ingredients.map {
+                    IngredientEntity(
+                        id = foodIdentityResolver.canonicalId(it.id),
+                        nameAr = it.nameAr,
+                        nameFr = it.nameFr,
+                        categoryId = it.categoryId,
+                        subcategoryId = it.subcategoryId,
+                        baseUnit = it.baseUnit,
+                        allergensCsv = it.allergens.sorted().joinToString(","),
+                        aliasesCsv = it.aliases.joinToString("|")
                     )
-                }
-            })
-            dao.insertRecipeSteps(SeedRecipes.all.flatMap { recipe ->
-                recipe.stepsAr.mapIndexed { index, step ->
-                    RecipeStepEntity(
-                        recipeId = recipe.id,
-                        stepNumber = index + 1,
-                        instructionAr = step,
-                        instructionFr = recipe.stepsFr.getOrElse(index) { "" }
+                })
+                dao.insertRecipes(SeedRecipes.all.map { recipe ->
+                    RecipeEntity(
+                        id = recipe.id,
+                        nameAr = recipe.nameAr,
+                        nameFr = recipe.nameFr,
+                        descriptionAr = recipe.descriptionAr,
+                        descriptionFr = recipe.descriptionFr,
+                        category = recipe.category,
+                        region = recipe.region,
+                        durationMinutes = recipe.durationMinutes,
+                        baseServings = recipe.baseServings,
+                        difficulty = recipe.difficulty,
+                        allergensCsv = recipe.allergens.sorted().joinToString(",")
                     )
-                }
-            })
+                })
+                dao.insertRecipeIngredients(SeedRecipes.all.flatMap { recipe ->
+                    recipe.ingredients.mapIndexed { index, item ->
+                        RecipeIngredientEntity(
+                            recipeId = recipe.id,
+                            ingredientId = foodIdentityResolver.canonicalId(item.ingredientId),
+                            quantityBase = item.quantityBase,
+                            unit = item.unit,
+                            prepNote = item.prepNote,
+                            optional = item.optional,
+                            rowKey = "seed:$index"
+                        )
+                    }
+                })
+                dao.insertRecipeSteps(SeedRecipes.all.flatMap { recipe ->
+                    recipe.stepsAr.mapIndexed { index, step ->
+                        RecipeStepEntity(
+                            recipeId = recipe.id,
+                            stepNumber = index + 1,
+                            instructionAr = step,
+                            instructionFr = recipe.stepsFr.getOrElse(index) { "" }
+                        )
+                    }
+                })
                 dao.insertPrices(demoPrices())
             }
         }
+
         // Mapping validation intentionally targets the canonical recipe
         // ingredients table. Install only after a fresh database has its seeds.
         MarketProductIngredientMatchInstaller(appContext, databaseOverride = database).installIfNeeded()
