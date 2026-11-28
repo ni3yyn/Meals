@@ -767,6 +767,17 @@ private fun MealsAppContent(
                         onUpdateItemDetails = { id, purchaseQty, note, unavailable, actual ->
                             perform { repository.updateShoppingItemDetails(id, purchaseQty, note, unavailable, actual) }
                         },
+                        onUpdatePlanAdjustment = { ingredientId, unit, adjustmentType, availableQuantity ->
+                            perform {
+                                repository.updatePlanIngredientAdjustment(
+                                    weekStartIso,
+                                    ingredientId,
+                                    unit,
+                                    adjustmentType,
+                                    availableQuantity
+                                )
+                            }
+                        },
                         onDeleteCustomItem = { id -> perform { repository.deleteCustomShoppingItem(id) } },
                         onRecordPrice = { id, pack, amount, context ->
                             perform { repository.recordPriceObservation(id, pack, amount, preferences.wilaya, context) }
