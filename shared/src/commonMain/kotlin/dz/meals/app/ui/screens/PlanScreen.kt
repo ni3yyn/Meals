@@ -167,7 +167,12 @@ fun PlanScreen(
                     ) {
                         Text("الشراء المتوقع", color = dz.meals.app.ui.theme.TextAccent, style = MaterialTheme.typography.labelMedium)
                         Text(
-                            snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
+                            snapshot.basket.purchaseOutlayMinDzd?.let { minimum ->
+                                val maximum = snapshot.basket.purchaseOutlayMaxDzd
+                                if (maximum != null && minimum != maximum) {
+                                    minimum.toInt().formatDzd() + " – " + maximum.toInt().formatDzd()
+                                } else snapshot.basket.purchaseOutlayDzd.toInt().formatDzd()
+                            } ?: snapshot.basket.purchaseOutlayDzd.toInt().formatDzd(),
                             color = dz.meals.app.ui.theme.Ink,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
