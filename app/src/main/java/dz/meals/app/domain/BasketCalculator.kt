@@ -449,14 +449,17 @@ fun calculateBasket(
     val purchaseOutlayMax = items.sumOf {
         it.marketCashOutlayMaxDzd ?: it.cashOutlayDzd ?: 0.0
     }
+    val allPricesKnown = items.all {
+        it.cashOutlayDzd != null || it.purchaseQuantity <= 0.0
+    }
     return BasketSummary(
         items = items,
         consumedValueDzd = items.sumOf { it.consumedValueDzd ?: 0.0 },
         purchaseOutlayDzd = priced.sumOf { it.cashOutlayDzd ?: 0.0 },
         unknownPriceCount = items.count { it.cashOutlayDzd == null && it.purchaseQuantity > 0.0 },
         hasDemoPrices = prices.any { it.priceKind == "demo" },
-        purchaseOutlayMinDzd = purchaseOutlayMin.takeIf { hasMarketPriceRanges },
-        purchaseOutlayMaxDzd = purchaseOutlayMax.takeIf { hasMarketPriceRanges }
+        purchaseOutlayMinDzd = purchaseOutlayMin.takeIf { hasMarketPriceRanges && allPricesKnown },
+        purchaseOutlayMaxDzd = purchaseOutlayMax.takeIf { hasMarketPriceRanges && allPricesKnown }
     )
 }
 
