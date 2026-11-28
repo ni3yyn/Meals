@@ -231,6 +231,32 @@ class MonthlyPlanGenerationTest {
             assertEquals(recipeAssignmentsBeforeAdjustment, dao.getPlanningPeriodMeals(periodId)
                 .associate { it.id to it.recipeId })
 
+            // Price refresh is a separate command: it updates only price evidence.
+            val adjustmentBeforeRefresh = dao.getPlanIngredientAdjustment(
+                periodId, targetIngredientId, targetLine.unit
+            )
+            val priceTimestampBeforeRefresh = requireNotNull(dao.getPlanningPeriod(periodId))
+                .priceSnapshotAtEpochMillis
+            val refreshedSnapshot = repository.refreshPlanPrices(PlanningPeriodId(periodId))
+            assertNotNull(refreshedSnapshot)
+            assertEquals(
+                recipeAssignmentsBeforeAdjustment,
+                dao.getPlanningPeriodMeals(periodId).associate { it.id to it.recipeId }
+            )
+            assertEquals(
+                adjustmentBeforeRefresh,
+                dao.getPlanIngredientAdjustment(periodId, targetIngredientId, targetLine.unit)
+            )
+            assertTrue(
+                requireNotNull(dao.getPlanningPeriod(periodId)).priceSnapshotAtEpochMillis >=
+                    priceTimestampBeforeRefresh
+            )
+            val refreshedShoppingLine = refreshedSnapshot!!.shoppingItems
+                .first { it.ingredientId == targetIngredientId && it.unit == targetLine.unit }
+            assertEquals(true, refreshedShoppingLine.checked)
+            assertEquals("اختبار حفظ الفترة", refreshedShoppingLine.storeNote)
+            assertEquals(75.0, refreshedShoppingLine.actualSpentDzd!!, 0.0001)
+
             // Invalid input must not replace the last valid plan-local adjustment.
             val rejectedSnapshot = repository.updatePlanIngredientAdjustment(
                 periodId = PlanningPeriodId(periodId),
