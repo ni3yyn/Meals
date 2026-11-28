@@ -1,5 +1,6 @@
 package dz.meals.app.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -28,6 +29,7 @@ data class PlanningPeriodEntity(
     val engineVersion: String,
     val createdAtEpochMillis: Long,
     val priceSnapshotAtEpochMillis: Long,
+    @ColumnInfo(defaultValue = "0") val marketPriceSnapshotCaptured: Boolean = false,
     val householdServings: Int,
     val updatedAtEpochMillis: Long
 )
