@@ -1427,9 +1427,33 @@ private fun ShoppingItemRow(
     onDelete: () -> Unit,
     showDivider: Boolean
 ) {
-    val supportingDetails = remember(item.isUnavailable, item.actualSpentDzd) {
+    val supportingDetails = remember(
+        item.isUnavailable,
+        item.actualSpentDzd,
+        item.marketPriceWilaya,
+        item.marketPriceStoreNames,
+        item.marketPriceMinPackageCount,
+        item.marketPriceMaxPackageCount,
+        item.marketPriceIncludesLimitedAvailability
+    ) {
         buildList {
             if (item.isUnavailable) add("غير متوفر")
+            item.marketPriceWilaya?.let { wilaya ->
+                val stores = item.marketPriceStoreNames.take(2).joinToString("، ")
+                val minPacks = item.marketPriceMinPackageCount
+                val maxPacks = item.marketPriceMaxPackageCount
+                val packageText = when {
+                    minPacks == null || maxPacks == null -> ""
+                    minPacks == maxPacks -> " · $minPacks عبوة"
+                    else -> " · $minPacks–$maxPacks عبوات"
+                }
+                add(
+                    "سعر استرشادي في $wilaya" +
+                        if (stores.isNotBlank()) " · $stores" else "" +
+                        packageText
+                )
+            }
+            if (item.marketPriceIncludesLimitedAvailability) add("التوفر محدود")
             item.actualSpentDzd?.let { add("المدفوع " + it.toInt().formatDzd()) }
         }.joinToString(" · ")
     }
