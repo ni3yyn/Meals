@@ -127,3 +127,28 @@ data class MarketPriceObservationEntity(
     val locationHint: String,
     val sourceNotice: String
 )
+
+/** Room projection joining only human-verified product mappings to retailer offers. */
+data class VerifiedMarketProductPriceRow(
+    val productId: String,
+    val sourceListingId: String,
+    val ingredientId: String,
+    val productName: String,
+    val packageQuantity: Double?,
+    val packageUnit: String,
+    val mappingStatus: String,
+    val mappingReviewedAtEpochMillis: Long?,
+    val foodScopeReviewNeeded: Boolean,
+    val priceDzd: Double?,
+    val priceMinDzd: Double?,
+    val priceMaxDzd: Double?,
+    val currencyCode: String,
+    val observedAtEpochMillis: Long?,
+    val priceStatus: String,
+    val availabilityRaw: String,
+    val storeName: String,
+    val source: String,
+    val wilaya: String,
+    val sourceNotice: String
+)
+
