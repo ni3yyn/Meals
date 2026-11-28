@@ -847,6 +847,12 @@ private fun MonthlyPlanContent(
             recipesById[recipeId]?.allergens?.intersect(preferences.allergyIds)?.isNotEmpty()
         } == true
     }
+    // The week cards follow the month header, an optional safety warning, and
+    // the generation controls. Keep jump indices correct in both layouts.
+    val weekSectionsStartIndex = if (unsafeLockedMeal != null) 3 else 2
+    val selectedWeekIndex = (
+        monthListState.firstVisibleItemIndex - weekSectionsStartIndex
+    ).coerceIn(0, weekGroups.lastIndex)
 
     LazyColumn(
         state = monthListState,
@@ -930,7 +936,9 @@ private fun MonthlyPlanContent(
                         MealsTextButton(
                             onClick = {
                                 coroutineScope.launch {
-                                    monthListState.animateScrollToItem(todayWeekIndex + 2)
+                                    monthListState.animateScrollToItem(
+                                        weekSectionsStartIndex + todayWeekIndex
+                                    )
                                 }
                             }
                         ) {
@@ -940,6 +948,49 @@ private fun MonthlyPlanContent(
                     }
                     MealsIconAction(onClick = onNextMonth, modifier = Modifier.size(40.dp)) {
                         MealsIcon(MealsIconName.ArrowForward, contentDescription = "الشهر التالي", modifier = Modifier.size(24.dp))
+                    }
+                }
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    items(
+                        weekGroups,
+                        key = { it.first },
+                        contentType = { "month-week-jump" }
+                    ) { (weekIndex, days) ->
+                        MealsSelectionGlass(
+                            modifier = Modifier.width(94.dp).height(36.dp),
+                            selected = selectedWeekIndex == weekIndex,
+                            emphasizeSelectedFace = true
+                        ) {
+                            MealsPressable(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        monthListState.animateScrollToItem(
+                                            weekSectionsStartIndex + weekIndex
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "الأسبوع ${weekIndex + 1}",
+                                        color = dz.meals.app.ui.theme.Ink,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = if (selectedWeekIndex == weekIndex) {
+                                            FontWeight.Bold
+                                        } else {
+                                            FontWeight.Medium
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
