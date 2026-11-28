@@ -116,6 +116,7 @@ fun ShoppingScreen(
     onAddCatalogueItem: (String) -> Unit,
     onEditCustomItem: (String, String, Double, String) -> Unit,
     onUpdateItemDetails: (String, Double?, String, Boolean, Double?) -> Unit,
+    onUpdatePlanAdjustment: (String, String, String?, Double) -> Unit,
     onDeleteCustomItem: (String) -> Unit,
     onRecordPrice: (String, Double, Double, String) -> Unit,
     onShareList: (String) -> Unit,
@@ -144,7 +145,12 @@ fun ShoppingScreen(
     var editStoreNote by rememberSaveable { mutableStateOf("") }
     var editActualSpent by rememberSaveable { mutableStateOf("") }
     var editUnavailable by rememberSaveable { mutableStateOf(false) }
+    var editAdjustmentType by rememberSaveable { mutableStateOf("NONE") }
+    var editAvailableQuantity by rememberSaveable { mutableStateOf("") }
     var editUserAdded by rememberSaveable { mutableStateOf(false) }
+    val editingShoppingItem = remember(snapshot.shoppingItems, editItemId) {
+        snapshot.shoppingItems.firstOrNull { it.id == editItemId }
+    }
     var addedFeedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(addedFeedback) {
@@ -1107,6 +1113,13 @@ fun ShoppingScreen(
                                     editStoreNote = item.storeNote
                                     editActualSpent = item.actualSpentDzd?.toString().orEmpty()
                                     editUnavailable = item.isUnavailable
+                                    editAdjustmentType = when {
+                                        item.alreadyHaveEnough -> "ENOUGH"
+                                        item.alreadyHaveQuantity > 0.0 -> "SOME"
+                                        else -> "NONE"
+                                    }
+                                    editAvailableQuantity = item.alreadyHaveQuantity
+                                        .takeIf { it > 0.0 }?.prettyQuantity().orEmpty()
                                     editUserAdded = item.userAdded && item.ingredientId == null
                                 },
                                 onDelete = { onDeleteCustomItem(item.id) },
@@ -1194,13 +1207,86 @@ fun ShoppingScreen(
                         )
                         MealsLiquidGlassTextField(value = editUnit, onValueChange = { editUnit = it.take(12) }, label = { Text("الوحدة") }, singleLine = true)
                     } else {
-                        MealsLiquidGlassTextField(
-                            value = editPurchaseQuantity,
-                            onValueChange = { editPurchaseQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                            label = { Text("كمية الشراء المعدلة (اتركها فارغة لإعادة التلقائي)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true
-                        )
+                        if (editingShoppingItem?.ingredientId != null) {
+                            val noneLabel = when {
+                                appLocaleTag.startsWith("en") -> "None"
+                                appLocaleTag.startsWith("fr") -> "Aucun"
+                                else -> "لا أملك"
+                            }
+                            val someLabel = when {
+                                appLocaleTag.startsWith("en") -> "I have some"
+                                appLocaleTag.startsWith("fr") -> "J'en ai un peu"
+                                else -> "عندي كمية"
+                            }
+                            val enoughLabel = when {
+                                appLocaleTag.startsWith("en") -> "I have enough"
+                                appLocaleTag.startsWith("fr") -> "J'en ai assez"
+                                else -> "عندي ما يكفي"
+                            }
+                            Text(
+                                when {
+                                    appLocaleTag.startsWith("en") -> "Already have for this plan"
+                                    appLocaleTag.startsWith("fr") -> "Déjà disponible pour ce plan"
+                                    else -> "المتوفر لديك لهذه الخطة"
+                                },
+                                color = Ink,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            MealsFilterChips(
+                                items = listOf(noneLabel, someLabel, enoughLabel),
+                                selected = when (editAdjustmentType) {
+                                    "SOME" -> someLabel
+                                    "ENOUGH" -> enoughLabel
+                                    else -> noneLabel
+                                },
+                                onSelect = { selected ->
+                                    editAdjustmentType = when (selected) {
+                                        someLabel -> "SOME"
+                                        enoughLabel -> "ENOUGH"
+                                        else -> "NONE"
+                                    }
+                                    if (editAdjustmentType != "NONE") {
+                                        editPurchaseQuantity = ""
+                                    } else {
+                                        editPurchaseQuantity = editingShoppingItem.purchaseQuantity.prettyQuantity()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (editAdjustmentType == "SOME") {
+                                MealsLiquidGlassTextField(
+                                    value = editAvailableQuantity,
+                                    onValueChange = {
+                                        editAvailableQuantity = it.filter { c ->
+                                            c.isDigit() || c == '.' || c == ','
+                                        }
+                                    },
+                                    label = {
+                                        Text("الكمية المتوفرة (" + editingShoppingItem.unit + ")")
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true
+                                )
+                            }
+                            Text(
+                                when {
+                                    appLocaleTag.startsWith("en") -> "This adjustment applies only to the current plan."
+                                    appLocaleTag.startsWith("fr") -> "Cet ajustement s'applique uniquement au plan actuel."
+                                    else -> "هذا التعديل يخص الخطة الحالية فقط."
+                                },
+                                color = MutedInk,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                        if (editingShoppingItem?.ingredientId == null || editAdjustmentType == "NONE") {
+                            MealsLiquidGlassTextField(
+                                value = editPurchaseQuantity,
+                                onValueChange = { editPurchaseQuantity = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
+                                label = { Text("كمية الشراء المعدلة (اتركها فارغة لإعادة التلقائي)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true
+                            )
+                        }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         MealsCheckbox(checked = editUnavailable, onCheckedChange = { editUnavailable = it })
@@ -1222,18 +1308,38 @@ fun ShoppingScreen(
                     onClick = {
                         val id = editItemId
                         val quantity = editQuantity.replace(',', '.').toDoubleOrNull()
-                        val purchaseQuantity = editPurchaseQuantity.takeIf { it.isNotBlank() }
-                            ?.replace(',', '.')?.toDoubleOrNull()
+                        val typedAvailableQuantity = editAvailableQuantity.replace(',', '.').toDoubleOrNull()
+                        val purchaseQuantity = if (!editUserAdded && editingShoppingItem?.ingredientId != null &&
+                            editAdjustmentType != "NONE"
+                        ) {
+                            null
+                        } else {
+                            editPurchaseQuantity.takeIf { it.isNotBlank() }
+                                ?.replace(',', '.')?.toDoubleOrNull()
+                        }
                         val actualSpent = editActualSpent.takeIf { it.isNotBlank() }
                             ?.replace(',', '.')?.toDoubleOrNull()
                         val valid = if (editUserAdded) {
                             quantity != null && quantity > 0.0 && editName.isNotBlank()
                         } else {
-                            editPurchaseQuantity.isBlank() || (purchaseQuantity != null && purchaseQuantity > 0.0)
+                            (editAdjustmentType != "SOME" ||
+                                (typedAvailableQuantity != null && typedAvailableQuantity.isFinite() && typedAvailableQuantity > 0.0)) &&
+                                (editAdjustmentType != "NONE" ||
+                                    editPurchaseQuantity.isBlank() || (purchaseQuantity != null && purchaseQuantity > 0.0))
                         }
                         if (id != null && valid && (actualSpent == null || actualSpent >= 0.0)) {
                             dismissSheet {
                                 if (editUserAdded && quantity != null) onEditCustomItem(id, editName, quantity, editUnit)
+                                if (!editUserAdded) {
+                                    editingShoppingItem?.ingredientId?.let { ingredientId ->
+                                        onUpdatePlanAdjustment(
+                                            ingredientId,
+                                            editingShoppingItem.unit,
+                                            editAdjustmentType.takeIf { it != "NONE" },
+                                            typedAvailableQuantity ?: 0.0
+                                        )
+                                    }
+                                }
                                 onUpdateItemDetails(id, purchaseQuantity, editStoreNote, editUnavailable, actualSpent)
                                 editItemId = null
                             }
@@ -1241,7 +1347,10 @@ fun ShoppingScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = (!editUserAdded || (editName.isNotBlank() && (editQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0)) &&
-                        (editPurchaseQuantity.isBlank() || (editPurchaseQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
+                        (editAdjustmentType != "SOME" ||
+                            (editAvailableQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
+                        (editAdjustmentType != "NONE" || editPurchaseQuantity.isBlank() ||
+                            (editPurchaseQuantity.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0.0) &&
                         (editActualSpent.isBlank() || (editActualSpent.replace(',', '.').toDoubleOrNull() ?: -1.0) >= 0.0)
                 )
             },
