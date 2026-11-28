@@ -30,6 +30,54 @@ data class PlanningDateRange(
 }
 
 /**
+ * One date/meal-slot position in a selected planning period.
+ *
+ * WEEK IDs deliberately retain the legacy weekStart-dayIndex-slot format so
+ * existing weekly meal rows keep their identity during the engine extraction.
+ * MONTH IDs use the canonical period and ISO date instead of a week-relative key.
+ */
+data class PlanningPeriodSlot(
+    val id: String,
+    val date: LocalDate,
+    val dayIndex: Int,
+    val mealSlot: String
+)
+
+/** Build every selected slot exactly once, in chronological date/slot order. */
+fun buildPlanningPeriodSlots(
+    period: PlanningDateRange,
+    mealSlots: List<String>
+): List<PlanningPeriodSlot> {
+    require(period.dayCount in 1..31) {
+        "A planning period must contain between 1 and 31 calendar days."
+    }
+    require(period.endDate == period.startDate.plusDays(period.dayCount.toLong() - 1L)) {
+        "Planning period end date does not match its day count."
+    }
+
+    val selectedSlots = mealSlots
+        .filter { it.isNotBlank() }
+        .distinct()
+
+    return (0 until period.dayCount).flatMap { dayIndex ->
+        val date = period.startDate.plusDays(dayIndex.toLong())
+        selectedSlots.map { mealSlot ->
+            val id = if (period.type == PlanningPeriodType.WEEK) {
+                "${period.startDate}-${dayIndex}-${mealSlot}"
+            } else {
+                "${period.periodId}-${date}-${mealSlot}"
+            }
+            PlanningPeriodSlot(
+                id = id,
+                date = date,
+                dayIndex = dayIndex,
+                mealSlot = mealSlot
+            )
+        }
+    }
+}
+
+/**
  * Resolve a selected date into its canonical planning period.
  *
  * Week periods always start on Monday. Month periods always start on day one
