@@ -28,6 +28,7 @@ class MarketProductIngredientMatchMigrationTest {
                         db.execSQL("CREATE TABLE market_products (id TEXT NOT NULL PRIMARY KEY)")
                         db.execSQL("CREATE TABLE ingredients (id TEXT NOT NULL PRIMARY KEY)")
                         db.execSQL("INSERT INTO market_products (id) VALUES ('product-1')")
+                        db.execSQL("INSERT INTO market_products (id) VALUES ('product-2')")
                         db.execSQL("INSERT INTO ingredients (id) VALUES ('ingredient-1')")
                     }
 
