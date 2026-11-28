@@ -34,6 +34,8 @@ import dz.meals.app.domain.PlanIngredientAdjustment
 import dz.meals.app.domain.PlanningPeriodType
 import dz.meals.app.domain.PeriodMeatAllowance
 import dz.meals.app.domain.calculatePeriodMeatAllowances
+import dz.meals.app.domain.periodSearchAttempts
+import dz.meals.app.domain.scorePeriodIngredientReuse
 import dz.meals.app.domain.calculatePurchaseNeed
 import dz.meals.app.domain.resolvePlanningDateRange
 import dz.meals.app.domain.buildPlanningPeriodSlots
@@ -1030,7 +1032,8 @@ class MealsRepository internal constructor(
         return withContext(Dispatchers.Default) {
             data class RecipeSignature(
                 val proteinGroups: Set<String>,
-                val proteinIngredientIds: Set<String>
+                val proteinIngredientIds: Set<String>,
+                val reusableIngredientIds: Set<String>
             )
 
             val proteinCategoryIds = setOf(
@@ -1052,9 +1055,21 @@ class MealsRepository internal constructor(
                     .sortedByDescending { it.first.quantityBase }
                     .take(2)
                     .toList()
+                val reusableIngredientIds = recipe.ingredients
+                    .asSequence()
+                    .filter { !it.optional && it.quantityBase > 0.0 }
+                    .mapNotNull { ingredient ->
+                        val categoryId = ingredientTaxonomyById[ingredient.ingredientId]?.categoryId
+                            ?: return@mapNotNull null
+                        ingredient.ingredientId.takeIf {
+                            categoryId !in proteinCategoryIds && categoryId != "foodcat-oils"
+                        }
+                    }
+                    .toSet()
                 recipe.id to RecipeSignature(
                     proteinGroups = proteinIngredients.mapTo(linkedSetOf()) { it.second },
-                    proteinIngredientIds = proteinIngredients.mapTo(linkedSetOf()) { it.first.ingredientId }
+                    proteinIngredientIds = proteinIngredients.mapTo(linkedSetOf()) { it.first.ingredientId },
+                    reusableIngredientIds = reusableIngredientIds
                 )
             }
             val recipesById = recipes.associateBy { it.id }
@@ -1074,6 +1089,9 @@ class MealsRepository internal constructor(
             }
 
             fun scorePlan(candidateMeals: List<PlannedMeal>, tieBreak: Double = 0.0): Double {
+                // Allergy, diet and meat constraints are already enforced before a
+                // recipe can enter this search. Keep weighted cost/quality scoring
+                // strictly downstream so a cheap but forbidden recipe never wins.
                 val basket = calculateBasket(
                     candidateMeals,
                     recipes,
@@ -1114,6 +1132,14 @@ class MealsRepository internal constructor(
                     }
                 }
 
+                // Reward a compact shared-staple basket across different recipes.
+                // Protein and oil are excluded from this signal; meal variety has its
+                // own penalty and should not be sacrificed merely to reuse ingredients.
+                val ingredientReuseAdjustment = scorePeriodIngredientReuse(
+                    mealsWithRecipes.map { (_, recipe) ->
+                        signatures[recipe.id]?.reusableIngredientIds.orEmpty()
+                    }
+                )
                 val overBuffer = (basket.purchaseOutlayDzd - targetBudget).coerceAtLeast(0.0)
                 val overBudget = (basket.purchaseOutlayDzd - periodBudgetDzd).coerceAtLeast(0.0)
                 val previousMatches = candidateMeals.count { meal ->
@@ -1153,6 +1179,7 @@ class MealsRepository internal constructor(
                     basket.unknownPriceCount * 350.0 +
                     repeatedRecipeCount * 1_250.0 +
                     adjacentSimilarityPenalty +
+                    ingredientReuseAdjustment +
                     previousMatches * rotationPenalty +
                     preferencePenalty +
                     oilUsagePenalty +
@@ -1161,19 +1188,13 @@ class MealsRepository internal constructor(
                     tieBreak
             }
 
-            // Month plans can contain up to 93 slots. Reduce retry count for
-            // long horizons so whole-period basket scoring stays bounded.
-            val searchAttempts = when {
-                slots.size >= 72 -> 2
-                slots.size >= 42 -> 3
-                slots.size >= 28 -> 4
-                slots.size >= 18 -> 6
-                slots.size >= 12 -> 8
-                else -> 10
-            }
-            val seed = System.currentTimeMillis() xor
+            // Keep search bounded for long plans, and make every regeneration
+            // distinct even when taps arrive within the same millisecond.
+            val searchAttempts = periodSearchAttempts(slots.size)
+            val seed = System.nanoTime() xor
                 (previousGeneratedAtEpochMillis ?: 0L) xor
-                periodStartIso.hashCode().toLong()
+                periodStartIso.hashCode().toLong() xor
+                UUID.randomUUID().mostSignificantBits
             var bestPlan: List<PlannedMeal>? = null
             var bestScore = Double.POSITIVE_INFINITY
 

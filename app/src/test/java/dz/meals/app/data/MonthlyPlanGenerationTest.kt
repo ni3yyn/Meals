@@ -107,6 +107,13 @@ class MonthlyPlanGenerationTest {
 
             val regeneratedById = dao.getPlanningPeriodMeals(periodId).associateBy { it.id }
             assertEquals(31, regeneratedById.size)
+            val preservedIds = setOf(lockedBefore.id, cookedBefore.id, editedBefore.id)
+            assertTrue(
+                "Regeneration with unchanged preferences should explore a new eligible recipe when alternatives exist.",
+                firstRows.any { old ->
+                    old.id !in preservedIds && regeneratedById[old.id]?.recipeId != old.recipeId
+                }
+            )
             for (preservedRow in listOf(lockedBefore, cookedBefore, editedBefore)) {
                 val after = regeneratedById[preservedRow.id]
                 assertNotNull(after)
