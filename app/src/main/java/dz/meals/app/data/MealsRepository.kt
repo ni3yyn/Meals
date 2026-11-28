@@ -88,9 +88,9 @@ class MealsRepository internal constructor(
 
     suspend fun ensureInitialized() = initializationMutex.withLock {
         SeedRecipes.validateCatalogue()
-        FoodCatalogueInstaller(appContext).installIfNeeded()
-        MarketProductCatalogueInstaller(appContext).installIfNeeded()
-        MarketProductIngredientMatchInstaller(appContext).installIfNeeded()
+        FoodCatalogueInstaller(appContext, databaseOverride = database).installIfNeeded()
+        MarketProductCatalogueInstaller(appContext, databaseOverride = database).installIfNeeded()
+        MarketProductIngredientMatchInstaller(appContext, databaseOverride = database).installIfNeeded()
         dao.assignUnscopedShoppingItemsToWeek(currentWeekStartIso())
         dao.scopeLegacyGeneratedShoppingItemIds()
         if (dao.recipeCount() > 0) return@withLock
