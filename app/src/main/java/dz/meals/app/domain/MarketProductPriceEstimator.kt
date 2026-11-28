@@ -111,6 +111,9 @@ fun estimateMarketProductPrice(
     val latestByListing = evidence
         .asSequence()
         .filter { it.ingredientId == safeIngredientId }
+        // A future-dated source row must not suppress the last valid historical
+        // observation when this estimator is asked for a saved-plan snapshot.
+        .filter { (it.observedAtEpochMillis ?: Long.MAX_VALUE) <= nowEpochMillis }
         .filter { it.sourceListingId.isNotBlank() }
         .groupBy { it.sourceListingId }
         .values
